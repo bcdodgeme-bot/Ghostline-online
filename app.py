@@ -24,6 +24,9 @@ app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'ghostline-default-key')
 PASSWORD = os.getenv('GHOSTLINE_PASSWORD', 'open_the_gate')
 
+# === hosted model to use in production (override with env CHAT_MODEL) =========
+CHAT_MODEL = os.getenv('CHAT_MODEL', 'gpt-4o-mini')
+
 # Make sure sessions dir exists
 os.makedirs("sessions", exist_ok=True)
 
@@ -104,7 +107,7 @@ def index():
                 retrieval_ctx = retrieve(summary_prompt, k=5, project_filter=project) if is_ready() else []
                 response_data = generate_response(
                     summary_prompt, use_voices, random_toggle,
-                    project=project, model="llama3", retrieval_context=retrieval_ctx
+                    project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
                 )
             except Exception as e:
                 response_data = {"SyntaxPrime": f"Gmail check failed: {e}"}
@@ -136,7 +139,7 @@ def index():
                 retrieval_ctx = retrieve(summary_prompt, k=5, project_filter=project) if is_ready() else []
                 response_data = generate_response(
                     summary_prompt, use_voices, random_toggle,
-                    project=project, model="llama3", retrieval_context=retrieval_ctx
+                    project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
                 )
             except Exception as e:
                 response_data = {"SyntaxPrime": f"Gmail search failed: {e}"}
@@ -169,7 +172,7 @@ def index():
                 retrieval_ctx = retrieve(summary_prompt, k=5, project_filter=project) if is_ready() else []
                 response_data = generate_response(
                     summary_prompt, use_voices, random_toggle,
-                    project=project, model="llama3", retrieval_context=retrieval_ctx
+                    project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
                 )
 
             # Save and return
@@ -191,7 +194,7 @@ def index():
         retrieval_ctx = retrieve(user_input, k=5, project_filter=project) if is_ready() else []
         response_data = generate_response(
             user_input, use_voices, random_toggle,
-            project=project, model="llama3", retrieval_context=retrieval_ctx
+            project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
         )
 
         # Save to project session file
@@ -224,7 +227,7 @@ def stream():
     def generate():
         for chunk in stream_generate(
             user_input, use_voices, project=project,
-            model="llama3", retrieval_context=retrieval_ctx
+            model=CHAT_MODEL, retrieval_context=retrieval_ctx
         ):
             yield chunk
 
@@ -331,5 +334,6 @@ def upload_file():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
