@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify
-from utils.ghostline_engine import generate_response, stream_generate, CHAT_MODEL
+from utils.ghostline_engine import generate_response, stream_generate
 from utils.rag_basic import retrieve, is_ready, load_corpus  # RAG imports
 from utils.scraper import scrape_url                         # Scraper
 from utils.gmail_client import list_overnight, search as gmail_search
@@ -17,15 +17,15 @@ import docx
 try:
     from dotenv import load_dotenv
     load_dotenv()
-except:
+except Exception:
     pass
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'ghostline-default-key')
 PASSWORD = os.getenv('GHOSTLINE_PASSWORD', 'open_the_gate')
 
-# === hosted model to use in production (override with env CHAT_MODEL) =========
-CHAT_MODEL = os.getenv('CHAT_MODEL', 'gpt-4o-mini')
+# Central place to pick the chat model (can be overridden in Render env)
+CHAT_MODEL = os.getenv("CHAT_MODEL", os.getenv("OPENROUTER_MODEL", "openrouter/auto"))
 
 # Make sure sessions dir exists
 os.makedirs("sessions", exist_ok=True)
@@ -44,7 +44,8 @@ PROJECTS = [
     'Side Quests'
 ]
 
-CORPUS_PATH = "data/cleaned/ghostline_sources.jsonl.gz"  # gz OK; rag loader handles .gz
+# gz OK; rag loader handles .gz
+CORPUS_PATH = "data/cleaned/ghostline_sources.jsonl.gz"
 
 # --- Auto-load the corpus at startup / on (re)deploy (Flask 3 safe) ---
 def _boot_load_corpus():
@@ -334,6 +335,7 @@ def upload_file():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
 
