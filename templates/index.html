@@ -1,171 +1,206 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Ghostline – Creative Intelligence System</title>
   <link rel="stylesheet" href="/static/style.css">
   <link rel="stylesheet" href="/static/loader.css">
   <script src="/static/main.js" defer></script>
   <link rel="icon" type="image/png" href="/static/favicon.png">
   <style>
-    body {
-      margin: 0;
-      padding-bottom: 160px; /* space for bottom bar */
-    }
-    .bottom-bar {
+    /* Bottom-fixed composer */
+    .composer {
       position: fixed;
-      bottom: 0;
       left: 0;
-      width: 100%;
-      background: #1a1a1a;
-      padding: 10px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-      box-shadow: 0 -2px 8px rgba(0,0,0,0.4);
+      right: 0;
+      bottom: 0;
+      background: #0b0b0b;
+      border-top: 1px solid #303030;
+      padding: 10px 12px;
+      z-index: 20;
     }
-    .bottom-bar textarea {
-      flex: 1 1 auto;
-      border-radius: 12px;
-      padding: 10px;
-      resize: none;
-      font-size: 1rem;
+    .composer form { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .composer textarea {
+      flex: 1;
+      min-height: 54px;
+      max-height: 160px;
+      background: #111;
+      color: #eee;
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 10px 12px;
+      resize: vertical;
     }
-    .bottom-bar select, .bottom-bar input[type="submit"], .bottom-bar button {
-      border-radius: 6px;
-      padding: 6px 12px;
-      font-size: 0.9rem;
-    }
-    .persona-toggle {
-      margin-top: 0.5em;
-      font-size: 0.85rem;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    main {
-      padding: 20px;
-    }
-    .response-block {
-      background: #2a2a2a;
-      padding: 10px;
+    .composer .submit {
+      padding: 8px 16px;
+      background: #6A0DAD;
+      color: #fff;
+      border: none;
       border-radius: 8px;
-      margin-bottom: 10px;
+      font-weight: 700;
+      cursor: pointer;
     }
+    header .bar { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
+    header .left { display: flex; align-items: center; gap: 12px; }
+    header h1 { margin: 0; }
+    /* Chat thread */
+    .thread { display: flex; flex-direction: column; gap: 10px; padding: 0 8px 140px 8px; }
+    .msg { display: flex; }
+    .msg.right { justify-content: flex-end; }
+    .bubble {
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid #3b3b3b;
+      white-space: pre-wrap;
+      line-height: 1.45;
+    }
+    .bubble.user { background: #1f2937; border-color: #374151; }
+    .bubble.bot { background: #111827; border-color: #4b5563; }
+    .role { font-weight: 700; opacity: 0.85; margin-bottom: 4px; }
   </style>
 </head>
 
 <body class="dark-mode">
-  <header style="padding: 10px 20px; display: flex; align-items: center; justify-content: space-between;">
-    <div>
-      <h1 style="margin: 0; font-size: 1.5rem; display: flex; align-items: center; gap: 10px;">
-        <img src="/static/syntax-buffering.png" alt="Syntax Prime Logo" width="48" style="vertical-align: middle;">
-        Ghostline
-      </h1><br><br>
-      <p style="margin: 2px 0 0; font-style: italic; font-size: 0.9rem; color: #ccc;">
-        Syntax Prime is online. Minimal patience. Maximum sarcasm.
-      </p>
+  <header>
+    <div class="bar">
+      <div class="left">
+        <img src="/static/syntax-buffering.png" alt="Syntax Prime Logo" width="64" style="vertical-align: middle;">
+        <h1>Ghostline</h1>
+      </div>
+
+      <!-- Logout button with confirm -->
+      <form action="{{ url_for('logout') }}" method="get" id="logoutForm" style="display:inline;">
+        <button type="submit"
+                aria-label="Log out"
+                title="Log out"
+                style="background-color:#333; color:#fff; padding:6px 12px; border:none; border-radius:8px; cursor:pointer;">
+          🚨 Logout
+        </button>
+      </form>
     </div>
-    <form action="{{ url_for('logout') }}" method="get" id="logoutForm" style="display:inline;">
-      <button type="submit"
-              aria-label="Log out"
-              title="Log out"
-              style="background-color:#333; color:#fff; padding:4px 10px; border:none; border-radius:4px; cursor:pointer;">
-        🚨 Logout
-      </button>
-    </form>
+
+    <p style="margin-top:6px; font-style:italic; font-size:0.9rem; color:#ccc;">
+      Syntax Prime is online. Minimal patience. Maximum sarcasm.
+    </p>
   </header>
 
-  <!-- Loader -->
+  <!-- Thinking / loader -->
   <div id="loader">
     <img src="/static/syntax-buffering.png" alt="Syntax Prime buffering..." width="100"><br>
     Syntax Prime is buffering your next poor decision…
   </div>
 
-  <!-- Conversation -->
-  <main>
-    {% if response_data %}
-      {% set display_names = {
-        'SyntaxPrime':'Syntax Prime',
-        'SyntaxBot':'SyntaxBot',
-        'Nil.exe':'Nil.exe',
-        'GhadaGPT':'GhadaGPT'
-      } %}
-      {% for voice, reply in response_data.items() %}
-        <div class="response-block">
-          <h3>{{ display_names.get(voice, voice) }} Says:</h3>
-          <p>{{ reply }}</p>
+  <!-- Threaded chat -->
+  <main class="chat">
+    <div class="thread" id="thread">
+      {% if conversation and conversation|length > 0 %}
+        {% set display_names = {'SyntaxPrime':'Syntax Prime','SyntaxBot':'SyntaxBot','Nil.exe':'Nil.exe','GhadaGPT':'GhadaGPT'} %}
+
+        {% for turn in conversation %}
+          <!-- User -->
+          <div class="msg right">
+            <div class="bubble user">
+              <div class="role">You</div>
+              <div>{{ turn.user | e }}</div>
+            </div>
+          </div>
+
+          <!-- Assistant replies -->
+          {% for voice, reply in turn.responses.items() %}
+            <div class="msg">
+              <div class="bubble bot">
+                <div class="role">{{ display_names.get(voice, voice) }}</div>
+                <div>{{ reply | e }}</div>
+              </div>
+            </div>
+          {% endfor %}
+        {% endfor %}
+      {% else %}
+        <div class="msg">
+          <div class="bubble bot">
+            <div class="role">Syntax Prime</div>
+            <div>Say something and I’ll talk back. Try “What day is it?”</div>
+          </div>
         </div>
-      {% endfor %}
-    {% endif %}
+      {% endif %}
+    </div>
   </main>
 
-  <!-- Bottom input bar -->
-  <div class="bottom-bar">
-    <form method="POST" style="flex: 1;">
-      <div style="display: flex; gap: 8px; margin-bottom: 6px;">
-        <select name="project">
-          {% for project in projects %}
-            <option value="{{ project }}">{{ project }}</option>
-          {% endfor %}
-        </select>
-        <input type="submit" value="Submit"
-               style="background-color:#6A0DAD; color:#fff; border:none; cursor:pointer;">
-      </div>
-      <textarea name="user_input" rows="2" placeholder="Type your prompt..." required></textarea>
-      <div class="persona-toggle">
+  <!-- Bottom-fixed composer -->
+  <div class="composer">
+    <form method="POST">
+      <label for="project">📂 Project:</label>
+      <select name="project">
+        {% for project in projects %}
+          <option value="{{ project }}" {% if project == current_project %}selected{% endif %}>{{ project }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="user_input">💬 Prompt:</label>
+      <textarea name="user_input" required placeholder="Type your prompt... (Enter to send, Shift+Enter for newline)"></textarea>
+
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+        <span>🤖 Who responds?</span>
         <label><input type="checkbox" name="voices" value="SyntaxPrime" checked> Syntax Prime</label>
         <label><input type="checkbox" name="voices" value="SyntaxBot"> SyntaxBot</label>
         <label><input type="checkbox" name="voices" value="Nil.exe"> Nil.exe</label>
-        <label><input type="checkbox" name="voices" value="GhadaGPT"> GGPT</label>
+        <label><input type="checkbox" name="voices" value="GhadaGPT"> GhadaGPT</label>
         <label><input type="checkbox" name="random"> 🎲 Random</label>
+        <button class="submit" type="submit">Submit</button>
       </div>
     </form>
 
-    <!-- Upload -->
-    <form action="/upload" method="post" enctype="multipart/form-data">
+    <!-- Upload / OCR -->
+    <form action="/upload" method="post" enctype="multipart/form-data" style="margin-top:10px;">
+      <label for="file">Upload Image or Document:</label>
       <input type="file" name="file">
-      <input type="submit" value="Analyze" style="background-color:#6A0DAD; color:white; border:none; cursor:pointer;">
+      <input type="submit" value="Analyze"
+             style="margin-left:10px; padding:6px 12px; background-color:#6A0DAD; color:#fff; border:none; border-radius:6px; cursor:pointer;">
     </form>
 
     <!-- Export -->
-    <form id="exportForm">
+    <form id="exportForm" style="margin-top:10px;">
       <button type="submit"
-              style="background-color:#333; color:#fff; border:none; cursor:pointer;">
+              style="padding:6px 12px; background-color:#333; color:#fff; border:none; border-radius:6px; cursor:pointer;">
         📤 Export Session
       </button>
     </form>
   </div>
 
-  <!-- Export project redirect -->
+  <!-- Scripts -->
   <script>
+    // Submit on Enter (Shift+Enter for newline)
+    const ta = document.querySelector('textarea[name="user_input"]');
+    if (ta) {
+      ta.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          this.form.submit();
+        }
+      });
+    }
+
+    // Export current project
     document.getElementById('exportForm').addEventListener('submit', function (e) {
       e.preventDefault();
       const proj = document.querySelector('select[name="project"]').value;
       window.location.href = '/export/' + encodeURIComponent(proj);
     });
-  </script>
 
-  <!-- Enter-to-submit -->
-  <script>
-    document.querySelector('textarea[name="user_input"]').addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        this.form.submit();
-      }
-    });
-  </script>
-
-  <!-- Logout confirm -->
-  <script>
+    // Confirm logout
     const lf = document.getElementById('logoutForm');
     if (lf) {
       lf.addEventListener('submit', function (e) {
-        const ok = confirm('Log out of Ghostline?\nYou’ll need the password to log back in.');
-        if (!ok) e.preventDefault();
+        if (!confirm('Log out of Ghostline?\nYou’ll need the password to log back in.')) {
+          e.preventDefault();
+        }
       });
     }
+
+    // Auto-scroll to latest message
+    const thread = document.getElementById('thread');
+    if (thread) thread.scrollTop = thread.scrollHeight;
   </script>
 </body>
 </html>
