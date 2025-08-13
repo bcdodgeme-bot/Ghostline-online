@@ -299,7 +299,7 @@ def export_session(project):
             download_name=f"{project}_session.md"
         )
     except FileNotFoundError:
-        return f"No session data found for project: {project}", 404)
+        return f"No session data found for project: {project}", 404
 
 # --- UPLOAD / OCR ---
 @app.route('/upload', methods=['POST'])
