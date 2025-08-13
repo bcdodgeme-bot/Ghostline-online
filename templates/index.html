@@ -58,7 +58,58 @@
     .bubble.user { background: #1f2937; border-color: #374151; }
     .bubble.bot { background: #111827; border-color: #4b5563; }
     .role { font-weight: 700; opacity: 0.85; margin-bottom: 4px; }
-  </style>
+  /* --- Mobile-friendly chat layout --- */
+:root{
+  /* fallbacks; JS keeps these in sync with real sizes */
+  --header-h: 72px;
+  --composer-h: 150px;
+}
+
+/* Chat area uses dynamic viewport to play nice with mobile browser chrome */
+main.chat{
+  height: calc(100dvh - var(--header-h));
+  overflow: hidden; /* thread handles its own scroll */
+}
+
+/* Thread scrolls and leaves room for the composer */
+.thread{
+  height: calc(100% - var(--composer-h));
+  overflow: auto;
+  padding: 8px 8px calc(var(--composer-h) + 16px) 8px; /* extra bottom so last msg isn’t hidden */
+}
+
+/* Composer respects notches/home-indicator on iOS */
+.composer{
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+}
+
+/* --- Tighten on small screens --- */
+@media (max-width: 600px){
+  .composer{ padding: 8px; }
+  .composer form{
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .composer label{ margin-top: 6px; }
+  .composer textarea{
+    min-height: 80px;
+    width: 100%;
+  }
+  .composer select,
+  .composer .submit,
+  .composer input[type="file"],
+  .composer input[type="submit"],
+  .composer button{
+    width: 100%;
+  }
+  .composer div{
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+}
+
+	</style>
 </head>
 
 <body class="dark-mode">
@@ -202,5 +253,49 @@
     const thread = document.getElementById('thread');
     if (thread) thread.scrollTop = thread.scrollHeight;
   </script>
+	<script>
+  // keep CSS vars in sync with real header/composer sizes
+  function updateHeights(){
+    const header = document.querySelector('header');
+    const composer = document.querySelector('.composer');
+    if(header) document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
+    if(composer) document.documentElement.style.setProperty('--composer-h', composer.offsetHeight + 'px');
+    // nudge thread to the bottom after size changes
+    const thread = document.getElementById('thread');
+    if(thread) thread.scrollTop = thread.scrollHeight;
+  }
+  window.addEventListener('load', updateHeights);
+  window.addEventListener('resize', updateHeights);
+  new ResizeObserver(updateHeights).observe(document.querySelector('.composer'));
+
+  // auto-resize textarea + keep it visible when keyboard opens
+  const ta = document.querySelector('textarea[name="user_input"]');
+  if (ta){
+    const fit = () => {
+      ta.style.height = 'auto';
+      ta.style.height = Math.min(220, ta.scrollHeight) + 'px';
+    };
+    ta.addEventListener('input', fit);
+    ta.addEventListener('focus', () => {
+      setTimeout(() => {
+        fit();
+        const thread = document.getElementById('thread');
+        if(thread) thread.scrollTop = thread.scrollHeight;
+      }, 100);
+    });
+    fit();
+  }
+
+  // (kept) Enter-to-send behavior
+  if (ta) {
+    ta.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        this.form.submit();
+      }
+    });
+  }
+</script>
+
 </body>
 </html>
