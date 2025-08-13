@@ -41,30 +41,40 @@ PROJECTS = [
     'Side Quests'
 ]
 
-CORPUS_PATH = "data/cleaned/ghostline_sources.jsonl.gz"
+CORPUS_PATH = "data/cleaned/ghostline_sources.jsonl.gz"  # gz OK; rag loader handles .gz
 
-# --- Auto-load the corpus (works with Flask 3.x) ---
-_corpus_loaded = False
-
-def _ensure_corpus_loaded():
-    """Load once on import and once again on first request if needed."""
-    global _corpus_loaded
-    if _corpus_loaded:
-        return
+# --- Auto-load the corpus at startup / on (re)deploy (Flask 3 safe) ---
+def _boot_load_corpus():
     try:
         load_corpus(CORPUS_PATH)
         app.logger.info("✅ Brain loaded from %s", CORPUS_PATH)
-        _corpus_loaded = True
     except Exception as e:
         app.logger.warning("⚠️ Brain load failed: %s", e)
 
-# Try at import (covers gunicorn worker start, local run)
-_ensure_corpus_loaded()
+_boot_load_corpus()
 
-# And ensure on first actual HTTP request (Flask 3.x safe)
-@app.before_request
-def _load_once_before_request():
-    _ensure_corpus_loaded()
+# --- conversation loader (tail last N turns) ---
+def load_conversation(project: str, limit: int = 50):
+    """
+    Reads sessions/<project>.json and returns a list of turns like:
+      {"user": "...", "responses": {"SyntaxPrime": "...", ...}}
+    Most recent at the end.
+    """
+    path = f"sessions/{project.lower().replace(' ', '_')}.json"
+    if not os.path.exists(path):
+        return []
+
+    turns = []
+    with open(path, "r", encoding="utf-8") as f:
+        lines = [ln.strip() for ln in f if ln.strip()]
+    for line in lines[-limit:]:
+        try:
+            row = json.loads(line)
+            turns.append({"user": row.get("prompt", ""), "responses": row.get("response", {})})
+        except json.JSONDecodeError:
+            continue
+    return turns
+
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -72,13 +82,79 @@ def index():
         return redirect(url_for('login'))
 
     response_data = {}
+    selected_project = PROJECTS[0]
+
     if request.method == 'POST':
         user_input = request.form['user_input'].strip()
         project = request.form['project']
+        selected_project = project
         use_voices = request.form.getlist('voices') or ['SyntaxPrime']
         random_toggle = 'random' in request.form
 
-        # --- Command: scrape <url> ---
+        # ---- Command: gmail overnight ----
+        if user_input.lower().strip() == "gmail overnight":
+            try:
+                msgs = list_overnight(max_results=25, unread_only=True)
+                lines = [f"- {m['date']} — {m['from']} — {m['subject']}" for m in msgs]
+                summary_prompt = (
+                    "Summarize these overnight emails into 5–8 concise bullets. "
+                    "Group related threads, call out anything urgent, and suggest 3 next actions:\n\n"
+                    + "\n".join(lines)
+                )
+                retrieval_ctx = retrieve(summary_prompt, k=5, project_filter=project) if is_ready() else []
+                response_data = generate_response(
+                    summary_prompt, use_voices, random_toggle,
+                    project=project, model="llama3", retrieval_context=retrieval_ctx
+                )
+            except Exception as e:
+                response_data = {"SyntaxPrime": f"Gmail check failed: {e}"}
+
+            session_path = f"sessions/{project.lower().replace(' ', '_')}.json"
+            with open(session_path, 'a', encoding='utf-8') as f:
+                json.dump({'prompt': user_input, 'response': response_data}, f); f.write('\n')
+
+            conversation = load_conversation(project, limit=50)
+            return render_template(
+                'index.html',
+                projects=PROJECTS,
+                response_data=response_data,
+                conversation=conversation,
+                current_project=project
+            )
+
+        # ---- Command: gmail search <query> ----
+        if user_input.lower().startswith("gmail search "):
+            query_text = user_input.split(" ", 2)[2].strip()
+            try:
+                msgs = gmail_search(query_text, max_results=25)
+                lines = [f"- {m['date']} — {m['from']} — {m['subject']}" for m in msgs]
+                summary_prompt = (
+                    f"Summarize the most relevant messages for query: '{query_text}'. "
+                    "Give key points, who it’s from, and any required follow‑ups:\n\n"
+                    + "\n".join(lines)
+                )
+                retrieval_ctx = retrieve(summary_prompt, k=5, project_filter=project) if is_ready() else []
+                response_data = generate_response(
+                    summary_prompt, use_voices, random_toggle,
+                    project=project, model="llama3", retrieval_context=retrieval_ctx
+                )
+            except Exception as e:
+                response_data = {"SyntaxPrime": f"Gmail search failed: {e}"}
+
+            session_path = f"sessions/{project.lower().replace(' ', '_')}.json"
+            with open(session_path, 'a', encoding='utf-8') as f:
+                json.dump({'prompt': user_input, 'response': response_data}, f); f.write('\n')
+
+            conversation = load_conversation(project, limit=50)
+            return render_template(
+                'index.html',
+                projects=PROJECTS,
+                response_data=response_data,
+                conversation=conversation,
+                current_project=project
+            )
+
+        # ---- Command: scrape <url> ----
         if user_input.lower().startswith("scrape "):
             url = user_input.split(" ", 1)[1].strip()
             result = scrape_url(url)
@@ -98,61 +174,20 @@ def index():
 
             # Save and return
             session_path = f"sessions/{project.lower().replace(' ', '_')}.json"
-            with open(session_path, 'a') as f:
+            with open(session_path, 'a', encoding='utf-8') as f:
                 json.dump({'prompt': user_input, 'response': response_data}, f)
                 f.write('\n')
-            return render_template('index.html', projects=PROJECTS, response_data=response_data)
 
-        # --- Command: gmail overnight ---
-        if user_input.lower().strip() == "gmail overnight":
-            try:
-                msgs = list_overnight(max_results=25, unread_only=True)
-                lines = [f"- {m['date']} — {m['from']} — {m['subject']}" for m in msgs]
-                summary_prompt = (
-                    "Summarize these overnight emails into 5–8 concise bullets. "
-                    "Group related threads, call out anything urgent, and suggest 3 next actions:\n\n"
-                    + "\n".join(lines)
-                )
-                retrieval_ctx = retrieve(summary_prompt, k=5, project_filter=project) if is_ready() else []
-                response_data = generate_response(
-                    summary_prompt, use_voices, random_toggle,
-                    project=project, model="llama3", retrieval_context=retrieval_ctx
-                )
-            except Exception as e:
-                response_data = {"SyntaxPrime": f"Gmail check failed: {e}"}
+            conversation = load_conversation(project, limit=50)
+            return render_template(
+                'index.html',
+                projects=PROJECTS,
+                response_data=response_data,
+                conversation=conversation,
+                current_project=project
+            )
 
-            session_path = f"sessions/{project.lower().replace(' ', '_')}.json"
-            with open(session_path, 'a') as f:
-                json.dump({'prompt': user_input, 'response': response_data}, f)
-                f.write('\n')
-            return render_template('index.html', projects=PROJECTS, response_data=response_data)
-
-        # --- Command: gmail search <query> ---
-        if user_input.lower().startswith("gmail search "):
-            query_text = user_input.split(" ", 2)[2].strip()
-            try:
-                msgs = gmail_search(query_text, max_results=25)
-                lines = [f"- {m['date']} — {m['from']} — {m['subject']}" for m in msgs]
-                summary_prompt = (
-                    f"Summarize the most relevant messages for query: '{query_text}'. "
-                    "Give me key points, who it’s from, and any required follow-ups:\n\n"
-                    + "\n".join(lines)
-                )
-                retrieval_ctx = retrieve(summary_prompt, k=5, project_filter=project) if is_ready() else []
-                response_data = generate_response(
-                    summary_prompt, use_voices, random_toggle,
-                    project=project, model="llama3", retrieval_context=retrieval_ctx
-                )
-            except Exception as e:
-                response_data = {"SyntaxPrime": f"Gmail search failed: {e}"}
-
-            session_path = f"sessions/{project.lower().replace(' ', '_')}.json"
-            with open(session_path, 'a') as f:
-                json.dump({'prompt': user_input, 'response': response_data}, f)
-                f.write('\n')
-            return render_template('index.html', projects=PROJECTS, response_data=response_data)
-
-        # --- Normal flow: retrieve knowledge + generate ---
+        # ---- Normal flow: retrieve + generate ----
         retrieval_ctx = retrieve(user_input, k=5, project_filter=project) if is_ready() else []
         response_data = generate_response(
             user_input, use_voices, random_toggle,
@@ -161,11 +196,18 @@ def index():
 
         # Save to project session file
         session_path = f"sessions/{project.lower().replace(' ', '_')}.json"
-        with open(session_path, 'a') as f:
+        with open(session_path, 'a', encoding='utf-8') as f:
             json.dump({'prompt': user_input, 'response': response_data}, f)
             f.write('\n')
 
-    return render_template('index.html', projects=PROJECTS, response_data=response_data)
+    conversation = load_conversation(selected_project, limit=50)
+    return render_template(
+        'index.html',
+        projects=PROJECTS,
+        response_data=response_data,
+        conversation=conversation,
+        current_project=selected_project
+    )
 
 # --- STREAMING ENDPOINT (plain text stream) ---
 @app.route('/stream', methods=['POST'])
@@ -195,9 +237,6 @@ def reload_corpus():
         return redirect(url_for('login'))
     try:
         load_corpus(CORPUS_PATH)
-        # mark as loaded in case it errored earlier
-        global _corpus_loaded
-        _corpus_loaded = True
         return "Brain reloaded ✅", 200
     except Exception as e:
         return f"Reload failed: {e}", 500
@@ -216,6 +255,7 @@ def healthz():
     status = {"status": "ok" if ok else "error", **details}
     return jsonify(status), (200 if ok else 500)
 
+# --- AUTH ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
@@ -232,11 +272,12 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
+# --- EXPORT SESSION ---
 @app.route('/export/<project>')
 def export_session(project):
-    session_path = f"sessions/{project.lower().replace(' ', '_')}.json"
+    session_path = f'sessions/{project.lower().replace(" ", "_")}.json'
     try:
-        with open(session_path, 'r') as f:
+        with open(session_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
 
         content = ""
@@ -258,8 +299,9 @@ def export_session(project):
             download_name=f"{project}_session.md"
         )
     except FileNotFoundError:
-        return f"No session data found for project: {project}", 404
+        return f"No session data found for project: {project}", 404)
 
+# --- UPLOAD / OCR ---
 @app.route('/upload', methods=['POST'])
 def upload_file():
     file = request.files.get('file')
@@ -289,4 +331,5 @@ def upload_file():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
