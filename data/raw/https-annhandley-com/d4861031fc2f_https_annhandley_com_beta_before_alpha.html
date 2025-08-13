@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head > <script type="text/javascript">
+/* <![CDATA[ */
+var gform;gform||(document.addEventListener("gform_main_scripts_loaded",function(){gform.scriptsLoaded=!0}),document.addEventListener("gform/theme/scripts_loaded",function(){gform.themeScriptsLoaded=!0}),window.addEventListener("DOMContentLoaded",function(){gform.domLoaded=!0}),gform={domLoaded:!1,scriptsLoaded:!1,themeScriptsLoaded:!1,isFormEditor:()=>"function"==typeof InitializeEditor,callIfLoaded:function(o){return!(!gform.domLoaded||!gform.scriptsLoaded||!gform.themeScriptsLoaded&&!gform.isFormEditor()||(gform.isFormEditor()&&console.warn("The use of gform.initializeOnLoaded() is deprecated in the form editor context and will be removed in Gravity Forms 3.1."),o(),0))},initializeOnLoaded:function(o){gform.callIfLoaded(o)||(document.addEventListener("gform_main_scripts_loaded",()=>{gform.scriptsLoaded=!0,gform.callIfLoaded(o)}),document.addEventListener("gform/theme/scripts_loaded",()=>{gform.themeScriptsLoaded=!0,gform.callIfLoaded(o)}),window.addEventListener("DOMContentLoaded",()=>{gform.domLoaded=!0,gform.callIfLoaded(o)}))},hooks:{action:{},filter:{}},addAction:function(o,r,e,t){gform.addHook("action",o,r,e,t)},addFilter:function(o,r,e,t){gform.addHook("filter",o,r,e,t)},doAction:function(o){gform.doHook("action",o,arguments)},applyFilters:function(o){return gform.doHook("filter",o,arguments)},removeAction:function(o,r){gform.removeHook("action",o,r)},removeFilter:function(o,r,e){gform.removeHook("filter",o,r,e)},addHook:function(o,r,e,t,n){null==gform.hooks[o][r]&&(gform.hooks[o][r]=[]);var d=gform.hooks[o][r];null==n&&(n=r+"_"+d.length),gform.hooks[o][r].push({tag:n,callable:e,priority:t=null==t?10:t})},doHook:function(r,o,e){var t;if(e=Array.prototype.slice.call(e,1),null!=gform.hooks[r][o]&&((o=gform.hooks[r][o]).sort(function(o,r){return o.priority-r.priority}),o.forEach(function(o){"function"!=typeof(t=o.callable)&&(t=window[t]),"action"==r?t.apply(null,e):e[0]=t.apply(null,e)})),"filter"==r)return e[0]},removeHook:function(o,r,t,n){var e;null!=gform.hooks[o][r]&&(e=(e=gform.hooks[o][r]).filter(function(o,r,e){return!!(null!=n&&n!=o.tag||null!=t&&t!=o.priority)}),gform.hooks[o][r]=e)}});
+/* ]]> */
+</script>
+
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name='robots' content='index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1' />
+	<style>img:is([sizes="auto" i], [sizes^="auto," i]) { contain-intrinsic-size: 3000px 1500px }</style>
+	
+<!-- Google Tag Manager for WordPress by gtm4wp.com -->
+<script data-cfasync="false" data-pagespeed-no-defer>
+	var gtm4wp_datalayer_name = "dataLayer";
+	var dataLayer = dataLayer || [];
+</script>
+<!-- End Google Tag Manager for WordPress by gtm4wp.com -->
+	<!-- This site is optimized with the Yoast SEO plugin v25.6 - https://yoast.com/wordpress/plugins/seo/ -->
+	<title>Beta Before Alpha - Ann Handley</title>
+	<link rel="canonical" href="https://annhandley.com/beta-before-alpha/" />
+	<meta property="og:locale" content="en_US" />
+	<meta property="og:type" content="article" />
+	<meta property="og:title" content="Beta Before Alpha - Ann Handley" />
+	<meta property="og:description" content="My friend Rachel emailed me an article the other day from Yankelovich, a market research company. The article, produced just after Mother&#8217;s Day, heralded the arrival of &#8220;Beta Moms&#8221; and their &#8220;newfound acceptance that being a &#8216;just good enough for my family&#8217; mother&#8230;speaks to a more forgiving, laid-back approach to parenting.&#8221; Unlike &#8220;Alpha Moms&#8221; (or, [&hellip;]" />
+	<meta property="og:url" content="https://annhandley.com/beta-before-alpha/" />
+	<meta property="og:site_name" content="Ann Handley" />
+	<meta property="article:publisher" content="https://www.facebook.com/ann.handley" />
+	<meta property="article:published_time" content="2008-06-08T18:54:50+00:00" />
+	<meta property="article:modified_time" content="2017-12-05T16:03:47+00:00" />
+	<meta property="og:image" content="https://184.154.246.108/~annhandl/ah/wp-content/uploads/2008/06/June-Cleaver.jpg" />
+	<meta name="author" content="Ann Handley" />
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:creator" content="@annhandley" />
+	<meta name="twitter:site" content="@annhandley" />
+	<meta name="twitter:label1" content="Written by" />
+	<meta name="twitter:data1" content="Ann Handley" />
+	<meta name="twitter:label2" content="Est. reading time" />
+	<meta name="twitter:data2" content="4 minutes" />
+	<script type="application/ld+json" class="yoast-schema-graph">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://annhandley.com/beta-before-alpha/","url":"https://annhandley.com/beta-before-alpha/","name":"Beta Before Alpha - Ann Handley","isPartOf":{"@id":"https://annhandley.com/#website"},"primaryImageOfPage":{"@id":"https://annhandley.com/beta-before-alpha/#primaryimage"},"image":{"@id":"https://annhandley.com/beta-before-alpha/#primaryimage"},"thumbnailUrl":"http://184.154.246.108/~annhandl/ah/wp-content/uploads/2008/06/June-Cleaver.jpg","datePublished":"2008-06-08T18:54:50+00:00","dateModified":"2017-12-05T16:03:47+00:00","author":{"@id":"https://annhandley.com/#/schema/person/82b31a4f88235bf8103dece480e1f551"},"breadcrumb":{"@id":"https://annhandley.com/beta-before-alpha/#breadcrumb"},"inLanguage":"en-US","potentialAction":[{"@type":"ReadAction","target":["https://annhandley.com/beta-before-alpha/"]}]},{"@type":"ImageObject","inLanguage":"en-US","@id":"https://annhandley.com/beta-before-alpha/#primaryimage","url":"http://184.154.246.108/~annhandl/ah/wp-content/uploads/2008/06/June-Cleaver.jpg","contentUrl":"http://184.154.246.108/~annhandl/ah/wp-content/uploads/2008/06/June-Cleaver.jpg"},{"@type":"BreadcrumbList","@id":"https://annhandley.com/beta-before-alpha/#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://annhandley.com/"},{"@type":"ListItem","position":2,"name":"Beta Before Alpha"}]},{"@type":"WebSite","@id":"https://annhandley.com/#website","url":"https://annhandley.com/","name":"Ann Handley","description":"Writer. Speaker. Marketer.","potentialAction":[{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"https://annhandley.com/?s={search_term_string}"},"query-input":{"@type":"PropertyValueSpecification","valueRequired":true,"valueName":"search_term_string"}}],"inLanguage":"en-US"},{"@type":"Person","@id":"https://annhandley.com/#/schema/person/82b31a4f88235bf8103dece480e1f551","name":"Ann Handley","image":{"@type":"ImageObject","inLanguage":"en-US","@id":"https://annhandley.com/#/schema/person/image/","url":"https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=96&d=mm&r=g","contentUrl":"https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=96&d=mm&r=g","caption":"Ann Handley"},"url":"https://annhandley.com/author/ann/"}]}</script>
+	<!-- / Yoast SEO plugin. -->
+
+
+<link rel='dns-prefetch' href='//use.typekit.net' />
+<link rel='dns-prefetch' href='//fonts.googleapis.com' />
+<link rel='dns-prefetch' href='//code.ionicframework.com' />
+<link rel="alternate" type="application/rss+xml" title="Ann Handley &raquo; Feed" href="https://annhandley.com/feed/" />
+<link rel="alternate" type="application/rss+xml" title="Ann Handley &raquo; Comments Feed" href="https://annhandley.com/comments/feed/" />
+<link rel="alternate" type="application/rss+xml" title="Ann Handley &raquo; Beta Before Alpha Comments Feed" href="https://annhandley.com/beta-before-alpha/feed/" />
+<link rel='stylesheet' id='ann-handley-css' href='https://annhandley.com/ah/wp-content/themes/annhandley/style.css' type='text/css' media='all' />
+<link rel='stylesheet' id='annhandley-fonts-css' href='https://fonts.googleapis.com/css?family=Open+Sans%3A400%2C400i%2C700&#038;ver=1.0.0' type='text/css' media='all' />
+<link rel='stylesheet' id='annhandley-ionicons-css' href='//code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css?ver=2.0.1' type='text/css' media='all' />
+<link rel='stylesheet' id='wp-block-library-css' href='https://annhandley.com/ah/wp-includes/css/dist/block-library/style.min.css' type='text/css' media='all' />
+<style id='classic-theme-styles-inline-css' type='text/css'>
+/*! This file is auto-generated */
+.wp-block-button__link{color:#fff;background-color:#32373c;border-radius:9999px;box-shadow:none;text-decoration:none;padding:calc(.667em + 2px) calc(1.333em + 2px);font-size:1.125em}.wp-block-file__button{background:#32373c;color:#fff;text-decoration:none}
+</style>
+<style id='global-styles-inline-css' type='text/css'>
+:root{--wp--preset--aspect-ratio--square: 1;--wp--preset--aspect-ratio--4-3: 4/3;--wp--preset--aspect-ratio--3-4: 3/4;--wp--preset--aspect-ratio--3-2: 3/2;--wp--preset--aspect-ratio--2-3: 2/3;--wp--preset--aspect-ratio--16-9: 16/9;--wp--preset--aspect-ratio--9-16: 9/16;--wp--preset--color--black: #000000;--wp--preset--color--cyan-bluish-gray: #abb8c3;--wp--preset--color--white: #ffffff;--wp--preset--color--pale-pink: #f78da7;--wp--preset--color--vivid-red: #cf2e2e;--wp--preset--color--luminous-vivid-orange: #ff6900;--wp--preset--color--luminous-vivid-amber: #fcb900;--wp--preset--color--light-green-cyan: #7bdcb5;--wp--preset--color--vivid-green-cyan: #00d084;--wp--preset--color--pale-cyan-blue: #8ed1fc;--wp--preset--color--vivid-cyan-blue: #0693e3;--wp--preset--color--vivid-purple: #9b51e0;--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple: linear-gradient(135deg,rgba(6,147,227,1) 0%,rgb(155,81,224) 100%);--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan: linear-gradient(135deg,rgb(122,220,180) 0%,rgb(0,208,130) 100%);--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange: linear-gradient(135deg,rgba(252,185,0,1) 0%,rgba(255,105,0,1) 100%);--wp--preset--gradient--luminous-vivid-orange-to-vivid-red: linear-gradient(135deg,rgba(255,105,0,1) 0%,rgb(207,46,46) 100%);--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray: linear-gradient(135deg,rgb(238,238,238) 0%,rgb(169,184,195) 100%);--wp--preset--gradient--cool-to-warm-spectrum: linear-gradient(135deg,rgb(74,234,220) 0%,rgb(151,120,209) 20%,rgb(207,42,186) 40%,rgb(238,44,130) 60%,rgb(251,105,98) 80%,rgb(254,248,76) 100%);--wp--preset--gradient--blush-light-purple: linear-gradient(135deg,rgb(255,206,236) 0%,rgb(152,150,240) 100%);--wp--preset--gradient--blush-bordeaux: linear-gradient(135deg,rgb(254,205,165) 0%,rgb(254,45,45) 50%,rgb(107,0,62) 100%);--wp--preset--gradient--luminous-dusk: linear-gradient(135deg,rgb(255,203,112) 0%,rgb(199,81,192) 50%,rgb(65,88,208) 100%);--wp--preset--gradient--pale-ocean: linear-gradient(135deg,rgb(255,245,203) 0%,rgb(182,227,212) 50%,rgb(51,167,181) 100%);--wp--preset--gradient--electric-grass: linear-gradient(135deg,rgb(202,248,128) 0%,rgb(113,206,126) 100%);--wp--preset--gradient--midnight: linear-gradient(135deg,rgb(2,3,129) 0%,rgb(40,116,252) 100%);--wp--preset--font-size--small: 13px;--wp--preset--font-size--medium: 20px;--wp--preset--font-size--large: 36px;--wp--preset--font-size--x-large: 42px;--wp--preset--spacing--20: 0.44rem;--wp--preset--spacing--30: 0.67rem;--wp--preset--spacing--40: 1rem;--wp--preset--spacing--50: 1.5rem;--wp--preset--spacing--60: 2.25rem;--wp--preset--spacing--70: 3.38rem;--wp--preset--spacing--80: 5.06rem;--wp--preset--shadow--natural: 6px 6px 9px rgba(0, 0, 0, 0.2);--wp--preset--shadow--deep: 12px 12px 50px rgba(0, 0, 0, 0.4);--wp--preset--shadow--sharp: 6px 6px 0px rgba(0, 0, 0, 0.2);--wp--preset--shadow--outlined: 6px 6px 0px -3px rgba(255, 255, 255, 1), 6px 6px rgba(0, 0, 0, 1);--wp--preset--shadow--crisp: 6px 6px 0px rgba(0, 0, 0, 1);}:where(.is-layout-flex){gap: 0.5em;}:where(.is-layout-grid){gap: 0.5em;}body .is-layout-flex{display: flex;}.is-layout-flex{flex-wrap: wrap;align-items: center;}.is-layout-flex > :is(*, div){margin: 0;}body .is-layout-grid{display: grid;}.is-layout-grid > :is(*, div){margin: 0;}:where(.wp-block-columns.is-layout-flex){gap: 2em;}:where(.wp-block-columns.is-layout-grid){gap: 2em;}:where(.wp-block-post-template.is-layout-flex){gap: 1.25em;}:where(.wp-block-post-template.is-layout-grid){gap: 1.25em;}.has-black-color{color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-color{color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-color{color: var(--wp--preset--color--white) !important;}.has-pale-pink-color{color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-color{color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-color{color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-color{color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-color{color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-color{color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-color{color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-color{color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-color{color: var(--wp--preset--color--vivid-purple) !important;}.has-black-background-color{background-color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-background-color{background-color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-background-color{background-color: var(--wp--preset--color--white) !important;}.has-pale-pink-background-color{background-color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-background-color{background-color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-background-color{background-color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-background-color{background-color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-background-color{background-color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-background-color{background-color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-background-color{background-color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-background-color{background-color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-background-color{background-color: var(--wp--preset--color--vivid-purple) !important;}.has-black-border-color{border-color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-border-color{border-color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-border-color{border-color: var(--wp--preset--color--white) !important;}.has-pale-pink-border-color{border-color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-border-color{border-color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-border-color{border-color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-border-color{border-color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-border-color{border-color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-border-color{border-color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-border-color{border-color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-border-color{border-color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-border-color{border-color: var(--wp--preset--color--vivid-purple) !important;}.has-vivid-cyan-blue-to-vivid-purple-gradient-background{background: var(--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple) !important;}.has-light-green-cyan-to-vivid-green-cyan-gradient-background{background: var(--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan) !important;}.has-luminous-vivid-amber-to-luminous-vivid-orange-gradient-background{background: var(--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange) !important;}.has-luminous-vivid-orange-to-vivid-red-gradient-background{background: var(--wp--preset--gradient--luminous-vivid-orange-to-vivid-red) !important;}.has-very-light-gray-to-cyan-bluish-gray-gradient-background{background: var(--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray) !important;}.has-cool-to-warm-spectrum-gradient-background{background: var(--wp--preset--gradient--cool-to-warm-spectrum) !important;}.has-blush-light-purple-gradient-background{background: var(--wp--preset--gradient--blush-light-purple) !important;}.has-blush-bordeaux-gradient-background{background: var(--wp--preset--gradient--blush-bordeaux) !important;}.has-luminous-dusk-gradient-background{background: var(--wp--preset--gradient--luminous-dusk) !important;}.has-pale-ocean-gradient-background{background: var(--wp--preset--gradient--pale-ocean) !important;}.has-electric-grass-gradient-background{background: var(--wp--preset--gradient--electric-grass) !important;}.has-midnight-gradient-background{background: var(--wp--preset--gradient--midnight) !important;}.has-small-font-size{font-size: var(--wp--preset--font-size--small) !important;}.has-medium-font-size{font-size: var(--wp--preset--font-size--medium) !important;}.has-large-font-size{font-size: var(--wp--preset--font-size--large) !important;}.has-x-large-font-size{font-size: var(--wp--preset--font-size--x-large) !important;}
+:where(.wp-block-post-template.is-layout-flex){gap: 1.25em;}:where(.wp-block-post-template.is-layout-grid){gap: 1.25em;}
+:where(.wp-block-columns.is-layout-flex){gap: 2em;}:where(.wp-block-columns.is-layout-grid){gap: 2em;}
+:root :where(.wp-block-pullquote){font-size: 1.5em;line-height: 1.6;}
+</style>
+<link rel='stylesheet' id='simple-social-icons-font-css' href='https://annhandley.com/ah/wp-content/plugins/simple-social-icons/css/style.css' type='text/css' media='all' />
+<link rel='stylesheet' id='iworks_upprev_frontend-css' href='https://annhandley.com/ah/wp-content/plugins/upprev/assets/styles/frontend.min.css' type='text/css' media='all' />
+<script type="text/javascript" src="https://use.typekit.net/zln5nzk.js?ver=1.0.0" id="annhandley-typekit-js"></script>
+<script type="text/javascript" id="annhandley-typekit-js-after">
+/* <![CDATA[ */
+try{Typekit.load({ async: false });}catch(e){}
+/* ]]> */
+</script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-includes/js/jquery/jquery.min.js" id="jquery-core-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-includes/js/jquery/jquery-migrate.min.js" id="jquery-migrate-js"></script>
+<script type="text/javascript" id="iworks_upprev_frontend-js-extra">
+/* <![CDATA[ */
+var iworks_upprev = {"animation":"flyout","close_button_show":"1","color_set":null,"compare":"simple","configuration":"simple","css_border_width":"2px 0 0 0","css_bottom":"5","css_side":"5","css_width":"360","excerpt_length":"20","excerpt_show":"1","ga_opt_noninteraction":"1","ga_track_clicks":"1","ga_track_views":"1","header_show":"1","header_text":null,"ignore_sticky_posts":"1","number_of_posts":"1","offset_element":"#comments","offset_percent":"75","reopen_button_show":"1","show_thumb":"1","taxonomy_limit":"0","thumb_height":null,"thumb_width":"48","url_new_window":"0","url_prefix":"","url_suffix":null,"position":{"raw":"right","top":0,"left":0,"center":0,"middle":0,"all":"right"},"title":"Beta Before Alpha","p":"23","nonce":"85e9bbd959","ajaxurl":"https:\/\/annhandley.com\/ah\/wp-admin\/admin-ajax.php"};
+/* ]]> */
+</script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/plugins/upprev/assets/scripts/upprev.min.js" id="iworks_upprev_frontend-js"></script>
+<link rel="https://api.w.org/" href="https://annhandley.com/wp-json/" /><link rel="alternate" title="JSON" type="application/json" href="https://annhandley.com/wp-json/wp/v2/posts/23" /><link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://annhandley.com/ah/xmlrpc.php?rsd" />
+
+<link rel='shortlink' href='https://annhandley.com/?p=23' />
+<link rel="alternate" title="oEmbed (JSON)" type="application/json+oembed" href="https://annhandley.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fannhandley.com%2Fbeta-before-alpha%2F" />
+<link rel="alternate" title="oEmbed (XML)" type="text/xml+oembed" href="https://annhandley.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fannhandley.com%2Fbeta-before-alpha%2F&#038;format=xml" />
+
+<!-- Google Tag Manager for WordPress by gtm4wp.com -->
+<!-- GTM Container placement set to automatic -->
+<script data-cfasync="false" data-pagespeed-no-defer>
+	var dataLayer_content = {"pagePostType":"post","pagePostType2":"single-post","pageCategory":["children","family-history","media","parenting","women"],"pageAttributes":["competitive-parenting","marketing","media","mothers","parenting"],"pagePostAuthor":"Ann Handley"};
+	dataLayer.push( dataLayer_content );
+</script>
+<script data-cfasync="false" data-pagespeed-no-defer>
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-5WLC99C');
+</script>
+<!-- End Google Tag Manager for WordPress by gtm4wp.com --><link rel="icon" href="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicon.ico" />
+<link rel="pingback" href="https://annhandley.com/ah/xmlrpc.php" />
+<meta name="google-site-verification" content="QVmkHGydRdaIj0hPv2vjUJ3TleeljPNxd-Op0pFuK04" />
+<meta name="google-site-verification" content="2n8YhFOr_bBIRhOTA8V4kOcx9FPE89D_Ayun0frf7do" />
+<link rel="apple-touch-icon" sizes="180x180" href="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicons/favicon-32x32.png">
+<link rel="manifest" href="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicons/manifest.json">
+<link rel="mask-icon" href="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicons/safari-pinned-tab.svg" color="#e077cc">
+<meta name="msapplication-config" content="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicons/browserconfig.xml">
+<meta name="apple-mobile-web-app-title" content="Ann Handley">
+<meta name="application-name" content="Ann Handley">
+<meta name="theme-color" content="#ffffff">		<style type="text/css" id="wp-custom-css">
+			.page .at4-share {display:none !important}
+
+.navnews a {border: 2px solid #b551a9 !important}		</style>
+		<style type="text/css">
+ </style>
+</head>
+<body class="wp-singular post-template-default single single-post postid-23 single-format-standard wp-theme-genesis wp-child-theme-annhandley fl-builder-2-9-2-1 fl-no-js header-full-width full-width-content genesis-breadcrumbs-hidden genesis-footer-widgets-visible">
+<!-- GTM Container placement set to automatic -->
+<!-- Google Tag Manager (noscript) -->
+				<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5WLC99C" height="0" width="0" style="display:none;visibility:hidden" aria-hidden="true"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+<!-- GTM Container placement set to automatic -->
+<!-- Google Tag Manager (noscript) --><div class="site-container"><ul class="genesis-skip-link"><li><a href="#genesis-nav-primary" class="screen-reader-shortcut"> Skip to primary navigation</a></li><li><a href="#genesis-content" class="screen-reader-shortcut"> Skip to main content</a></li><li><a href="#genesis-footer-widgets" class="screen-reader-shortcut"> Skip to footer</a></li></ul><header class="site-header"><div class="wrap"><div class="title-area"><p class="site-title"><a href="https://annhandley.com/">Ann Handley</a></p><p class="site-description">Writer. Speaker. Marketer.</p></div><nav class="nav-primary" aria-label="Main" id="genesis-nav-primary"><div class="wrap"><ul id="menu-main-menu" class="menu genesis-nav-menu menu-primary js-superfish"><li id="menu-item-2737" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2737"><a href="https://annhandley.com/about/"><span >About</span></a></li>
+<li id="menu-item-2743" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2743"><a href="https://annhandley.com/speaking/"><span >Speaking</span></a></li>
+<li id="menu-item-2747" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2747"><a href="https://annhandley.com/books/"><span >Books</span></a></li>
+<li id="menu-item-2742" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2742"><a href="https://annhandley.com/blog/"><span >Blog</span></a></li>
+<li id="menu-item-3676" class="homelink menu-item menu-item-type-custom menu-item-object-custom menu-item-home menu-item-3676"><a href="https://annhandley.com/#workwithannhome"><span >WORK WITH ANN</span></a></li>
+<li id="menu-item-4700" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-4700"><a href="https://annhandley.com/testimonials/"><span >Testimonials</span></a></li>
+<li id="menu-item-2738" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2738"><a href="https://annhandley.com/contact/"><span >Contact</span></a></li>
+<li id="menu-item-4378" class="navnews menu-item menu-item-type-post_type menu-item-object-page menu-item-4378"><a href="https://annhandley.com/newsletter/"><span >GET ANNARCHY</span></a></li>
+</ul></div></nav></div></header><div class="site-inner"><div class="wrap"><div class="content-sidebar-wrap"><main class="content" id="genesis-content"><article class="post-23 post type-post status-publish format-standard category-children category-family-history category-media category-parenting category-women tag-competitive-parenting tag-marketing tag-media tag-mothers tag-parenting entry" aria-label="Beta Before Alpha"><header class="entry-header"><h1 class="entry-title">Beta Before Alpha</h1>
+</header><div class="entry-content"><p><img decoding="async" src="https://184.154.246.108/~annhandl/ah/wp-content/uploads/2008/06/June-Cleaver.jpg" alt="June Cleaver" width="245" height="267" class="alignleft size-full wp-image-3629" />My friend Rachel emailed me <a href="http://www.yankelovich.com/images/minute08/2008_May_12/2008_MonitorMinute_May12.pdf" target="_blank">an article</a> the other day from Yankelovich, a market research company. The article, produced just after Mother&#8217;s Day, heralded the arrival of &#8220;Beta Moms&#8221; and their &#8220;newfound acceptance that being a &#8216;just good enough for my family&#8217; mother&#8230;speaks to a more forgiving, laid-back approach to parenting.&#8221;</p>
+<p>Unlike &#8220;Alpha Moms&#8221; (or, as they are sometimes called, &#8220;Extreme Moms&#8221;—those &#8220;ultra-organized overachievers who approach parenting with the same intensity and quest for perfection that they take with them into the boardroom or the gym, treating parenthood as if it were an Olympic competition&#8221;), Beta Moms (or &#8220;Slacker Moms&#8221;) are more relaxed.</p>
+<p>They are less anxious, less prone to perfection and less perturbed in general. And they don&#8217;t feel guilty about being that way.</p>
+<p>The article mentions two book releases as bellwethers of the Beta Mom Age: <em>Even June Cleaver Would Forget the Juice Box</em> and <em>Let Them Run with Scissors: How Over-Parenting Hurts Children, Parents and Society.</em> In fact, there are a slew more, all of them more and more hilariously named: <em>The Three-Martini Playdate</em>, <em>Confessions of a Slacker Mom, </em>and <em>Sippy Cups Are Not for Chardonnay.</em></p>
+<p>For every &#8220;baby whisperer&#8221; book, it seems, comes an antidote. Parents, pick your poison.</p>
+<p>My own Mom was most definitely not an Alpha Mom. Was she a Beta Mom? I guess so, in a way, assuming there was an extra shot of &#8220;slack&#8221; in her Tom Collins. My oldest sister was born in 1952, so Mom raised her four kids over three decades, with me straggling at the rear. She seemed to spend much of my &#8217;70s childhood a little weary of it all, like she&#8217;d started retirement before she actually had all her years in.<span id="more-23"></span></p>
+<p>In my memories of her, she&#8217;s almost always in some sort of repose: smoking a Tareyton under the pine trees in the yard, paperback propped on her knee; sipping a cup of coffee in front of the afternoon soap operas, which she called her &#8220;stories&#8221;; flipping through a McCall’s.</p>
+<p>But sometimes she was anything but: furiously vacuuming; pulling in laundry from the line; mauling top loin in a noisy, battering grinder clamped to the Formica countertop; ironing a stack of my father&#8217;s handkerchiefs, folding the edges so sharp they could slit an artery, which is possibly exactly what she felt like doing some days. Even in industry, she was a little edgy, bushed, and probably sick of it all.</p>
+<p>There was no middle ground; there was no play, at least for my mother in the &#8217;70s. Which in a way defines her approach to parenting, too: there wasn&#8217;t a lot of overthinking or nuance to it. Children were let outside in the morning, and in the afternoon, they always turned up again.</p>
+<p>At least in their apparently utter lack of anxiety about us kids, the women of my mother&#8217;s generation were something of the original Beta Moms (a beta of the Betas, maybe?). But the label is not a perfect fit—clearly, so-called Slacker Moms today are more nuanced in their approach, and I&#8217;m sure their lives are entirely more rewarding than those of the moms who lived in our neighborhood. After all, we have blogging now&#8230;</p>
+<p>My mother died more than 20 years ago; but if she were around today, she&#8217;d likely shrug off the notion: the very idea of an Alpha Mom would be as alien to her as SUVs and iPhones.</p>
+<p>My mom didn&#8217;t choose to not micro-manage her children&#8217;s lives in response to any notion of an Alpha Mom. In fact, I doubt she gave much thought to her parenting worldview at all. She wasn&#8217;t nervous or anxious about it, certainly. And she didn&#8217;t feel guilty, either, because in her time and for her social class, society—and marketers—hadn&#8217;t yet created an alternative parenting philosophy.</p>
+<p>In other words, the &#8220;Beta Moms&#8221; that Yankelovich writes about really aren&#8217;t all that different from the Moms I knew growing up, with the exception of being defined as a marketing segment.</p>
+<p>Every generation, I&#8217;m convinced, thinks it reinvents parenting. Or, maybe, it&#8217;s every person who is reinvented as a parent—in part because we bring agendas to our roles as parents: Sometimes, we are inspired by our own upbringing, and sometimes we exorcise it.</p>
+<p>Either way, we&#8217;re doing something pretty close to what&#8217;s been done for hundreds of thousands of years.</p>
+<div id="upprev-trigger"></div><!--<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+			xmlns:dc="http://purl.org/dc/elements/1.1/"
+			xmlns:trackback="http://madskills.com/public/xml/rss/module/trackback/">
+		<rdf:Description rdf:about="https://annhandley.com/beta-before-alpha/"
+    dc:identifier="https://annhandley.com/beta-before-alpha/"
+    dc:title="Beta Before Alpha"
+    trackback:ping="https://annhandley.com/beta-before-alpha/trackback/" />
+</rdf:RDF>-->
+</div><footer class="entry-footer"><p class="entry-meta"><span class="entry-categories">Filed Under: <a href="https://annhandley.com/category/family-2/children/" rel="category tag">Children</a>, <a href="https://annhandley.com/category/family-2/family-history/" rel="category tag">Family History</a>, <a href="https://annhandley.com/category/business/media/" rel="category tag">Media</a>, <a href="https://annhandley.com/category/family-2/parenting/" rel="category tag">Parenting</a>, <a href="https://annhandley.com/category/women/" rel="category tag">Women</a></span> <span class="entry-tags">Tagged With: <a href="https://annhandley.com/tag/competitive-parenting/" rel="tag">competitive parenting</a>, <a href="https://annhandley.com/tag/marketing/" rel="tag">marketing</a>, <a href="https://annhandley.com/tag/media/" rel="tag">Media</a>, <a href="https://annhandley.com/tag/mothers/" rel="tag">mothers</a>, <a href="https://annhandley.com/tag/parenting/" rel="tag">Parenting</a></span></p></footer></article><div class="after-entry widget-area"><section id="text-5" class="widget widget_text"><div class="widget-wrap">			<div class="textwidget"><h3>SUBSCRIBE TO ANN&#8217;S NEWSLETTER,<br />
+<span style="color: #d07ec8;">TOTAL ANNARCHY:</span></h3>
+<h6>Get the letter 21,000+ people love to get. New writing, useful ideas, high-spirited shenanigans. Straight to your inbox. Every 2 weeks.</h6>
+<div class="AW-Form-1223224391"></div>
+<p><script type="text/javascript">(function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//forms.aweber.com/form/91/1223224391.js";
+    fjs.parentNode.insertBefore(js, fjs);
+    }(document, "script", "aweber-wjs-sje8260z2"));
+</script></p>
+</div>
+		</div></section>
+</div><div class="adjacent-entry-pagination pagination"><div class="pagination-previous alignleft"><a href="https://annhandley.com/off-color-commentary/" rel="prev"><span class="screen-reader-text">Previous Post: </span><span class="adjacent-post-link">&#xAB; Off-Color Commentary</span></a></div><div class="pagination-next alignright"><a href="https://annhandley.com/everyone-else-is-smarter/" rel="next"><span class="screen-reader-text">Next Post: </span><span class="adjacent-post-link">I Suspect Everyone Else Is Smarter, Better-Looking, Taller, Cooler, Cuter, Has Newer and Shinier Objects than I Do (and Is More Modest) &#xBB;</span></a></div></div><h2 class="screen-reader-text">Reader Interactions</h2><div class="entry-comments" id="comments"><h3>Comments</h3><ol class="comment-list">
+	<li class="comment even thread-even depth-1" id="comment-1192">
+	<article id="article-comment-1192">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/826bd825487495dd1dca1b4077d5e1acac2684394fc3f5e813bb8191cea62724?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/826bd825487495dd1dca1b4077d5e1acac2684394fc3f5e813bb8191cea62724?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' decoding='async'/><span class="comment-author-name"><a href="http://www.theviralgarden.com/" class="comment-author-link" rel="external nofollow">Mack Collier</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1192">June 8, 2008 at 7:14 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>&#8220;Every generation, I’m convinced, thinks it reinvents parenting.&#8221;</p>
+<p>Or life in general, it seems.  We all think that our unique challenges mean we are experiencing something that no one else in the history of the world has ever seen.</p>
+<p>The challenges are the same, we might have different circumstances to deal with, but our up and downs really aren&#8217;t changing as greatly from generation to the next as we might think they are.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1192" data-commentid="1192" data-postid="23" data-belowelement="article-comment-1192" data-respondelement="respond" data-replyto="Reply to Mack Collier" aria-label="Reply to Mack Collier">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1166">
+	<article id="article-comment-1166">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/826bd825487495dd1dca1b4077d5e1acac2684394fc3f5e813bb8191cea62724?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/826bd825487495dd1dca1b4077d5e1acac2684394fc3f5e813bb8191cea62724?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.theviralgarden.com" class="comment-author-link" rel="external nofollow">Mack Collier</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1166">June 8, 2008 at 11:14 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>&#8220;Every generation, I’m convinced, thinks it reinvents parenting.&#8221;</p>
+<p>Or life in general, it seems.  We all think that our unique challenges mean we are experiencing something that no one else in the history of the world has ever seen.</p>
+<p>The challenges are the same, we might have different circumstances to deal with, but our up and downs really aren&#8217;t changing as greatly from generation to the next as we might think they are.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1166" data-commentid="1166" data-postid="23" data-belowelement="article-comment-1166" data-respondelement="respond" data-replyto="Reply to Mack Collier" aria-label="Reply to Mack Collier">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1193">
+	<article id="article-comment-1193">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/70c1cd4617516d2c8744196e1ba89d19f247ac35d343a99342cbb71083724397?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/70c1cd4617516d2c8744196e1ba89d19f247ac35d343a99342cbb71083724397?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://masiguy.blogspot.com/" class="comment-author-link" rel="external nofollow">Tim Jackson</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1193">June 8, 2008 at 7:23 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Damn you Handley; great post!</p>
+<p>I agree with you 100%- we all seem to think that our roles as parents are unique and never before lived the way we have to live it. It&#8217;s totally new and no other generation could possibly get out challenges. Huh?</p>
+<p>I like your mom and love your portrayal of her; I can see all of it clear as can be. Your mom was the generation before my own, but I know her still. </p>
+<p>I guess I&#8217;m a Beta Dad. I dunno. I&#8217;m pretty much a clueless dork. My ex is a Beta Mom, with a hint of Alpha and I marvel at her sometimes. I get all freaked out from time to time about details of parenting&#8230; but then I slip into the cozy reality that I somehow managed to make it through childhood (even if only barely and with my mother in total fear).</p>
+<p>My mother is/ was a Beta, but a great Beta. I had a lot of freedom growing up in my small town in Alabama, but I always knew that Mom was somehow taking good care of me. She&#8217;s a nurse and that&#8217;s probably where her Alpha got put to work. I was almost always getting hurt somehow and she just held her breath and took care of it all. She took me to get stitches more times than any mother ever should. She&#8217;s still taking care of me now too- she&#8217;s been a great help during my recovery. </p>
+<p>Thanks for this post- it was a great read and I enjoyed meeting your mom.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1193" data-commentid="1193" data-postid="23" data-belowelement="article-comment-1193" data-respondelement="respond" data-replyto="Reply to Tim Jackson" aria-label="Reply to Tim Jackson">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1194">
+	<article id="article-comment-1194">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/1ee9f178436da76426307e5752ae5e7bb9546a7e6b15fc493a3245916b02af2e?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/1ee9f178436da76426307e5752ae5e7bb9546a7e6b15fc493a3245916b02af2e?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://crashtestmommy.net/" class="comment-author-link" rel="external nofollow">Jenny, Crash Test Mommy</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1194">June 8, 2008 at 7:23 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Very thought-provoking post.</p>
+<p>Got me wondering if we&#8217;ve become a society of parental micro-managers because we feel we can no longer just let the children out in the morning for fear they won&#8217;t turn up in the afternoon.</p>
+<p>I have many wonderful memories of childhood days spent roaming free through my neighborhood, riding bicycles with friends &#8220;around the block&#8221; over and over. Seems such a shame my own children won&#8217;t have those same kinds of experiences because of my fears.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1194" data-commentid="1194" data-postid="23" data-belowelement="article-comment-1194" data-respondelement="respond" data-replyto="Reply to Jenny, Crash Test Mommy" aria-label="Reply to Jenny, Crash Test Mommy">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1167">
+	<article id="article-comment-1167">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/70c1cd4617516d2c8744196e1ba89d19f247ac35d343a99342cbb71083724397?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/70c1cd4617516d2c8744196e1ba89d19f247ac35d343a99342cbb71083724397?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://masiguy.blogspot.com" class="comment-author-link" rel="external nofollow">Tim Jackson</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1167">June 8, 2008 at 11:23 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Damn you Handley; great post!</p>
+<p>I agree with you 100%- we all seem to think that our roles as parents are unique and never before lived the way we have to live it. It&#8217;s totally new and no other generation could possibly get out challenges. Huh?</p>
+<p>I like your mom and love your portrayal of her; I can see all of it clear as can be. Your mom was the generation before my own, but I know her still. </p>
+<p>I guess I&#8217;m a Beta Dad. I dunno. I&#8217;m pretty much a clueless dork. My ex is a Beta Mom, with a hint of Alpha and I marvel at her sometimes. I get all freaked out from time to time about details of parenting&#8230; but then I slip into the cozy reality that I somehow managed to make it through childhood (even if only barely and with my mother in total fear).</p>
+<p>My mother is/ was a Beta, but a great Beta. I had a lot of freedom growing up in my small town in Alabama, but I always knew that Mom was somehow taking good care of me. She&#8217;s a nurse and that&#8217;s probably where her Alpha got put to work. I was almost always getting hurt somehow and she just held her breath and took care of it all. She took me to get stitches more times than any mother ever should. She&#8217;s still taking care of me now too- she&#8217;s been a great help during my recovery. </p>
+<p>Thanks for this post- it was a great read and I enjoyed meeting your mom.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1167" data-commentid="1167" data-postid="23" data-belowelement="article-comment-1167" data-respondelement="respond" data-replyto="Reply to Tim Jackson" aria-label="Reply to Tim Jackson">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1168">
+	<article id="article-comment-1168">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/63f6bc64b1f195b84ade3b65a6fad6c99b473530888db032ace47075997f65f7?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/63f6bc64b1f195b84ade3b65a6fad6c99b473530888db032ace47075997f65f7?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://crashtestmommy.net" class="comment-author-link" rel="external nofollow">Jenny</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1168">June 8, 2008 at 11:23 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Very thought-provoking post.</p>
+<p>Got me wondering if we&#8217;ve become a society of parental micro-managers because we feel we can no longer just let the children out in the morning for fear they won&#8217;t turn up in the afternoon.</p>
+<p>I have many wonderful memories of childhood days spent roaming free through my neighborhood, riding bicycles with friends &#8220;around the block&#8221; over and over. Seems such a shame my own children won&#8217;t have those same kinds of experiences because of my fears.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1168" data-commentid="1168" data-postid="23" data-belowelement="article-comment-1168" data-respondelement="respond" data-replyto="Reply to Jenny" aria-label="Reply to Jenny">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1195">
+	<article id="article-comment-1195">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/048c21fc3eaf9566935e1bb08ddbe80be42eb10507db7c04824bb6b2660eac6a?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/048c21fc3eaf9566935e1bb08ddbe80be42eb10507db7c04824bb6b2660eac6a?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://inmycopiousfreetime.typepad.com/" class="comment-author-link" rel="external nofollow">Tara</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1195">June 8, 2008 at 7:43 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Huh, I&#8217;m a beta mom and didn&#8217;t even know it. ;)</p>
+<p>Great post.  I agree with you completely about the so-called Beta moms being nothing new. I think what is new is the level of consciousness, good or bad, about parenting and the subtle backlash against the idea that having more options meant having to do and be all of them.</p>
+<p>Your memories of your mom sound a lot like my memories of my mom. :)</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1195" data-commentid="1195" data-postid="23" data-belowelement="article-comment-1195" data-respondelement="respond" data-replyto="Reply to Tara" aria-label="Reply to Tara">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1169">
+	<article id="article-comment-1169">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/048c21fc3eaf9566935e1bb08ddbe80be42eb10507db7c04824bb6b2660eac6a?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/048c21fc3eaf9566935e1bb08ddbe80be42eb10507db7c04824bb6b2660eac6a?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://inmycopiousfreetime.typepad.com" class="comment-author-link" rel="external nofollow">Tara</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1169">June 8, 2008 at 11:43 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Huh, I&#8217;m a beta mom and didn&#8217;t even know it. ;)</p>
+<p>Great post.  I agree with you completely about the so-called Beta moms being nothing new. I think what is new is the level of consciousness, good or bad, about parenting and the subtle backlash against the idea that having more options meant having to do and be all of them.</p>
+<p>Your memories of your mom sound a lot like my memories of my mom. :)</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1169" data-commentid="1169" data-postid="23" data-belowelement="article-comment-1169" data-respondelement="respond" data-replyto="Reply to Tara" aria-label="Reply to Tara">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1196">
+	<article id="article-comment-1196">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/67eb0486823205f51cf290cb59048a2d38001893f4c9f986db4c6eb11acb92f6?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/67eb0486823205f51cf290cb59048a2d38001893f4c9f986db4c6eb11acb92f6?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.junecleavernirvana.com/" class="comment-author-link" rel="external nofollow">HRH</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1196">June 8, 2008 at 7:55 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>I recently went to a lecture by Ann Dunnewold who wrote the &#8220;Even June Cleaver would forget the juice box&#8221; book.  Which is probably a very alpha mom thing to do (although the fact that childcare was provided might lean toward the beta) but it was really good.  She shares a lot of insights about bridging the gaps between today&#8217;s overachieving mom/kids and the lazy days of kids roaming the neighborhood returning home for food.</p>
+<p>Found you on Plurk.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1196" data-commentid="1196" data-postid="23" data-belowelement="article-comment-1196" data-respondelement="respond" data-replyto="Reply to HRH" aria-label="Reply to HRH">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1170">
+	<article id="article-comment-1170">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/67eb0486823205f51cf290cb59048a2d38001893f4c9f986db4c6eb11acb92f6?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/67eb0486823205f51cf290cb59048a2d38001893f4c9f986db4c6eb11acb92f6?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.junecleavernirvana.com" class="comment-author-link" rel="external nofollow">HRH</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1170">June 8, 2008 at 11:55 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>I recently went to a lecture by Ann Dunnewold who wrote the &#8220;Even June Cleaver would forget the juice box&#8221; book.  Which is probably a very alpha mom thing to do (although the fact that childcare was provided might lean toward the beta) but it was really good.  She shares a lot of insights about bridging the gaps between today&#8217;s overachieving mom/kids and the lazy days of kids roaming the neighborhood returning home for food.</p>
+<p>Found you on Plurk.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1170" data-commentid="1170" data-postid="23" data-belowelement="article-comment-1170" data-respondelement="respond" data-replyto="Reply to HRH" aria-label="Reply to HRH">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1197">
+	<article id="article-comment-1197">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/594f8649e84fc9527f13c68b4eacbccd18b3be1d270d242872707ba5ff7f7e9e?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/594f8649e84fc9527f13c68b4eacbccd18b3be1d270d242872707ba5ff7f7e9e?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.livepath.net/" class="comment-author-link" rel="external nofollow">Leigh Duncan - Durst</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1197">June 8, 2008 at 10:22 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Annie,</p>
+<p>Great post. I&#8217;m definitely among the BETA mommies&#8230; as was my mom.  However, I can&#8217;t I can&#8217;t help but feel resentful that my son won&#8217;t have the wonderful childhood of neglect I enjoyed myself!  </p>
+<p>&#8211; I never had &#8220;play dates&#8221;<br />
+&#8211; I didn&#8217;t take a foreign language until I was 12<br />
+&#8211; I never had a nanny<br />
+&#8211; I was frequently kicked out of the house and told not to come home until dinner<br />
+&#8211; I often rode my bike far outside the bounds of our neighborhood<br />
+&#8211; My parents did not track me with a GPS or microchip, and I had no cell phone<br />
+&#8211; I often befriended strangers at the park<br />
+&#8211; I was delighted to be dropped at Saturday Family movies to watch THREE matinees in a row (all were rated G and perfectly wonderful)<br />
+&#8211; I walked to the park by myself and played freely without fear for my safety<br />
+&#8211; I will admit to playing once, in a Church dumpster with my best friend Ann Wilson. We had a ball. </p>
+<p>Unfortunately, we can&#8217;t just let the kids out in the morning and wait for them to come back around lunch or dinner anymore.  Lord!  I WISH I could be that kind of mom:  The freedom it would give my son would be so healthy for his sense of creativity and adventure&#8230;and it would build his confidence, I&#8217;m sure!</p>
+<p>Unfortunately, we live in a world where even the Beta moms need to be &#8220;healthily&#8221; aware that the world just isn&#8217;t as safe as it was&#8230;</p>
+<p>Case in point:  I was nauseated to find, upon searching  the Sex Offender Registry &#8211; there&#8217;s a man who was convicted of raping a 3 year old boy living just five houses away from mine.  Last I checked, there were more than 300 sex offenders in my zip code.  And we live in a good neighborhood!</p>
+<p>I&#8217;m sad that, as much as I&#8217;d be okay with my son running off to discover and play ALL DAY &#8211; that the society we live in makes that unsafe now.  So I will be a BETA mom with a watchful eye and I will schedule playdates and do my best to pray and discern how &#8220;lazy&#8221; I can afford to be on his behalf.</p>
+<p>;-) Sorry for the somber tone.</p>
+<p>Leigh</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1197" data-commentid="1197" data-postid="23" data-belowelement="article-comment-1197" data-respondelement="respond" data-replyto="Reply to Leigh Duncan - Durst" aria-label="Reply to Leigh Duncan - Durst">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1171">
+	<article id="article-comment-1171">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/594f8649e84fc9527f13c68b4eacbccd18b3be1d270d242872707ba5ff7f7e9e?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/594f8649e84fc9527f13c68b4eacbccd18b3be1d270d242872707ba5ff7f7e9e?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.livepath.net" class="comment-author-link" rel="external nofollow">Leigh Duncan - Durst</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1171">June 8, 2008 at 2:22 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Annie,</p>
+<p>Great post. I&#8217;m definitely among the BETA mommies&#8230; as was my mom.  However, I can&#8217;t I can&#8217;t help but feel resentful that my son won&#8217;t have the wonderful childhood of neglect I enjoyed myself!  </p>
+<p>&#8211; I never had &#8220;play dates&#8221;<br />
+&#8211; I didn&#8217;t take a foreign language until I was 12<br />
+&#8211; I never had a nanny<br />
+&#8211; I was frequently kicked out of the house and told not to come home until dinner<br />
+&#8211; I often rode my bike far outside the bounds of our neighborhood<br />
+&#8211; My parents did not track me with a GPS or microchip, and I had no cell phone<br />
+&#8211; I often befriended strangers at the park<br />
+&#8211; I was delighted to be dropped at Saturday Family movies to watch THREE matinees in a row (all were rated G and perfectly wonderful)<br />
+&#8211; I walked to the park by myself and played freely without fear for my safety<br />
+&#8211; I will admit to playing once, in a Church dumpster with my best friend Ann Wilson. We had a ball. </p>
+<p>Unfortunately, we can&#8217;t just let the kids out in the morning and wait for them to come back around lunch or dinner anymore.  Lord!  I WISH I could be that kind of mom:  The freedom it would give my son would be so healthy for his sense of creativity and adventure&#8230;and it would build his confidence, I&#8217;m sure!</p>
+<p>Unfortunately, we live in a world where even the Beta moms need to be &#8220;healthily&#8221; aware that the world just isn&#8217;t as safe as it was&#8230;</p>
+<p>Case in point:  I was nauseated to find, upon searching  the Sex Offender Registry &#8211; there&#8217;s a man who was convicted of raping a 3 year old boy living just five houses away from mine.  Last I checked, there were more than 300 sex offenders in my zip code.  And we live in a good neighborhood!</p>
+<p>I&#8217;m sad that, as much as I&#8217;d be okay with my son running off to discover and play ALL DAY &#8211; that the society we live in makes that unsafe now.  So I will be a BETA mom with a watchful eye and I will schedule playdates and do my best to pray and discern how &#8220;lazy&#8221; I can afford to be on his behalf.</p>
+<p>;-) Sorry for the somber tone.</p>
+<p>Leigh</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1171" data-commentid="1171" data-postid="23" data-belowelement="article-comment-1171" data-respondelement="respond" data-replyto="Reply to Leigh Duncan - Durst" aria-label="Reply to Leigh Duncan - Durst">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1198">
+	<article id="article-comment-1198">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.annhandley.com/" class="comment-author-link" rel="external nofollow">Ann Handley</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1198">June 8, 2008 at 10:31 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>WOW&#8230; I wrote this post and then was offline for a few hours: totally appreciate the love, here, and the thoughtful comments. I was worried when I wrote this that my mother would come off looking lacking&#8230; or me ungrateful &#8212; because she really wasn&#8217;t, and I&#8217;m not.  But it sounds like we were all raised similarly.</p>
+<p>My own 2 kids &#8212; now 16 and 11 &#8212; don&#8217;t have the freedoms we did, and my take is that they are both worse off and better off.  I have a tighter relationship with them both that&#8217;s more open in a lot of ways &#8212; because we spend so much freakin&#8217; TIME together&#8230; lol &#8212; (that&#8217;s the &#8220;better&#8221; part) but that, too, comes at a cost of personal freedom and responsibilities (that&#8217;s the &#8220;worse&#8221; part).</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1198" data-commentid="1198" data-postid="23" data-belowelement="article-comment-1198" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment byuser comment-author-ann bypostauthor odd alt thread-odd thread-alt depth-1" id="comment-1172">
+	<article id="article-comment-1172">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.annhandley.com" class="comment-author-link" rel="external nofollow">Ann Handley</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1172">June 8, 2008 at 2:31 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>WOW&#8230; I wrote this post and then was offline for a few hours: totally appreciate the love, here, and the thoughtful comments. I was worried when I wrote this that my mother would come off looking lacking&#8230; or me ungrateful &#8212; because she really wasn&#8217;t, and I&#8217;m not.  But it sounds like we were all raised similarly.</p>
+<p>My own 2 kids &#8212; now 16 and 11 &#8212; don&#8217;t have the freedoms we did, and my take is that they are both worse off and better off.  I have a tighter relationship with them both that&#8217;s more open in a lot of ways &#8212; because we spend so much freakin&#8217; TIME together&#8230; lol &#8212; (that&#8217;s the &#8220;better&#8221; part) but that, too, comes at a cost of personal freedom and responsibilities (that&#8217;s the &#8220;worse&#8221; part).</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1172" data-commentid="1172" data-postid="23" data-belowelement="article-comment-1172" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1199">
+	<article id="article-comment-1199">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/a36eeb94c529ac1a6de3edb585318406b20c944dc619750352283288a7a46666?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/a36eeb94c529ac1a6de3edb585318406b20c944dc619750352283288a7a46666?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.servantofchaos.com/" class="comment-author-link" rel="external nofollow">Gavin Heaton</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1199">June 9, 2008 at 12:51 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Grat post, Ann! I think one of the big differences you touch on is choice. These days, Alpha, Beta and even Omega moms have a variety of choice and access to opportunity that did not exist in the 70s.</p>
+<p>Perhaps it is, in part, the way that choice is exercised that makes the difference. </p>
+<p>But the fact that kids do not come with instruction manuals (or volume switches) means that we are perpetually working in Beta. Me? I am looking forward to the first release &#8230; terrifying and rewarding at the same time.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1199" data-commentid="1199" data-postid="23" data-belowelement="article-comment-1199" data-respondelement="respond" data-replyto="Reply to Gavin Heaton" aria-label="Reply to Gavin Heaton">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1173">
+	<article id="article-comment-1173">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/a36eeb94c529ac1a6de3edb585318406b20c944dc619750352283288a7a46666?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/a36eeb94c529ac1a6de3edb585318406b20c944dc619750352283288a7a46666?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.servantofchaos.com" class="comment-author-link" rel="external nofollow">Gavin Heaton</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1173">June 8, 2008 at 4:51 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Grat post, Ann! I think one of the big differences you touch on is choice. These days, Alpha, Beta and even Omega moms have a variety of choice and access to opportunity that did not exist in the 70s.</p>
+<p>Perhaps it is, in part, the way that choice is exercised that makes the difference. </p>
+<p>But the fact that kids do not come with instruction manuals (or volume switches) means that we are perpetually working in Beta. Me? I am looking forward to the first release &#8230; terrifying and rewarding at the same time.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1173" data-commentid="1173" data-postid="23" data-belowelement="article-comment-1173" data-respondelement="respond" data-replyto="Reply to Gavin Heaton" aria-label="Reply to Gavin Heaton">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1200">
+	<article id="article-comment-1200">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/47c2ce53a0712f82779bfe9370443114719a368de43351d94cd57772a092d231?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/47c2ce53a0712f82779bfe9370443114719a368de43351d94cd57772a092d231?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.myspace.com/christiangulliksen" class="comment-author-link" rel="external nofollow">Christian Gulliksen</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1200">June 9, 2008 at 5:08 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>My mother did a good job, I think, of balancing structure and freedom. She wanted to know, generally speaking, what we were up to &#8212; but only so she&#8217;d know where to start calling if she needed to get us.</p>
+<p>Maybe because she wasn&#8217;t a worrier, it has been a real surprise to see my two sisters (both in their thirties) agonize over giving their children even a little space. One asked me just the other day what I thought about letting my almost-13-year-old nephew ride his bike along a broad levee that goes past their house to the beach; it&#8217;s fairly well-trafficked with cyclists and joggers and people on walks, and passes through several family neighborhoods. I said I thought it was fine. Why not? &#8220;But what if he falls down and there&#8217;s no cell reception?&#8221; she asked. A passerby will help, I replied. &#8220;But what if someone hassles him? Older kids hang out there.&#8221; He&#8217;s old enough to know if it looks dicey and he can turn around, I said. The Q&amp;A continued, and she came around to seeing things from my perspective. (The kid owes me, big time!) But I walked away in a slight state of shock that we had just had that conversation.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1200" data-commentid="1200" data-postid="23" data-belowelement="article-comment-1200" data-respondelement="respond" data-replyto="Reply to Christian Gulliksen" aria-label="Reply to Christian Gulliksen">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1174">
+	<article id="article-comment-1174">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/47c2ce53a0712f82779bfe9370443114719a368de43351d94cd57772a092d231?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/47c2ce53a0712f82779bfe9370443114719a368de43351d94cd57772a092d231?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.myspace.com/christiangulliksen" class="comment-author-link" rel="external nofollow">Christian Gulliksen</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1174">June 8, 2008 at 9:08 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>My mother did a good job, I think, of balancing structure and freedom. She wanted to know, generally speaking, what we were up to &#8212; but only so she&#8217;d know where to start calling if she needed to get us.</p>
+<p>Maybe because she wasn&#8217;t a worrier, it has been a real surprise to see my two sisters (both in their thirties) agonize over giving their children even a little space. One asked me just the other day what I thought about letting my almost-13-year-old nephew ride his bike along a broad levee that goes past their house to the beach; it&#8217;s fairly well-trafficked with cyclists and joggers and people on walks, and passes through several family neighborhoods. I said I thought it was fine. Why not? &#8220;But what if he falls down and there&#8217;s no cell reception?&#8221; she asked. A passerby will help, I replied. &#8220;But what if someone hassles him? Older kids hang out there.&#8221; He&#8217;s old enough to know if it looks dicey and he can turn around, I said. The Q&amp;A continued, and she came around to seeing things from my perspective. (The kid owes me, big time!) But I walked away in a slight state of shock that we had just had that conversation.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1174" data-commentid="1174" data-postid="23" data-belowelement="article-comment-1174" data-respondelement="respond" data-replyto="Reply to Christian Gulliksen" aria-label="Reply to Christian Gulliksen">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1201">
+	<article id="article-comment-1201">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/30a263c12578be24dcd7aec50408580c014d3c115915adf85fa31c88e16498b9?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/30a263c12578be24dcd7aec50408580c014d3c115915adf85fa31c88e16498b9?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.thebridebeautiful.com/" class="comment-author-link" rel="external nofollow">Jen DelMonaco</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1201">June 9, 2008 at 11:26 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Whoa&#8211; were we separated at birth and reared by clones?? Sub in a Viceroy and a faithfull Champale at 4PM&#8211; she called it her &#8216;pop&#8217; and we&#8217;re the same beast!<br />
+My mom too, were she here as well, would be the Beta&#8217;s beta of today.  I think I got my sense of &#8220;While we&#8217;re not buddies or best friends, we can still have a great time growing you kids up&#8221; mentality I enjoy today.  I do feel a little bit manic to be organized, but I just try to stand still, repeating, &#8221; This too shall pass!&#8221;</p>
+<p>Thanks for nailing my random musings that take place in my head only yet AGAIN!<br />
+You rock!!<br />
+J</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1201" data-commentid="1201" data-postid="23" data-belowelement="article-comment-1201" data-respondelement="respond" data-replyto="Reply to Jen DelMonaco" aria-label="Reply to Jen DelMonaco">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1175">
+	<article id="article-comment-1175">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/30a263c12578be24dcd7aec50408580c014d3c115915adf85fa31c88e16498b9?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/30a263c12578be24dcd7aec50408580c014d3c115915adf85fa31c88e16498b9?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.thebridebeautiful.com" class="comment-author-link" rel="external nofollow">Jen DelMonaco</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1175">June 9, 2008 at 3:26 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Whoa&#8211; were we separated at birth and reared by clones?? Sub in a Viceroy and a faithfull Champale at 4PM&#8211; she called it her &#8216;pop&#8217; and we&#8217;re the same beast!<br />
+My mom too, were she here as well, would be the Beta&#8217;s beta of today.  I think I got my sense of &#8220;While we&#8217;re not buddies or best friends, we can still have a great time growing you kids up&#8221; mentality I enjoy today.  I do feel a little bit manic to be organized, but I just try to stand still, repeating, &#8221; This too shall pass!&#8221;</p>
+<p>Thanks for nailing my random musings that take place in my head only yet AGAIN!<br />
+You rock!!<br />
+J</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1175" data-commentid="1175" data-postid="23" data-belowelement="article-comment-1175" data-respondelement="respond" data-replyto="Reply to Jen DelMonaco" aria-label="Reply to Jen DelMonaco">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1202">
+	<article id="article-comment-1202">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/cf01cd974d65ad6249d0722d739ea6b4796f92f82ea28d1bc080cc6645ebb21e?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/cf01cd974d65ad6249d0722d739ea6b4796f92f82ea28d1bc080cc6645ebb21e?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.stickyfigure.com/" class="comment-author-link" rel="external nofollow">Steve Woodruff</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1202">June 9, 2008 at 12:35 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Ann, there&#8217;s more than an Iota of truth in this post &#8211; the Delta between the Alpha and Beta moms is the degree of Nu anxiety and paranoia introduced by the Rho of perceived threats against our kids, up to and including Gamma rays from Zeta. The six Sigma parenting that demands error-free control is enough to make you Psi for the good old days.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1202" data-commentid="1202" data-postid="23" data-belowelement="article-comment-1202" data-respondelement="respond" data-replyto="Reply to Steve Woodruff" aria-label="Reply to Steve Woodruff">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1176">
+	<article id="article-comment-1176">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/cf01cd974d65ad6249d0722d739ea6b4796f92f82ea28d1bc080cc6645ebb21e?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/cf01cd974d65ad6249d0722d739ea6b4796f92f82ea28d1bc080cc6645ebb21e?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.stickyfigure.com" class="comment-author-link" rel="external nofollow">Steve Woodruff</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1176">June 9, 2008 at 4:35 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Ann, there&#8217;s more than an Iota of truth in this post &#8211; the Delta between the Alpha and Beta moms is the degree of Nu anxiety and paranoia introduced by the Rho of perceived threats against our kids, up to and including Gamma rays from Zeta. The six Sigma parenting that demands error-free control is enough to make you Psi for the good old days.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1176" data-commentid="1176" data-postid="23" data-belowelement="article-comment-1176" data-respondelement="respond" data-replyto="Reply to Steve Woodruff" aria-label="Reply to Steve Woodruff">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1203">
+	<article id="article-comment-1203">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/fbe47a07c0f56b3e8bb27ea5b5e8a0a8a7c1913b604124e84bc803e1366402c0?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/fbe47a07c0f56b3e8bb27ea5b5e8a0a8a7c1913b604124e84bc803e1366402c0?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://icantkeepup.blogspot.com/" class="comment-author-link" rel="external nofollow">DebInDenver</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1203">June 9, 2008 at 2:52 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>I too was not micro-managed as a kid. In the sumer, we spent all day hanging out in the woods and creek, then during the school year playing with the kids on neighboring farms. Somehow, I made it to college and a fun career. Funny how that works when kids are left to their own devices!</p>
+<p>When I lived in Japan a good friend was pregnant, I asked her what books she was reading and she replied, &#8220;we all know how to parent inside us, I don&#8217;t know why I would need to read a book.&#8221; I admired her confidence and independence.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1203" data-commentid="1203" data-postid="23" data-belowelement="article-comment-1203" data-respondelement="respond" data-replyto="Reply to DebInDenver" aria-label="Reply to DebInDenver">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1177">
+	<article id="article-comment-1177">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/fbe47a07c0f56b3e8bb27ea5b5e8a0a8a7c1913b604124e84bc803e1366402c0?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/fbe47a07c0f56b3e8bb27ea5b5e8a0a8a7c1913b604124e84bc803e1366402c0?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://icantkeepup.blogspot.com/" class="comment-author-link" rel="external nofollow">DebInDenver</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1177">June 9, 2008 at 6:52 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>I too was not micro-managed as a kid. In the sumer, we spent all day hanging out in the woods and creek, then during the school year playing with the kids on neighboring farms. Somehow, I made it to college and a fun career. Funny how that works when kids are left to their own devices!</p>
+<p>When I lived in Japan a good friend was pregnant, I asked her what books she was reading and she replied, &#8220;we all know how to parent inside us, I don&#8217;t know why I would need to read a book.&#8221; I admired her confidence and independence.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1177" data-commentid="1177" data-postid="23" data-belowelement="article-comment-1177" data-respondelement="respond" data-replyto="Reply to DebInDenver" aria-label="Reply to DebInDenver">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1204">
+	<article id="article-comment-1204">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c236e7eb8ddfd190a693036c6ec9648d66a848fbeb9bce55121bc59af6dcb40f?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c236e7eb8ddfd190a693036c6ec9648d66a848fbeb9bce55121bc59af6dcb40f?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.forgivingmom.com/" class="comment-author-link" rel="external nofollow">Linda Athis</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1204">June 9, 2008 at 4:56 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Loved this post.  I have a similar experience&#8230;my Mom gave birth to me, her oldest, in 1954.  She was trapped in the time of transition from working at home to working out of the home.  Her guilt and confusion did take a toll on me.</p>
+<p>I lost her a year and a half ago.  In the short period before her death, we &#8220;smoked the peace pipe&#8221; after years of struggle.</p>
+<p>I wrote about this amazing time of forgiveness and shared my poetry with her before she died.  It was extremely healing!  </p>
+<p>Linda Athis<br />
+<a href="http://www.forgivingmom.com" rel="nofollow ugc">http://www.forgivingmom.com</a></p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1204" data-commentid="1204" data-postid="23" data-belowelement="article-comment-1204" data-respondelement="respond" data-replyto="Reply to Linda Athis" aria-label="Reply to Linda Athis">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1178">
+	<article id="article-comment-1178">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c236e7eb8ddfd190a693036c6ec9648d66a848fbeb9bce55121bc59af6dcb40f?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c236e7eb8ddfd190a693036c6ec9648d66a848fbeb9bce55121bc59af6dcb40f?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.forgivingmom.com" class="comment-author-link" rel="external nofollow">Linda Athis</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1178">June 9, 2008 at 8:56 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Loved this post.  I have a similar experience&#8230;my Mom gave birth to me, her oldest, in 1954.  She was trapped in the time of transition from working at home to working out of the home.  Her guilt and confusion did take a toll on me.</p>
+<p>I lost her a year and a half ago.  In the short period before her death, we &#8220;smoked the peace pipe&#8221; after years of struggle.</p>
+<p>I wrote about this amazing time of forgiveness and shared my poetry with her before she died.  It was extremely healing!  </p>
+<p>Linda Athis<br />
+<a href="http://www.forgivingmom.com" rel="nofollow ugc">http://www.forgivingmom.com</a></p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1178" data-commentid="1178" data-postid="23" data-belowelement="article-comment-1178" data-respondelement="respond" data-replyto="Reply to Linda Athis" aria-label="Reply to Linda Athis">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1205">
+	<article id="article-comment-1205">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/5cacb96e281a3e337361d18ba3b7809a652684451b7ed12e78d64e6fe71e3eef?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/5cacb96e281a3e337361d18ba3b7809a652684451b7ed12e78d64e6fe71e3eef?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://musingsfromthemitten.com/" class="comment-author-link" rel="external nofollow">Erika</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1205">June 10, 2008 at 4:59 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>This was such a great post, so very well said about Alpha- and Beta-moms and each generation thinking that we&#8217;ve reinvented parenting.  Except, with our generation (and the ones to follow it), is that the media now helps to fuel the flames of creating division among parents, whether it&#8217;s an Alpha-Mom/Beta-Mom comparison/debate or a SAHM/WAHM/WOHM debate/comparison, forgetting that what unites us all (as you so very well said with &#8220;we’re doing something pretty close to what’s been done for hundreds of thousands of years&#8221;) is that we&#8217;re parents and in that&#8211;regardless of our parenting styles&#8211;there should be some common ground that can be found in the role.  (Thanks to Mack C. for tweeting this yesterday, btw.) I know, that for me, with a mom who was sometimes alpha, sometimes beta (and being the eldest, I&#8217;d swear she&#8217;s more beta with my siblings, who would beg to differ), that now that I am a mom, there &#8216;s a lot that I &#8220;get&#8221; that I could never have before.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1205" data-commentid="1205" data-postid="23" data-belowelement="article-comment-1205" data-respondelement="respond" data-replyto="Reply to Erika" aria-label="Reply to Erika">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1179">
+	<article id="article-comment-1179">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/5cacb96e281a3e337361d18ba3b7809a652684451b7ed12e78d64e6fe71e3eef?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/5cacb96e281a3e337361d18ba3b7809a652684451b7ed12e78d64e6fe71e3eef?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://musingsfromthemitten.com" class="comment-author-link" rel="external nofollow">Erika</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1179">June 9, 2008 at 8:59 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>This was such a great post, so very well said about Alpha- and Beta-moms and each generation thinking that we&#8217;ve reinvented parenting.  Except, with our generation (and the ones to follow it), is that the media now helps to fuel the flames of creating division among parents, whether it&#8217;s an Alpha-Mom/Beta-Mom comparison/debate or a SAHM/WAHM/WOHM debate/comparison, forgetting that what unites us all (as you so very well said with &#8220;we’re doing something pretty close to what’s been done for hundreds of thousands of years&#8221;) is that we&#8217;re parents and in that&#8211;regardless of our parenting styles&#8211;there should be some common ground that can be found in the role.  (Thanks to Mack C. for tweeting this yesterday, btw.) I know, that for me, with a mom who was sometimes alpha, sometimes beta (and being the eldest, I&#8217;d swear she&#8217;s more beta with my siblings, who would beg to differ), that now that I am a mom, there &#8216;s a lot that I &#8220;get&#8221; that I could never have before.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1179" data-commentid="1179" data-postid="23" data-belowelement="article-comment-1179" data-respondelement="respond" data-replyto="Reply to Erika" aria-label="Reply to Erika">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1206">
+	<article id="article-comment-1206">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/d379495efdc6c49adf167e23027a80ee11aceaa871822cb33acbad926677abf8?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/d379495efdc6c49adf167e23027a80ee11aceaa871822cb33acbad926677abf8?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Bdot</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1206">June 10, 2008 at 2:19 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Ann,<br />
+Great post&#8230;. I feel like I almost know your mom, sounds very much like my own.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1206" data-commentid="1206" data-postid="23" data-belowelement="article-comment-1206" data-respondelement="respond" data-replyto="Reply to Bdot" aria-label="Reply to Bdot">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1180">
+	<article id="article-comment-1180">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/d379495efdc6c49adf167e23027a80ee11aceaa871822cb33acbad926677abf8?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/d379495efdc6c49adf167e23027a80ee11aceaa871822cb33acbad926677abf8?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Bdot</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1180">June 10, 2008 at 6:19 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Ann,<br />
+Great post&#8230;. I feel like I almost know your mom, sounds very much like my own.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1180" data-commentid="1180" data-postid="23" data-belowelement="article-comment-1180" data-respondelement="respond" data-replyto="Reply to Bdot" aria-label="Reply to Bdot">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1207">
+	<article id="article-comment-1207">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/8c540a3a06b038dc738bc748b7e44dd5af9b3c19e739f322b7118c44dd2d3644?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/8c540a3a06b038dc738bc748b7e44dd5af9b3c19e739f322b7118c44dd2d3644?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://howtobeanamericanhousewife.wordpress.com/" class="comment-author-link" rel="external nofollow">Maryn</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1207">June 10, 2008 at 9:10 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>I would love to be a Beta Mom.   I  hate schlepping the kids all over town to their playdates and games.   I like to drop off my kids at b-day parties, not hang out with them 24/7.  Please, let the kids have their kid time. Let them make up their own games and rules and not have everything completely regulated!  That&#8217;s how kids learn how to think and create.<br />
+However, it seems like modern life necessitates a certain amount of micromanaging due to how far apart kids live (esp in our community, which has a lot of retirees), who is at home in the day, safety, etc.<br />
+Great post.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1207" data-commentid="1207" data-postid="23" data-belowelement="article-comment-1207" data-respondelement="respond" data-replyto="Reply to Maryn" aria-label="Reply to Maryn">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1181">
+	<article id="article-comment-1181">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/8c540a3a06b038dc738bc748b7e44dd5af9b3c19e739f322b7118c44dd2d3644?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/8c540a3a06b038dc738bc748b7e44dd5af9b3c19e739f322b7118c44dd2d3644?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://howtobeanamericanhousewife.wordpress.com/" class="comment-author-link" rel="external nofollow">Maryn</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1181">June 10, 2008 at 1:10 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>I would love to be a Beta Mom.   I  hate schlepping the kids all over town to their playdates and games.   I like to drop off my kids at b-day parties, not hang out with them 24/7.  Please, let the kids have their kid time. Let them make up their own games and rules and not have everything completely regulated!  That&#8217;s how kids learn how to think and create.<br />
+However, it seems like modern life necessitates a certain amount of micromanaging due to how far apart kids live (esp in our community, which has a lot of retirees), who is at home in the day, safety, etc.<br />
+Great post.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1181" data-commentid="1181" data-postid="23" data-belowelement="article-comment-1181" data-respondelement="respond" data-replyto="Reply to Maryn" aria-label="Reply to Maryn">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1208">
+	<article id="article-comment-1208">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/3359479a8ba3243efe2bb05ca24253a45a5022f4f2c42165de3cf193c1b479bd?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/3359479a8ba3243efe2bb05ca24253a45a5022f4f2c42165de3cf193c1b479bd?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.chaosscenario.com/" class="comment-author-link" rel="external nofollow">Cam Beck</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1208">June 11, 2008 at 1:42 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Paraphrasing one of the guys from Penn &amp; Teller: </p>
+<p>In the course of the last several centuries, take any 25-year chunk of time, and two things are always true: 1) Things are getting better and 2) everyone thinks they&#8217;re getting worse.</p>
+<p>Not sure if that&#8217;s exactly right, but an interesting thought, on the balance.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1208" data-commentid="1208" data-postid="23" data-belowelement="article-comment-1208" data-respondelement="respond" data-replyto="Reply to Cam Beck" aria-label="Reply to Cam Beck">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1182">
+	<article id="article-comment-1182">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/3359479a8ba3243efe2bb05ca24253a45a5022f4f2c42165de3cf193c1b479bd?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/3359479a8ba3243efe2bb05ca24253a45a5022f4f2c42165de3cf193c1b479bd?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.chaosscenario.com" class="comment-author-link" rel="external nofollow">Cam Beck</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1182">June 10, 2008 at 5:42 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Paraphrasing one of the guys from Penn &amp; Teller: </p>
+<p>In the course of the last several centuries, take any 25-year chunk of time, and two things are always true: 1) Things are getting better and 2) everyone thinks they&#8217;re getting worse.</p>
+<p>Not sure if that&#8217;s exactly right, but an interesting thought, on the balance.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1182" data-commentid="1182" data-postid="23" data-belowelement="article-comment-1182" data-respondelement="respond" data-replyto="Reply to Cam Beck" aria-label="Reply to Cam Beck">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1209">
+	<article id="article-comment-1209">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/6b0ec7b7a44755b6b66488dc693acdf4882a8aac3ef0dbf65eaf6982b732b59e?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/6b0ec7b7a44755b6b66488dc693acdf4882a8aac3ef0dbf65eaf6982b732b59e?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://liveanduncensored.com/" class="comment-author-link" rel="external nofollow">Angela</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1209">June 12, 2008 at 2:31 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>My mother was selectively alpha and beta.</p>
+<p>I found this baby troubleshooting manual very appealing. Not sure what that says about my own potential as a mother.</p>
+<p><a href="http://www.amazon.com/Baby-Owners-Manual-Instructions-Trouble-Shooting/dp/1931686238/ref=pd_bbs_sr_1?ie=UTF8&#038;s=books&#038;qid=1213237777&#038;sr=8-1" rel="nofollow ugc">http://www.amazon.com/Baby-Owners-Manual-Instructions-Trouble-Shooting/dp/1931686238/ref=pd_bbs_sr_1?ie=UTF8&#038;s=books&#038;qid=1213237777&#038;sr=8-1</a></p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1209" data-commentid="1209" data-postid="23" data-belowelement="article-comment-1209" data-respondelement="respond" data-replyto="Reply to Angela" aria-label="Reply to Angela">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1183">
+	<article id="article-comment-1183">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/6b0ec7b7a44755b6b66488dc693acdf4882a8aac3ef0dbf65eaf6982b732b59e?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/6b0ec7b7a44755b6b66488dc693acdf4882a8aac3ef0dbf65eaf6982b732b59e?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://liveanduncensored.com" class="comment-author-link" rel="external nofollow">Angela</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1183">June 11, 2008 at 6:31 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>My mother was selectively alpha and beta.</p>
+<p>I found this baby troubleshooting manual very appealing. Not sure what that says about my own potential as a mother.</p>
+<p><a href="http://www.amazon.com/Baby-Owners-Manual-Instructions-Trouble-Shooting/dp/1931686238/ref=pd_bbs_sr_1?ie=UTF8&#038;s=books&#038;qid=1213237777&#038;sr=8-1" rel="nofollow ugc">http://www.amazon.com/Baby-Owners-Manual-Instructions-Trouble-Shooting/dp/1931686238/ref=pd_bbs_sr_1?ie=UTF8&#038;s=books&#038;qid=1213237777&#038;sr=8-1</a></p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1183" data-commentid="1183" data-postid="23" data-belowelement="article-comment-1183" data-respondelement="respond" data-replyto="Reply to Angela" aria-label="Reply to Angela">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1210">
+	<article id="article-comment-1210">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/0151da1bb9404c4e2b5cfb6a8c4e1a42e809642d3aa3177459c765d7cb3dfca7?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/0151da1bb9404c4e2b5cfb6a8c4e1a42e809642d3aa3177459c765d7cb3dfca7?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">grace</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1210">June 18, 2008 at 1:13 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>My oldest sister was born in 1951.  I arrived four children later in 1963&#8230;seems we have much in common &#8211; in that way.</p>
+<p>I too had tremendous freedom, yet my mom was, and still is, an alpha mom.  She raised us in troublesome times&#8230;1960s-early 70s  with free love, drugs and rock &amp; roll.  (One of my brothers was kicked out of college &#8211; the same one every member of our father&#8217;s family had attended since it began one &#8211; for growing and selling pot.  That was an interesting time.)</p>
+<p>I thrived on the freedom I experienced growing up, yet in the midst of that freedom there was some pretty strict structure in place.  </p>
+<p>My father fought in the Pacific during the second world war&#8230;my parents were both born before the depression.  My life converged at a cross point of several worlds.</p>
+<p>I wish I could give my children what I had&#8230;the safety to run around with my friends from 3pm until sundown, the  joy of no real homework until Jr. High (7th grade), getting my license @ 15!!!!!  No real after school activities or play dates&#8230;we rode bikes clear across town if we wanted to get together with our friends who did not live in the neighborhood.  NO crazy traffic to test our mortality, or nut job child molesters living within our zip code.</p>
+<p>But also, I wish I could teach them, without the interference of their peers and their peers&#8217; parents, that family is first, more is not better, adults often do know better&#8230;home, country and work in that order&#8230;that was how I was raised&#8230;nothing came before family&#8230;ever.  As a family we discussed what was going on around us that effected our world&#8230;the war, which was not really a war, Watergate, the gas crisis which brought lines we waited in to fill up the station wagon, etc.  </p>
+<p>We read the newspaper and talked about the news &#8211;  the summer b/t fourth and fifth grade was a crazy time&#8230;hours upon hours discussing Nixon, his cronies, their crimes and how that would forever change our world&#8230;never could we trust a politician again.  </p>
+<p>So, no Tom Collins for my mom&#8230;although my glass of red wine at the end of the day does wonders for moi!  She was attentive, loving, challenging, and demanding, aware yet not at times, a big time queen bee, reading more and knowing more than most other mothers, much more in-tune with what was going on in the world around her, and the wretchedly unfair differences b/t men and women.  I am not embarrassed that my mom was an alpha mom.  </p>
+<p>She was a great role model.  A college graduate at 20&#8230;yes&#8230;try living up to that..received her grad degree as she closed in on 70.  All that and she has not held a real job since 1960.   She is just interested in developing herself for the pure joy of it.  </p>
+<p>BTW, having a truly evolved father helped ease the pain of having the perfect mother&#8230;she was not our nurturer, although she was loving&#8230;.he was and while she has never said I am sorry, he made up for it by being man enough to admit when he was wrong.  I find myself clearly in the middle&#8230;I am a cross b/t the alpha and the beta, and I like that!  I want my children to live up to their fullest potential, but I don&#8217;t want them to be adults before their time.  While they have rules they must follow, behaviors that are expected,  I always admit when I am wrong and I have said I am  sorry more times than I can count.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1210" data-commentid="1210" data-postid="23" data-belowelement="article-comment-1210" data-respondelement="respond" data-replyto="Reply to grace" aria-label="Reply to grace">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1184">
+	<article id="article-comment-1184">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/0151da1bb9404c4e2b5cfb6a8c4e1a42e809642d3aa3177459c765d7cb3dfca7?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/0151da1bb9404c4e2b5cfb6a8c4e1a42e809642d3aa3177459c765d7cb3dfca7?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">grace</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1184">June 17, 2008 at 5:13 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>My oldest sister was born in 1951.  I arrived four children later in 1963&#8230;seems we have much in common &#8211; in that way.</p>
+<p>I too had tremendous freedom, yet my mom was, and still is, an alpha mom.  She raised us in troublesome times&#8230;1960s-early 70s  with free love, drugs and rock &amp; roll.  (One of my brothers was kicked out of college &#8211; the same one every member of our father&#8217;s family had attended since it began one &#8211; for growing and selling pot.  That was an interesting time.)</p>
+<p>I thrived on the freedom I experienced growing up, yet in the midst of that freedom there was some pretty strict structure in place.  </p>
+<p>My father fought in the Pacific during the second world war&#8230;my parents were both born before the depression.  My life converged at a cross point of several worlds.</p>
+<p>I wish I could give my children what I had&#8230;the safety to run around with my friends from 3pm until sundown, the  joy of no real homework until Jr. High (7th grade), getting my license @ 15!!!!!  No real after school activities or play dates&#8230;we rode bikes clear across town if we wanted to get together with our friends who did not live in the neighborhood.  NO crazy traffic to test our mortality, or nut job child molesters living within our zip code.</p>
+<p>But also, I wish I could teach them, without the interference of their peers and their peers&#8217; parents, that family is first, more is not better, adults often do know better&#8230;home, country and work in that order&#8230;that was how I was raised&#8230;nothing came before family&#8230;ever.  As a family we discussed what was going on around us that effected our world&#8230;the war, which was not really a war, Watergate, the gas crisis which brought lines we waited in to fill up the station wagon, etc.  </p>
+<p>We read the newspaper and talked about the news &#8211;  the summer b/t fourth and fifth grade was a crazy time&#8230;hours upon hours discussing Nixon, his cronies, their crimes and how that would forever change our world&#8230;never could we trust a politician again.  </p>
+<p>So, no Tom Collins for my mom&#8230;although my glass of red wine at the end of the day does wonders for moi!  She was attentive, loving, challenging, and demanding, aware yet not at times, a big time queen bee, reading more and knowing more than most other mothers, much more in-tune with what was going on in the world around her, and the wretchedly unfair differences b/t men and women.  I am not embarrassed that my mom was an alpha mom.  </p>
+<p>She was a great role model.  A college graduate at 20&#8230;yes&#8230;try living up to that..received her grad degree as she closed in on 70.  All that and she has not held a real job since 1960.   She is just interested in developing herself for the pure joy of it.  </p>
+<p>BTW, having a truly evolved father helped ease the pain of having the perfect mother&#8230;she was not our nurturer, although she was loving&#8230;.he was and while she has never said I am sorry, he made up for it by being man enough to admit when he was wrong.  I find myself clearly in the middle&#8230;I am a cross b/t the alpha and the beta, and I like that!  I want my children to live up to their fullest potential, but I don&#8217;t want them to be adults before their time.  While they have rules they must follow, behaviors that are expected,  I always admit when I am wrong and I have said I am  sorry more times than I can count.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1184" data-commentid="1184" data-postid="23" data-belowelement="article-comment-1184" data-respondelement="respond" data-replyto="Reply to grace" aria-label="Reply to grace">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1211">
+	<article id="article-comment-1211">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/85b621ea3c4b853664cadcdce9415f70c26ad31b2ea6f496faa9c717ef82c551?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/85b621ea3c4b853664cadcdce9415f70c26ad31b2ea6f496faa9c717ef82c551?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://32dwight.com/" class="comment-author-link" rel="external nofollow">Janet</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1211">June 19, 2008 at 1:55 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Thanks for the trip down memory lane&#8230;the &#8220;stories,&#8221; the crazed vacuuming; and pulling in laundry from the line (where &#8220;it&#8217;s starting to rain!&#8221; was like a fire drill) made me laugh. The &#8220;stories&#8221; of today are probably blogs, where you get attached to people you haven&#8217;t met -except they&#8217;re real.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1211" data-commentid="1211" data-postid="23" data-belowelement="article-comment-1211" data-respondelement="respond" data-replyto="Reply to Janet" aria-label="Reply to Janet">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1185">
+	<article id="article-comment-1185">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/85b621ea3c4b853664cadcdce9415f70c26ad31b2ea6f496faa9c717ef82c551?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/85b621ea3c4b853664cadcdce9415f70c26ad31b2ea6f496faa9c717ef82c551?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://32dwight.com" class="comment-author-link" rel="external nofollow">Janet</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1185">June 19, 2008 at 5:55 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Thanks for the trip down memory lane&#8230;the &#8220;stories,&#8221; the crazed vacuuming; and pulling in laundry from the line (where &#8220;it&#8217;s starting to rain!&#8221; was like a fire drill) made me laugh. The &#8220;stories&#8221; of today are probably blogs, where you get attached to people you haven&#8217;t met -except they&#8217;re real.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1185" data-commentid="1185" data-postid="23" data-belowelement="article-comment-1185" data-respondelement="respond" data-replyto="Reply to Janet" aria-label="Reply to Janet">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1212">
+	<article id="article-comment-1212">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/26ef3dabce7781c948427f40e7f0fae93b38b3c3884d44429f4e2addd73a8a4d?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/26ef3dabce7781c948427f40e7f0fae93b38b3c3884d44429f4e2addd73a8a4d?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://RemarkableParents.com/" class="comment-author-link" rel="external nofollow">Vicky H</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1212">June 21, 2008 at 2:57 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>My thinking is that Beta mom&#8217;s have always been out there, but in the 70&#8217;s and 80&#8217;s there wasn&#8217;t as much communication, tv, and media.</p>
+<p>Now with the internet, blogs, ecommerce, we are much more aware of things that our parents were.  They saw Leave It To Beaver and Mary Tyler More and that was it.  They were sold a carefully crafted media and marketing vision of what &#8216;they should be&#8217;.  </p>
+<p>I think that Beta mom&#8217;s were pioneers of their day, much like the Mommy Bloggers of today.  There are talk shows, reality tv, and so much other media that shows us that there are so many kinds of people out there and although we are carefully marketed to in this day and age, we are much more likely to challenge that &#8216;perfect world&#8217; scenario when it is presented to us.</p>
+<p>I don&#8217;t think mommy&#8217;s have changed, I think our access to information has changed.</p>
+<p>Love this post!</p>
+<p>Vicky H</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1212" data-commentid="1212" data-postid="23" data-belowelement="article-comment-1212" data-respondelement="respond" data-replyto="Reply to Vicky H" aria-label="Reply to Vicky H">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1186">
+	<article id="article-comment-1186">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/26ef3dabce7781c948427f40e7f0fae93b38b3c3884d44429f4e2addd73a8a4d?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/26ef3dabce7781c948427f40e7f0fae93b38b3c3884d44429f4e2addd73a8a4d?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://RemarkableParents.com" class="comment-author-link" rel="external nofollow">Vicky H</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1186">June 21, 2008 at 6:57 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>My thinking is that Beta mom&#8217;s have always been out there, but in the 70&#8217;s and 80&#8217;s there wasn&#8217;t as much communication, tv, and media.</p>
+<p>Now with the internet, blogs, ecommerce, we are much more aware of things that our parents were.  They saw Leave It To Beaver and Mary Tyler More and that was it.  They were sold a carefully crafted media and marketing vision of what &#8216;they should be&#8217;.  </p>
+<p>I think that Beta mom&#8217;s were pioneers of their day, much like the Mommy Bloggers of today.  There are talk shows, reality tv, and so much other media that shows us that there are so many kinds of people out there and although we are carefully marketed to in this day and age, we are much more likely to challenge that &#8216;perfect world&#8217; scenario when it is presented to us.</p>
+<p>I don&#8217;t think mommy&#8217;s have changed, I think our access to information has changed.</p>
+<p>Love this post!</p>
+<p>Vicky H</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1186" data-commentid="1186" data-postid="23" data-belowelement="article-comment-1186" data-respondelement="respond" data-replyto="Reply to Vicky H" aria-label="Reply to Vicky H">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1213">
+	<article id="article-comment-1213">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/6580f5cd741fca35531d4eadb1e1c95ed42200fc56179cca8723fa8a4ee9fcfd?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/6580f5cd741fca35531d4eadb1e1c95ed42200fc56179cca8723fa8a4ee9fcfd?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.toadstoolblog.com/" class="comment-author-link" rel="external nofollow">Alan Wolk</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1213">June 27, 2008 at 2:29 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Wow- somehow missed this one and just saw it now as I came to read the post you put up yesterday.</p>
+<p>There&#8217;s a great book by Neil Howe and William Strauss called &#8220;13th Gen: Abort, Retry or Fail?&#8221; that does a great job of outlining many of the issues that shaped child-rearing in the 70s and made it different than many other eras (<a href="http://www.amazon.com/13th-Gen-Abort-Retry-Ignore/dp/0679743650" rel="nofollow ugc">http://www.amazon.com/13th-Gen-Abort-Retry-Ignore/dp/0679743650</a>)</p>
+<p>In a nutshell, we (and I am around your age, although the oldest of all my cousins) were the abandoned generation &#8211; the solid suburbs of the fifties and sixties were crumbling and things like divorce and women returning to work, plus an ongoing recession. meant that kids were no longer the focus of what was going on in America. We were secondary at some level. Which meant that we had a great deal of freedom and a whole lot of beta or even gamma moms. Not too many alphas.</p>
+<p>I find the lack of downtime in my kids lives a bit troubling. A lot of lessons were learned trying to sort out a pack of 20 kids into two kickball teams without any adults around. That doesn&#8217;t happen anymore.</p>
+<p>But returning to the 70s, I was watching &#8220;Bad News Bears&#8221; (the original) with my son the other day. He thought it was a very racy movie, what with the cursing and drinking and fairly frank sexual discussions. And it struck me that I was around his age when that movie came out and it was just another kids movie at the time. Nothing notable about the raciness of the content.</p>
+<p>That about sums it up.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1213" data-commentid="1213" data-postid="23" data-belowelement="article-comment-1213" data-respondelement="respond" data-replyto="Reply to Alan Wolk" aria-label="Reply to Alan Wolk">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1187">
+	<article id="article-comment-1187">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/6580f5cd741fca35531d4eadb1e1c95ed42200fc56179cca8723fa8a4ee9fcfd?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/6580f5cd741fca35531d4eadb1e1c95ed42200fc56179cca8723fa8a4ee9fcfd?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.toadstoolblog.com" class="comment-author-link" rel="external nofollow">Alan Wolk</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1187">June 27, 2008 at 6:29 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Wow- somehow missed this one and just saw it now as I came to read the post you put up yesterday.</p>
+<p>There&#8217;s a great book by Neil Howe and William Strauss called &#8220;13th Gen: Abort, Retry or Fail?&#8221; that does a great job of outlining many of the issues that shaped child-rearing in the 70s and made it different than many other eras (<a href="http://www.amazon.com/13th-Gen-Abort-Retry-Ignore/dp/0679743650" rel="nofollow ugc">http://www.amazon.com/13th-Gen-Abort-Retry-Ignore/dp/0679743650</a>)</p>
+<p>In a nutshell, we (and I am around your age, although the oldest of all my cousins) were the abandoned generation &#8211; the solid suburbs of the fifties and sixties were crumbling and things like divorce and women returning to work, plus an ongoing recession. meant that kids were no longer the focus of what was going on in America. We were secondary at some level. Which meant that we had a great deal of freedom and a whole lot of beta or even gamma moms. Not too many alphas.</p>
+<p>I find the lack of downtime in my kids lives a bit troubling. A lot of lessons were learned trying to sort out a pack of 20 kids into two kickball teams without any adults around. That doesn&#8217;t happen anymore.</p>
+<p>But returning to the 70s, I was watching &#8220;Bad News Bears&#8221; (the original) with my son the other day. He thought it was a very racy movie, what with the cursing and drinking and fairly frank sexual discussions. And it struck me that I was around his age when that movie came out and it was just another kids movie at the time. Nothing notable about the raciness of the content.</p>
+<p>That about sums it up.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1187" data-commentid="1187" data-postid="23" data-belowelement="article-comment-1187" data-respondelement="respond" data-replyto="Reply to Alan Wolk" aria-label="Reply to Alan Wolk">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1214">
+	<article id="article-comment-1214">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/625fe2089e93bd879ea128e58a5d8e3e2d56f662cda791c472032fd2053381b9?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/625fe2089e93bd879ea128e58a5d8e3e2d56f662cda791c472032fd2053381b9?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.jgrichardsresultsblog.com/" class="comment-author-link" rel="external nofollow">Jan Richards</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1214">June 27, 2008 at 10:41 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Great post. I came back from a business group meeting last night and listened to the first-time mom of a six-month old talk about the importance of her mommy group (This was not just ANY moms, she wanted to make sure we knew. This was a jd/mba/md/phd crew). </p>
+<p>With a slightly frantic quality in her voice, she said that, were it not for this mommy group, she would not have known that she HAD to have this toy or that toy, this product or that product for her child&#8230;or&#8230;well. She felt so “thankful!” for the group (while my own reaction at the description was to feel cell-bound).</p>
+<p>I was exhausted listening to the jd/mba/md/phd new mom as she described almost desperately trying to choose the “right” toy for her child so they would both &#8220;belong.” (And I wondered, could she be the product of helicopter parents, herself? Could she be substituting this moms’ group for micro-parenting that she misses?).</p>
+<p>That brief view into the new moms’ group made me feel relieved to be at the stage when we have almost navigated the whitewater rapids of daily parenting, and, at times, the whitewater rapids of other parents’ opinions. (Our children are a 24-year-old daughter who is feeling her way through the early career-building years and a 16-year-old newly licensed son who is getting ready to choose his college, his portal on the work world soon). </p>
+<p>As I drove home I felt a great deal of gratitude that my mother taught me to make toy giraffe decisions on my own.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1214" data-commentid="1214" data-postid="23" data-belowelement="article-comment-1214" data-respondelement="respond" data-replyto="Reply to Jan Richards" aria-label="Reply to Jan Richards">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1188">
+	<article id="article-comment-1188">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/625fe2089e93bd879ea128e58a5d8e3e2d56f662cda791c472032fd2053381b9?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/625fe2089e93bd879ea128e58a5d8e3e2d56f662cda791c472032fd2053381b9?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.jgrichardsresultsblog.com" class="comment-author-link" rel="external nofollow">Jan Richards</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1188">June 27, 2008 at 2:41 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Great post. I came back from a business group meeting last night and listened to the first-time mom of a six-month old talk about the importance of her mommy group (This was not just ANY moms, she wanted to make sure we knew. This was a jd/mba/md/phd crew). </p>
+<p>With a slightly frantic quality in her voice, she said that, were it not for this mommy group, she would not have known that she HAD to have this toy or that toy, this product or that product for her child&#8230;or&#8230;well. She felt so “thankful!” for the group (while my own reaction at the description was to feel cell-bound).</p>
+<p>I was exhausted listening to the jd/mba/md/phd new mom as she described almost desperately trying to choose the “right” toy for her child so they would both &#8220;belong.” (And I wondered, could she be the product of helicopter parents, herself? Could she be substituting this moms’ group for micro-parenting that she misses?).</p>
+<p>That brief view into the new moms’ group made me feel relieved to be at the stage when we have almost navigated the whitewater rapids of daily parenting, and, at times, the whitewater rapids of other parents’ opinions. (Our children are a 24-year-old daughter who is feeling her way through the early career-building years and a 16-year-old newly licensed son who is getting ready to choose his college, his portal on the work world soon). </p>
+<p>As I drove home I felt a great deal of gratitude that my mother taught me to make toy giraffe decisions on my own.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1188" data-commentid="1188" data-postid="23" data-belowelement="article-comment-1188" data-respondelement="respond" data-replyto="Reply to Jan Richards" aria-label="Reply to Jan Richards">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1215">
+	<article id="article-comment-1215">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/ecab92f34fa7c5565c5310f6f2368458b60b2efaf243e3fca407fc3aade423b9?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/ecab92f34fa7c5565c5310f6f2368458b60b2efaf243e3fca407fc3aade423b9?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">GiGi Delay</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1215">June 28, 2008 at 11:38 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Yes, nothing makes you think about your parents more than having kids of your own.  I enjoyed the profile of your mom and share the same experience of being booted out of the house each morning with threats of &#8220;If you come in, you&#8217;re staying in!&#8221;  I often think our parents didn&#8217;t obsess about all the things we obsess about as parents, but who knows?  Maybe they did, but just about different things.  I do agree with others&#8217; comments about the different ways our kids are growing up with play dates and organized sports as opposed to neighborhood baseball games that went past dark.  Ann, great stuff!</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1215" data-commentid="1215" data-postid="23" data-belowelement="article-comment-1215" data-respondelement="respond" data-replyto="Reply to GiGi Delay" aria-label="Reply to GiGi Delay">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1189">
+	<article id="article-comment-1189">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/ecab92f34fa7c5565c5310f6f2368458b60b2efaf243e3fca407fc3aade423b9?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/ecab92f34fa7c5565c5310f6f2368458b60b2efaf243e3fca407fc3aade423b9?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">GiGi Delay</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1189">June 28, 2008 at 3:38 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Yes, nothing makes you think about your parents more than having kids of your own.  I enjoyed the profile of your mom and share the same experience of being booted out of the house each morning with threats of &#8220;If you come in, you&#8217;re staying in!&#8221;  I often think our parents didn&#8217;t obsess about all the things we obsess about as parents, but who knows?  Maybe they did, but just about different things.  I do agree with others&#8217; comments about the different ways our kids are growing up with play dates and organized sports as opposed to neighborhood baseball games that went past dark.  Ann, great stuff!</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1189" data-commentid="1189" data-postid="23" data-belowelement="article-comment-1189" data-respondelement="respond" data-replyto="Reply to GiGi Delay" aria-label="Reply to GiGi Delay">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-1216">
+	<article id="article-comment-1216">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/f6036587a298a1bfb56f5b28dbe233f52e4ff58663802c34a46324152d42fc59?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/f6036587a298a1bfb56f5b28dbe233f52e4ff58663802c34a46324152d42fc59?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://diablogue.wordpress.com/" class="comment-author-link" rel="external nofollow">JP</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1216">July 2, 2008 at 9:58 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Good heavens! Thanks for the brief, yet oh-so-lovely, transport!  I needed it.   :)    Sigh.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1216" data-commentid="1216" data-postid="23" data-belowelement="article-comment-1216" data-respondelement="respond" data-replyto="Reply to JP" aria-label="Reply to JP">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-1190">
+	<article id="article-comment-1190">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/f6036587a298a1bfb56f5b28dbe233f52e4ff58663802c34a46324152d42fc59?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/f6036587a298a1bfb56f5b28dbe233f52e4ff58663802c34a46324152d42fc59?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://diablogue.wordpress.com" class="comment-author-link" rel="external nofollow">JP</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/beta-before-alpha/#comment-1190">July 2, 2008 at 1:58 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Good heavens! Thanks for the brief, yet oh-so-lovely, transport!  I needed it.   :)    Sigh.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1190" data-commentid="1190" data-postid="23" data-belowelement="article-comment-1190" data-respondelement="respond" data-replyto="Reply to JP" aria-label="Reply to JP">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ol></div><div class="entry-pings"><h3>Trackbacks</h3><ol class="ping-list">		<li id="comment-1191" class="pingback even thread-even depth-1">
+			<article id="div-comment-1191" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="https://www.annhandley.com/2008/09/07/in-case-of-emergency/" class="url" rel="ugc external nofollow">In Case of Emergency</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/beta-before-alpha/#comment-1191"><time datetime="2008-09-07T08:34:34-04:00">September 7, 2008 at 8:34 am</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] with not surviving an emergency landing. When I was a kid I would sometimes voice my fears to my mother—not those, exactly, but others: our house catching on fire, our dog being stolen in the middle of [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-1191" data-commentid="1191" data-postid="23" data-belowelement="div-comment-1191" data-respondelement="respond" data-replyto="Reply to In Case of Emergency" aria-label="Reply to In Case of Emergency">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+</ol></div>	<div id="respond" class="comment-respond">
+		<h3 id="reply-title" class="comment-reply-title">Leave a Reply <small><a rel="nofollow" id="cancel-comment-reply-link" href="/beta-before-alpha/#respond" style="display:none;">Cancel reply</a></small></h3><form action="https://annhandley.com/ah/wp-comments-post.php" method="post" id="commentform" class="comment-form"><p class="comment-notes"><span id="email-notes">Your email address will not be published.</span> <span class="required-field-message">Required fields are marked <span class="required">*</span></span></p><p class="comment-form-comment"><label for="comment">Comment <span class="required">*</span></label> <textarea id="comment" name="comment" cols="45" rows="8" maxlength="65525" required></textarea></p><p class="comment-form-author"><label for="author">Name <span class="required">*</span></label> <input id="author" name="author" type="text" value="" size="30" maxlength="245" autocomplete="name" required /></p>
+<p class="comment-form-email"><label for="email">Email <span class="required">*</span></label> <input id="email" name="email" type="email" value="" size="30" maxlength="100" aria-describedby="email-notes" autocomplete="email" required /></p>
+<p class="comment-form-url"><label for="url">Website</label> <input id="url" name="url" type="url" value="" size="30" maxlength="200" autocomplete="url" /></p>
+<p class="form-submit"><input name="submit" type="submit" id="submit" class="submit" value="Post Comment" /> <input type='hidden' name='comment_post_ID' value='23' id='comment_post_ID' />
+<input type='hidden' name='comment_parent' id='comment_parent' value='0' />
+</p><p style="display: none;"><input type="hidden" id="akismet_comment_nonce" name="akismet_comment_nonce" value="7919c88750" /></p><p style="display: none !important;" class="akismet-fields-container" data-prefix="ak_"><label>&#916;<textarea name="ak_hp_textarea" cols="45" rows="8" maxlength="100"></textarea></label><input type="hidden" id="ak_js_1" name="ak_js" value="103"/><script>document.getElementById( "ak_js_1" ).setAttribute( "value", ( new Date() ).getTime() );</script></p></form>	</div><!-- #respond -->
+	</main></div></div></div><div class="footer-optin"><div class="wrap"><section id="custom_html-3" class="widget_text widget widget_custom_html"><div class="widget_text widget-wrap"><div class="textwidget custom-html-widget"><h3><span style="color:#fff">Subscribe to Total </span><span style="color:#e077cc">ANNARCHY</span></h3>
+<h6>Get new writing, useful ideas, fresh links, and high-spirited shenanigans delivered to your inbox every two weeks.
+
+	</h6>
+
+	<a class="button" href="https://annhandley.com/newsletter/">SUBSCRIBE</a>
+
+<!--
+	<form class="mainopt" action="https://www.aweber.com/scripts/addlead.pl" method="post"><input type="hidden" name="meta_web_form_id" value="1483784026" /><input id="awf_tag-103757396" type="hidden" name="tag_103757396" value="footer_opt" /><input type="hidden" name="listname" value="totalannarchy" /><input type="hidden" name="meta_message" value="1" /><input type="hidden" name="redirect" value="https://annhandley.com/thank-you" id="redirect_bd89b556cf6bc1b80faed4ec90669c3a" /><input name="meta_redirect_onlist" type="hidden" value="https://annhandley.com/thank-you" /><input type="hidden" name="meta_adtracking" value="2019_New_AH_Form" /><input name="meta_message" type="hidden" value="1" /><input name="meta_required" type="hidden" value="email" /><input name="meta_forward_vars" type="hidden" value="0" /><input name="name" type="text" placeholder="FIRST NAME" /><input name="email" type="text" value="" placeholder="EMAIL ADDRESS" /><input name="submit" type="submit" value="SUBMIT" /></form>--> 
+
+
+	
+	</div></div></section>
+</div></div><footer class="site-footer"><p></p><div class="footer-widgets" id="genesis-footer-widgets"><h2 class="genesis-sidebar-title screen-reader-text">Footer</h2><div class="wrap"><div class="widget-area footer-widgets-1 footer-widget-area"><section id="text-3" class="widget widget_text"><div class="widget-wrap"><h3 class="widgettitle widget-title">COPYRIGHT 2025 ANN HANDLEY</h3>
+			<div class="textwidget"><p><span class="credits"><a href="https://minimadesigns.com/" target="_new" >SITE BY MINIMA DESIGNS</a></span></p>
+</div>
+		</div></section>
+<section id="simple-social-icons-2" class="widget simple-social-icons"><div class="widget-wrap"><ul class="alignleft"><li class="ssi-facebook"><a href="https://www.facebook.com/ann.handley/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-facebook" aria-labelledby="social-facebook-2"><title id="social-facebook-2">Facebook</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-facebook"></use></svg></a></li><li class="ssi-instagram"><a href="https://www.instagram.com/annhandley/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-instagram" aria-labelledby="social-instagram-2"><title id="social-instagram-2">Instagram</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-instagram"></use></svg></a></li><li class="ssi-linkedin"><a href="http://www.linkedin.com/in/annhandley/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-linkedin" aria-labelledby="social-linkedin-2"><title id="social-linkedin-2">LinkedIn</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-linkedin"></use></svg></a></li><li class="ssi-pinterest"><a href="http://pinterest.com/annhandley/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-pinterest" aria-labelledby="social-pinterest-2"><title id="social-pinterest-2">Pinterest</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-pinterest"></use></svg></a></li><li class="ssi-rss"><a href="http://feeds2.feedburner.com/ANNARCHY/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-rss" aria-labelledby="social-rss-2"><title id="social-rss-2">RSS</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-rss"></use></svg></a></li><li class="ssi-twitter"><a href="https://twitter.com/annhandley/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-twitter" aria-labelledby="social-twitter-2"><title id="social-twitter-2">Twitter</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-twitter"></use></svg></a></li></ul></div></section>
+</div><div class="widget-area footer-widgets-2 footer-widget-area"><section id="nav_menu-2" class="widget widget_nav_menu"><div class="widget-wrap"><h3 class="widgettitle widget-title">About</h3>
+<div class="menu-about-container"><ul id="menu-about" class="menu"><li id="menu-item-2779" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2779"><a href="https://annhandley.com/about/">Bio</a></li>
+<li id="menu-item-2778" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2778"><a href="https://annhandley.com/in-the-media/">In the Media</a></li>
+<li id="menu-item-3766" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-3766"><a href="https://annhandley.com/newsletter/">Newsletter</a></li>
+</ul></div></div></section>
+</div><div class="widget-area footer-widgets-3 footer-widget-area"><section id="nav_menu-3" class="widget widget_nav_menu"><div class="widget-wrap"><h3 class="widgettitle widget-title">Speaking</h3>
+<div class="menu-speaking-container"><ul id="menu-speaking" class="menu"><li id="menu-item-2970" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2970"><a href="https://annhandley.com/speaking/">Speaking</a></li>
+<li id="menu-item-2925" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2925"><a href="https://annhandley.com/meeting-planners/">For Meeting Planners</a></li>
+</ul></div></div></section>
+</div><div class="widget-area footer-widgets-4 footer-widget-area"><section id="nav_menu-4" class="widget widget_nav_menu"><div class="widget-wrap"><h3 class="widgettitle widget-title">The Books</h3>
+<div class="menu-the-books-container"><ul id="menu-the-books" class="menu"><li id="menu-item-2782" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-2782"><a target="_blank" href="http://bit.ly/EverybodyWrites">Everybody Writes</a></li>
+<li id="menu-item-2783" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-2783"><a target="_blank" href="https://www.amazon.com/gp/product/1118232607/ref=as_li_ss_tl?ie=UTF8&#038;camp=1789&#038;creative=390957&#038;creativeASIN=1118232607&#038;linkCode=as2&#038;tag=annarchy-20">Content Rules</a></li>
+</ul></div></div></section>
+</div></div></div></footer></div><script type="speculationrules">
+{"prefetch":[{"source":"document","where":{"and":[{"href_matches":"\/*"},{"not":{"href_matches":["\/ah\/wp-*.php","\/ah\/wp-admin\/*","\/ah\/wp-content\/uploads\/*","\/ah\/wp-content\/*","\/ah\/wp-content\/plugins\/*","\/ah\/wp-content\/themes\/annhandley\/*","\/ah\/wp-content\/themes\/genesis\/*","\/*\\?(.+)"]}},{"not":{"selector_matches":"a[rel~=\"nofollow\"]"}},{"not":{"selector_matches":".no-prefetch, .no-prefetch a"}}]},"eagerness":"conservative"}]}
+</script>
+<script type="text/javascript" src="//analytics.aweber.com/js/awt_analytics.js?id=8LvK"></script><style type="text/css" media="screen">#simple-social-icons-2 ul li a, #simple-social-icons-2 ul li a:hover, #simple-social-icons-2 ul li a:focus { background-color: #ffffff !important; border-radius: 0px; color: #000000 !important; border: 0px #ffffff solid !important; font-size: 20px; padding: 10px; }  #simple-social-icons-2 ul li a:hover, #simple-social-icons-2 ul li a:focus { background-color: #ffffff !important; border-color: #ffffff !important; color: #000000 !important; }  #simple-social-icons-2 ul li a:focus { outline: 1px dotted #ffffff !important; }</style><script type="text/javascript" src="https://annhandley.com/ah/wp-content/plugins/duracelltomi-google-tag-manager/dist/js/gtm4wp-form-move-tracker.js" id="gtm4wp-form-move-tracker-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-includes/js/comment-reply.min.js" id="comment-reply-js" async="async" data-wp-strategy="async"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-includes/js/hoverIntent.min.js" id="hoverIntent-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/genesis/lib/js/menu/superfish.min.js" id="superfish-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/genesis/lib/js/menu/superfish.args.min.js" id="superfish-args-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/genesis/lib/js/skip-links.min.js" id="skip-links-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/annhandley/js/global.js" id="annhandley-global-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/annhandley/js/match-height.js" id="annhandley-match-height-js"></script>
+<script type="text/javascript" id="annhandley-responsive-menu-js-extra">
+/* <![CDATA[ */
+var InfinityL10n = {"mainMenu":"Menu","subMenu":"Menu"};
+/* ]]> */
+</script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/annhandley/js/responsive-menu.js" id="annhandley-responsive-menu-js"></script>
+<script defer type="text/javascript" src="https://annhandley.com/ah/wp-content/plugins/akismet/_inc/akismet-frontend.js" id="akismet-frontend-js"></script>
+<script type="text/javascript" id="aweber-wpn-script-handle-js-extra">
+/* <![CDATA[ */
+var aweber_wpn_vars = {"plugin_base_path":"https:\/\/annhandley.com\/ah\/wp-content\/plugins\/aweber-web-form-widget\/php\/","register_aweber_service_worker":""};
+/* ]]> */
+</script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/plugins/aweber-web-form-widget/php/../src/js/aweber-wpn-script.js" id="aweber-wpn-script-handle-js"></script>
+</body></html>

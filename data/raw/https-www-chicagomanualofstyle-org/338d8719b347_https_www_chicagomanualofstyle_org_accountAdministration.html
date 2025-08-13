@@ -1,0 +1,210 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+
+    <link href="/css/style.css" rel="stylesheet" type="text/css"/>
+    <link href="/css/header.css" rel="stylesheet" type="text/css"/>
+    <link href="/css/footer.css" rel="stylesheet" type="text/css"/>
+    <link href="/css/mobile.css" rel="stylesheet" type="text/css"/>
+
+    <title>Account Administration Log In</title>
+    <script type="text/javascript">
+        function validate()
+        {
+            var form = document.getElementById( "loginForm" );
+            var username = form.elements["username"].value;
+            var password = form.elements["password"].value;
+
+            if ( username != null && username.length > 0 &&
+                    password != null && password.length > 0 )
+            {
+                return true;
+            }
+
+            console.log( "No username or password value specified" );
+
+            if(document.getElementById("error") == null){
+                var errorDiv = document.createElement("div");
+                errorDiv.id = "error";
+                errorDiv.className = "error";
+                document.getElementById('login').appendChild(errorDiv);
+            }
+
+            if ( username.length == 0 && password.length == 0){
+                document.getElementById("error").innerHTML = "Please fill in all fields.";
+            }  else if (username.length == 0){
+                document.getElementById("error").innerHTML = "Please enter username." ;
+            } else if (password.length == 0){
+                document.getElementById("error").innerHTML = "Please enter password." ;
+            }
+
+            return false;
+        }
+    </script>
+
+</head>
+<body onload="document.getElementById( 'username' ).focus();">
+    <div class="wrapper">
+<header class="header slab-light-gray">
+    <noindex>
+        <div class="header-inner">
+            <div class="header-upper">
+                <div class="header-left">
+                    <a class="header-logo" href="https://press.uchicago.edu/index.html">
+                        <img class="img-fluid" src="/images/logo-press.svg" width="271" height="110" alt="The University of Chicago Press"/>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </noindex>
+</header>
+<div class="header-lower">
+    <div class="manualLogos">
+        <div class="cmosLogo">
+            <a href="https://chicagomanualofstyle.org">
+                <img class="img-fluid" src="/images/CMOS_title.svg" alt="The Chicago Manual of Style"/>
+            </a>
+        </div>
+        <div class="cseLogo">
+            <a href="https://csemanual.org">
+                <img class="img-fluid" src="/images/CSE_logo.svg" alt="The CSE Manual Logo"/>
+            </a>
+        </div>
+    </div>
+
+</div>
+
+        <div class="content">
+            <div class="container-fluid">
+            <h1>Log In </h1>
+            <form id="loginForm" method="POST" action="/action/accountAdministration" onsubmit="return validate();">
+                <div class="userName">
+                    <label for="username" class="labels">Username</label>
+                    <input type="text" id="username" name="username" maxlength="50" value="" autocomplete="on"/>
+                </div>
+                <div class="password">
+                    <label for="password" class="labels">Password</label>
+                    <input type="password" id="password" name="password" />
+                </div>
+                <div class="rememberMe">
+                    <input type="checkbox" id="rememberMe" name="rememberMe"
+                           checked />
+                    <label for="rememberMe" class="labels">Remember me</label>
+                </div>
+                <div class="login" id="login">
+                    <input type="hidden" name="manual" value="MOS" />
+                    
+                    <span class="login">
+                        <input class="login" type="submit" value="LOG IN" />
+                    </span>
+                </div>
+            </form>
+
+            <div class="login-text">Not a subscriber? Try a free <a href="https://press-booksweb.uchicago.edu/MOSSSF/FreeTrial.aspx">30-day trial</a> of <em>The Chicago Manual of Style Online</em> or <em>The CSE Manual Online</em>.</div>
+            <div class="login-text">We offer subscriptions for individuals, groups, and institutions. Click to learn more about your options for accessing <em><a href="https://chicagomanualofstyle.org/help-tools/subscription.html">The Chicago Manual of Style Online</a></em> or <em><a href="https://csemanual.org/Help-Topics/Subscription-Options.html">The CSE Manual Online</a></em>.</div>
+
+        </div>
+        </div>  <!-- end content div -->
+<footer class="footer">
+  <div class="container-fluid">
+    <noindex>
+      <div class="row">
+        <div class="footer-col-primary">
+          <a class="logo" href="https://press.uchicago.edu/index.html">
+            <img class="img-fluid" src="/images/logo-inverted.svg" width="271" height="110" alt="The University of Chicago Press">
+          </a>
+
+          <h2 class="sr-only">Contact Information</h2>
+          <ul>
+            <li>1427 E. 60th Street Chicago, IL 60637 USA</li>
+            <li>Voice: <a href='tel:+17737027700' aria-label="Phone: 773.702.7700">773.702.7700</a></li>
+            <li>Fax: <a href='tel:+17737029756' aria-label="Fax: 773.702.9756">773.702.9756</a></li>
+          </ul>
+
+          <div class="footer-social">
+            <a href="https://twitter.com/UChicagoPress" class="icon-social">
+              <i class="fab fa-twitter" aria-hidden="true"></i>
+              <span class="sr-only">Twitter</span>
+            </a>
+            <a href="https://www.facebook.com/UniversityofChicagoPress/" class="icon-social">
+              <i class="fab fa-facebook" aria-hidden="true"></i>
+              <span class="sr-only">Facebook</span>
+            </a>
+            <a href="https://www.linkedin.com/company/university-of-chicago-press" class="icon-social">
+              <i class="fab fa-linkedin" aria-hidden="true"></i>
+              <span class="sr-only">Linkedin</span>
+            </a>
+            <a href="https://www.instagram.com/uchicagopress" class="icon-social">
+              <i class="fab fa-instagram" aria-hidden="true"></i>
+              <span class="sr-only">Instagram</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h2>The University of Chicago Press</h2>
+          <ul>
+            <li><a href="https://press.uchicago.edu/press/about.html">About the Press</a></li>
+            <li><a href="https://journals.uchicago.edu">Journals</a></li>
+            <li><a href="https://press.uchicago.edu/press/contact.html">Contact Us</a></li>
+            <li><a href="https://pressblog.uchicago.edu">News</a></li>
+            <li><a href="https://press.uchicago.edu/books/orders.html">Ordering Information</a></li>
+            <li><a href="https://press.uchicago.edu/books/publishers.html">Publishers We Distribute</a></li>
+            <li><a href="https://press.uchicago.edu/press/giving.html">Giving to the Press</a></li>
+            <li><a href="https://press.uchicago.edu/press/privacy.html">Privacy Policy</a></li>
+            <li><a href="https://accessibility.uchicago.edu/">Accessibility</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h2>Books</h2>
+          <ul>
+            <li><a href="https://press.uchicago.edu/books/subject.html">Subjects</a></li>
+            <li><a aria-current="page" href="https://press.uchicago.edu/books/series.html">Series</a></li>
+            <li><a href="https://press.uchicago.edu/books/instructors.html">Desk and Exam Copies</a></li>
+            <li><a href="https://press.uchicago.edu/books/catalogs.html">Catalogs</a></li>
+            <li><a href="https://press.uchicago.edu/books/freeEbook.html">Free E-book of the Month</a></li>
+            <li><a href="https://press.uchicago.edu/books/events.html">Author Events</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h2>Information for</h2>
+          <ul>
+            <li><a href="https://press.uchicago.edu/resource/emsguide.html">Current Authors</a></li>
+            <li><a href="https://press.uchicago.edu/resource/books_submissions.html">Prospective Authors</a></li>
+            <li><a href="https://press.uchicago.edu/books/instructors.html">Instructors</a></li>
+            <li><a href="https://press.uchicago.edu/books/catalogs.html">Booksellers</a></li>
+            <li><a href="https://press.uchicago.edu/resource/media.html">Media</a></li>
+            <li><a href="https://press.uchicago.edu/resource/rights.html">Rights and Permissions</a></li>
+            <li><a href="https://press.uchicago.edu/resource/accessibility.html">Disability Officers</a></li>
+            <li><a href="https://press.uchicago.edu/resource/pub_services.html">Publishers Seeking Distribution</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h2>Reference</h2>
+          <ul>
+            <li><a href="https://www.chicagomanualofstyle.org/home.html">Chicago Manual of Style</a></li>
+            <li><a href="https://www.chicagomanualofstyle.org/turabian.html">Turabian Style</a></li>
+            <li><a href="https://www.csemanual.org/Home.html">The CSE Manual Online</a></li>
+          </ul>
+          <h2>Related Sites</h2>
+          <ul>
+            <li><a href="https://www.bibliovault.org/">BiblioVault</a></li>
+            <li><a href="https://press.uchicago.edu/cdc">Chicago Distribution Center</a></li>
+            <li><a href="https://www.uchicago.edu">The University of Chicago</a></li>
+          </ul>
+        </div>
+
+      </div>
+    </noindex>
+  </div>
+
+</footer>    </div>   <!-- end wrapper div -->
+</body>
+</html>
+
+
+

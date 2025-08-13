@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ghostline – Creative Intelligence System</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/loader.css">
+  <script src="/static/main.js" defer></script>
+  <link rel="icon" type="image/png" href="/static/favicon.png">
+  <style>
+    body {
+      margin: 0;
+      padding-bottom: 160px; /* space for bottom bar */
+    }
+    .bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: #1a1a1a;
+      padding: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.4);
+    }
+    .bottom-bar textarea {
+      flex: 1 1 auto;
+      border-radius: 12px;
+      padding: 10px;
+      resize: none;
+      font-size: 1rem;
+    }
+    .bottom-bar select, .bottom-bar input[type="submit"], .bottom-bar button {
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+    }
+    .persona-toggle {
+      margin-top: 0.5em;
+      font-size: 0.85rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    main {
+      padding: 20px;
+    }
+    .response-block {
+      background: #2a2a2a;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+
+<body class="dark-mode">
+  <header style="padding: 10px 20px; display: flex; align-items: center; justify-content: space-between;">
+    <div>
+      <h1 style="margin: 0; font-size: 1.5rem; display: flex; align-items: center; gap: 10px;">
+        <img src="/static/syntax-buffering.png" alt="Syntax Prime Logo" width="48" style="vertical-align: middle;">
+        Ghostline
+      </h1><br><br>
+      <p style="margin: 2px 0 0; font-style: italic; font-size: 0.9rem; color: #ccc;">
+        Syntax Prime is online. Minimal patience. Maximum sarcasm.
+      </p>
+    </div>
+    <form action="{{ url_for('logout') }}" method="get" id="logoutForm" style="display:inline;">
+      <button type="submit"
+              aria-label="Log out"
+              title="Log out"
+              style="background-color:#333; color:#fff; padding:4px 10px; border:none; border-radius:4px; cursor:pointer;">
+        🚨 Logout
+      </button>
+    </form>
+  </header>
+
+  <!-- Loader -->
+  <div id="loader">
+    <img src="/static/syntax-buffering.png" alt="Syntax Prime buffering..." width="100"><br>
+    Syntax Prime is buffering your next poor decision…
+  </div>
+
+  <!-- Conversation -->
+  <main>
+    {% if response_data %}
+      {% set display_names = {
+        'SyntaxPrime':'Syntax Prime',
+        'SyntaxBot':'SyntaxBot',
+        'Nil.exe':'Nil.exe',
+        'GhadaGPT':'GhadaGPT'
+      } %}
+      {% for voice, reply in response_data.items() %}
+        <div class="response-block">
+          <h3>{{ display_names.get(voice, voice) }} Says:</h3>
+          <p>{{ reply }}</p>
+        </div>
+      {% endfor %}
+    {% endif %}
+  </main>
+
+  <!-- Bottom input bar -->
+  <div class="bottom-bar">
+    <form method="POST" style="flex: 1;">
+      <div style="display: flex; gap: 8px; margin-bottom: 6px;">
+        <select name="project">
+          {% for project in projects %}
+            <option value="{{ project }}">{{ project }}</option>
+          {% endfor %}
+        </select>
+        <input type="submit" value="Submit"
+               style="background-color:#6A0DAD; color:#fff; border:none; cursor:pointer;">
+      </div>
+      <textarea name="user_input" rows="2" placeholder="Type your prompt..." required></textarea>
+      <div class="persona-toggle">
+        <label><input type="checkbox" name="voices" value="SyntaxPrime" checked> Syntax Prime</label>
+        <label><input type="checkbox" name="voices" value="SyntaxBot"> SyntaxBot</label>
+        <label><input type="checkbox" name="voices" value="Nil.exe"> Nil.exe</label>
+        <label><input type="checkbox" name="voices" value="GhadaGPT"> GGPT</label>
+        <label><input type="checkbox" name="random"> 🎲 Random</label>
+      </div>
+    </form>
+
+    <!-- Upload -->
+    <form action="/upload" method="post" enctype="multipart/form-data">
+      <input type="file" name="file">
+      <input type="submit" value="Analyze" style="background-color:#6A0DAD; color:white; border:none; cursor:pointer;">
+    </form>
+
+    <!-- Export -->
+    <form id="exportForm">
+      <button type="submit"
+              style="background-color:#333; color:#fff; border:none; cursor:pointer;">
+        📤 Export Session
+      </button>
+    </form>
+  </div>
+
+  <!-- Export project redirect -->
+  <script>
+    document.getElementById('exportForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const proj = document.querySelector('select[name="project"]').value;
+      window.location.href = '/export/' + encodeURIComponent(proj);
+    });
+  </script>
+
+  <!-- Enter-to-submit -->
+  <script>
+    document.querySelector('textarea[name="user_input"]').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        this.form.submit();
+      }
+    });
+  </script>
+
+  <!-- Logout confirm -->
+  <script>
+    const lf = document.getElementById('logoutForm');
+    if (lf) {
+      lf.addEventListener('submit', function (e) {
+        const ok = confirm('Log out of Ghostline?\nYou’ll need the password to log back in.');
+        if (!ok) e.preventDefault();
+      });
+    }
+  </script>
+</body>
+</html>

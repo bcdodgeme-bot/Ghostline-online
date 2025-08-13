@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: ghostline
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app -w 2 -k gthread --threads 8 --timeout 120
+    autoDeploy: true
+    envVars:
+      - key: FLASK_SECRET_KEY
+        sync: false
+      - key: GHOSTLINE_PASSWORD
+        sync: false

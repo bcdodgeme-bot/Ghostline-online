@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en-US" class="no-js">
+<head>
+	<!-- Create query string to escape Cookiebot on Google PageSpeed Insights -->
+<script>
+window.addEventListener("CookiebotOnDialogInit", function() {
+if (Cookiebot.getDomainUrlParam("CookiebotScan") === "true") {
+Cookiebot.setOutOfRegion();
+}
+});
+</script>
+<!-- Set IAB TCF2 settings on Cookiebot -->
+<script id="CookiebotConfiguration" type="application/json" data-cookieconsent="ignore">
+  {
+    "Frameworks": {
+      "IABTCF2": {
+        "AllowedVendors": [],
+        "AllowedGoogleACVendors": [],
+        "AllowedPurposes": [1, 2, 7],
+        "AllowedSpecialPurposes": [],
+        "AllowedFeatures": [1],
+        "AllowedSpecialFeatures": [0]
+      }
+    }
+  }
+</script>
+<!-- Main Cokiebot script -->
+<script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="56f7ac59-cd50-49c6-8a99-6851a91dd084" data-framework="TCFv2.2" type="text/javascript" data-consentmode-defaults="disabled" async></script>
+
+<meta charset="UTF-8"><script type="text/javascript">(window.NREUM||(NREUM={})).init={ajax:{deny_list:["bam.nr-data.net"]}};(window.NREUM||(NREUM={})).loader_config={licenseKey:"cb7e744beb",applicationID:"325803987"};;/*! For license information please see nr-loader-rum-1.294.0.min.js.LICENSE.txt */
+(()=>{var e,t,r={122:(e,t,r)=>{"use strict";r.d(t,{a:()=>i});var n=r(944);function i(e,t){try{if(!e||"object"!=typeof e)return(0,n.R)(3);if(!t||"object"!=typeof t)return(0,n.R)(4);const r=Object.create(Object.getPrototypeOf(t),Object.getOwnPropertyDescriptors(t)),a=0===Object.keys(r).length?e:r;for(let s in a)if(void 0!==e[s])try{if(null===e[s]){r[s]=null;continue}Array.isArray(e[s])&&Array.isArray(t[s])?r[s]=Array.from(new Set([...e[s],...t[s]])):"object"==typeof e[s]&&"object"==typeof t[s]?r[s]=i(e[s],t[s]):r[s]=e[s]}catch(e){r[s]||(0,n.R)(1,e)}return r}catch(e){(0,n.R)(2,e)}}},555:(e,t,r)=>{"use strict";r.d(t,{D:()=>o,f:()=>s});var n=r(384),i=r(122);const a={beacon:n.NT.beacon,errorBeacon:n.NT.errorBeacon,licenseKey:void 0,applicationID:void 0,sa:void 0,queueTime:void 0,applicationTime:void 0,ttGuid:void 0,user:void 0,account:void 0,product:void 0,extra:void 0,jsAttributes:{},userAttributes:void 0,atts:void 0,transactionName:void 0,tNamePlain:void 0};function s(e){try{return!!e.licenseKey&&!!e.errorBeacon&&!!e.applicationID}catch(e){return!1}}const o=e=>(0,i.a)(e,a)},324:(e,t,r)=>{"use strict";r.d(t,{F3:()=>i,Xs:()=>a,xv:()=>n});const n="1.294.0",i="PROD",a="CDN"},154:(e,t,r)=>{"use strict";r.d(t,{OF:()=>c,RI:()=>i,WN:()=>d,bv:()=>a,gm:()=>s,mw:()=>o,sb:()=>u});var n=r(863);const i="undefined"!=typeof window&&!!window.document,a="undefined"!=typeof WorkerGlobalScope&&("undefined"!=typeof self&&self instanceof WorkerGlobalScope&&self.navigator instanceof WorkerNavigator||"undefined"!=typeof globalThis&&globalThis instanceof WorkerGlobalScope&&globalThis.navigator instanceof WorkerNavigator),s=i?window:"undefined"!=typeof WorkerGlobalScope&&("undefined"!=typeof self&&self instanceof WorkerGlobalScope&&self||"undefined"!=typeof globalThis&&globalThis instanceof WorkerGlobalScope&&globalThis),o=Boolean("hidden"===s?.document?.visibilityState),c=/iPad|iPhone|iPod/.test(s.navigator?.userAgent),u=c&&"undefined"==typeof SharedWorker,d=((()=>{const e=s.navigator?.userAgent?.match(/Firefox[/\s](\d+\.\d+)/);Array.isArray(e)&&e.length>=2&&e[1]})(),Date.now()-(0,n.t)())},241:(e,t,r)=>{"use strict";r.d(t,{W:()=>a});var n=r(154);const i="newrelic";function a(e={}){try{n.gm.dispatchEvent(new CustomEvent(i,{detail:e}))}catch(e){}}},687:(e,t,r)=>{"use strict";r.d(t,{Ak:()=>u,Ze:()=>f,x3:()=>d});var n=r(241),i=r(836),a=r(606),s=r(860),o=r(646);const c={};function u(e,t){const r={staged:!1,priority:s.P3[t]||0};l(e),c[e].get(t)||c[e].set(t,r)}function d(e,t){e&&c[e]&&(c[e].get(t)&&c[e].delete(t),p(e,t,!1),c[e].size&&g(e))}function l(e){if(!e)throw new Error("agentIdentifier required");c[e]||(c[e]=new Map)}function f(e="",t="feature",r=!1){if(l(e),!e||!c[e].get(t)||r)return p(e,t);c[e].get(t).staged=!0,g(e)}function g(e){const t=Array.from(c[e]);t.every((([e,t])=>t.staged))&&(t.sort(((e,t)=>e[1].priority-t[1].priority)),t.forEach((([t])=>{c[e].delete(t),p(e,t)})))}function p(e,t,r=!0){const s=e?i.ee.get(e):i.ee,c=a.i.handlers;if(!s.aborted&&s.backlog&&c){if((0,n.W)({agentIdentifier:e,type:"lifecycle",name:"drain",feature:t}),r){const e=s.backlog[t],r=c[t];if(r){for(let t=0;e&&t<e.length;++t)m(e[t],r);Object.entries(r).forEach((([e,t])=>{Object.values(t||{}).forEach((t=>{t[0]?.on&&t[0]?.context()instanceof o.y&&t[0].on(e,t[1])}))}))}}s.isolatedBacklog||delete c[t],s.backlog[t]=null,s.emit("drain-"+t,[])}}function m(e,t){var r=e[1];Object.values(t[r]||{}).forEach((t=>{var r=e[0];if(t[0]===r){var n=t[1],i=e[3],a=e[2];n.apply(i,a)}}))}},836:(e,t,r)=>{"use strict";r.d(t,{P:()=>o,ee:()=>c});var n=r(384),i=r(990),a=r(646),s=r(607);const o="nr@context:".concat(s.W),c=function e(t,r){var n={},s={},d={},l=!1;try{l=16===r.length&&u.initializedAgents?.[r]?.runtime.isolatedBacklog}catch(e){}var f={on:p,addEventListener:p,removeEventListener:function(e,t){var r=n[e];if(!r)return;for(var i=0;i<r.length;i++)r[i]===t&&r.splice(i,1)},emit:function(e,r,n,i,a){!1!==a&&(a=!0);if(c.aborted&&!i)return;t&&a&&t.emit(e,r,n);var o=g(n);m(e).forEach((e=>{e.apply(o,r)}));var u=v()[s[e]];u&&u.push([f,e,r,o]);return o},get:h,listeners:m,context:g,buffer:function(e,t){const r=v();if(t=t||"feature",f.aborted)return;Object.entries(e||{}).forEach((([e,n])=>{s[n]=t,t in r||(r[t]=[])}))},abort:function(){f._aborted=!0,Object.keys(f.backlog).forEach((e=>{delete f.backlog[e]}))},isBuffering:function(e){return!!v()[s[e]]},debugId:r,backlog:l?{}:t&&"object"==typeof t.backlog?t.backlog:{},isolatedBacklog:l};return Object.defineProperty(f,"aborted",{get:()=>{let e=f._aborted||!1;return e||(t&&(e=t.aborted),e)}}),f;function g(e){return e&&e instanceof a.y?e:e?(0,i.I)(e,o,(()=>new a.y(o))):new a.y(o)}function p(e,t){n[e]=m(e).concat(t)}function m(e){return n[e]||[]}function h(t){return d[t]=d[t]||e(f,t)}function v(){return f.backlog}}(void 0,"globalEE"),u=(0,n.Zm)();u.ee||(u.ee=c)},646:(e,t,r)=>{"use strict";r.d(t,{y:()=>n});class n{constructor(e){this.contextId=e}}},908:(e,t,r)=>{"use strict";r.d(t,{d:()=>n,p:()=>i});var n=r(836).ee.get("handle");function i(e,t,r,i,a){a?(a.buffer([e],i),a.emit(e,t,r)):(n.buffer([e],i),n.emit(e,t,r))}},606:(e,t,r)=>{"use strict";r.d(t,{i:()=>a});var n=r(908);a.on=s;var i=a.handlers={};function a(e,t,r,a){s(a||n.d,i,e,t,r)}function s(e,t,r,i,a){a||(a="feature"),e||(e=n.d);var s=t[a]=t[a]||{};(s[r]=s[r]||[]).push([e,i])}},878:(e,t,r)=>{"use strict";function n(e,t){return{capture:e,passive:!1,signal:t}}function i(e,t,r=!1,i){window.addEventListener(e,t,n(r,i))}function a(e,t,r=!1,i){document.addEventListener(e,t,n(r,i))}r.d(t,{DD:()=>a,jT:()=>n,sp:()=>i})},607:(e,t,r)=>{"use strict";r.d(t,{W:()=>n});const n=(0,r(566).bz)()},566:(e,t,r)=>{"use strict";r.d(t,{LA:()=>o,bz:()=>s});var n=r(154);const i="xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx";function a(e,t){return e?15&e[t]:16*Math.random()|0}function s(){const e=n.gm?.crypto||n.gm?.msCrypto;let t,r=0;return e&&e.getRandomValues&&(t=e.getRandomValues(new Uint8Array(30))),i.split("").map((e=>"x"===e?a(t,r++).toString(16):"y"===e?(3&a()|8).toString(16):e)).join("")}function o(e){const t=n.gm?.crypto||n.gm?.msCrypto;let r,i=0;t&&t.getRandomValues&&(r=t.getRandomValues(new Uint8Array(e)));const s=[];for(var o=0;o<e;o++)s.push(a(r,i++).toString(16));return s.join("")}},614:(e,t,r)=>{"use strict";r.d(t,{BB:()=>s,H3:()=>n,g:()=>u,iL:()=>c,tS:()=>o,uh:()=>i,wk:()=>a});const n="NRBA",i="SESSION",a=144e5,s=18e5,o={STARTED:"session-started",PAUSE:"session-pause",RESET:"session-reset",RESUME:"session-resume",UPDATE:"session-update"},c={SAME_TAB:"same-tab",CROSS_TAB:"cross-tab"},u={OFF:0,FULL:1,ERROR:2}},863:(e,t,r)=>{"use strict";function n(){return Math.floor(performance.now())}r.d(t,{t:()=>n})},944:(e,t,r)=>{"use strict";r.d(t,{R:()=>i});var n=r(241);function i(e,t){"function"==typeof console.debug&&(console.debug("New Relic Warning: https://github.com/newrelic/newrelic-browser-agent/blob/main/docs/warning-codes.md#".concat(e),t),(0,n.W)({agentIdentifier:null,drained:null,type:"data",name:"warn",feature:"warn",data:{code:e,secondary:t}}))}},701:(e,t,r)=>{"use strict";r.d(t,{B:()=>a,t:()=>s});var n=r(241);const i=new Set,a={};function s(e,t){const r=t.agentIdentifier;a[r]??={},e&&"object"==typeof e&&(i.has(r)||(t.ee.emit("rumresp",[e]),a[r]=e,i.add(r),(0,n.W)({agentIdentifier:r,loaded:!0,drained:!0,type:"lifecycle",name:"load",feature:void 0,data:e})))}},990:(e,t,r)=>{"use strict";r.d(t,{I:()=>i});var n=Object.prototype.hasOwnProperty;function i(e,t,r){if(n.call(e,t))return e[t];var i=r();if(Object.defineProperty&&Object.keys)try{return Object.defineProperty(e,t,{value:i,writable:!0,enumerable:!1}),i}catch(e){}return e[t]=i,i}},389:(e,t,r)=>{"use strict";function n(e,t=500,r={}){const n=r?.leading||!1;let i;return(...r)=>{n&&void 0===i&&(e.apply(this,r),i=setTimeout((()=>{i=clearTimeout(i)}),t)),n||(clearTimeout(i),i=setTimeout((()=>{e.apply(this,r)}),t))}}function i(e){let t=!1;return(...r)=>{t||(t=!0,e.apply(this,r))}}r.d(t,{J:()=>i,s:()=>n})},289:(e,t,r)=>{"use strict";r.d(t,{GG:()=>a,Qr:()=>o,sB:()=>s});var n=r(878);function i(){return"undefined"==typeof document||"complete"===document.readyState}function a(e,t){if(i())return e();(0,n.sp)("load",e,t)}function s(e){if(i())return e();(0,n.DD)("DOMContentLoaded",e)}function o(e){if(i())return e();(0,n.sp)("popstate",e)}},384:(e,t,r)=>{"use strict";r.d(t,{NT:()=>a,US:()=>u,Zm:()=>s,bQ:()=>c,dV:()=>o,pV:()=>d});var n=r(154),i=r(863);const a={beacon:"bam.nr-data.net",errorBeacon:"bam.nr-data.net"};function s(){return n.gm.NREUM||(n.gm.NREUM={}),void 0===n.gm.newrelic&&(n.gm.newrelic=n.gm.NREUM),n.gm.NREUM}function o(){let e=s();return e.o||(e.o={ST:n.gm.setTimeout,SI:n.gm.setImmediate,CT:n.gm.clearTimeout,XHR:n.gm.XMLHttpRequest,REQ:n.gm.Request,EV:n.gm.Event,PR:n.gm.Promise,MO:n.gm.MutationObserver,FETCH:n.gm.fetch,WS:n.gm.WebSocket}),e}function c(e,t){let r=s();r.initializedAgents??={},t.initializedAt={ms:(0,i.t)(),date:new Date},r.initializedAgents[e]=t}function u(e,t){s()[e]=t}function d(){return function(){let e=s();const t=e.info||{};e.info={beacon:a.beacon,errorBeacon:a.errorBeacon,...t}}(),function(){let e=s();const t=e.init||{};e.init={...t}}(),o(),function(){let e=s();const t=e.loader_config||{};e.loader_config={...t}}(),s()}},843:(e,t,r)=>{"use strict";r.d(t,{u:()=>i});var n=r(878);function i(e,t=!1,r,i){(0,n.DD)("visibilitychange",(function(){if(t)return void("hidden"===document.visibilityState&&e());e(document.visibilityState)}),r,i)}},773:(e,t,r)=>{"use strict";r.d(t,{z_:()=>a,XG:()=>o,TZ:()=>n,rs:()=>i,xV:()=>s});r(154),r(566),r(384);const n=r(860).K7.metrics,i="sm",a="cm",s="storeSupportabilityMetrics",o="storeEventMetrics"},630:(e,t,r)=>{"use strict";r.d(t,{T:()=>n});const n=r(860).K7.pageViewEvent},782:(e,t,r)=>{"use strict";r.d(t,{T:()=>n});const n=r(860).K7.pageViewTiming},234:(e,t,r)=>{"use strict";r.d(t,{W:()=>a});var n=r(836),i=r(687);class a{constructor(e,t){this.agentIdentifier=e,this.ee=n.ee.get(e),this.featureName=t,this.blocked=!1}deregisterDrain(){(0,i.x3)(this.agentIdentifier,this.featureName)}}},741:(e,t,r)=>{"use strict";r.d(t,{W:()=>a});var n=r(944),i=r(261);class a{#e(e,...t){if(this[e]!==a.prototype[e])return this[e](...t);(0,n.R)(35,e)}addPageAction(e,t){return this.#e(i.hG,e,t)}register(e){return this.#e(i.eY,e)}recordCustomEvent(e,t){return this.#e(i.fF,e,t)}setPageViewName(e,t){return this.#e(i.Fw,e,t)}setCustomAttribute(e,t,r){return this.#e(i.cD,e,t,r)}noticeError(e,t){return this.#e(i.o5,e,t)}setUserId(e){return this.#e(i.Dl,e)}setApplicationVersion(e){return this.#e(i.nb,e)}setErrorHandler(e){return this.#e(i.bt,e)}addRelease(e,t){return this.#e(i.k6,e,t)}log(e,t){return this.#e(i.$9,e,t)}start(){return this.#e(i.d3)}finished(e){return this.#e(i.BL,e)}recordReplay(){return this.#e(i.CH)}pauseReplay(){return this.#e(i.Tb)}addToTrace(e){return this.#e(i.U2,e)}setCurrentRouteName(e){return this.#e(i.PA,e)}interaction(){return this.#e(i.dT)}wrapLogger(e,t,r){return this.#e(i.Wb,e,t,r)}measure(e,t){return this.#e(i.V1,e,t)}}},261:(e,t,r)=>{"use strict";r.d(t,{$9:()=>u,BL:()=>o,CH:()=>g,Dl:()=>_,Fw:()=>y,PA:()=>h,Pl:()=>n,Tb:()=>l,U2:()=>a,V1:()=>k,Wb:()=>x,bt:()=>b,cD:()=>v,d3:()=>w,dT:()=>c,eY:()=>p,fF:()=>f,hG:()=>i,k6:()=>s,nb:()=>m,o5:()=>d});const n="api-",i="addPageAction",a="addToTrace",s="addRelease",o="finished",c="interaction",u="log",d="noticeError",l="pauseReplay",f="recordCustomEvent",g="recordReplay",p="register",m="setApplicationVersion",h="setCurrentRouteName",v="setCustomAttribute",b="setErrorHandler",y="setPageViewName",_="setUserId",w="start",x="wrapLogger",k="measure"},163:(e,t,r)=>{"use strict";r.d(t,{j:()=>E});var n=r(384),i=r(741);var a=r(555);r(860).K7.genericEvents;const s="experimental.marks",o="experimental.measures",c="experimental.resources",u=e=>{if(!e||"string"!=typeof e)return!1;try{document.createDocumentFragment().querySelector(e)}catch{return!1}return!0};var d=r(614),l=r(944),f=r(122);const g="[data-nr-mask]",p=e=>(0,f.a)(e,(()=>{const e={feature_flags:[],experimental:{marks:!1,measures:!1,resources:!1},mask_selector:"*",block_selector:"[data-nr-block]",mask_input_options:{color:!1,date:!1,"datetime-local":!1,email:!1,month:!1,number:!1,range:!1,search:!1,tel:!1,text:!1,time:!1,url:!1,week:!1,textarea:!1,select:!1,password:!0}};return{ajax:{deny_list:void 0,block_internal:!0,enabled:!0,autoStart:!0},api:{allow_registered_children:!0,duplicate_registered_data:!1},distributed_tracing:{enabled:void 0,exclude_newrelic_header:void 0,cors_use_newrelic_header:void 0,cors_use_tracecontext_headers:void 0,allowed_origins:void 0},get feature_flags(){return e.feature_flags},set feature_flags(t){e.feature_flags=t},generic_events:{enabled:!0,autoStart:!0},harvest:{interval:30},jserrors:{enabled:!0,autoStart:!0},logging:{enabled:!0,autoStart:!0},metrics:{enabled:!0,autoStart:!0},obfuscate:void 0,page_action:{enabled:!0},page_view_event:{enabled:!0,autoStart:!0},page_view_timing:{enabled:!0,autoStart:!0},performance:{get capture_marks(){return e.feature_flags.includes(s)||e.experimental.marks},set capture_marks(t){e.experimental.marks=t},get capture_measures(){return e.feature_flags.includes(o)||e.experimental.measures},set capture_measures(t){e.experimental.measures=t},capture_detail:!0,resources:{get enabled(){return e.feature_flags.includes(c)||e.experimental.resources},set enabled(t){e.experimental.resources=t},asset_types:[],first_party_domains:[],ignore_newrelic:!0}},privacy:{cookies_enabled:!0},proxy:{assets:void 0,beacon:void 0},session:{expiresMs:d.wk,inactiveMs:d.BB},session_replay:{autoStart:!0,enabled:!1,preload:!1,sampling_rate:10,error_sampling_rate:100,collect_fonts:!1,inline_images:!1,fix_stylesheets:!0,mask_all_inputs:!0,get mask_text_selector(){return e.mask_selector},set mask_text_selector(t){u(t)?e.mask_selector="".concat(t,",").concat(g):""===t||null===t?e.mask_selector=g:(0,l.R)(5,t)},get block_class(){return"nr-block"},get ignore_class(){return"nr-ignore"},get mask_text_class(){return"nr-mask"},get block_selector(){return e.block_selector},set block_selector(t){u(t)?e.block_selector+=",".concat(t):""!==t&&(0,l.R)(6,t)},get mask_input_options(){return e.mask_input_options},set mask_input_options(t){t&&"object"==typeof t?e.mask_input_options={...t,password:!0}:(0,l.R)(7,t)}},session_trace:{enabled:!0,autoStart:!0},soft_navigations:{enabled:!0,autoStart:!0},spa:{enabled:!0,autoStart:!0},ssl:void 0,user_actions:{enabled:!0,elementAttributes:["id","className","tagName","type"]}}})());var m=r(154),h=r(324);let v=0;const b={buildEnv:h.F3,distMethod:h.Xs,version:h.xv,originTime:m.WN},y={appMetadata:{},customTransaction:void 0,denyList:void 0,disabled:!1,entityManager:void 0,harvester:void 0,isolatedBacklog:!1,isRecording:!1,loaderType:void 0,maxBytes:3e4,obfuscator:void 0,onerror:void 0,ptid:void 0,releaseIds:{},session:void 0,timeKeeper:void 0,jsAttributesMetadata:{bytes:0},get harvestCount(){return++v}},_=e=>{const t=(0,f.a)(e,y),r=Object.keys(b).reduce(((e,t)=>(e[t]={value:b[t],writable:!1,configurable:!0,enumerable:!0},e)),{});return Object.defineProperties(t,r)};var w=r(701);const x=e=>{const t=e.startsWith("http");e+="/",r.p=t?e:"https://"+e};var k=r(836),A=r(241);const S={accountID:void 0,trustKey:void 0,agentID:void 0,licenseKey:void 0,applicationID:void 0,xpid:void 0},T=e=>(0,f.a)(e,S),R=new Set;function E(e,t={},r,s){let{init:o,info:c,loader_config:u,runtime:d={},exposed:l=!0}=t;if(!c){const e=(0,n.pV)();o=e.init,c=e.info,u=e.loader_config}e.init=p(o||{}),e.loader_config=T(u||{}),c.jsAttributes??={},m.bv&&(c.jsAttributes.isWorker=!0),e.info=(0,a.D)(c);const f=e.init,g=[c.beacon,c.errorBeacon];R.has(e.agentIdentifier)||(f.proxy.assets&&(x(f.proxy.assets),g.push(f.proxy.assets)),f.proxy.beacon&&g.push(f.proxy.beacon),function(e){const t=(0,n.pV)();Object.getOwnPropertyNames(i.W.prototype).forEach((r=>{const n=i.W.prototype[r];if("function"!=typeof n||"constructor"===n)return;let a=t[r];e[r]&&!1!==e.exposed&&"micro-agent"!==e.runtime?.loaderType&&(t[r]=(...t)=>{const n=e[r](...t);return a?a(...t):n})}))}(e),(0,n.US)("activatedFeatures",w.B),e.runSoftNavOverSpa&&=!0===f.soft_navigations.enabled&&f.feature_flags.includes("soft_nav")),d.denyList=[...f.ajax.deny_list||[],...f.ajax.block_internal?g:[]],d.ptid=e.agentIdentifier,d.loaderType=r,e.runtime=_(d),R.has(e.agentIdentifier)||(e.ee=k.ee.get(e.agentIdentifier),e.exposed=l,(0,A.W)({agentIdentifier:e.agentIdentifier,drained:!!w.B?.[e.agentIdentifier],type:"lifecycle",name:"initialize",feature:void 0,data:e.config})),R.add(e.agentIdentifier)}},374:(e,t,r)=>{r.nc=(()=>{try{return document?.currentScript?.nonce}catch(e){}return""})()},860:(e,t,r)=>{"use strict";r.d(t,{$J:()=>d,K7:()=>c,P3:()=>u,XX:()=>i,Yy:()=>o,df:()=>a,qY:()=>n,v4:()=>s});const n="events",i="jserrors",a="browser/blobs",s="rum",o="browser/logs",c={ajax:"ajax",genericEvents:"generic_events",jserrors:i,logging:"logging",metrics:"metrics",pageAction:"page_action",pageViewEvent:"page_view_event",pageViewTiming:"page_view_timing",sessionReplay:"session_replay",sessionTrace:"session_trace",softNav:"soft_navigations",spa:"spa"},u={[c.pageViewEvent]:1,[c.pageViewTiming]:2,[c.metrics]:3,[c.jserrors]:4,[c.spa]:5,[c.ajax]:6,[c.sessionTrace]:7,[c.softNav]:8,[c.sessionReplay]:9,[c.logging]:10,[c.genericEvents]:11},d={[c.pageViewEvent]:s,[c.pageViewTiming]:n,[c.ajax]:n,[c.spa]:n,[c.softNav]:n,[c.metrics]:i,[c.jserrors]:i,[c.sessionTrace]:a,[c.sessionReplay]:a,[c.logging]:o,[c.genericEvents]:"ins"}}},n={};function i(e){var t=n[e];if(void 0!==t)return t.exports;var a=n[e]={exports:{}};return r[e](a,a.exports,i),a.exports}i.m=r,i.d=(e,t)=>{for(var r in t)i.o(t,r)&&!i.o(e,r)&&Object.defineProperty(e,r,{enumerable:!0,get:t[r]})},i.f={},i.e=e=>Promise.all(Object.keys(i.f).reduce(((t,r)=>(i.f[r](e,t),t)),[])),i.u=e=>"nr-rum-1.294.0.min.js",i.o=(e,t)=>Object.prototype.hasOwnProperty.call(e,t),e={},t="NRBA-1.294.0.PROD:",i.l=(r,n,a,s)=>{if(e[r])e[r].push(n);else{var o,c;if(void 0!==a)for(var u=document.getElementsByTagName("script"),d=0;d<u.length;d++){var l=u[d];if(l.getAttribute("src")==r||l.getAttribute("data-webpack")==t+a){o=l;break}}if(!o){c=!0;var f={296:"sha512-Hz0ZNXYlb6vS6VCJvRAGBPiwIxFrOHZEaMmdDZkZS8eh96+o2f2aLJ7g09pAYf4blG1LWhCJAqhekaYT9K6xnw=="};(o=document.createElement("script")).charset="utf-8",o.timeout=120,i.nc&&o.setAttribute("nonce",i.nc),o.setAttribute("data-webpack",t+a),o.src=r,0!==o.src.indexOf(window.location.origin+"/")&&(o.crossOrigin="anonymous"),f[s]&&(o.integrity=f[s])}e[r]=[n];var g=(t,n)=>{o.onerror=o.onload=null,clearTimeout(p);var i=e[r];if(delete e[r],o.parentNode&&o.parentNode.removeChild(o),i&&i.forEach((e=>e(n))),t)return t(n)},p=setTimeout(g.bind(null,void 0,{type:"timeout",target:o}),12e4);o.onerror=g.bind(null,o.onerror),o.onload=g.bind(null,o.onload),c&&document.head.appendChild(o)}},i.r=e=>{"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(e,"__esModule",{value:!0})},i.p="https://js-agent.newrelic.com/",(()=>{var e={374:0,840:0};i.f.j=(t,r)=>{var n=i.o(e,t)?e[t]:void 0;if(0!==n)if(n)r.push(n[2]);else{var a=new Promise(((r,i)=>n=e[t]=[r,i]));r.push(n[2]=a);var s=i.p+i.u(t),o=new Error;i.l(s,(r=>{if(i.o(e,t)&&(0!==(n=e[t])&&(e[t]=void 0),n)){var a=r&&("load"===r.type?"missing":r.type),s=r&&r.target&&r.target.src;o.message="Loading chunk "+t+" failed.\n("+a+": "+s+")",o.name="ChunkLoadError",o.type=a,o.request=s,n[1](o)}}),"chunk-"+t,t)}};var t=(t,r)=>{var n,a,[s,o,c]=r,u=0;if(s.some((t=>0!==e[t]))){for(n in o)i.o(o,n)&&(i.m[n]=o[n]);if(c)c(i)}for(t&&t(r);u<s.length;u++)a=s[u],i.o(e,a)&&e[a]&&e[a][0](),e[a]=0},r=self["webpackChunk:NRBA-1.294.0.PROD"]=self["webpackChunk:NRBA-1.294.0.PROD"]||[];r.forEach(t.bind(null,0)),r.push=t.bind(null,r.push.bind(r))})(),(()=>{"use strict";i(374);var e=i(566),t=i(741);class r extends t.W{agentIdentifier=(0,e.LA)(16)}var n=i(860);const a=Object.values(n.K7);var s=i(163);var o=i(908),c=i(863),u=i(261),d=i(241),l=i(944),f=i(701),g=i(773);function p(e,t,i,a){const s=a||i;!s||s[e]&&s[e]!==r.prototype[e]||(s[e]=function(){(0,o.p)(g.xV,["API/"+e+"/called"],void 0,n.K7.metrics,i.ee),(0,d.W)({agentIdentifier:i.agentIdentifier,drained:!!f.B?.[i.agentIdentifier],type:"data",name:"api",feature:u.Pl+e,data:{}});try{return t.apply(this,arguments)}catch(e){(0,l.R)(23,e)}})}function m(e,t,r,n,i){const a=e.info;null===r?delete a.jsAttributes[t]:a.jsAttributes[t]=r,(i||null===r)&&(0,o.p)(u.Pl+n,[(0,c.t)(),t,r],void 0,"session",e.ee)}var h=i(687),v=i(234),b=i(289),y=i(154),_=i(384);const w=e=>y.RI&&!0===e?.privacy.cookies_enabled;function x(e){return!!(0,_.dV)().o.MO&&w(e)&&!0===e?.session_trace.enabled}var k=i(389);class A extends v.W{constructor(e,t){super(e.agentIdentifier,t),this.abortHandler=void 0,this.featAggregate=void 0,this.onAggregateImported=void 0,this.deferred=Promise.resolve(),!1===e.init[this.featureName].autoStart?this.deferred=new Promise(((t,r)=>{this.ee.on("manual-start-all",(0,k.J)((()=>{(0,h.Ak)(e.agentIdentifier,this.featureName),t()})))})):(0,h.Ak)(e.agentIdentifier,t)}importAggregator(e,t,r={}){if(this.featAggregate)return;let a;this.onAggregateImported=new Promise((e=>{a=e}));const s=async()=>{let s;await this.deferred;try{if(w(e.init)){const{setupAgentSession:t}=await i.e(296).then(i.bind(i,305));s=t(e)}}catch(e){(0,l.R)(20,e),this.ee.emit("internal-error",[e]),this.featureName===n.K7.sessionReplay&&this.abortHandler?.()}try{if(!this.#t(this.featureName,s,e.init))return(0,h.Ze)(this.agentIdentifier,this.featureName),void a(!1);const{Aggregate:n}=await t();this.featAggregate=new n(e,r),e.runtime.harvester.initializedAggregates.push(this.featAggregate),a(!0)}catch(e){(0,l.R)(34,e),this.abortHandler?.(),(0,h.Ze)(this.agentIdentifier,this.featureName,!0),a(!1),this.ee&&this.ee.abort()}};y.RI?(0,b.GG)((()=>s()),!0):s()}#t(e,t,r){switch(e){case n.K7.sessionReplay:return x(r)&&!!t;case n.K7.sessionTrace:return!!t;default:return!0}}}var S=i(630),T=i(614);class R extends A{static featureName=S.T;constructor(e){var t;super(e,S.T),this.setupInspectionEvents(e.agentIdentifier),t=e,p(u.Fw,(function(e,r){"string"==typeof e&&("/"!==e.charAt(0)&&(e="/"+e),t.runtime.customTransaction=(r||"http://custom.transaction")+e,(0,o.p)(u.Pl+u.Fw,[(0,c.t)()],void 0,void 0,t.ee))}),t),this.ee.on("api-send-rum",((e,t)=>(0,o.p)("send-rum",[e,t],void 0,this.featureName,this.ee))),this.importAggregator(e,(()=>i.e(296).then(i.bind(i,108))))}setupInspectionEvents(e){const t=(t,r)=>{t&&(0,d.W)({agentIdentifier:e,timeStamp:t.timeStamp,loaded:"complete"===t.target.readyState,type:"window",name:r,data:t.target.location+""})};(0,b.sB)((e=>{t(e,"DOMContentLoaded")})),(0,b.GG)((e=>{t(e,"load")})),(0,b.Qr)((e=>{t(e,"navigate")})),this.ee.on(T.tS.UPDATE,((t,r)=>{(0,d.W)({agentIdentifier:e,type:"lifecycle",name:"session",data:r})}))}}var E=i(843),N=i(878),j=i(782);class I extends A{static featureName=j.T;constructor(e){super(e,j.T),y.RI&&((0,E.u)((()=>(0,o.p)("docHidden",[(0,c.t)()],void 0,j.T,this.ee)),!0),(0,N.sp)("pagehide",(()=>(0,o.p)("winPagehide",[(0,c.t)()],void 0,j.T,this.ee))),this.importAggregator(e,(()=>i.e(296).then(i.bind(i,350)))))}}class O extends A{static featureName=g.TZ;constructor(e){super(e,g.TZ),y.RI&&document.addEventListener("securitypolicyviolation",(e=>{(0,o.p)(g.xV,["Generic/CSPViolation/Detected"],void 0,this.featureName,this.ee)})),this.importAggregator(e,(()=>i.e(296).then(i.bind(i,373))))}}new class extends r{constructor(e){var t;(super(),y.gm)?(this.features={},(0,_.bQ)(this.agentIdentifier,this),this.desiredFeatures=new Set(e.features||[]),this.desiredFeatures.add(R),this.runSoftNavOverSpa=[...this.desiredFeatures].some((e=>e.featureName===n.K7.softNav)),(0,s.j)(this,e,e.loaderType||"agent"),t=this,p(u.cD,(function(e,r,n=!1){if("string"==typeof e){if(["string","number","boolean"].includes(typeof r)||null===r)return m(t,e,r,u.cD,n);(0,l.R)(40,typeof r)}else(0,l.R)(39,typeof e)}),t),function(e){p(u.Dl,(function(t){if("string"==typeof t||null===t)return m(e,"enduser.id",t,u.Dl,!0);(0,l.R)(41,typeof t)}),e)}(this),function(e){p(u.nb,(function(t){if("string"==typeof t||null===t)return m(e,"application.version",t,u.nb,!1);(0,l.R)(42,typeof t)}),e)}(this),function(e){p(u.d3,(function(){e.ee.emit("manual-start-all")}),e)}(this),this.run()):(0,l.R)(21)}get config(){return{info:this.info,init:this.init,loader_config:this.loader_config,runtime:this.runtime}}get api(){return this}run(){try{const e=function(e){const t={};return a.forEach((r=>{t[r]=!!e[r]?.enabled})),t}(this.init),t=[...this.desiredFeatures];t.sort(((e,t)=>n.P3[e.featureName]-n.P3[t.featureName])),t.forEach((t=>{if(!e[t.featureName]&&t.featureName!==n.K7.pageViewEvent)return;if(this.runSoftNavOverSpa&&t.featureName===n.K7.spa)return;if(!this.runSoftNavOverSpa&&t.featureName===n.K7.softNav)return;const r=function(e){switch(e){case n.K7.ajax:return[n.K7.jserrors];case n.K7.sessionTrace:return[n.K7.ajax,n.K7.pageViewEvent];case n.K7.sessionReplay:return[n.K7.sessionTrace];case n.K7.pageViewTiming:return[n.K7.pageViewEvent];default:return[]}}(t.featureName).filter((e=>!(e in this.features)));r.length>0&&(0,l.R)(36,{targetFeature:t.featureName,missingDependencies:r}),this.features[t.featureName]=new t(this)}))}catch(e){(0,l.R)(22,e);for(const e in this.features)this.features[e].abortHandler?.();const t=(0,_.Zm)();delete t.initializedAgents[this.agentIdentifier]?.features,delete this.sharedAggregator;return t.ee.get(this.agentIdentifier).abort(),!1}}}({features:[R,I,O],loaderType:"lite"})})()})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script>document.documentElement.className = document.documentElement.className.replace( "no-js", "js" )</script>
+
+<!-- Data Layer for GTM -->
+<script>
+	dataLayer = [];
+</script>
+<!-- Set default values for Google's Consent Mode -->
+<script data-cookieconsent="ignore">
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+    gtag("consent", "default", {
+        ad_personalization: "denied",
+        ad_storage: "denied",
+        ad_user_data: "denied",
+        analytics_storage: "denied",
+        functionality_storage: "denied",
+        personalization_storage: "denied",
+        security_storage: "granted",
+        wait_for_update: 500,
+    });
+    gtag("set", "ads_data_redaction", true);
+    gtag("set", "url_passthrough", true);
+</script>
+<!-- Google Tag Manager -->
+<script type="text/javascript">(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-5NMXHL');</script>
+<!-- End Google Tag Manager -->
+
+<!-- START: HEAP -->
+<script type="text/plain" data-cookieconsent="statistics">
+  window.heap=window.heap||[],heap.load=function(e,t){window.heap.appid=e,window.heap.config=t=t||{};var r=t.forceSSL||"https:"===document.location.protocol,a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=(r?"https:":"http:")+"//cdn.heapanalytics.com/js/heap-"+e+".js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n);for(var o=function(e){return function(){heap.push([e].concat(Array.prototype.slice.call(arguments,0)))}},p=["addEventProperties","addUserProperties","clearEventProperties","identify","removeEventProperty","setEventProperties","track","unsetEventProperty","resetIdentity"],c=0;c<p.length;c++)heap[p[c]]=o(p[c])};
+  heap.load("1292665624");
+</script>
+<!-- END: HEAP -->
+
+<!-- START: Unbounce -->
+<script type="text/plain" data-cookieconsent="marketing" src="https://6f5e4b3284b44e08a3c88ce1a42237be.js.ubembed.com" async></script>
+<!-- END: Unbounce -->
+
+<meta name="apple-mobile-web-app-title" content="Precision Nutrition">
+<meta name="application-name" content="Precision Nutrition">
+<link rel="preload" type="text/css" href="https://assets.precisionnutrition.com/pn-wp/032c6a3d/css/fonts.css" as="style">
+<link rel="stylesheet" type="text/css" href="https://assets.precisionnutrition.com/pn-wp/032c6a3d/css/fonts.css">
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="https://assets.precisionnutrition.com/pn-wp/032c6a3d/img/favicon/apple-touch-icon.png">
+
+<link rel="icon" type="image/png" sizes="32x32" href="https://assets.precisionnutrition.com/pn-wp/032c6a3d/img/favicon/favicon-32x32.png">
+
+<link rel="icon" type="image/png" sizes="16x16" href="https://assets.precisionnutrition.com/pn-wp/032c6a3d/img/favicon/favicon-16x16.png">
+
+<link rel="manifest" href="https://assets.precisionnutrition.com/pn-wp/032c6a3d/img/favicon/manifest.json">
+
+<link rel="mask-icon" color="#00bbe3" href="https://assets.precisionnutrition.com/pn-wp/032c6a3d/img/favicon/safari-pinned-tab.svg">
+
+<link rel="shortcut icon" href="https://assets.precisionnutrition.com/pn-wp/032c6a3d/img/favicon/favicon.ico">
+
+<meta name="msapplication-config" content="https://assets.precisionnutrition.com/pn-wp/032c6a3d/img/favicon/browserconfig.xml">
+
+<meta name="theme-color" content="#ffffff">
+<meta name='robots' content='index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1' />
+	<style>img:is([sizes="auto" i], [sizes^="auto," i]) { contain-intrinsic-size: 3000px 1500px }</style>
+	
+	<!-- This site is optimized with the Yoast SEO Premium plugin v25.3.1 (Yoast SEO v25.3.1) - https://yoast.com/wordpress/plugins/seo/ -->
+	<title>What Should I Eat?! Keto Edition: Precision Nutrition</title>
+	<meta name="description" content="This easy-to-use keto diet food list infographic will help you determine the best Paleo diet foods for YOUR body, goals, and taste buds." />
+	<link rel="canonical" href="https://www.precisionnutrition.com/keto-food-list-infographic" />
+	<meta property="og:locale" content="en_US" />
+	<meta property="og:type" content="article" />
+	<meta property="og:title" content="‘What should I eat?!’ The keto diet edition. [Infographic]" />
+	<meta property="og:description" content="How to choose keto-friendly foods that are right for your body, goals, and taste buds." />
+	<meta property="og:url" content="https://www.precisionnutrition.com/keto-food-list-infographic" />
+	<meta property="og:site_name" content="Precision Nutrition" />
+	<meta property="article:publisher" content="https://www.facebook.com/insidePN" />
+	<meta property="article:published_time" content="2021-04-04T04:01:28+00:00" />
+	<meta property="article:modified_time" content="2021-10-29T20:20:23+00:00" />
+	<meta property="og:image" content="https://www.precisionnutrition.com/wp-content/uploads/2022/02/What_Should_I_Eat_Keto_Feature_FB-1024x538.png" />
+	<meta property="og:image:width" content="1024" />
+	<meta property="og:image:height" content="538" />
+	<meta property="og:image:type" content="image/png" />
+	<meta name="author" content="Brian St. Pierre, MS, RD" />
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:title" content="‘What should I eat?!’ The keto diet edition. [Infographic]" />
+	<meta name="twitter:description" content="How to choose keto-friendly foods that are right for your body, goals, and taste buds." />
+	<meta name="twitter:image" content="https://assets.precisionnutrition.com/2022/02/What_Should_I_Eat_Keto_Feature_TW.png" />
+	<meta name="twitter:creator" content="@bspnutrition" />
+	<meta name="twitter:site" content="@insidePN" />
+	<meta name="twitter:label1" content="Written by" />
+	<meta name="twitter:data1" content="Brian St. Pierre, MS, RD" />
+	<meta name="twitter:label2" content="Est. reading time" />
+	<meta name="twitter:data2" content="2 minutes" />
+	<script type="application/ld+json" class="yoast-schema-graph">{"@context":"https://schema.org","@graph":[{"@type":"Article","@id":"https://www.precisionnutrition.com/keto-food-list-infographic#article","isPartOf":{"@id":"https://www.precisionnutrition.com/keto-food-list-infographic"},"author":[{"@id":"https://www.precisionnutrition.com/#/schema/person/e6aee5a09f75016c9172a2e49106eb5a"}],"headline":"‘What should I eat?!’ The keto diet edition. [Infographic]","datePublished":"2021-04-04T04:01:28+00:00","dateModified":"2021-10-29T20:20:23+00:00","mainEntityOfPage":{"@id":"https://www.precisionnutrition.com/keto-food-list-infographic"},"wordCount":407,"publisher":{"@id":"https://www.precisionnutrition.com/#organization"},"image":{"@id":"https://www.precisionnutrition.com/keto-food-list-infographic#primaryimage"},"thumbnailUrl":"https://assets.precisionnutrition.com/2022/02/What_Should_I_Eat_Keto_Feature_FB.png","articleSection":["Blog","Food &amp; Nutrition","Infographics"],"inLanguage":"en-US"},{"@type":"WebPage","@id":"https://www.precisionnutrition.com/keto-food-list-infographic","url":"https://www.precisionnutrition.com/keto-food-list-infographic","name":"What Should I Eat?! Keto Edition: Precision Nutrition","isPartOf":{"@id":"https://www.precisionnutrition.com/#website"},"primaryImageOfPage":{"@id":"https://www.precisionnutrition.com/keto-food-list-infographic#primaryimage"},"image":{"@id":"https://www.precisionnutrition.com/keto-food-list-infographic#primaryimage"},"thumbnailUrl":"https://assets.precisionnutrition.com/2022/02/What_Should_I_Eat_Keto_Feature_FB.png","datePublished":"2021-04-04T04:01:28+00:00","dateModified":"2021-10-29T20:20:23+00:00","description":"This easy-to-use keto diet food list infographic will help you determine the best Paleo diet foods for YOUR body, goals, and taste buds.","breadcrumb":{"@id":"https://www.precisionnutrition.com/keto-food-list-infographic#breadcrumb"},"inLanguage":"en-US","potentialAction":[{"@type":"ReadAction","target":["https://www.precisionnutrition.com/keto-food-list-infographic"]}]},{"@type":"ImageObject","inLanguage":"en-US","@id":"https://www.precisionnutrition.com/keto-food-list-infographic#primaryimage","url":"https://assets.precisionnutrition.com/2022/02/What_Should_I_Eat_Keto_Feature_FB.png","contentUrl":"https://assets.precisionnutrition.com/2022/02/What_Should_I_Eat_Keto_Feature_FB.png","width":2400,"height":1260,"caption":"Ketogenic diet-friendly sources of protein, carbs and fats."},{"@type":"BreadcrumbList","@id":"https://www.precisionnutrition.com/keto-food-list-infographic#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.precisionnutrition.com/"},{"@type":"ListItem","position":2,"name":"‘What should I eat?!’ The keto diet edition. [Infographic]"}]},{"@type":"WebSite","@id":"https://www.precisionnutrition.com/#website","url":"https://www.precisionnutrition.com/","name":"Precision Nutrition","description":"Life-changing, research-driven nutrition coaching for everyone. Precision Nutrition will get you in the best shape of your life. 100% guaranteed.","publisher":{"@id":"https://www.precisionnutrition.com/#organization"},"potentialAction":[{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"https://www.precisionnutrition.com/?s={search_term_string}"},"query-input":{"@type":"PropertyValueSpecification","valueRequired":true,"valueName":"search_term_string"}}],"inLanguage":"en-US"},{"@type":"Person","@id":"https://www.precisionnutrition.com/#/schema/person/e6aee5a09f75016c9172a2e49106eb5a","name":"Brian St. Pierre, MS, RD","description":"Brian St. Pierre is the director of nutrition at Precision Nutrition, the coauthor of Precision Nutrition’s Level 1 Certification textbook, The Essentials of Nutrition and Coaching, and the mastermind behind the Precision Nutrition Calculator. He holds a master’s degree in Food Science and Human Nutrition from the University of Maine. St. Pierre is a Registered Dietitian (RD), Certified Strength and Conditioning Specialist (CSCS) through the National Strength &amp; Conditioning Association (NSCA), and a Certified Sports Nutritionist (CISSN). He also serves on the Men's Health Network (MHN) Board of Advisors. During his time at Precision Nutrition, St. Pierre has provided nutrition coaching and performance meal planning to US Open champion Sloane Stephens and a host of other professional and Olympic athletes. He’s also served as a nutrition consultant for the NBA’s San Antonio Spurs and Brooklyn Nets and the NFL’s Cleveland Browns. Prior to joining Precision Nutrition in 2012, St. Pierre was the head sports nutritionist and a strength and conditioning coach for Cressey Sports Performance, a high-performance facility in Hudson, Massachusetts and Jupiter, Florida. A leading expert in teaching nutrition coaching skills to fitness professionals, St. Pierre has presented hundreds of workshops and trainings in five countries and 17 U.S. states. He’s been featured in US News &amp; World Report, Men’s Health, Men’s Fitness, ESPN the Magazine, Shape, Q Magazine, STACK, and Testosterone Magazine and his insights have been included in stories on ESPN.com, About.com, BuzzFeed, and more.","sameAs":["http://brianstpierretraining.com/","https://www.linkedin.com/in/brian-st-pierre-ms-rd-cscs-b2a19519b/","https://x.com/bspnutrition"],"url":"https://www.precisionnutrition.com/author/brian-st-pierre"}]}</script>
+	<!-- / Yoast SEO Premium plugin. -->
+
+
+<link rel='dns-prefetch' href='//challenges.cloudflare.com' />
+<link rel='dns-prefetch' href='//assets.precisionnutrition.com' />
+<link rel="alternate" type="application/rss+xml" title="Precision Nutrition &raquo; Feed" href="https://www.precisionnutrition.com/feed" />
+<link rel="alternate" type="application/rss+xml" title="Precision Nutrition &raquo; Comments Feed" href="https://www.precisionnutrition.com/comments/feed" />
+<style id='co-authors-plus-coauthors-style-inline-css' type='text/css'>
+.wp-block-co-authors-plus-coauthors.is-layout-flow [class*=wp-block-co-authors-plus]{display:inline}
+
+</style>
+<style id='co-authors-plus-avatar-style-inline-css' type='text/css'>
+.wp-block-co-authors-plus-avatar :where(img){height:auto;max-width:100%;vertical-align:bottom}.wp-block-co-authors-plus-coauthors.is-layout-flow .wp-block-co-authors-plus-avatar :where(img){vertical-align:middle}.wp-block-co-authors-plus-avatar:is(.alignleft,.alignright){display:table}.wp-block-co-authors-plus-avatar.aligncenter{display:table;margin-inline:auto}
+
+</style>
+<style id='co-authors-plus-image-style-inline-css' type='text/css'>
+.wp-block-co-authors-plus-image{margin-bottom:0}.wp-block-co-authors-plus-image :where(img){height:auto;max-width:100%;vertical-align:bottom}.wp-block-co-authors-plus-coauthors.is-layout-flow .wp-block-co-authors-plus-image :where(img){vertical-align:middle}.wp-block-co-authors-plus-image:is(.alignfull,.alignwide) :where(img){width:100%}.wp-block-co-authors-plus-image:is(.alignleft,.alignright){display:table}.wp-block-co-authors-plus-image.aligncenter{display:table;margin-inline:auto}
+
+</style>
+<style id='global-styles-inline-css' type='text/css'>
+:root{--wp--preset--aspect-ratio--square: 1;--wp--preset--aspect-ratio--4-3: 4/3;--wp--preset--aspect-ratio--3-4: 3/4;--wp--preset--aspect-ratio--3-2: 3/2;--wp--preset--aspect-ratio--2-3: 2/3;--wp--preset--aspect-ratio--16-9: 16/9;--wp--preset--aspect-ratio--9-16: 9/16;--wp--preset--color--black: #000000;--wp--preset--color--cyan-bluish-gray: #abb8c3;--wp--preset--color--white: #ffffff;--wp--preset--color--pale-pink: #f78da7;--wp--preset--color--vivid-red: #cf2e2e;--wp--preset--color--luminous-vivid-orange: #ff6900;--wp--preset--color--luminous-vivid-amber: #fcb900;--wp--preset--color--light-green-cyan: #7bdcb5;--wp--preset--color--vivid-green-cyan: #00d084;--wp--preset--color--pale-cyan-blue: #8ed1fc;--wp--preset--color--vivid-cyan-blue: #0693e3;--wp--preset--color--vivid-purple: #9b51e0;--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple: linear-gradient(135deg,rgba(6,147,227,1) 0%,rgb(155,81,224) 100%);--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan: linear-gradient(135deg,rgb(122,220,180) 0%,rgb(0,208,130) 100%);--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange: linear-gradient(135deg,rgba(252,185,0,1) 0%,rgba(255,105,0,1) 100%);--wp--preset--gradient--luminous-vivid-orange-to-vivid-red: linear-gradient(135deg,rgba(255,105,0,1) 0%,rgb(207,46,46) 100%);--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray: linear-gradient(135deg,rgb(238,238,238) 0%,rgb(169,184,195) 100%);--wp--preset--gradient--cool-to-warm-spectrum: linear-gradient(135deg,rgb(74,234,220) 0%,rgb(151,120,209) 20%,rgb(207,42,186) 40%,rgb(238,44,130) 60%,rgb(251,105,98) 80%,rgb(254,248,76) 100%);--wp--preset--gradient--blush-light-purple: linear-gradient(135deg,rgb(255,206,236) 0%,rgb(152,150,240) 100%);--wp--preset--gradient--blush-bordeaux: linear-gradient(135deg,rgb(254,205,165) 0%,rgb(254,45,45) 50%,rgb(107,0,62) 100%);--wp--preset--gradient--luminous-dusk: linear-gradient(135deg,rgb(255,203,112) 0%,rgb(199,81,192) 50%,rgb(65,88,208) 100%);--wp--preset--gradient--pale-ocean: linear-gradient(135deg,rgb(255,245,203) 0%,rgb(182,227,212) 50%,rgb(51,167,181) 100%);--wp--preset--gradient--electric-grass: linear-gradient(135deg,rgb(202,248,128) 0%,rgb(113,206,126) 100%);--wp--preset--gradient--midnight: linear-gradient(135deg,rgb(2,3,129) 0%,rgb(40,116,252) 100%);--wp--preset--font-size--small: 13px;--wp--preset--font-size--medium: 20px;--wp--preset--font-size--large: 36px;--wp--preset--font-size--x-large: 42px;--wp--preset--spacing--20: 0.44rem;--wp--preset--spacing--30: 0.67rem;--wp--preset--spacing--40: 1rem;--wp--preset--spacing--50: 1.5rem;--wp--preset--spacing--60: 2.25rem;--wp--preset--spacing--70: 3.38rem;--wp--preset--spacing--80: 5.06rem;--wp--preset--shadow--natural: 6px 6px 9px rgba(0, 0, 0, 0.2);--wp--preset--shadow--deep: 12px 12px 50px rgba(0, 0, 0, 0.4);--wp--preset--shadow--sharp: 6px 6px 0px rgba(0, 0, 0, 0.2);--wp--preset--shadow--outlined: 6px 6px 0px -3px rgba(255, 255, 255, 1), 6px 6px rgba(0, 0, 0, 1);--wp--preset--shadow--crisp: 6px 6px 0px rgba(0, 0, 0, 1);}:where(.is-layout-flex){gap: 0.5em;}:where(.is-layout-grid){gap: 0.5em;}body .is-layout-flex{display: flex;}.is-layout-flex{flex-wrap: wrap;align-items: center;}.is-layout-flex > :is(*, div){margin: 0;}body .is-layout-grid{display: grid;}.is-layout-grid > :is(*, div){margin: 0;}:where(.wp-block-columns.is-layout-flex){gap: 2em;}:where(.wp-block-columns.is-layout-grid){gap: 2em;}:where(.wp-block-post-template.is-layout-flex){gap: 1.25em;}:where(.wp-block-post-template.is-layout-grid){gap: 1.25em;}.has-black-color{color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-color{color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-color{color: var(--wp--preset--color--white) !important;}.has-pale-pink-color{color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-color{color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-color{color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-color{color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-color{color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-color{color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-color{color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-color{color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-color{color: var(--wp--preset--color--vivid-purple) !important;}.has-black-background-color{background-color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-background-color{background-color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-background-color{background-color: var(--wp--preset--color--white) !important;}.has-pale-pink-background-color{background-color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-background-color{background-color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-background-color{background-color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-background-color{background-color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-background-color{background-color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-background-color{background-color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-background-color{background-color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-background-color{background-color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-background-color{background-color: var(--wp--preset--color--vivid-purple) !important;}.has-black-border-color{border-color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-border-color{border-color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-border-color{border-color: var(--wp--preset--color--white) !important;}.has-pale-pink-border-color{border-color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-border-color{border-color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-border-color{border-color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-border-color{border-color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-border-color{border-color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-border-color{border-color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-border-color{border-color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-border-color{border-color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-border-color{border-color: var(--wp--preset--color--vivid-purple) !important;}.has-vivid-cyan-blue-to-vivid-purple-gradient-background{background: var(--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple) !important;}.has-light-green-cyan-to-vivid-green-cyan-gradient-background{background: var(--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan) !important;}.has-luminous-vivid-amber-to-luminous-vivid-orange-gradient-background{background: var(--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange) !important;}.has-luminous-vivid-orange-to-vivid-red-gradient-background{background: var(--wp--preset--gradient--luminous-vivid-orange-to-vivid-red) !important;}.has-very-light-gray-to-cyan-bluish-gray-gradient-background{background: var(--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray) !important;}.has-cool-to-warm-spectrum-gradient-background{background: var(--wp--preset--gradient--cool-to-warm-spectrum) !important;}.has-blush-light-purple-gradient-background{background: var(--wp--preset--gradient--blush-light-purple) !important;}.has-blush-bordeaux-gradient-background{background: var(--wp--preset--gradient--blush-bordeaux) !important;}.has-luminous-dusk-gradient-background{background: var(--wp--preset--gradient--luminous-dusk) !important;}.has-pale-ocean-gradient-background{background: var(--wp--preset--gradient--pale-ocean) !important;}.has-electric-grass-gradient-background{background: var(--wp--preset--gradient--electric-grass) !important;}.has-midnight-gradient-background{background: var(--wp--preset--gradient--midnight) !important;}.has-small-font-size{font-size: var(--wp--preset--font-size--small) !important;}.has-medium-font-size{font-size: var(--wp--preset--font-size--medium) !important;}.has-large-font-size{font-size: var(--wp--preset--font-size--large) !important;}.has-x-large-font-size{font-size: var(--wp--preset--font-size--x-large) !important;}
+:where(.wp-block-post-template.is-layout-flex){gap: 1.25em;}:where(.wp-block-post-template.is-layout-grid){gap: 1.25em;}
+:where(.wp-block-columns.is-layout-flex){gap: 2em;}:where(.wp-block-columns.is-layout-grid){gap: 2em;}
+:root :where(.wp-block-pullquote){font-size: 1.5em;line-height: 1.6;}
+</style>
+<link rel='stylesheet' id='general-styles-css' href='https://assets.precisionnutrition.com/pn-wp/032c6a3d/css/general.css' type='text/css' media='all' />
+<link rel='stylesheet' id='blog-css' href='https://assets.precisionnutrition.com/pn-wp/032c6a3d/css/blog.css' type='text/css' media='all' />
+<script type="text/javascript" defer="defer" src="//challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" id="signup-captcha-js"></script>
+<script type="text/javascript" src="https://www.precisionnutrition.com/wp-includes/js/jquery/jquery.min.js?ver=3.7.1" id="jquery-core-js"></script>
+<script type="text/javascript" src="https://www.precisionnutrition.com/wp-includes/js/jquery/jquery-migrate.min.js?ver=3.4.1" id="jquery-migrate-js"></script>
+<script type="text/javascript" id="pnwp-global-js-extra">
+/* <![CDATA[ */
+var pn2017GlobalVars = {"wpDebug":"","ajaxurl":"https:\/\/www.precisionnutrition.com\/wp-admin\/admin-ajax.php","userIp":"10.90.204.98","ajax_nonce":"39e108a9a2","gmaps":"AIzaSyBfvpgr9NuV4GBnaOOJsmm87pq3RBDw67A","cfturnstile":"0x4AAAAAAAElRqv4RNXrPvtE"};
+/* ]]> */
+</script>
+<script type="text/javascript" defer="defer" src="https://assets.precisionnutrition.com/pn-wp/032c6a3d/js/global.built.js" id="pnwp-global-js"></script>
+<link rel="https://api.w.org/" href="https://www.precisionnutrition.com/wp-json/" /><link rel="alternate" title="JSON" type="application/json" href="https://www.precisionnutrition.com/wp-json/wp/v2/posts/116120" /><link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://www.precisionnutrition.com/xmlrpc.php?rsd" />
+<link rel='shortlink' href='https://www.precisionnutrition.com/?p=116120' />
+<link rel="alternate" title="oEmbed (JSON)" type="application/json+oembed" href="https://www.precisionnutrition.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fwww.precisionnutrition.com%2Fketo-food-list-infographic" />
+<link rel="alternate" title="oEmbed (XML)" type="text/xml+oembed" href="https://www.precisionnutrition.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fwww.precisionnutrition.com%2Fketo-food-list-infographic&#038;format=xml" />
+		<script>
+			document.documentElement.className = document.documentElement.className.replace('no-js', 'js');
+		</script>
+				<style>
+			.no-js img.lazyload {
+				display: none;
+			}
+
+			figure.wp-block-image img.lazyloading {
+				min-width: 150px;
+			}
+
+			.lazyload,
+			.lazyloading {
+				--smush-placeholder-width: 100px;
+				--smush-placeholder-aspect-ratio: 1/1;
+				width: var(--smush-placeholder-width) !important;
+				aspect-ratio: var(--smush-placeholder-aspect-ratio) !important;
+			}
+
+						.lazyload, .lazyloading {
+				opacity: 0;
+			}
+
+			.lazyloaded {
+				opacity: 1;
+				transition: opacity 400ms;
+				transition-delay: 0ms;
+			}
+
+					</style>
+				<style type="text/css" id="wp-custom-css">
+			/*
+ * 3/2/2018 - Fix js-inline lists when window is resized
+ * 
+ * 7/5/2019 - moving to theme styling - PS-744
+ */
+.pn-wysiwyg__c-list>ul {
+	max-width: 100%;
+}
+
+/*
+ * 3/6/2018 - Z Landing Page [pn2015] style updates
+ * Fixed with PS-478-z-landing-page-style-update
+ * UPDATE - only the title change is global, the testimonial edits are just for /whats-possible-with-the-precision-nutrition-certification
+ *  * 
+ * 7/5/2019 - moving to theme styling - PS-744
+ */
+#intro h1 span.title {
+	margin: 12px 0;
+	line-height: 1.2em;
+}
+
+/* fix lineheight of resource titles  * 7/19/2019 - moving to theme styling - PS-744
+ */
+.page-id-83336 .page-tpl-5-day-lesson .course-steps-container .course-steps-col .steps-right h2,
+.page-id-83343 .page-tpl-5-day-lesson .course-steps-container .course-steps-col .steps-right h2,
+.page-id-83347 .page-tpl-5-day-lesson .course-steps-container .course-steps-col .steps-right h2 {
+	line-height: 1em;
+}
+/* fix certification section title
+ * 7/19/2019 - moving to theme styling - PS-744
+ */
+.page-id-83331 .page-tpl-5-day-lesson .certification-left,
+.page-id-83336 .page-tpl-5-day-lesson .certification-left,
+.page-id-83343 .page-tpl-5-day-lesson .certification-left,
+.page-id-83347 .page-tpl-5-day-lesson .certification-left,
+.page-id-83334 .page-tpl-5-day-lesson .certification-left,
+.page-id-83340 .page-tpl-5-day-lesson .certification-left,
+.page-id-83345 .page-tpl-5-day-lesson .certification-left,
+.page-id-83350 .page-tpl-5-day-lesson .certification-left{
+	width: 475px;
+}
+@media only screen and (max-width: 950px) {
+	.page-id-83331 .page-tpl-5-day-lesson .certification-left,
+	.page-id-83331 .page-tpl-5-day-lesson .certification-right,
+	.page-id-83336 .page-tpl-5-day-lesson .certification-left,
+	.page-id-83336 .page-tpl-5-day-lesson .certification-right,
+	.page-id-83343 .page-tpl-5-day-lesson .certification-left,
+	.page-id-83343 .page-tpl-5-day-lesson .certification-right,
+	.page-id-83347 .page-tpl-5-day-lesson .certification-left,	
+	.page-id-83347 .page-tpl-5-day-lesson .certification-right,
+	.page-id-83334 .page-tpl-5-day-lesson .certification-left,	
+	.page-id-83334 .page-tpl-5-day-lesson .certification-right,
+	.page-id-83340 .page-tpl-5-day-lesson .certification-left,	
+	.page-id-83340 .page-tpl-5-day-lesson .certification-right,
+	.page-id-83345 .page-tpl-5-day-lesson .certification-left,	
+	.page-id-83345 .page-tpl-5-day-lesson .certification-right,
+	.page-id-83350 .page-tpl-5-day-lesson .certification-left,	
+	.page-id-83350 .page-tpl-5-day-lesson .certification-right {
+		width: 100%;
+	}
+}
+@media only screen and (max-width: 1100px) {
+	.page-id-83331 .page-tpl-5-day-lesson .certification-right,
+	.page-id-83336 .page-tpl-5-day-lesson .certification-right,
+	.page-id-83343 .page-tpl-5-day-lesson .certification-right,
+	.page-id-83347 .page-tpl-5-day-lesson .certification-right,
+	.page-id-83334 .page-tpl-5-day-lesson .certification-right,
+	.page-id-83340 .page-tpl-5-day-lesson .certification-right,
+	.page-id-83345 .page-tpl-5-day-lesson .certification-right,
+	.page-id-83350 .page-tpl-5-day-lesson .certification-right {
+		width: 48%;
+	}
+}
+
+/**
+ * Update - 4-24-2018
+ * Add extra indent to bulleted lists
+ * 8/23/2019 - moving to theme styling - PS-744
+ */
+.list--indent {
+	margin-left: 25px !important;
+}
+.list--condensed li {
+	margin-bottom: 0 !important;
+	line-height: 1.333em !important;
+}
+
+/**
+ * Update - 6/1/2018
+ * Change cta_overlay_men_women_coaching_form CTA styling
+ */
+/* adjust main titles */
+#overlay.cta_overlay_men_women_coaching_form #overlay_cta h3,
+body.body-transformation-secrets-coaching #overlay #overlay_cta h3 {
+	margin-bottom: 12px;
+}
+#overlay.cta_overlay_men_women_coaching_form #overlay_cta h4,
+body.body-transformation-secrets-coaching
+#overlay #overlay_cta h4
+{
+  text-transform: none;
+  font-size: 1.5em;
+  letter-spacing: 0;
+}
+/* customize content */
+#overlay.cta_overlay_men_women_coaching_form #overlay_cta p,
+body.body-transformation-secrets-coaching #overlay #overlay_cta p {
+	font-size: 1em;
+}
+/* customize subtitles */
+#overlay.cta_overlay_men_women_coaching_form #overlay_cta .program,
+body.body-transformation-secrets-coaching #overlay #overlay_cta .program {
+	color: #FFFFFF;
+	font-weight: 700;
+	margin-bottom: 15px;
+	text-align: left;
+}
+/* customize radio buttons
+ * because of scale issues in Firefox, trying to add custom radio buttons instead
+ */
+.cta_overlay_men_women_coaching_form .pn-form--signup__step input[type="radio"],
+body.body-transformation-secrets-coaching .pn-form--signup__step input[type="radio"] {
+	display: none;
+}
+#overlay.cta_overlay_men_women_coaching_form #overlay_cta #radio_buttons,
+body.body-transformation-secrets-coaching #overlay #overlay_cta #radio_buttons {
+	margin-bottom: 1.1em;
+	text-align: left;
+}
+#overlay.cta_overlay_men_women_coaching_form #overlay_cta #radio_buttons > div,
+body.body-transformation-secrets-coaching #overlay #overlay_cta #radio_buttons > div{
+  display: inline-block;
+	margin-right:2.5em;
+	min-height: 2.5em;
+}
+#overlay.cta_overlay_men_women_coaching_form #overlay_cta #radio_buttons label,
+body.body-transformation-secrets-coaching #overlay #overlay_cta #radio_buttons label {
+	font-weight: 400;
+	vertical-align: middle;
+	display: block;
+	padding: 6px 0 0 42px;
+	background: url('https://assets.precisionnutrition.com/2018/06/btn_radio_deselected2x.png') left top/32px 32px no-repeat;
+	min-height: 32px;
+}
+#overlay.cta_overlay_men_women_coaching_form #overlay_cta #radio_buttons input[type=radio]:checked + label,
+body.body-transformation-secrets-coaching #overlay #overlay_cta #radio_buttons input[type=radio]:checked + label{
+	background: url('https://assets.precisionnutrition.com/2018/06/btn_radio_selected2x.png') left top/32px 32px no-repeat;
+}
+/* customize input fields */
+body #overlay.cta_overlay_men_women_coaching_form #overlay_cta input[type="text"], body #overlay.cta_overlay_men_women_coaching_form #overlay_cta input[type="email"], body #overlay.cta_overlay_men_women_coaching_form #overlay_cta input[type="tel"], body #overlay.cta_overlay_men_women_coaching_form #overlay_cta select,
+body.body-transformation-secrets-coaching #overlay #overlay_cta input[type="text"], body.body-transformation-secrets-coaching #overlay #overlay_cta input[type="email"], body.body-transformation-secrets-coaching #overlay #overlay_cta input[type="tel"], body.body-transformation-secrets-coaching #overlay #overlay_cta select {
+	height: 2.5em;
+	padding: 0.5em 0.95em;
+}
+#overlay.cta_overlay_men_women_coaching_form .pn-form--signup__field,
+body.body-transformation-secrets-coaching #overlay .pn-form--signup__field {
+	margin-bottom: 25px;
+}
+body #overlay.cta_overlay_men_women_coaching_form #overlay_cta .signup_form .cc_display,
+body.body-transformation-secrets-coaching #overlay #overlay_cta .signup_form .cc_display{
+	height: 100%;
+	top: 50% !important;
+  transform: translateY(-14%);
+	-webkit-transform: translateY(-14%);
+  -ms-transform: translateY(-14%);
+}
+/* customize submit button */
+#overlay.cta_overlay_men_women_coaching_form #overlay_cta button,
+body.body-transformation-secrets-coaching #overlay #overlay_cta button {
+	background: #333333;
+	margin-top: 0.5rem;
+	padding: 0.7rem 4.6rem;
+	text-transform: none;
+}
+/* customize sub-text */
+#overlay.cta_overlay_men_women_coaching_form .pn-form--signup__subtext,
+body.body-transformation-secrets-coaching #overlay .pn-form--signup__subtext {
+	color: #000000;
+	font-size: 12px;
+	opacity: 0.5;
+}
+/* fix height issue on .body-transformation-secrets-coaching */
+body.body-transformation-secrets-coaching .pn-course__overlay select {
+	height: 2.5em !important;
+}
+/* responsive */
+@media only screen and (max-width: 480px) {
+#overlay.cta_overlay_men_women_coaching_form #overlay_cta button, body.body-transformation-secrets-coaching #overlay #overlay_cta button {
+		padding: 0.7rem 1.5rem;
+	}
+}
+
+/**
+ * Update 8/9/2018
+ * Style download buttons for Infographics Download page
+ */
+@media only screen and (min-width: 900px) {
+  body .pn-infographic .pn-infographic--post__download {
+	vertical-align: top;
+		margin-top: 30px;
+  }
+}
+
+/**
+ * Update 12/4/2018
+ * Ensure long links break to multiple lines
+ */
+p {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+/**
+ * Update 3/7/2019
+ * Add space to bottom of list items
+ */
+.pn-list__spaced > li {
+	margin-bottom: 30px;
+}
+
+/**
+ * 3/22/2019
+ * Hide Google recaptcha badge and Google places logo
+ */
+.grecaptcha-badge, .pac-container.pac-logo:after {
+	display: none;
+}
+.pac-container {
+	z-index: 1005;
+}
+.pac-container .pac-item {
+	padding: 4px;
+}
+
+/**
+ * 5/23/2019
+ * Fix team member thumbnails
+ */
+.page-tpl--meet-team__members .individual .thumbnail_wrapper img {
+	height: auto;
+}
+
+/**
+ * 9/18/2019
+ * Add styling for copyright symbol
+ */
+.copyright {
+	font-size: 0.4em;
+	top: -1em;
+}
+
+
+/**
+ * 11/29/2019
+ * Adjust 'save 30%' bubble on flexible sales page pricing box for L1v4 Upgrade sales page
+ */
+@media only screen and (max-width: 369px) {
+  .pn-flex--pricing__boxes__price__save {
+    font-size: 14px;
+    right: -3.6em;
+    bottom: -.5em;
+    padding: .8em 0;
+    height: 3em;
+    width: 3em;
+  }
+
+  .pn-flex--pricing__boxes__price__save:before {
+    content: "SAVE";
+    display: block;
+    font-size: 14px;
+  }
+}
+
+/**
+ * 3/11/2020
+ * Adjust CTA & Related Posts sections to have default left aligned text.
+ */
+#signup_cta, #related_posts {
+	text-align: left !important;
+}
+
+/**
+ * 5/14/2020
+ * Add list-style-inside class
+ */
+.pn-list__inside {
+	list-style-position: inside;
+}
+
+/**
+ * 6/18/2020
+ * Add basic list styling for emergencies
+ */
+.list--basic {
+	list-style: disc;
+	margin-left: 1.2em;
+}
+.list--basic li {
+	margin-bottom: 0.5em;
+}
+
+/**
+ * 6/30/2020
+ * Fix submit button in mobile
+ */
+@media screen and (max-width: 767px) {
+	body .pn-flex--popup .popup-form .button_blue {
+		height: auto;
+		padding: 8px 41px;
+	}
+}
+
+/**
+ * 8/28/2020
+ * Fix lists in 
+ */
+.how-to-succeed-in-health-and-fitness-free-course-lesson-2 .page-tpl-5-day-lesson ul li:before {
+  background: none;
+}
+
+/**
+ * 9/23/2020
+ * Account for long email in contact us section for mobile
+ */
+.longlink a br{
+	display:none;
+}
+@media only screen and (max-width: 550px) {
+	.longlink a br {
+		display:inline;
+	}
+	.longlink a {
+		font-size:16px;
+	}
+}
+@media only screen and (max-width: 350px) {
+	.longlink a {
+		font-size:14px;
+	}
+}
+
+/**
+ * 10/2/2020
+ * Override some old overrides
+ */
+@media only screen and (min-width: 1100px) {
+  body.pn-launch--level-2-cert-2017 .pn-flex--masthead__img {
+    position: static;
+	  float: right;
+	  width: 95%;
+  }
+	body.page-template-flexible-sales-page.pn-launch--level-2-cert-2017 div.pn--burst__wrap {
+		bottom: -10px;
+	}
+}
+
+/**
+ * 3/11/2021
+ * Pricing Table - now usable in other sections
+ */
+table.universal-pricing-table {
+  width: 100%;
+  margin: 50px auto;
+}
+table.universal-pricing-table tr {
+	border: none;
+}
+table.universal-pricing-table th {
+	font-size: 24px;
+	font-weight: 400;
+	line-height: 26px;
+  text-align: center;
+	width: 40%;
+}
+table.universal-pricing-table th .price {
+	display: inline-block;
+	font-size: 18px;
+	line-height: 1.1em;
+	padding-bottom: .5em;
+}
+table.universal-pricing-table td {
+	border-bottom: 1px solid #eaeaea;
+	border-left: 1em solid #fff;
+	line-height: 1.42em;
+  width: 40%;
+}
+table.universal-pricing-table td:first-child {
+	border-left: none;
+}
+@media (min-width: 1100px) {
+	table.universal-pricing-table {
+		width: 940px;
+		margin: 95px auto;
+	}
+	table.universal-pricing-table td {
+		border-left-width: 5em;
+		font-size: 1.11em;
+	}
+}
+
+/* 7-14-2012
+ *  Mobile signup fix for blog
+ */
+.fixed_footer form .mobile_signup_fields .cc_wrap .cc_display {
+  bottom: auto;
+	left: auto !important;
+}
+.ffb_content h3, .ffb_content li {color: #fff;}
+
+/* Hide Cookiebot branding 
+ */
+#CookiebotWidget .CookiebotWidget-body .CookiebotWidget-main-logo, a#CybotCookiebotDialogPoweredbyCybot, div#CybotCookiebotDialogPoweredByText, #CybotCookiebotDialogDetailFooter, p.CookieDeclarationLastUpdated a {
+  display: none!important;
+}
+p.CookieDeclarationLastUpdated:after {
+  content: "Precision Nutrition's Privacy Officer";
+}		</style>
+		
+
+<style type="text/css">
+  .js #fous { visibility: hidden; }
+</style>
+<script type="text/javascript">
+  document.documentElement.className = "js";
+</script>
+</head>
+<body class="wp-singular post-template-default single single-post postid-116120 single-format-standard wp-theme-pn-wp keto-food-list-infographic">
+<!-- Begin GTM noscript -->
+<noscript>
+	<iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5NMXHL"
+height="0" width="0" style="display:none;visibility:hidden"></iframe>
+</noscript>
+<!-- End GTM noscript -->
+	<header id="top" class="pn-head--site pn-head--site--alt pn-out">
+		<div class="pn-in">
+			<nav class="top-level-nav">
+				<ul>
+					<li class="search-item">
+						<form action="https://www.precisionnutrition.com" method="get" id="search">
+							<button aria-label="Toggle search" id="search_toggle" type="button"><svg viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg" class="pn-svg"><path d="M1216 832q0-185-131.5-316.5T768 384 451.5 515.5 320 832t131.5 316.5T768 1280t316.5-131.5T1216 832zm512 832q0 52-38 90t-90 38q-54 0-90-38l-343-342q-179 124-399 124-143 0-273.5-55.5t-225-150-150-225T64 832t55.5-273.5 150-225 225-150T768 128t273.5 55.5 225 150 150 225T1472 832q0 220-124 399l343 343q37 37 37 90z"></path></svg></button>
+							<label for="header_search" class="screen-reader-text">Search this site</label>
+							<input aria-label="Search, press Enter to submit" type="text" name="s" id="header_search" placeholder="search...">
+						</form>
+					</li>
+					<li>
+						<a rel="nofollow" class="sign-in-button" href="https://my.precisionnutrition.com/users/sign_in">Sign In</a>	
+					</li>
+					<li>
+						<a rel="nofollow" class="cta-button" href="https://my.precisionnutrition.com/users/sign_up">Join for Free</a>					</li>
+				</ul>
+			</nav>
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 264.819" class="pn-svg pn-head--site__bars js-nav-main-trigger"><path d="M500 18.75c0 10.315-8.436 18.75-18.75 18.75H18.75C8.435 37.5 0 29.065 0 18.75S8.435 0 18.75 0h462.5C491.564 0 500 8.435 500 18.75zM18.75 150.757h312.5c10.315 0 18.75-8.435 18.75-18.75s-8.435-18.75-18.75-18.75H18.75c-10.315 0-18.75 8.435-18.75 18.75s8.435 18.75 18.75 18.75zm387.5 76.562H18.75c-10.315 0-18.75 8.435-18.75 18.75 0 10.314 8.435 18.75 18.75 18.75h387.5c10.314 0 18.75-8.435 18.75-18.75s-8.436-18.75-18.75-18.75z"/></svg>			<a class="pn-head--home" href="https://www.precisionnutrition.com" title="Go to homepage"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   viewBox="0 0 612 120.00001"
+   class="pn-svg pn-head--site__logo pn-svg--logo"
+   version="1.1"
+   id="svg849"
+   sodipodi:docname="pn-logo-mark-blue-text-gray-tagline.svg"
+   height="120"
+   inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)">
+  <metadata
+     id="metadata855">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs853" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     id="namedview851"
+     showgrid="false"
+     inkscape:zoom="2"
+     inkscape:cx="381.3972"
+     inkscape:cy="76.983654"
+     inkscape:window-x="1912"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg849"
+     inkscape:document-rotation="0" />
+  <path
+     fill="#20262b"
+     class="pn-svg pn-head--site__logo--logo__text"
+     d="m 253.014,22.237 h 7.296 v 7.297 h -7.296 z m 0,41.693 h 7.296 V 34.397 h -7.296 z m 28.839,-17.72 c -5.212,-2.084 -6.602,-2.432 -6.602,-4.518 0,-1.736 1.043,-2.431 4.864,-2.431 2.779,0 6.601,0.695 9.033,1.389 l 1.39,-5.211 c -3.126,-1.042 -7.644,-1.389 -10.423,-1.389 -7.644,0 -11.813,2.779 -11.813,8.338 0,4.865 2.432,6.604 10.423,9.729 4.169,1.737 5.56,2.432 5.56,4.17 0,1.389 -1.39,2.778 -5.212,2.778 -3.127,0 -6.948,-0.693 -10.423,-2.084 l -1.737,5.211 c 3.821,1.392 8.338,2.434 12.16,2.434 7.644,0 12.509,-3.823 12.509,-9.034 0,-5.212 -2.433,-6.601 -9.729,-9.382 z m -43.432,-6.254 c 1.738,0 3.823,0.347 5.907,0.694 l 1.39,-5.211 c -2.432,-1.042 -4.864,-1.389 -7.644,-1.389 -9.729,0 -16.33,6.601 -16.33,15.287 0,8.686 6.601,15.289 16.33,15.289 2.432,0 5.56,-0.696 7.644,-1.738 l -1.39,-5.211 c -2.085,0.695 -3.823,1.042 -5.907,1.042 -6.254,0 -9.381,-3.822 -9.381,-9.382 0,-5.558 3.128,-9.38 9.381,-9.381 z m -73.312,-3.473 c 0,6.948 -5.212,12.854 -13.204,12.854 H 139.05 V 63.93 h -7.645 V 27.448 c 0,-2.084 1.738,-3.822 3.823,-3.822 h 16.677 c 7.992,0 13.204,5.908 13.204,12.857 z m -7.992,0 c 0,-3.822 -3.127,-6.254 -6.602,-6.254 h -11.813 v 12.507 h 11.813 c 3.475,0 6.602,-2.431 6.602,-6.253 z M 297.835,63.93 h 7.297 V 34.397 h -7.297 z M 176.574,39.609 v -5.212 h -7.297 V 63.93 h 7.297 V 50.727 c 0,-5.906 3.127,-9.728 10.077,-10.076 v -6.949 c -4.517,0 -8.687,3.128 -10.077,5.907 z m 40.305,9.382 v 2.432 h -20.5 v 0.347 c 0,4.518 3.822,6.949 9.382,6.949 2.779,0 5.906,-0.348 8.686,-1.39 l 1.389,5.212 c -3.473,1.043 -6.254,1.736 -10.075,1.736 -10.771,0 -16.679,-6.254 -16.679,-15.286 0,-7.993 5.213,-15.29 14.246,-15.29 8.687,10e-4 13.551,6.256 13.551,15.29 z m -6.602,-2.432 c -0.347,-4.17 -2.432,-6.949 -6.601,-6.949 -3.822,0 -6.602,2.432 -7.297,6.949 z m 87.558,-17.025 h 7.297 v -7.297 h -7.297 z M 539.662,63.93 h 5.211 V 34.397 h -5.211 z m -10.424,-3.821 c -2.084,0 -3.473,-1.042 -3.473,-4.517 V 38.22 h 5.904 v -3.822 h -5.904 V 26.06 h -5.213 v 8.338 h -3.822 v 4.169 h 4.17 v 17.372 c 0,6.254 3.125,8.688 7.992,8.688 1.041,0 2.777,-0.349 3.818,-1.042 l -0.691,-3.823 c -1.042,0.346 -2.085,0.346 -2.781,0.347 z m 10.424,-30.575 h 5.211 v -6.602 h -5.211 z m -35.787,0 h 5.211 v -6.602 h -5.211 z m 97.979,4.516 c -4.168,0 -7.99,2.433 -10.074,5.559 v -5.212 h -5.213 V 63.93 h 5.213 V 48.295 c 0,-5.907 4.516,-9.729 8.686,-9.729 4.52,0 6.256,2.085 6.256,6.603 v 18.761 0.348 h 5.211 V 45.169 C 611.932,38.567 608.459,34.051 601.854,34.05 Z m -20.846,15.288 c 0,7.992 -5.559,15.289 -14.244,15.289 -8.688,0 -14.244,-7.297 -14.244,-15.289 0,-8.338 5.557,-15.287 14.244,-15.287 8.685,0 14.244,7.295 14.244,15.287 z m -5.211,0 c 0,-6.601 -3.475,-11.118 -9.033,-11.118 -5.561,0 -9.035,4.516 -9.035,11.118 0,6.602 3.475,11.119 9.035,11.119 5.558,0 9.033,-4.518 9.033,-11.119 z M 472.951,60.109 c -2.084,0 -3.475,-1.042 -3.475,-4.517 V 38.22 h 5.906 v -3.822 h -5.906 V 26.06 h -5.211 v 8.338 h -3.822 v 4.169 h 3.822 v 17.372 c 0,6.254 3.127,8.688 7.992,8.688 1.041,0 2.777,-0.349 4.168,-1.042 l -0.695,-3.823 c -1.042,0.346 -2.084,0.346 -2.779,0.347 z m -24.32,-10.076 c 0,5.559 -4.52,9.381 -8.688,9.381 -4.516,0 -6.254,-2.085 -6.254,-6.603 V 34.397 h -5.211 v 19.11 c 0,6.602 3.475,10.771 10.076,10.771 4.17,0 7.99,-2.432 10.076,-5.559 v 5.211 h 5.211 V 34.397 h -5.211 v 15.636 z m -33.356,4.169 -23.281,-30.229 c -0.693,-0.696 -1.041,-1.043 -2.084,-1.043 -1.389,0 -2.779,1.39 -2.779,2.78 v 38.22 h 5.213 V 33.007 l 23.277,30.229 c 0.695,1.042 1.393,1.042 2.086,1.042 1.389,0 2.777,-1.042 2.777,-2.778 V 23.626 h -5.209 z M 365.24,34.051 c -4.516,0 -8.338,2.432 -10.076,5.211 v -4.865 h -7.295 v 29.187 h 7.295 V 47.253 c 0,-4.17 3.475,-6.949 6.949,-6.949 3.474,0 5.211,2.084 5.211,5.907 V 63.93 h 7.645 V 45.169 c 0,-6.602 -3.127,-11.118 -9.729,-11.118 z m 122.998,6.253 v -5.907 h -5.211 v 29.534 h 5.211 V 49.686 c 0,-5.559 4.518,-11.119 10.076,-10.771 v -4.864 c -4.517,0 -8.337,3.127 -10.076,6.253 z m 15.637,23.626 h 5.211 V 34.397 h -5.211 z M 341.613,49.338 c 0,7.992 -6.254,15.289 -14.938,15.289 -9.035,0 -14.941,-7.297 -14.941,-15.289 0,-7.992 5.906,-15.287 14.941,-15.287 9.034,0 14.938,7.295 14.938,15.287 z m -7.295,-0.347 c 0,-5.561 -3.127,-9.382 -7.643,-9.382 -4.867,0 -7.301,3.822 -7.301,9.382 0,5.559 2.781,9.381 7.301,9.381 4.864,0 7.643,-3.822 7.643,-9.381 z"
+     id="path846" />
+  <path
+     fill="#068FB9"
+     class="pn-svg pn-head--site__logo--logo__mark"
+     d="m 47.602,36.135 c 0,4.169 -3.127,7.296 -7.644,7.296 H 27.102 V 28.838 h 0.695 12.161 c 4.517,0 7.644,3.127 7.644,7.297 z m 54.896,15.288 -21.193,36.483 c -1.39,2.779 -5.56,4.863 -8.687,4.863 H 30.923 c -3.127,0 -6.95,-2.432 -8.686,-4.863 L 1.042,51.423 c -1.39,-2.78 -1.39,-7.296 0,-10.077 L 22.237,4.864 C 23.627,2.432 27.796,0 30.923,0 h 42.041 c 3.128,0 6.95,2.432 8.687,4.864 l 21.195,36.482 c 1.39,2.781 1.39,7.297 -0.348,10.077 z M 54.203,36.135 C 54.203,28.838 48.644,23.626 41,23.626 H 23.626 c -1.737,0 -3.127,1.39 -3.127,3.127 0,0 0,35.788 0,37.177 1.043,0 5.56,0 6.602,0 0,-1.389 0,-14.938 0,-14.938 H 41 c 7.644,-0.349 13.203,-5.56 13.203,-12.857 z m 30.924,10.771 c 0,-7.296 -5.906,-12.855 -13.551,-12.855 -7.644,0 -13.551,5.559 -13.551,12.855 0,0 0,15.636 0,17.024 1.043,0 5.212,0 6.254,0 0,-1.389 0,-17.024 0,-17.024 0,-4.518 2.779,-7.296 7.296,-7.296 4.517,0 7.297,3.126 7.297,7.296 0,0 0,15.636 0,17.024 1.042,0 5.211,0 6.254,0 0,-1.388 0,-17.023 10e-4,-17.024 z"
+     id="path847" />
+  <g
+     transform="scale(1.0006529,0.99934749)"
+     id="text859"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:42.6946px;line-height:1.25;font-family:'Maiandra GD';-inkscape-font-specification:'Maiandra GD, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1.00065">
+    <path
+       id="path1505"
+       style="font-style:italic;font-variant:normal;font-weight:600;font-stretch:normal;font-size:42.6946px;font-family:'Source Sans Pro';-inkscape-font-specification:'Source Sans Pro Semi-Bold Italic';text-align:end;text-anchor:end;fill:#068FB9;fill-opacity:1;stroke-width:1.00065"
+       d="m 591.14786,118.57406 h 4.61102 l 2.81784,-14.30269 c 2.22012,-2.26282 3.84252,-3.24479 5.29413,-3.24479 1.79318,0 2.64707,0.89658 2.64707,2.68976 0,0.64042 -0.17078,1.23814 -0.34156,2.22012 l -2.56167,12.6376 h 4.56832 l 2.64706,-13.23533 c 0.25617,-1.11006 0.34156,-1.96395 0.34156,-2.94592 0,-3.372878 -1.45162,-5.294135 -4.95257,-5.294135 -2.64707,0 -4.99527,1.5797 -7.21539,3.458265 h -0.17078 l 0.21347,-2.94593 h -3.71443 z m -14.04644,0.51233 c 5.76377,0 11.57024,-5.4649 11.57024,-13.4488 0,-5.25143 -3.11671,-8.538915 -7.85581,-8.538915 -5.72107,0 -11.52754,5.422215 -11.52754,13.448795 0,5.20874 3.11671,8.53892 7.81311,8.53892 z m 0.51234,-3.71443 c -2.4336,0 -3.71443,-1.83586 -3.71443,-4.99526 0,-5.33683 3.1167,-9.56359 6.44688,-9.56359 2.3909,0 3.67174,1.79317 3.67174,4.95257 0,5.37952 -3.07401,9.60628 -6.40419,9.60628 z m -19.55412,3.2021 h 4.61101 l 4.18407,-20.96305 h -4.56832 z m 7.59963,-24.67748 c 1.70779,0 3.07402,-1.280838 3.07402,-2.988622 0,-1.537005 -1.28084,-2.390897 -2.60437,-2.390897 -1.70779,0 -3.07402,1.366227 -3.07402,2.988622 0,1.537005 1.28084,2.390897 2.60437,2.390897 z m -15.02844,25.18981 c 1.92126,0 3.41557,-0.51233 4.44024,-0.93928 l -0.85389,-3.24479 c -0.59773,0.29887 -1.23815,0.55503 -1.96396,0.55503 -1.75047,0 -2.43359,-0.7685 -2.43359,-2.30551 0,-0.51233 0.0427,-0.98197 0.12809,-1.49431 l 2.13473,-10.41748 h 5.12335 l 0.72581,-3.62904 h -5.03797 l 1.11006,-5.635687 h -3.84251 l -1.66509,5.635687 -3.2021,0.213473 -0.68311,3.415567 h 2.94593 l -2.13473,10.24671 c -0.12809,0.85389 -0.25617,1.62239 -0.25617,2.47628 0,2.90323 1.53701,5.12335 5.46491,5.12335 z m -24.037,0 c 2.3909,0 4.95258,-1.36622 6.91653,-3.41556 h 0.12808 l -0.21347,2.90323 h 3.75712 l 4.18407,-20.96305 h -3.67173 l -0.89659,2.43359 h -0.0854 c -0.93928,-1.793171 -2.77515,-2.945925 -4.82449,-2.945925 -5.80646,0 -11.27137,6.318805 -11.27137,14.345385 0,4.90988 2.30551,7.64233 5.97724,7.64233 z m 1.87856,-3.75712 c -1.92125,0 -3.1167,-1.45162 -3.1167,-4.52563 0,-5.37952 3.24479,-9.94784 6.78844,-9.94784 1.28084,0 2.60437,0.7685 3.54365,2.56168 l -1.70778,8.36814 c -1.70779,2.51898 -3.71443,3.54365 -5.50761,3.54365 z m -18.05972,3.75712 c 3.1594,0 5.29413,-1.28083 6.87383,-2.43359 l -1.96395,-2.90323 c -1.06736,0.85389 -2.3482,1.62239 -3.9706,1.62239 -2.81784,0 -4.22676,-1.83586 -4.22676,-4.99526 0,-5.20875 3.28748,-9.56359 7.04461,-9.56359 1.40892,0 2.26281,0.51233 3.24479,1.62239 l 2.56167,-2.775149 c -1.15275,-1.366227 -2.94592,-2.561676 -5.5076,-2.561676 -6.53227,0 -12.03988,5.934545 -12.03988,13.448795 0,5.42222 3.37288,8.53892 7.98389,8.53892 z m -19.16987,-0.51233 h 4.61102 l 4.18407,-20.96305 h -4.56832 z m 7.59964,-24.67748 c 1.70779,0 3.07401,-1.280838 3.07401,-2.988622 0,-1.537005 -1.28084,-2.390897 -2.60437,-2.390897 -1.70778,0 -3.07401,1.366227 -3.07401,2.988622 0,1.537005 1.28084,2.390897 2.60437,2.390897 z m -19.08441,7.34347 h 2.68976 l -3.45826,17.33401 h 4.56832 l 3.41557,-17.33401 h 4.01329 l 0.72581,-3.62904 h -3.9706 l 0.51234,-2.561676 c 0.46964,-2.390897 1.537,-3.458262 3.24479,-3.458262 0.85389,0 1.66509,0.341557 2.17742,0.640419 l 1.53701,-3.24479 c -1.19545,-0.640419 -2.56168,-1.067365 -4.14138,-1.067365 -4.18407,0 -6.53227,2.988622 -7.38616,7.258082 l -0.46964,2.433592 -2.77515,0.213473 z m -12.25333,17.33401 h 4.61102 l 4.18407,-20.96305 h -4.56832 z m 7.59964,-24.67748 c 1.70779,0 3.07401,-1.280838 3.07401,-2.988622 0,-1.537005 -1.28083,-2.390897 -2.60437,-2.390897 -1.70778,0 -3.07401,1.366227 -3.07401,2.988622 0,1.537005 1.28084,2.390897 2.60437,2.390897 z m -15.02844,25.18981 c 1.92125,0 3.41557,-0.51233 4.44024,-0.93928 l -0.8539,-3.24479 c -0.59772,0.29887 -1.23814,0.55503 -1.96395,0.55503 -1.75048,0 -2.43359,-0.7685 -2.43359,-2.30551 0,-0.51233 0.0427,-0.98197 0.12808,-1.49431 l 2.13473,-10.41748 h 5.12336 l 0.7258,-3.62904 h -5.03796 l 1.11006,-5.635687 h -3.84251 l -1.66509,5.635687 -3.2021,0.213473 -0.68311,3.415567 h 2.94593 l -2.13473,10.24671 c -0.12809,0.85389 -0.25617,1.62239 -0.25617,2.47628 0,2.90323 1.537,5.12335 5.46491,5.12335 z m -22.84157,-0.51233 h 4.61102 l 2.47629,-12.6803 c 1.70778,-3.20209 3.71443,-4.7391 5.67838,-4.7391 0.72581,0 1.45162,0.0854 1.96395,0.34156 l 1.53701,-4.013293 c -0.55503,-0.256168 -1.19545,-0.384252 -2.09204,-0.384252 -2.51898,0 -4.82449,1.963952 -6.48958,4.568325 h -0.17078 l 0.38425,-4.05599 h -3.71443 z m -20.36527,-8.36814 c 0,5.63568 3.41557,8.88047 8.41084,8.88047 2.98862,0 5.4649,-1.02467 7.17269,-2.22012 l -1.70779,-2.94592 c -1.15275,0.85389 -2.77514,1.66509 -4.26946,1.66509 -3.1594,0 -5.63568,-1.87857 -5.16604,-6.3188 h 12.76568 c 0.29886,-0.68312 0.89659,-2.60437 0.89659,-4.44024 0,-4.35485 -1.79317,-7.727725 -6.66036,-7.727725 -5.5076,0 -11.44215,5.294135 -11.44215,13.107245 z m 4.82449,-3.84252 c 1.02467,-3.58634 3.54365,-5.72107 6.06263,-5.72107 2.56168,0 3.41557,1.83586 3.41557,3.88521 0,0.68311 -0.0854,1.28083 -0.21347,1.83586 z m -17.41931,12.72299 c 3.58634,0 6.36149,-1.66509 8.24006,-3.33018 l -2.00665,-2.94592 c -1.6224,1.36622 -3.37287,2.30551 -5.33683,2.30551 -4.52562,0 -6.44688,-3.1594 -6.44688,-7.85581 0,-6.48958 4.01329,-13.149937 9.69167,-13.149937 1.83587,0 3.1594,1.024671 4.22677,2.732455 l 3.1594,-2.433593 c -1.49431,-2.561676 -3.9279,-4.26946 -7.13,-4.26946 -8.53892,0 -14.64425,8.240058 -14.64425,17.462095 0,7.00191 3.84252,11.48484 10.24671,11.48484 z M 377.71825,99.873824 h -0.12808 c -0.89659,-1.665089 -2.56168,-2.775149 -4.61102,-2.775149 -5.80647,0 -11.27138,6.318805 -11.27138,14.345385 0,4.90988 2.30551,7.64233 5.97725,7.64233 2.3909,0 4.95257,-1.36622 6.91652,-3.41556 h 0.12809 l -0.21348,2.90323 h 3.75713 l 6.06263,-30.142388 h -4.56832 l -1.45162,7.42886 z m -8.15467,15.455446 c -1.92126,0 -3.1167,-1.45162 -3.1167,-4.52563 0,-5.37952 3.24478,-9.94784 6.78844,-9.94784 1.28083,0 2.60437,0.7685 3.54365,2.56168 l -1.70779,8.36814 c -1.75047,2.51898 -3.71443,3.54365 -5.5076,3.54365 z m -28.77612,-5.12335 c 0,5.63568 3.41557,8.88047 8.41084,8.88047 2.98862,0 5.46491,-1.02467 7.17269,-2.22012 l -1.70778,-2.94592 c -1.15276,0.85389 -2.77515,1.66509 -4.26946,1.66509 -3.1594,0 -5.63569,-1.87857 -5.16605,-6.3188 h 12.76569 c 0.29886,-0.68312 0.89658,-2.60437 0.89658,-4.44024 0,-4.35485 -1.79317,-7.727725 -6.66035,-7.727725 -5.50761,0 -11.44216,5.294135 -11.44216,13.107245 z m 4.82449,-3.84252 c 1.02467,-3.58634 3.54365,-5.72107 6.06264,-5.72107 2.56167,0 3.41556,1.83586 3.41556,3.88521 0,0.68311 -0.0854,1.28083 -0.21347,1.83586 z m -12.21055,12.72299 c 1.92126,0 3.41557,-0.51233 4.44024,-0.93928 l -0.8539,-3.24479 c -0.59772,0.29887 -1.23814,0.55503 -1.96395,0.55503 -1.75048,0 -2.43359,-0.7685 -2.43359,-2.30551 0,-0.51233 0.0427,-0.98197 0.12808,-1.49431 l 2.13473,-10.41748 h 5.12336 l 0.7258,-3.62904 h -5.03796 l 1.11006,-5.635687 h -3.84251 l -1.66509,5.635687 -3.2021,0.213473 -0.68311,3.415567 h 2.94593 l -2.13473,10.24671 c -0.12809,0.85389 -0.25617,1.62239 -0.25617,2.47628 0,2.90323 1.537,5.12335 5.46491,5.12335 z m -24.03701,0 c 2.39089,0 4.95257,-1.36622 6.91652,-3.41556 h 0.12808 l -0.21347,2.90323 h 3.75713 l 4.18407,-20.96305 h -3.67174 l -0.89658,2.43359 h -0.0854 c -0.93929,-1.793171 -2.77515,-2.945925 -4.82449,-2.945925 -5.80647,0 -11.27138,6.318805 -11.27138,14.345385 0,4.90988 2.30551,7.64233 5.97725,7.64233 z m 1.87856,-3.75712 c -1.92126,0 -3.11671,-1.45162 -3.11671,-4.52563 0,-5.37952 3.24479,-9.94784 6.78844,-9.94784 1.28084,0 2.60437,0.7685 3.54366,2.56168 l -1.70779,8.36814 c -1.70778,2.51898 -3.71443,3.54365 -5.5076,3.54365 z m -32.14895,3.24479 h 4.61102 l 2.17742,-11.01521 h 4.14138 l 4.05598,11.01521 h 4.90988 l -4.61101,-11.57024 c 4.39754,-1.19545 7.64233,-4.31215 7.64233,-9.520893 0,-4.952574 -3.79982,-6.831136 -9.13664,-6.831136 h -8.24006 z m 7.55694,-14.68694 1.83587,-9.563594 h 3.50096 c 3.58635,0 5.46491,1.11006 5.46491,3.79982 0,3.500954 -2.51898,5.763774 -7.25808,5.763774 z m -37.40043,14.68694 h 15.62622 l 0.72581,-3.71443 h -5.25143 l 4.7391,-23.439337 h -3.45827 c -1.79317,1.067365 -3.75712,1.750479 -6.44688,2.177425 l -0.59772,2.903233 h 4.90987 l -3.71443,18.358679 h -5.76377 z m -20.45063,0 h 2.81784 l 2.64707,-8.36814 h 4.82449 l -2.64707,8.36814 h 2.81784 l 2.64707,-8.36814 h 3.58635 l 0.7258,-3.11671 h -3.33017 l 1.75047,-5.63569 h 3.50096 l 0.7685,-3.116701 h -3.28748 l 2.3909,-7.51425 h -2.86054 l -2.3909,7.51425 h -4.78179 l 2.39089,-7.51425 h -2.86053 l -2.3909,7.51425 h -3.54365 l -0.76851,3.116701 h 3.33018 l -1.75048,5.63569 h -3.50095 l -0.72581,3.11671 h 3.28748 z m 6.44688,-11.48485 1.75048,-5.63569 h 4.82449 l -1.75048,5.63569 z" />
+  </g>
+</svg>
+</a>
+			
+			<ul id="js-nav-main-desktop" class="pn-head--site__nav"><li id="menu-item-139262" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-has-children menu-item-139262 pn-head--site__nav__item"><a href="#">Get Coaching</a>
+<ul class="sub-menu">
+	<li id="menu-item-142328" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-142328 sub-menu__item"><a href="https://www.precisionnutrition.com/coaching-for-women">Group Coaching for Women</a></li>
+	<li id="menu-item-142329" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-142329 sub-menu__item"><a href="https://www.precisionnutrition.com/coaching-for-men">Group Coaching for Men</a></li>
+	<li id="menu-item-142327" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-142327 sub-menu__item"><a href="https://www.precisionnutrition.com/1-to-1-coaching-waitlist">1-to-1 Coaching</a></li>
+</ul>
+</li>
+<li id="menu-item-73286" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-has-children menu-item-73286 pn-head--site__nav__item"><a href="https://www.precisionnutrition.com/nutrition-certification">Certifications</a>
+<ul class="sub-menu">
+	<li id="menu-item-122700" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-122700 sub-menu__item"><a href="https://www.precisionnutrition.com/nutrition-certification">All Nutrition Certifications &#038; Courses</a></li>
+	<li id="menu-item-73287" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-73287 sub-menu__item"><a href="https://www.precisionnutrition.com/nutrition-certification-level-1-register-now">Level 1 Nutrition Certification</a></li>
+	<li id="menu-item-129485" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-129485 sub-menu__item"><a href="https://www.precisionnutrition.com/sleep-stress-management-recovery-certification-level-1-waitlist">Level 1 Sleep, Stress Management and Recovery Certification</a></li>
+	<li id="menu-item-73288" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-73288 sub-menu__item"><a href="https://www.precisionnutrition.com/nutrition-certification-level-2-presale-list">Level 2 Master Coaching Certification</a></li>
+</ul>
+</li>
+<li id="menu-item-73290" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-73290 pn-head--site__nav__item"><a href="https://www.precisionnutrition.com/blog">Resources and Articles</a></li>
+</ul><ul id="js-nav-main" class="pn-head--site__nav">
+						<li class="pn-head--site__nav__close js-nav-main-trigger"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="pn-svg pn-head--site__nav__close__svg"><g stroke="none" stroke-width="1" fill-rule="evenodd"><g transform="translate(-306.000000, -162.000000)" fill-rule="nonzero"><path d="M318.124971,172.000029 L325.874953,179.75001 C325.958285,179.833343 325.999952,179.947927 325.999952,180.093759 C325.999952,180.239592 325.958285,180.354176 325.874953,180.437508 L324.437456,181.875005 C324.354123,181.958338 324.23954,182.000005 324.093707,182.000005 C323.947874,182.000005 323.83329,181.958338 323.749958,181.875005 L315.999976,174.125024 L308.249995,181.875005 C308.166662,181.958338 308.052078,182.000005 307.906245,182.000005 C307.760413,182.000005 307.645829,181.958338 307.562496,181.875005 L306.125,180.437508 C306.041667,180.354176 306,180.239592 306,180.093759 C306,179.947927 306.041667,179.833343 306.125,179.75001 L313.874981,172.000029 L306.125,164.250047 C306.041667,164.166714 306,164.052131 306,163.906298 C306,163.760465 306.041667,163.645882 306.125,163.562549 L307.562496,162.125052 C307.645829,162.041719 307.760413,162.000052 307.906245,162.000052 C308.052078,162.000052 308.166662,162.041719 308.249995,162.125052 L315.999976,169.875034 L323.749958,162.125052 C323.83329,162.041719 323.947874,162.000052 324.093707,162.000052 C324.23954,162.000052 324.354123,162.041719 324.437456,162.125052 L325.874953,163.562549 C325.958285,163.645882 325.999952,163.760465 325.999952,163.906298 C325.999952,164.052131 325.958285,164.166714 325.874953,164.250047 L318.124971,172.000029 Z"/></g></g></svg>&nbsp;</li>
+						<li class="pn-head--site__nav__home"><a href="https://www.precisionnutrition.com"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   viewBox="0 0 253.39 226.725"
+   class="pn-svg pn-head--site__nav__home__svg"
+   version="1.1"
+   id="svg827"
+   sodipodi:docname="pn-logo-mark-blue.svg"
+   inkscape:version="0.92.4 (5da689c313, 2019-01-14)">
+  <metadata
+     id="metadata833">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs831" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     id="namedview829"
+     showgrid="false"
+     inkscape:pagecheckerboard="true"
+     inkscape:zoom="3.7402138"
+     inkscape:cx="126.695"
+     inkscape:cy="134.75165"
+     inkscape:window-x="1912"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg827" />
+  <path
+     d="M116.149,88.088c0,10.035-7.805,17.84-18.584,17.84H65.973v-35.31h1.858h29.735  C108.344,70.619,116.149,78.052,116.149,88.088z M250.325,125.628l-51.29,88.83c-3.718,6.691-13.381,12.267-21.187,12.267H75.264  c-7.805,0-17.097-5.576-21.185-12.267l-51.292-88.83c-3.717-6.69-3.717-17.841,0-24.531l51.292-88.832  C57.796,5.575,67.459,0,75.264,0h102.584c7.805,0,17.097,5.575,21.187,12.265l51.29,88.832  C254.412,107.787,254.412,118.938,250.325,125.628z M132.131,88.088c0-17.47-13.752-30.85-31.964-30.85h-42  c-4.46,0-7.805,3.717-7.805,7.805c0,0,0,87.344,0,90.688c2.602,0,13.38,0,15.982,0c0-3.344,0-36.794,0-36.794h34.195  C118.751,118.938,132.131,105.928,132.131,88.088z M207.209,114.477c0-17.84-14.122-31.593-33.079-31.593  c-18.955,0-33.079,13.753-33.079,31.593c0,0,0,37.911,0,41.255c2.601,0,13.01,0,15.611,0c0-3.344,0-41.255,0-41.255  c0-10.778,7.062-18.211,17.468-18.211c10.408,0,17.468,7.434,17.468,18.211c0,0,0,37.911,0,41.255c2.603,0,13.009,0,15.61,0  C207.209,152.388,207.209,114.477,207.209,114.477z"
+     id="path825"
+     style="fill:#068FB9;fill-opacity:1" />
+  <path
+     style="opacity:0;fill:#00ffff;fill-opacity:1;fill-rule:nonzero;stroke:#068FB9;stroke-width:0.26736438;stroke-opacity:1"
+     d="m 71.72488,226.21344 c -6.420101,-1.32576 -13.118966,-5.61482 -16.697724,-10.691 -2.040461,-2.89423 -52.6484521,-90.85956 -53.2901135,-92.62732 -2.27649335,-6.27166 -2.08471868,-14.57838 0.4663622,-20.20046 0.94155,-2.07499 52.1713283,-90.773511 53.3775533,-92.417149 3.250868,-4.4297266 9.791291,-8.4166114 15.960879,-9.72936916 2.736403,-0.58224844 107.249083,-0.58224844 109.985483,0 6.77801,1.44221516 13.61833,5.99386816 17.05078,11.34583416 0.62376,0.972589 12.71819,21.841713 26.8765,46.375832 16.13358,27.956928 25.97533,45.277292 26.36644,46.401932 1.92584,5.53776 1.84211,12.6965 -0.20987,17.94157 -0.66367,1.69643 -52.1209,91.01889 -53.84234,93.46269 -2.92276,4.14921 -8.56677,7.94529 -14.553,9.78812 l -2.00523,0.6173 -53.87393,0.0454 c -44.168251,0.0373 -54.187008,-0.0192 -55.61179,-0.31343 z m -5.347288,-88.74408 v -18.29714 l 19.317078,-0.10535 c 18.7013,-0.10199 19.40012,-0.12402 21.92224,-0.69089 9.80987,-2.20488 17.04001,-7.56463 21.20127,-15.71662 2.31076,-4.526829 3.33105,-8.987004 3.33105,-14.561597 0,-8.834324 -3.1342,-16.325147 -9.28751,-22.197378 -4.68251,-4.468614 -10.78096,-7.389602 -17.48324,-8.373989 -4.18145,-0.614144 -47.558706,-0.626095 -49.62096,-0.01366 -1.615025,0.479609 -3.832377,2.356272 -4.699851,3.977725 l -0.588258,1.099547 -0.0698,46.588242 -0.0698,46.58825 h 8.023892 8.023888 z m 90.438448,-4.22831 c 0.10128,-24.79438 0.0141,-23.4595 1.78575,-27.32837 3.2471,-7.090723 11.16968,-10.791653 19.4433,-9.082689 6.30342,1.302006 10.72395,5.449419 12.70873,11.923509 0.60036,1.95833 0.60168,2.00536 0.68595,24.48755 l 0.0844,22.52545 h 7.87722 7.87722 v -22.15623 c 0,-18.43681 -0.0669,-22.54006 -0.39873,-24.4427 -2.39663,-13.74329 -12.98899,-23.863321 -27.18307,-25.970941 -17.23574,-2.55926 -32.99027,6.828807 -37.4843,22.336771 -1.18882,4.10237 -1.24027,5.27761 -1.24027,28.32856 v 21.90454 h 7.87588 7.87589 z"
+     id="path835"
+     inkscape:connector-curvature="0" />
+  <path
+     style="opacity:0;fill:#00ffff;fill-opacity:1;fill-rule:nonzero;stroke:#068FB9;stroke-width:0.26736438;stroke-opacity:1"
+     d="m 71.72488,226.21344 c -6.420101,-1.32576 -13.118966,-5.61482 -16.697724,-10.691 -2.040461,-2.89423 -52.6484521,-90.85956 -53.2901135,-92.62732 -2.27649335,-6.27166 -2.08471868,-14.57838 0.4663622,-20.20046 0.94155,-2.07499 52.1713283,-90.773511 53.3775533,-92.417149 3.250868,-4.4297266 9.791291,-8.4166114 15.960879,-9.72936916 2.736403,-0.58224844 107.249083,-0.58224844 109.985483,0 6.77801,1.44221516 13.61833,5.99386816 17.05078,11.34583416 0.62376,0.972589 12.71819,21.841713 26.8765,46.375832 16.13358,27.956928 25.97533,45.277292 26.36644,46.401932 1.92584,5.53776 1.84211,12.6965 -0.20987,17.94157 -0.66367,1.69643 -52.1209,91.01889 -53.84234,93.46269 -2.92276,4.14921 -8.56677,7.94529 -14.553,9.78812 l -2.00523,0.6173 -53.87393,0.0454 c -44.168251,0.0373 -54.187008,-0.0192 -55.61179,-0.31343 z m -5.347288,-88.74408 v -18.29714 l 19.317078,-0.10535 c 18.7013,-0.10199 19.40012,-0.12402 21.92224,-0.69089 9.80987,-2.20488 17.04001,-7.56463 21.20127,-15.71662 2.31076,-4.526829 3.33105,-8.987004 3.33105,-14.561597 0,-8.834324 -3.1342,-16.325147 -9.28751,-22.197378 -4.68251,-4.468614 -10.78096,-7.389602 -17.48324,-8.373989 -4.18145,-0.614144 -47.558706,-0.626095 -49.62096,-0.01366 -1.615025,0.479609 -3.832377,2.356272 -4.699851,3.977725 l -0.588258,1.099547 -0.0698,46.588242 -0.0698,46.58825 h 8.023892 8.023888 z m 90.438448,-4.22831 c 0.10128,-24.79438 0.0141,-23.4595 1.78575,-27.32837 3.2471,-7.090723 11.16968,-10.791653 19.4433,-9.082689 6.30342,1.302006 10.72395,5.449419 12.70873,11.923509 0.60036,1.95833 0.60168,2.00536 0.68595,24.48755 l 0.0844,22.52545 h 7.87722 7.87722 v -22.15623 c 0,-18.43681 -0.0669,-22.54006 -0.39873,-24.4427 -2.39663,-13.74329 -12.98899,-23.863321 -27.18307,-25.970941 -17.23574,-2.55926 -32.99027,6.828807 -37.4843,22.336771 -1.18882,4.10237 -1.24027,5.27761 -1.24027,28.32856 v 21.90454 h 7.87588 7.87589 z"
+     id="path837"
+     inkscape:connector-curvature="0" />
+  <path
+     style="opacity:0;fill:#00ffff;fill-opacity:1;fill-rule:nonzero;stroke:#068FB9;stroke-width:0.26736438;stroke-opacity:1"
+     d="m 71.72488,226.21344 c -6.420101,-1.32576 -13.118966,-5.61482 -16.697724,-10.691 -2.040461,-2.89423 -52.6484521,-90.85956 -53.2901135,-92.62732 -2.27649335,-6.27166 -2.08471868,-14.57838 0.4663622,-20.20046 0.94155,-2.07499 52.1713283,-90.773511 53.3775533,-92.417149 3.250868,-4.4297266 9.791291,-8.4166114 15.960879,-9.72936916 2.736403,-0.58224844 107.249083,-0.58224844 109.985483,0 6.77801,1.44221516 13.61833,5.99386816 17.05078,11.34583416 0.62376,0.972589 12.71819,21.841713 26.8765,46.375832 16.13358,27.956928 25.97533,45.277292 26.36644,46.401932 1.92584,5.53776 1.84211,12.6965 -0.20987,17.94157 -0.66367,1.69643 -52.1209,91.01889 -53.84234,93.46269 -2.92276,4.14921 -8.56677,7.94529 -14.553,9.78812 l -2.00523,0.6173 -53.87393,0.0454 c -44.168251,0.0373 -54.187008,-0.0192 -55.61179,-0.31343 z m -5.347288,-88.74408 v -18.29714 l 19.317078,-0.10535 c 18.7013,-0.10199 19.40012,-0.12402 21.92224,-0.69089 9.80987,-2.20488 17.04001,-7.56463 21.20127,-15.71662 2.31076,-4.526829 3.33105,-8.987004 3.33105,-14.561597 0,-8.834324 -3.1342,-16.325147 -9.28751,-22.197378 -4.68251,-4.468614 -10.78096,-7.389602 -17.48324,-8.373989 -4.18145,-0.614144 -47.558706,-0.626095 -49.62096,-0.01366 -1.615025,0.479609 -3.832377,2.356272 -4.699851,3.977725 l -0.588258,1.099547 -0.0698,46.588242 -0.0698,46.58825 h 8.023892 8.023888 z m 90.438448,-4.22831 c 0.10128,-24.79438 0.0141,-23.4595 1.78575,-27.32837 3.2471,-7.090723 11.16968,-10.791653 19.4433,-9.082689 6.30342,1.302006 10.72395,5.449419 12.70873,11.923509 0.60036,1.95833 0.60168,2.00536 0.68595,24.48755 l 0.0844,22.52545 h 7.87722 7.87722 v -22.15623 c 0,-18.43681 -0.0669,-22.54006 -0.39873,-24.4427 -2.39663,-13.74329 -12.98899,-23.863321 -27.18307,-25.970941 -17.23574,-2.55926 -32.99027,6.828807 -37.4843,22.336771 -1.18882,4.10237 -1.24027,5.27761 -1.24027,28.32856 v 21.90454 h 7.87588 7.87589 z"
+     id="path839"
+     inkscape:connector-curvature="0" />
+  <path
+     style="opacity:0;fill:#00ffff;fill-opacity:1;fill-rule:nonzero;stroke:#068FB9;stroke-width:0.26736438;stroke-opacity:1"
+     d="m 50.603093,109.56008 c 0,-50.837082 -0.124676,-47.261607 1.72329,-49.420541 0.490696,-0.573267 1.536913,-1.399414 2.324927,-1.835881 l 1.432753,-0.793577 h 24.463842 c 24.182795,0 24.491775,0.0067 26.894975,0.580549 12.24343,2.923709 20.58908,10.875793 23.6991,22.581493 0.51732,1.947137 0.59463,2.914303 0.59561,7.451181 10e-4,4.470499 -0.0816,5.540111 -0.57913,7.504352 -3.26421,12.886544 -13.38463,21.554344 -26.81512,22.966264 -1.41917,0.1492 -10.415055,0.26907 -20.386539,0.27166 l -17.846573,0.005 v 18.31446 18.31446 h -7.753567 -7.753568 z m 52.269737,-4.13347 c 0.8823,-0.25325 2.62686,-0.96893 3.87679,-1.5904 4.31687,-2.14635 7.847,-6.596189 8.99196,-11.334637 0.58776,-2.432455 0.57656,-6.649829 -0.0237,-8.923463 C 113.9295,76.803991 108.28591,71.911252 100.95005,70.775056 99.691205,70.580084 93.298049,70.477254 82.435063,70.477254 H 65.842864 v 17.790499 17.790497 l 17.712891,-0.0856 c 15.796669,-0.0763 17.886435,-0.1354 19.317075,-0.54606 z"
+     id="path841"
+     inkscape:connector-curvature="0" />
+  <path
+     style="opacity:0;fill:#00ffff;fill-opacity:1;fill-rule:nonzero;stroke:#068FB9;stroke-width:0.26736438;stroke-opacity:1"
+     d="m 71.72488,226.21344 c -6.420101,-1.32576 -13.118966,-5.61482 -16.697724,-10.691 -2.040461,-2.89423 -52.6484521,-90.85956 -53.2901135,-92.62732 -2.27649335,-6.27166 -2.08471868,-14.57838 0.4663622,-20.20046 0.94155,-2.07499 52.1713283,-90.773511 53.3775533,-92.417149 3.250868,-4.4297266 9.791291,-8.4166114 15.960879,-9.72936916 2.736403,-0.58224844 107.249083,-0.58224844 109.985483,0 6.77801,1.44221516 13.61833,5.99386816 17.05078,11.34583416 0.62376,0.972589 12.71819,21.841713 26.8765,46.375832 16.13358,27.956928 25.97533,45.277292 26.36644,46.401932 1.92584,5.53776 1.84211,12.6965 -0.20987,17.94157 -0.66367,1.69643 -52.1209,91.01889 -53.84234,93.46269 -2.92276,4.14921 -8.56677,7.94529 -14.553,9.78812 l -2.00523,0.6173 -53.87393,0.0454 c -44.168251,0.0373 -54.187008,-0.0192 -55.61179,-0.31343 z m -5.347288,-88.74408 v -18.29714 l 19.317078,-0.10535 c 18.7013,-0.10199 19.40012,-0.12402 21.92224,-0.69089 9.80987,-2.20488 17.04001,-7.56463 21.20127,-15.71662 2.31076,-4.526829 3.33105,-8.987004 3.33105,-14.561597 0,-8.834324 -3.1342,-16.325147 -9.28751,-22.197378 -4.68251,-4.468614 -10.78096,-7.389602 -17.48324,-8.373989 -4.18145,-0.614144 -47.558706,-0.626095 -49.62096,-0.01366 -1.615025,0.479609 -3.832377,2.356272 -4.699851,3.977725 l -0.588258,1.099547 -0.0698,46.588242 -0.0698,46.58825 h 8.023892 8.023888 z m 90.438448,-4.22831 c 0.10128,-24.79438 0.0141,-23.4595 1.78575,-27.32837 3.2471,-7.090723 11.16968,-10.791653 19.4433,-9.082689 6.30342,1.302006 10.72395,5.449419 12.70873,11.923509 0.60036,1.95833 0.60168,2.00536 0.68595,24.48755 l 0.0844,22.52545 h 7.87722 7.87722 v -22.15623 c 0,-18.43681 -0.0669,-22.54006 -0.39873,-24.4427 -2.39663,-13.74329 -12.98899,-23.863321 -27.18307,-25.970941 -17.23574,-2.55926 -32.99027,6.828807 -37.4843,22.336771 -1.18882,4.10237 -1.24027,5.27761 -1.24027,28.32856 v 21.90454 h 7.87588 7.87589 z"
+     id="path843"
+     inkscape:connector-curvature="0" />
+  <path
+     style="opacity:0;fill:#00ffff;fill-opacity:1;fill-rule:nonzero;stroke:#068FB9;stroke-width:0.26736438;stroke-opacity:1"
+     d="m 141.23962,133.47659 c 0,-24.13482 0.0109,-24.33088 1.61076,-29.10628 3.7192,-11.101077 13.58712,-19.13128 25.69472,-20.909568 16.7168,-2.455255 31.91755,6.171031 36.8577,20.916418 1.59731,4.76764 1.60846,4.96942 1.60846,29.09943 v 22.02254 h -7.60846 -7.60846 l -0.0874,-22.39177 -0.0874,-22.39176 -0.61072,-2.00087 c -2.40125,-7.86715 -8.71831,-12.570494 -16.88344,-12.570494 -8.22542,0 -14.69533,4.879154 -16.91108,12.753154 -0.57941,2.05901 -0.58797,2.36906 -0.67241,24.34366 l -0.0855,22.25808 h -7.6084 -7.6084 z"
+     id="path845"
+     inkscape:connector-curvature="0" />
+</svg>
+</a>
+						<a role="button" class="button sign_in" rel="nofollow" href="https://my.precisionnutrition.com/users/sign_up">Sign Up/Login</a>
+						</li>
+						<li class="pn-head--site__nav__main"><svg viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg" class="pn-svg pn-head--site__nav__main__svg"><path d="M1203 544q0 13-10 23L800 960l393 393q10 10 10 23t-10 23l-50 50q-10 10-23 10t-23-10L631 983q-10-10-10-23t10-23l466-466q10-10 23-10t23 10l50 50q10 10 10 23z"/></svg><span>&nbsp;Main Menu</span>
+						</li>
+						<li class="pn-head--site__nav__submenu"></li>
+						<li id="menu-item-139263" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-has-children menu-item-139263 pn-head--site__nav__item"><a href="#">Get Coaching</a>
+<ul class="sub-menu">
+	<li id="menu-item-142331" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-142331 sub-menu__item"><a href="https://www.precisionnutrition.com/coaching-for-women">Group Coaching for Women</a></li>
+	<li id="menu-item-142330" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-142330 sub-menu__item"><a href="https://www.precisionnutrition.com/coaching-for-men">Group Coaching for Men</a></li>
+	<li id="menu-item-142332" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-142332 sub-menu__item"><a href="https://www.precisionnutrition.com/1-to-1-coaching-offer/">1-to-1 Coaching</a></li>
+</ul>
+</li>
+<li id="menu-item-102757" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-has-children menu-item-102757 pn-head--site__nav__item"><a href="#">Certifications</a>
+<ul class="sub-menu">
+	<li id="menu-item-122568" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-122568 sub-menu__item"><a href="https://www.precisionnutrition.com/nutrition-certification">All Nutrition Certifications &#038; Courses</a></li>
+	<li id="menu-item-114676" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-114676 sub-menu__item"><a href="https://www.precisionnutrition.com/nutrition-certification-level-1-register-now">Level 1 Nutrition Certification</a></li>
+	<li id="menu-item-129486" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-129486 sub-menu__item"><a href="https://www.precisionnutrition.com/sleep-stress-management-recovery-certification-level-1-waitlist">Level 1 Sleep, Stress Management and Recovery Certification</a></li>
+	<li id="menu-item-119330" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-119330 sub-menu__item"><a href="https://www.precisionnutrition.com/nutrition-certification-level-2-presale-list">Level 2 Health Coaching Certification</a></li>
+</ul>
+</li>
+<li id="menu-item-102766" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-has-children menu-item-102766 pn-head--site__nav__item"><a href="#">Resources and Articles</a>
+<ul class="sub-menu">
+	<li id="menu-item-102779" class="menu-item menu-item-type-taxonomy menu-item-object-category current-post-ancestor current-menu-parent current-post-parent menu-item-102779 sub-menu__item"><a href="https://www.precisionnutrition.com/blog">All Articles</a></li>
+	<li id="menu-item-109465" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-109465 sub-menu__item"><a href="https://www.precisionnutrition.com/blog/most-popular">Most Popular</a></li>
+	<li id="menu-item-102767" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-102767 sub-menu__item"><a href="https://www.precisionnutrition.com/blog/free-courses-guides">Free Courses &amp; Guides</a></li>
+	<li id="menu-item-102775" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-102775 sub-menu__item"><a href="https://www.precisionnutrition.com/blog/calculators">Calculators</a></li>
+	<li id="menu-item-102768" class="menu-item menu-item-type-taxonomy menu-item-object-category current-post-ancestor current-menu-parent current-post-parent menu-item-102768 sub-menu__item"><a href="https://www.precisionnutrition.com/blog/infographics">Infographics</a></li>
+	<li id="menu-item-102769" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-102769 sub-menu__item"><a href="https://www.precisionnutrition.com/blog/industry-reports">Industry Reports</a></li>
+	<li id="menu-item-102770" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-102770 sub-menu__item"><a href="https://www.precisionnutrition.com/blog/coaching-resources">Coaching Resources</a></li>
+	<li id="menu-item-102771" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-102771 sub-menu__item"><a href="https://www.precisionnutrition.com/blog/fitness-workouts">Fitness &amp; Workouts</a></li>
+	<li id="menu-item-102772" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-102772 sub-menu__item"><a href="https://www.precisionnutrition.com/blog/fitness-career">Fitness Career</a></li>
+	<li id="menu-item-102773" class="menu-item menu-item-type-taxonomy menu-item-object-category current-post-ancestor current-menu-parent current-post-parent menu-item-102773 sub-menu__item"><a href="https://www.precisionnutrition.com/blog/food-nutrition">Food &amp; Nutrition</a></li>
+	<li id="menu-item-102774" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-102774 sub-menu__item"><a href="https://www.precisionnutrition.com/blog/healthy-living">Healthy Living</a></li>
+	<li id="menu-item-102776" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-102776 sub-menu__item"><a href="https://www.precisionnutrition.com/blog/nutrition-psychology">Nutrition Psychology</a></li>
+	<li id="menu-item-102777" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-102777 sub-menu__item"><a href="https://www.precisionnutrition.com/blog/nutrition-science">Nutrition Science</a></li>
+	<li id="menu-item-102778" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-102778 sub-menu__item"><a href="https://www.precisionnutrition.com/blog/weight-loss">Weight Loss</a></li>
+	<li id="menu-item-115893" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-115893 sub-menu__item"><a href="https://www.precisionnutrition.com/podcast">Podcasts</a></li>
+</ul>
+</li>
+</ul>
+		</div>
+	</header>
+
+	<script>
+		(function($) {
+			$(document).ready(function() {
+				$('#search_toggle').click(function(e) {
+					e.preventDefault();
+					if(!$('#search').hasClass('expanded')) {
+						$('#search').toggleClass('expanded');
+						$(this).siblings('input').focus();
+					}
+				});
+				$('#search > input').focusout(function() {
+					if($('#search').hasClass('expanded')) {
+						$('#search').toggleClass('expanded');
+					}
+				});
+			});
+		}(jQuery));
+	</script>
+<div class="pn-out pn-out--edge pn-out--bg-t">
+  <div id="blog_post_wrapper">
+    <div class="blog_post">
+      <div class="intro">
+        <h1 class="title">‘What should I eat?!’ The keto diet edition. [Infographic]                      <br>
+            <span class="sub_title">
+              This keto food list shows you what to eat on the keto diet.             </span>
+                  </h1>
+        <div class="author">
+          By <a href="https://www.precisionnutrition.com/author/brian-st-pierre">Brian St. Pierre, MS, RD</a>        </div>
+        <hr>
+      </div>
+      <div id="social_sharing">
+        <p>Share</p>
+        <div class="pn-share--links">
+	<a class="pn-share--facebook" onclick="javascript:window.open('https://www.facebook.com/sharer.php?u=https%3A%2F%2Fwww.precisionnutrition.com%2Fketo-food-list-infographic', '_blank', 'width=800, height=500, top=300, left=300');void(0);">
+		<svg viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg" class="pn-svg"><path d="M1343 12v264h-157q-86 0-116 36t-30 108v189h293l-39 296h-254v759H734V905H479V609h255V391q0-186 104-288.5T1115 0q147 0 228 12z"/></svg>	</a>
+
+	<a class="pn-share--twitter" onclick="javascript:window.open('https://twitter.com/share?text=%E2%80%98What+should+I+eat%3F%21%E2%80%99+The+keto+diet+edition.+%5BInfographic%5D&url=https%3A%2F%2Fwww.precisionnutrition.com%2Fketo-food-list-infographic', '_blank', 'width=800, height=500, top=300, left=300');void(0);">
+		<svg viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg" class="pn-svg"><path d="M1684 408q-67 98-162 167 1 14 1 42 0 130-38 259.5T1369.5 1125 1185 1335.5t-258 146-323 54.5q-271 0-496-145 35 4 78 4 225 0 401-138-105-2-188-64.5T285 1033q33 5 61 5 43 0 85-11-112-23-185.5-111.5T172 710v-4q68 38 146 41-66-44-105-115t-39-154q0-88 44-163 121 149 294.5 238.5T884 653q-8-38-8-74 0-134 94.5-228.5T1199 256q140 0 236 102 109-21 205-78-37 115-142 178 93-10 186-50z"/></svg>	</a>
+</div>      </div>
+      <div class="post_content pn-wysiwyg">
+        <h2>“What can I eat on the keto diet?!”</h2>
+<p>When you nearly eliminate an entire macronutrient—in the case of keto, it&#8217;s carbohydrates—getting the right balance of nutrition becomes a bit more challenging.</p>
+<p>Folks who are interested in trying keto often wonder:</p>
+<ul class="pn-list__spaced">
+<li><b>Can I still eat vegetables? If so, which ones?</b></li>
+<li><b>Is fruit </b><b><i>completely </i></b><b>off-limits? </b></li>
+<li><b>What about foods that have a small amount of carbohydrates, like cheese?</b></li>
+<li><strong>Is bacon a protein or a fat? </strong></li>
+<li><b>Is butter healthy? </b></li>
+</ul>
+<p>That&#8217;s why we created this handy keto food list.</p>
+<p>Warning: You might notice that this infographic is a bit different from other keto guides you&#8217;ve seen.</p>
+<p>We’re not going to tell you that some foods are completely off-limits. Instead, we’ve sorted foods typically thought of as “no-no’s” on the keto diet into an “eat less” bucket.</p>
+<p>By thinking of foods on a continuum from “eat more” to “eat less,” you’ll be able to follow the keto diet and still include a range of nutritious foods. (Although, with severely restrictive diets like keto, we always recommend working with a medical practitioner, especially if you plan to follow the diet long-term.)</p>
+<p><b>Use our continuums to make keto food choices that are “just a little bit better,” whether you’re browsing the grocery store aisles, cooking a homemade meal, or ordering from a menu.</b></p>
+<p>Plus, learn how to:</p>
+<ul class="pn-list__spaced">
+<li><b>Incorporate a mix of keto-friendly proteins, vegetables, and fats to create nutritious meals</b><b><br />
+</b></li>
+<li><b>Strategically improve your food choices—based on what you eat right now—to feel, move, and look better. </b><b><br />
+</b></li>
+<li><b>Customize your intake for your individual lifestyle, goals, and (of course) taste buds. </b></li>
+</ul>
+<p>As a bonus, we’ve provided space to create your own personal keto food list on a continuum. That way, you can build a delicious menu that’s right for you—no headaches required.</p>
+<p>(And if you want a <strong>FREE keto diet nutrition plan</strong> that instantly gives you the amounts of calories, protein, carbs, and fat you need to achieve your goals, check out the <a href="https://www.precisionnutrition.com/nutrition-calculator"><strong>Precision Nutrition Calculator</strong></a>.)</p>
+<p><strong><a href="https://www.precisionnutrition.com/keto-food-list-infographic-download">Download this infographic for your tablet or printer</a> and use the step-by-step process to decide which foods match your (or your clients’) keto goals.</strong></p>
+<p style="text-align: center;"><strong><a href="https://assets.precisionnutrition.com/2021/04/keto-food-list-infographic-image-1.png"><img fetchpriority="high" decoding="async" class="aligncenter wp-image-119338 size-full" src="https://assets.precisionnutrition.com/2021/04/keto-food-list-infographic-image-1.png" alt="" width="1251" height="10768" /></a></strong></p>
+<p><a href="https://www.precisionnutrition.com/keto-food-list-infographic-download"><strong>Download the tablet or printer version</strong></a><strong> of this infographic to discover your own personal keto food list (or, if you’re a coach, to help your clients do the same).</strong></p>
+<p>++++<br />
+<h2>If you’re a coach, or you want to be…</h2>
+
+<p>
+You can help people build <em>sustainable</em> nutrition and lifestyle habits that will significantly improve their physical and mental health—while you make a great living doing what you love. We'll show you how.
+</p>
+<p>
+If you’d like to learn more, consider the <strong><a href="https://www.precisionnutrition.com/nutrition-certification-level-1-register-now">PN Level 1 Nutrition Coaching Certification.</a></strong> (You can enroll now at a big discount.)
+</p>
+
+</p>
+      </div>
+    </div>
+    <style>
+    div #signup_cta ul {
+    margin: 0;
+    padding: 0;
+    }
+    
+    div #signup_cta ul li {
+      list-style: none;
+    margin-bottom:5px;
+    }
+    
+    div #signup_cta ul li:before {
+        content: '✓ ';
+        font-size: 25px;
+        color: #068FB9;
+    }
+    </style>
+    
+    
+    
+    <!--  BASE OFFER:  -->
+      
+    <div id="signup_cta">
+      <h3 class="title"><strong>Ready to transform lives while doing what you love?</strong></h3>
+    </br>
+    <p><strong>The world's #1 rated <a href="https://www.precisionnutrition.com/nutrition-certification-level-1-register-now">PN Nutrition Certification</a> gives you the knowledge, skills, and tools to confidently coach nutrition with anyone. Click below to:</strong></p>
+    <ul>
+    <li><strong>Receive a BIG discount </strong>off the regular price (includes a low monthly payment option)
+    </li>
+    <li><strong>Get lifetime access </strong>to the self-paced program—with support from PN's experts and your peers around the world
+    </li>
+    <li><strong>Master nutrition science and coaching</strong>—so you can get paid well to help people eat, feel, and live better</li>
+    </ul>
+    </br>
+    </ul>
+      <a href="https://www.precisionnutrition.com/nutrition-certification-level-1-register-now"><button class="button_blue">LEARN MORE</button></a>
+    </div> 
+
+    <!-- MONTHLY PROMO:  
+
+  <div id="signup_cta">
+
+
+
+<h3><strong>This week only: SAVE 54% on the Nutrition Coach Starter Package!</strong></h3>
+
+<p>
+<br>This includes everything you need to succeed as a nutrition coach:<br><br>✓ <strong>PN Nutrition Certification</strong>. Master nutrition science and coaching so you can help people eat better and live healthier lives. 100% self-paced; no deadlines or expiration.
+<br>✓ <strong>Coaching Career Kickstarter Course. </strong>Turn your passion into a profitable full-time or part-time career or business. Self-paced + live learning.<br><br>✓ <strong>Social Media Success Secrets. </strong>95+ plug-and-play nutrition social posts, infographics, articles, and newsletters to easily attract clients online.<br><br>✓ <strong>Coaches Community Lifetime Access. </strong>Ask questions and get help anytime you need—from PN’s experts and your peers on our forum and live calls.<br><br><strong>Join now for less than HALF the regular price. (Ends Friday.)</strong>
+</p>
+
+    <a href="https://www.precisionnutrition.com/nutrition-certification-level-1-register-now"><button class="button_blue">ENROLL NOW</button></a>
+  </div>  -->          <div id="related_posts">
+        <h2 class="title"><strong>Related Articles</strong></h2>
+                  <div class="related_post">
+            <div class="related_post_image">
+              <a href="https://www.precisionnutrition.com/what-should-i-eat-infographic">
+                <img width="765" height="400" src="https://assets.precisionnutrition.com/2019/02/what-should-i-eat-infographic-social-2-1024x536.png" class="attachment-large size-large wp-post-image" alt="Chart with illustrations of different food options for lean proteins, smart carbohydrates, and healthy fats." decoding="async" srcset="https://assets.precisionnutrition.com/2019/02/what-should-i-eat-infographic-social-2-1024x536.png 1024w, https://assets.precisionnutrition.com/2019/02/what-should-i-eat-infographic-social-2-300x157.png 300w, https://assets.precisionnutrition.com/2019/02/what-should-i-eat-infographic-social-2-768x402.png 768w, https://assets.precisionnutrition.com/2019/02/what-should-i-eat-infographic-social-2-94x49.png 94w, https://assets.precisionnutrition.com/2019/02/what-should-i-eat-infographic-social-2-295x154.png 295w, https://assets.precisionnutrition.com/2019/02/what-should-i-eat-infographic-social-2.png 1200w" sizes="(max-width: 765px) 100vw, 765px" loading="lazy" />              </a>
+            </div>
+            <div class="related_post_content">
+              <div class="related_post_title">
+                <div class="main_title">
+                  <a href="https://www.precisionnutrition.com/what-should-i-eat-infographic">‘What should I eat?!’ Our 3-step guide for choosing the best foods for your body. [Infographic]</a>
+                </div>
+                              </div>
+            </div>
+          </div>
+                  <div class="related_post">
+            <div class="related_post_image">
+              <a href="https://www.precisionnutrition.com/foods-to-avoid-to-lose-weight">
+                <img width="765" height="402" src="https://assets.precisionnutrition.com/2021/01/women-dining-together-feature-1024x538.jpg" class="attachment-large size-large wp-post-image" alt="" decoding="async" srcset="https://assets.precisionnutrition.com/2021/01/women-dining-together-feature-1024x538.jpg 1024w, https://assets.precisionnutrition.com/2021/01/women-dining-together-feature-300x158.jpg 300w, https://assets.precisionnutrition.com/2021/01/women-dining-together-feature-768x403.jpg 768w, https://assets.precisionnutrition.com/2021/01/women-dining-together-feature-94x49.jpg 94w, https://assets.precisionnutrition.com/2021/01/women-dining-together-feature-295x155.jpg 295w, https://assets.precisionnutrition.com/2021/01/women-dining-together-feature.jpg 1200w" sizes="(max-width: 765px) 100vw, 765px" loading="lazy" />              </a>
+            </div>
+            <div class="related_post_content">
+              <div class="related_post_title">
+                <div class="main_title">
+                  <a href="https://www.precisionnutrition.com/foods-to-avoid-to-lose-weight">We’ve told 100,000 clients, “There are no bad foods.” And we&#8217;re not about to stop. Here’s why.</a>
+                </div>
+                <div class="sub_title">Candy bars. French fries. Doughnuts. Can most people really include these foods in moderation? Or is that a recipe for a disaster? </div>              </div>
+            </div>
+          </div>
+                  <div class="related_post">
+            <div class="related_post_image">
+              <a href="https://www.precisionnutrition.com/nutrition-calculator-old">
+                <img width="765" height="402" src="https://assets.precisionnutrition.com/2019/11/pn-calculator-feature-1024x538.png" class="attachment-large size-large wp-post-image" alt="PN Nutrition Calculator displayed on two tablets." decoding="async" srcset="https://assets.precisionnutrition.com/2019/11/pn-calculator-feature-1024x538.png 1024w, https://assets.precisionnutrition.com/2019/11/pn-calculator-feature-300x158.png 300w, https://assets.precisionnutrition.com/2019/11/pn-calculator-feature-768x403.png 768w, https://assets.precisionnutrition.com/2019/11/pn-calculator-feature-94x49.png 94w, https://assets.precisionnutrition.com/2019/11/pn-calculator-feature-295x155.png 295w, https://assets.precisionnutrition.com/2019/11/pn-calculator-feature.png 1200w" sizes="(max-width: 765px) 100vw, 765px" loading="lazy" />              </a>
+            </div>
+            <div class="related_post_content">
+              <div class="related_post_title">
+                <div class="main_title">
+                  <a href="https://www.precisionnutrition.com/nutrition-calculator-old">The Ultimate Macro Calculator</a>
+                </div>
+                <div class="sub_title">Use the Precision Nutrition Calculator to instantly get a nutrition plan—with macros, calorie, and portions—that’s personalized for your body, eating preferences, and goals</div>              </div>
+            </div>
+          </div>
+              </div>
+      </div>
+  </div>
+
+    <footer class="pn-foot--site pn-out">
+        <div class="pn-foot--site__body">
+          <div class="pn-in">
+
+              <div class="pn-foot--site__search-col">
+
+                  
+                      <div class="pn-foot--site__h">Search</div>
+
+                    <form action="/" method="get" class="pn-foot--site__search">
+    <label for="footer_search" class="screen-reader-text">Search this site</label>
+    <input type="text" name="s" value="" id="footer_search">
+    <button type="submit" aria-label="Search"><svg viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg" class="pn-svg"><path d="M1216 832q0-185-131.5-316.5T768 384 451.5 515.5 320 832t131.5 316.5T768 1280t316.5-131.5T1216 832zm512 832q0 52-38 90t-90 38q-54 0-90-38l-343-342q-179 124-399 124-143 0-273.5-55.5t-225-150-150-225T64 832t55.5-273.5 150-225 225-150T768 128t273.5 55.5 225 150 150 225T1472 832q0 220-124 399l343 343q37 37 37 90z"/></svg></button>
+</form>
+                  
+                  <div class="pn-foot--site__social">
+                      <a href="https://twitter.com/insidePN" target="_blank" class="pn-foot--site__icon keep-params" aria-label="PN on Twitter">
+                        <svg viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg" class="pn-svg"><path d="M1684 408q-67 98-162 167 1 14 1 42 0 130-38 259.5T1369.5 1125 1185 1335.5t-258 146-323 54.5q-271 0-496-145 35 4 78 4 225 0 401-138-105-2-188-64.5T285 1033q33 5 61 5 43 0 85-11-112-23-185.5-111.5T172 710v-4q68 38 146 41-66-44-105-115t-39-154q0-88 44-163 121 149 294.5 238.5T884 653q-8-38-8-74 0-134 94.5-228.5T1199 256q140 0 236 102 109-21 205-78-37 115-142 178 93-10 186-50z"/></svg>                      </a>
+                      <a href="https://www.facebook.com/insidePN" target="_blank" class="pn-foot--site__icon keep-params" aria-label="PN on Facebook">
+                        <svg viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg" class="pn-svg"><path d="M1343 12v264h-157q-86 0-116 36t-30 108v189h293l-39 296h-254v759H734V905H479V609h255V391q0-186 104-288.5T1115 0q147 0 228 12z"/></svg>                      </a>
+                      <a href="https://www.instagram.com/precisionnutrition/" target="_blank" class="pn-foot--site__icon keep-params" aria-label="PN on Instagram">
+                        <svg viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg" class="pn-svg"><path d="M1152 896q0-106-75-181t-181-75-181 75-75 181 75 181 181 75 181-75 75-181zm138 0q0 164-115 279t-279 115-279-115-115-279 115-279 279-115 279 115 115 279zm108-410q0 38-27 65t-65 27-65-27-27-65 27-65 65-27 65 27 27 65zM896 266q-7 0-76.5-.5t-105.5 0-96.5 3-103 10T443 297q-50 20-88 58t-58 88q-11 29-18.5 71.5t-10 103-3 96.5 0 105.5.5 76.5-.5 76.5 0 105.5 3 96.5 10 103T297 1349q20 50 58 88t88 58q29 11 71.5 18.5t103 10 96.5 3 105.5 0 76.5-.5 76.5.5 105.5 0 96.5-3 103-10 71.5-18.5q50-20 88-58t58-88q11-29 18.5-71.5t10-103 3-96.5 0-105.5-.5-76.5.5-76.5 0-105.5-3-96.5-10-103T1495 443q-20-50-58-88t-88-58q-29-11-71.5-18.5t-103-10-96.5-3-105.5 0-76.5.5zm768 630q0 229-5 317-10 208-124 322t-322 124q-88 5-317 5t-317-5q-208-10-322-124t-124-322q-5-88-5-317t5-317q10-208 124-322t322-124q88-5 317-5t317 5q208 10 322 124t124 322q5 88 5 317z"/></svg>                      </a>
+                      <a href="https://www.pinterest.com/insidepn/" target="_blank" class="pn-foot--site__icon keep-params" aria-label="PN on Pinterest">
+                        <svg viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg" class="pn-svg"><path d="M256 597q0-108 37.5-203.5T397 227t152-123 185-78T936 0q158 0 294 66.5T1451 260t85 287q0 96-19 188t-60 177-100 149.5-145 103-189 38.5q-68 0-135-32t-96-88q-10 39-28 112.5t-23.5 95-20.5 71-26 71-32 62.5-46 77.5-62 86.5l-14 5-9-10q-15-157-15-188 0-92 21.5-206.5T604 972t52-203q-32-65-32-169 0-83 52-156t132-73q61 0 95 40.5T937 514q0 66-44 191t-44 187q0 63 45 104.5t109 41.5q55 0 102-25t78.5-68 56-95 38-110.5 20-111 6.5-99.5q0-173-109.5-269.5T909 163q-200 0-334 129.5T441 621q0 44 12.5 85t27 65 27 45.5T520 847q0 28-15 73t-37 45q-2 0-17-3-51-15-90.5-56t-61-94.5-32.5-108T256 597z"/></svg>                      </a>
+                      <a href="https://www.youtube.com/user/PrecisionNutrition" target="_blank" class="pn-foot--site__icon keep-params" aria-label="PN on YouTube">
+                        <?xml version="1.0" encoding="UTF-8" standalone="no"?><!--Created with Inkscape (http://www.inkscape.org/)--><svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="1.1" xml:space="preserve" viewBox="0 0 256 256" class="pn-svg"><metadata/><defs><clipPath clipPathUnits="userSpaceOnUse"><path d="M 0,192 H 192 V 0 H 0 Z"/></clipPath></defs><g transform="matrix(1.3333333,0,0,-1.3333333,0,256)"><g><g clip-path="url(#a)"><g transform="translate(78,69.8311)"><path d="M 0,0 V 52.338 L 46,26.168 Z M 102.322,68.806 C 100.298,76.428 94.334,82.43 86.762,84.467 73.037,88.169 18,88.169 18,88.169 c 0,0 -55.037,0 -68.762,-3.702 C -58.334,82.43 -64.298,76.428 -66.322,68.806 -70,54.992 -70,26.169 -70,26.169 c 0,0 0,-28.822 3.678,-42.637 2.024,-7.622 7.988,-13.624 15.56,-15.662 13.725,-3.701 68.762,-3.701 68.762,-3.701 0,0 55.037,0 68.762,3.701 7.572,2.038 13.536,8.04 15.56,15.662 C 106,-2.653 106,26.169 106,26.169 c 0,0 0,28.823 -3.678,42.637"/></g></g></g></g></svg>                      </a>
+                  </div>
+
+              </div>
+
+              <div class="pn-foot--site__menu-col">
+          
+                          <div class="pn-foot--site__col">
+                              <div class="pn-foot--site__h">Products &amp; Services</div>
+
+                <ul id="menu-products-services" class="pn-foot--site__nav"><li id="menu-item-122701" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-122701 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/nutrition-certification">All Nutrition Certifications &#038; Courses</a></li>
+<li id="menu-item-71528" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-71528 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/nutrition-certification-level-1-register-now">Level 1 Nutrition Certification</a></li>
+<li id="menu-item-132198" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-132198 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/sleep-stress-management-recovery-certification-level-1-waitlist">Level 1 Sleep, Stress Management and Recovery Certification</a></li>
+<li id="menu-item-71529" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-71529 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/nutrition-certification-level-2-presale-list">Level 2 Health Coaching Certification</a></li>
+<li id="menu-item-73292" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-73292 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/procoach-nutrition-coaching-software">Coaching Software</a></li>
+<li id="menu-item-71526" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-71526 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/womens-coaching-ondemand">Group Coaching for Women</a></li>
+<li id="menu-item-71527" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-71527 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/mens-coaching-ondemand">Group Coaching for Men</a></li>
+<li id="menu-item-139264" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-139264 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/1-on-1-coaching-waitlist">1-to-1 Coaching</a></li>
+<li id="menu-item-71530" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-71530 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/books">Precision Nutrition Guide</a></li>
+<li id="menu-item-100719" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-100719 pn-foot--site__nav__item"><a target="_blank" href="https://precisionnutrition.drivemarketing.com">Precision Nutrition Apparel</a></li>
+<li id="menu-item-105790" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-105790 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/precision-nutrition-reviews/">Nutrition Certification Reviews</a></li>
+</ul>                          </div>
+
+              
+                          <div class="pn-foot--site__col">
+                              <div class="pn-foot--site__h">Free Starter Kits</div>
+
+                <ul id="menu-free-starter-kits" class="pn-foot--site__nav"><li id="menu-item-71533" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-71533 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/nutrition-coaching-free-course">For Health &#038; Fitness Pros</a></li>
+<li id="menu-item-71531" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-71531 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/body-transformation-secrets-women">For Women</a></li>
+<li id="menu-item-71532" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-71532 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/body-transformation-secrets-men">For Men</a></li>
+<li id="menu-item-71534" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-71534 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/elite-athlete-application">For Elite Athletes</a></li>
+<li id="menu-item-139810" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-139810 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/nutrition-calculator">Precision Nutrition Calculator</a></li>
+<li id="menu-item-140751" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-140751 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/weight-loss-calculator/">Weight Loss Calculator</a></li>
+</ul>                          </div>
+
+              
+                          <div class="pn-foot--site__col">
+                              <div class="pn-foot--site__h">Company</div>
+
+                <ul id="menu-company" class="pn-foot--site__nav"><li id="menu-item-71536" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-71536 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/blog">Resources and Articles</a></li>
+<li id="menu-item-71537" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-71537 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/our-story">About Us</a></li>
+<li id="menu-item-120979" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-120979 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/meet-the-experts">Meet the Experts</a></li>
+<li id="menu-item-115894" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-115894 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/podcast">Podcasts</a></li>
+<li id="menu-item-94328" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-94328 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/media-center">Media and Blogger Center</a></li>
+<li id="menu-item-71538" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-71538 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/contact">Contact Us</a></li>
+<li id="menu-item-71539" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-71539 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/careers">Career Opportunities</a></li>
+<li id="menu-item-71540" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-71540 pn-foot--site__nav__item"><a href="https://www.precisionnutrition.com/certified-coach-directory">Find A Certified Professional</a></li>
+</ul>                          </div>
+
+                            </div>
+
+              <div class="pn-foot--site__bottom">
+
+              <span class="pn-foot--site__bottom__row">&copy; 2025 Precision Nutrition Inc.</span>
+
+                  <span class="pn-foot--site__bottom__row">
+                  <span class="pn-u--sep"></span>
+                  <a class="keep-params" href="https://www.precisionnutrition.com/privacy-policy">Privacy Policy</a>
+                  <span class="pn-u--sep"></span>
+                  <a class="keep-params" href="https://www.precisionnutrition.com/terms-of-use">Terms of Use</a>
+                  <span class="pn-u--sep"></span>
+                  <a class="keep-params" href="https://www.precisionnutrition.com/accessibility">Accessibility</a>
+                  <span class="pn-u--sep"></span>
+                  <a href="https://docs.google.com/forms/d/e/1FAIpQLScvrQnqAfZ-5_OyIDsPxHRf-3-SFtVpq7_n8tWEZsjWUK1HOw/viewform">Do not sell my info</a>
+              </span>
+
+              </div>
+
+          </div>
+        </div>
+        
+  <div id="fixed_footer_newsletter" class="fixed_footer fixed_footer_signup">
+    <div class="fixed_footer_wrapper">
+      <div class="fixed_footer_collapsed">
+        <div class="fixed_footer_graphic">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pn-svg"><path d="M12.5 17.9c-.2.1-.3.1-.5.1s-.3 0-.5-.1L0 11.7V23c0 .6.4 1 1 1h22c.6 0 1-.4 1-1V11.7l-11.5 6.2z"></path><path d="M6 12.6V2h12v10.6l5.1-2.8L20 7.5V1c0-.6-.4-1-1-1H5c-.6 0-1 .4-1 1v6.6L.9 9.9 6 12.6z"></path><path data-color="color-2" d="M8 5h8v2H8zM8 9h8v2H8z"></path></svg>
+        </div>
+        <p class="heading">Want health and fitness strategies that work?</p>
+        <div class="fixed_footer_expand">
+          <svg viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg" class="pn-svg"><path d="M1395 1184q0 13-10 23l-50 50q-10 10-23 10t-23-10L896 864l-393 393q-10 10-23 10t-23-10l-50-50q-10-10-10-23t10-23l466-466q10-10 23-10t23 10l466 466q10 10 10 23z"/></svg>
+        </div>
+      </div>
+      <div id="fixed_footer_main_signup" class="fixed_footer_expanded">
+          <form id="signup_form_fs" class="signup_form signup_form_footer js-signup-validate pn-form pn-form--signup" method="post" action="/wp-admin/admin-ajax.php" data-current-step="fixed_footer_main_signup" data-next-step="fixed_footer_mobile_signup" data-cookie-name="newsletter-popup" data-cookie-value="joined" data-cookie-expiry="365">
+            <input type="hidden" name="action" value="signup_form_submit">
+            <input type="hidden" id="captcha_token_fs" name="captcha_token">
+            <input type="hidden" id="security_fs" name="security">
+            <input type="hidden" id="form_type_fs" name="form_type" value="Newsletter">
+            <input type="hidden" id="form_name_fs" name="form_name" value="Sticky footer newsletter signup">
+            <input type="hidden" id="url_fs" name="url">
+            <input type="hidden" id="redirect_fs" name="redirect" value="false">
+            <input type="hidden" id="source_fs" name="source" value="">
+            <input type="hidden" id="attribute1_fs" name="attribute1" value="">
+            <input type="hidden" id="attribute2_fs" name="attribute2" value="">
+            <input type="hidden" id="attribute3_fs" name="attribute3" value="">
+            <input type="hidden" id="attribute4_fs" name="attribute4" value="">
+            <input type="hidden" id="attribute5_fs" name="attribute5" value="">
+            <input type="hidden" id="mc_hammer_id_fs" name="mc_hammer_id" value="600038f8-753d-4edd-81e1-285c94552ee0">
+            <p class="heading">Get life-changing resources delivered right to your inbox. (Read by 1 million people weekly.)</p>
+            <div class="signup_field">
+              <input id="first_name_fs" class="capitalize signup_name" name="first_name" type="text" placeholder="First Name">
+            </div>
+            <div class="signup_field">
+              <input id="email_fs" class="signup_email" name="email" type="email" placeholder="Email">
+            </div>
+            <button class="submit_button button_blue btn-cta">SIGN ME UP!</button>
+            <div class="signup_subtext">*Required. By providing your email, you agree to our<br />
+<a href="/terms-of-use" target="_blank">Terms &amp; Conditions</a>, <a href="/privacy-policy" target="_blank">Privacy Policy</a>, and to receive email alerts<br />
+from Precision Nutrition. You can unsubscribe at anytime.</div>
+          </form>
+          <div class="fixed_footer_minimize">
+            <svg viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg" class="pn-svg"><path d="M1395 736q0 13-10 23l-466 466q-10 10-23 10t-23-10L407 759q-10-10-10-23t10-23l50-50q10-10 23-10t23 10l393 393 393-393q10-10 23-10t23 10l50 50q10 10 10 23z"/></svg>
+          </div>
+      </div>
+      <div id="fixed_footer_mobile_signup" class="fixed_footer_expanded fixed_footer_mobile_signup">
+          <form id="signup_form_fm" class="signup_form signup_form_footer js-signup-validate pn-form pn-form--signup" method="post" action="/wp-admin/admin-ajax.php">
+            <input type="hidden" name="action" value="signup_form_submit">
+            <input type="hidden" id="captcha_token_fm" name="captcha_token">
+            <input type="hidden" id="security_fm" name="security">
+            <input type="hidden" id="form_type_fm" name="form_type" value="Newsletter">
+            <input type="hidden" id="form_name_fm" name="form_name" value="Sticky footer newsletter signup">
+            <input type="hidden" id="url_fm" name="url">
+            <input type="hidden" id="redirect_fm" name="redirect" value="false">
+            <input type="hidden" id="source_fm" name="source" value="">
+            <input type="hidden" id="attribute1_fm" name="attribute1" value="">
+            <input type="hidden" id="attribute2_fm" name="attribute2" value="">
+            <input type="hidden" id="attribute3_fm" name="attribute3" value="">
+            <input type="hidden" id="attribute4_fm" name="attribute4" value="">
+            <input type="hidden" id="attribute5_fm" name="attribute5" value="">
+            <input type="hidden" id="mc_hammer_id_fm" name="mc_hammer_id" value="789f688c-ec2d-4362-9144-49e0635e34f2">
+            <input type="hidden" id="email_fm" name="email" value="">
+            <input type="hidden" id="first_name_fm" name="first_name" value="">
+            <p class="notice">Welcome to PN! Your first <span class="only_desktop">awesome </span>email is on its way.</p>
+            <p><strong>Sign up for occasional texts about special offers, too!</strong></p>
+            <div class="mobile_signup_fields">
+              <div class="signup_field">
+                <select name="mobilecc" class="signup_mobile_cc" id="mobilecc_fm">
+                  <option value="1">USA & Canada</option>
+                  <option value="93">Afghanistan</option><option value="355">Albania</option><option value="213">Algeria</option><option value="1684">American Samoa</option><option value="376">Andorra</option><option value="244">Angola</option><option value="1264">Anguilla</option><option value="672">Antarctica</option><option value="1268">Antigua and Barbuda</option><option value="54">Argentina</option><option value="374">Armenia</option><option value="297">Aruba</option><option value="61">Australia</option><option value="43">Austria</option><option value="994">Azerbaijan</option><option value="1242">Bahamas</option><option value="973">Bahrain</option><option value="880">Bangladesh</option><option value="1246">Barbados</option><option value="375">Belarus</option><option value="32">Belgium</option><option value="501">Belize</option><option value="229">Benin</option><option value="1441">Bermuda</option><option value="975">Bhutan</option><option value="591">Bolivia</option><option value="387">Bosnia and Herzegovina</option><option value="267">Botswana</option><option value="55">Brazil</option><option value="246">British Indian Ocean Territory</option><option value="1284">British Virgin Islands</option><option value="673">Brunei</option><option value="359">Bulgaria</option><option value="226">Burkina Faso</option><option value="257">Burundi</option><option value="855">Cambodia</option><option value="237">Cameroon</option><option value="1">Canada</option><option value="238">Cape Verde</option><option value="1345">Cayman Islands</option><option value="236">Central African Republic</option><option value="235">Chad</option><option value="56">Chile</option><option value="86">China</option><option value="61">Christmas Island</option><option value="61">Cocos Islands</option><option value="57">Colombia</option><option value="269">Comoros</option><option value="682">Cook Islands</option><option value="506">Costa Rica</option><option value="385">Croatia</option><option value="53">Cuba</option><option value="599">Curacao</option><option value="357">Cyprus</option><option value="420">Czech Republic</option><option value="243">Democratic Republic of the Congo</option><option value="45">Denmark</option><option value="253">Djibouti</option><option value="1767">Dominica</option><option value="1">Dominican Republic</option><option value="670">East Timor</option><option value="593">Ecuador</option><option value="20">Egypt</option><option value="503">El Salvador</option><option value="240">Equatorial Guinea</option><option value="291">Eritrea</option><option value="372">Estonia</option><option value="251">Ethiopia</option><option value="500">Falkland Islands</option><option value="298">Faroe Islands</option><option value="679">Fiji</option><option value="358">Finland</option><option value="33">France</option><option value="689">French Polynesia</option><option value="241">Gabon</option><option value="220">Gambia</option><option value="995">Georgia</option><option value="49">Germany</option><option value="233">Ghana</option><option value="350">Gibraltar</option><option value="30">Greece</option><option value="299">Greenland</option><option value="1473">Grenada</option><option value="1671">Guam</option><option value="502">Guatemala</option><option value="224">Guinea</option><option value="245">Guinea-Bissau</option><option value="592">Guyana</option><option value="509">Haiti</option><option value="504">Honduras</option><option value="852">Hong Kong</option><option value="36">Hungary</option><option value="354">Iceland</option><option value="91">India</option><option value="62">Indonesia</option><option value="98">Iran</option><option value="964">Iraq</option><option value="353">Ireland</option><option value="972">Israel</option><option value="39">Italy</option><option value="225">Ivory Coast</option><option value="1876">Jamaica</option><option value="81">Japan</option><option value="962">Jordan</option><option value="7">Kazakhstan</option><option value="254">Kenya</option><option value="686">Kiribati</option><option value="383">Kosovo</option><option value="965">Kuwait</option><option value="996">Kyrgyzstan</option><option value="856">Laos</option><option value="371">Latvia</option><option value="961">Lebanon</option><option value="266">Lesotho</option><option value="231">Liberia</option><option value="218">Libya</option><option value="423">Liechtenstein</option><option value="370">Lithuania</option><option value="352">Luxembourg</option><option value="853">Macau</option><option value="389">Macedonia</option><option value="261">Madagascar</option><option value="265">Malawi</option><option value="60">Malaysia</option><option value="960">Maldives</option><option value="223">Mali</option><option value="356">Malta</option><option value="692">Marshall Islands</option><option value="222">Mauritania</option><option value="230">Mauritius</option><option value="262">Mayotte</option><option value="52">Mexico</option><option value="691">Micronesia</option><option value="373">Moldova</option><option value="377">Monaco</option><option value="976">Mongolia</option><option value="382">Montenegro</option><option value="1664">Montserrat</option><option value="212">Morocco</option><option value="258">Mozambique</option><option value="95">Myanmar</option><option value="264">Namibia</option><option value="674">Nauru</option><option value="977">Nepal</option><option value="31">Netherlands</option><option value="599">Netherlands Antilles</option><option value="687">New Caledonia</option><option value="64">New Zealand</option><option value="505">Nicaragua</option><option value="227">Niger</option><option value="234">Nigeria</option><option value="683">Niue</option><option value="850">North Korea</option><option value="1670">Northern Mariana Islands</option><option value="47">Norway</option><option value="968">Oman</option><option value="92">Pakistan</option><option value="680">Palau</option><option value="970">Palestine</option><option value="507">Panama</option><option value="675">Papua New Guinea</option><option value="595">Paraguay</option><option value="51">Peru</option><option value="63">Philippines</option><option value="64">Pitcairn</option><option value="48">Poland</option><option value="351">Portugal</option><option value="1">Puerto Rico</option><option value="974">Qatar</option><option value="242">Republic of the Congo</option><option value="262">Reunion</option><option value="40">Romania</option><option value="7">Russia</option><option value="250">Rwanda</option><option value="590">Saint Barthelemy</option><option value="290">Saint Helena</option><option value="1869">Saint Kitts and Nevis</option><option value="1758">Saint Lucia</option><option value="590">Saint Martin</option><option value="508">Saint Pierre and Miquelon</option><option value="1784">Saint Vincent and the Grenadines</option><option value="685">Samoa</option><option value="378">San Marino</option><option value="239">Sao Tome and Principe</option><option value="966">Saudi Arabia</option><option value="221">Senegal</option><option value="381">Serbia</option><option value="248">Seychelles</option><option value="232">Sierra Leone</option><option value="65">Singapore</option><option value="1721">Sint Maarten</option><option value="421">Slovakia</option><option value="386">Slovenia</option><option value="677">Solomon Islands</option><option value="252">Somalia</option><option value="27">South Africa</option><option value="82">South Korea</option><option value="211">South Sudan</option><option value="34">Spain</option><option value="94">Sri Lanka</option><option value="249">Sudan</option><option value="597">Suriname</option><option value="47">Svalbard and Jan Mayen</option><option value="268">Swaziland</option><option value="46">Sweden</option><option value="41">Switzerland</option><option value="963">Syria</option><option value="886">Taiwan</option><option value="992">Tajikistan</option><option value="255">Tanzania</option><option value="66">Thailand</option><option value="228">Togo</option><option value="690">Tokelau</option><option value="676">Tonga</option><option value="1868">Trinidad and Tobago</option><option value="216">Tunisia</option><option value="90">Turkey</option><option value="993">Turkmenistan</option><option value="1649">Turks and Caicos Islands</option><option value="688">Tuvalu</option><option value="1340">U.S. Virgin Islands</option><option value="256">Uganda</option><option value="380">Ukraine</option><option value="971">United Arab Emirates</option><option value="44">United Kingdom</option><option value="1">United States</option><option value="598">Uruguay</option><option value="998">Uzbekistan</option><option value="678">Vanuatu</option><option value="379">Vatican</option><option value="58">Venezuela</option><option value="84">Vietnam</option><option value="681">Wallis and Futuna</option><option value="212">Western Sahara</option><option value="967">Yemen</option><option value="260">Zambia</option><option value="263">Zimbabwe</option>                </select>
+              </div>
+              <div class="signup_field">
+                <div class="cc_wrap">
+                  <div class="cc_display"></div>
+                  <input type="tel" id="mobilenum_fm" class="mobile_number" name="mobilenum" placeholder="Mobile Phone Number" required>
+                </div>
+              </div>
+            </div>
+            <button class="submit_button button_blue btn-cta">TEXT ME!</button>
+            <div class="signup_subtext">*Required. By providing your email and mobile number, you agree to our<br />
+<a href="/terms-of-use" target="_blank">Terms &amp; Conditions</a>, <a href="/privacy-policy" target="_blank">Privacy Policy</a>, and to receive email, phone calls,<br />
+and SMS alerts from Precision Nutrition. You can unsubscribe at anytime.<br />
+Standard message rates may apply. Message frequency varies.<br />
+US/CA text STOP to 76898 to opt-out or HELP for help.</div>
+          </form>
+        <div class="fixed_footer_close">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 498.452" class="pn-svg"><path d="M328.469 169.999c-6.108-6.088-16.339-5.74-22.854.714l-56.369 56.044-56.36-56.044c-6.511-6.454-16.745-6.802-22.854-.714-6.105 6.048-5.78 16.234.734 22.712l56.365 56.028-56.356 56.04c-6.523 6.45-6.864 16.632-.751 22.717 6.109 6.061 16.352 5.728 22.862-.755l56.36-56.012 56.369 56.012c6.515 6.482 16.753 6.791 22.854.746 6.109-6.085 5.777-16.241-.737-22.708l-56.369-56.04 56.369-56.028c6.514-6.478 6.846-16.648.737-22.712M249.23 0C111.582 0 0 111.59 0 249.214c0 137.653 111.582 249.238 249.23 249.238 137.645 0 249.222-111.585 249.222-249.238C498.452 111.59 386.875 0 249.23 0m0 465.237c-119.289 0-216-96.739-216-216.023 0-119.272 96.711-215.991 216-215.991 119.292 0 216 96.719 216 215.991 0 119.284-96.708 216.023-216 216.023"/></svg>
+        </div>
+      </div>
+      <div id="fixed_footer_thanks" class="fixed_footer_thanks">
+        <div>
+          <p class="notice">Success! You are signed up for SMS.</p>
+          <p>Enjoy the PN content and exclusive offers headed your way.</p>
+          <div class="fixed_footer_close">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 498.452" class="pn-svg"><path d="M328.469 169.999c-6.108-6.088-16.339-5.74-22.854.714l-56.369 56.044-56.36-56.044c-6.511-6.454-16.745-6.802-22.854-.714-6.105 6.048-5.78 16.234.734 22.712l56.365 56.028-56.356 56.04c-6.523 6.45-6.864 16.632-.751 22.717 6.109 6.061 16.352 5.728 22.862-.755l56.36-56.012 56.369 56.012c6.515 6.482 16.753 6.791 22.854.746 6.109-6.085 5.777-16.241-.737-22.708l-56.369-56.04 56.369-56.028c6.514-6.478 6.846-16.648.737-22.712M249.23 0C111.582 0 0 111.59 0 249.214c0 137.653 111.582 249.238 249.23 249.238 137.645 0 249.222-111.585 249.222-249.238C498.452 111.59 386.875 0 249.23 0m0 465.237c-119.289 0-216-96.739-216-216.023 0-119.272 96.711-215.991 216-215.991 119.292 0 216 96.719 216 215.991 0 119.284-96.708 216.023-216 216.023"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+      </footer>
+
+
+<div class="pn-u--overlay pn-u--overlay__dark js-overlay" id="js-overlay-dark"></div>
+<div class="pn-u--overlay pn-u--overlay__light js-overlay" id="js-overlay-light"></div>
+
+
+<!-- START: Heap scroll tracking -->
+<script defer>
+(function($) {
+  $( window ).on( "load", function() {
+    var scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+    var quarterHeight = scrollHeight / 4;
+    var quarters = 0;
+    var scrollDistance, divisible, scrollPercent;
+    document.addEventListener("scroll", function() {
+      scrollDistance = window.pageYOffset || (document.documentElement || document.body.parentNode || document.body).scrollTop;
+      divisible =  Math.trunc(scrollDistance / quarterHeight);
+      if (quarters < divisible && divisible !== Infinity){
+        scrollPercent = divisible * 25;
+        heap.track('Scroll Depth', {percent: scrollPercent});
+        quarters++;
+      }
+    });
+  });
+}(jQuery));
+</script>
+<!-- END: Heap scroll tracking -->
+
+<!-- START: Sitewide Footer -->
+<!-- END: Sitewide Footer -->
+<!-- START: wp_footer -->
+<script type="speculationrules">
+{"prefetch":[{"source":"document","where":{"and":[{"href_matches":"\/*"},{"not":{"href_matches":["\/wp-*.php","\/wp-admin\/*","\/*","\/wp-content\/*","\/wp-content\/plugins\/*","\/wp-content\/themes\/pn-wp\/*","\/*\\?(.+)"]}},{"not":{"selector_matches":"a[rel~=\"nofollow\"]"}},{"not":{"selector_matches":".no-prefetch, .no-prefetch a"}}]},"eagerness":"conservative"}]}
+</script>
+<script type="text/javascript" defer="defer" src="https://assets.precisionnutrition.com/pn-wp/032c6a3d/js/jquery.fitvids.min.js?ver=1.2.0" id="fitvids-js"></script>
+<!-- END: wp_footer -->
+
+<script type="text/javascript">window.NREUM||(NREUM={});NREUM.info={"beacon":"bam.nr-data.net","licenseKey":"cb7e744beb","applicationID":"325803987","transactionName":"YVRQYEdXD0tTURcIWlgec1dBXw5WHUEKD1JaVA==","queueTime":0,"applicationTime":169,"atts":"TRNTFg9NHEU=","errorBeacon":"bam.nr-data.net","agent":""}</script></body>
+</html>
+
+<!-- Performance optimized by Redis Object Cache. Learn more: https://wprediscache.com -->
