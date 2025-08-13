@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify
-from utils.ghostline_engine import generate_response, stream_generate
+from utils.ghostline_engine import generate_response, stream_generate, CHAT_MODEL
 from utils.rag_basic import retrieve, is_ready, load_corpus  # RAG imports
 from utils.scraper import scrape_url                         # Scraper
 from utils.gmail_client import list_overnight, search as gmail_search
