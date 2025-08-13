@@ -75,5 +75,5 @@ pymupdf
 python-docx
 scikit-learn
 requests
-openai
+openai>=1.40.0
 trafilatura

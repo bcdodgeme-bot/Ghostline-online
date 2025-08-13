@@ -1,33 +1,24 @@
 # utils/ghostline_engine.py
-
-import os
-import json
-import shutil
-import subprocess
+import os, json, subprocess
 from datetime import datetime
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 
-import requests  # for remote ollama or health checks
-
-# Optional OpenAI provider (works with OpenAI, OpenRouter, etc.)
-try:
-    from openai import OpenAI
-except Exception:
-    OpenAI = None  # we'll guard at runtime
-
-# -------------------- model/context & answer rules --------------------
+# Optional OpenAI backend (used on Render if OPENAI_API_KEY is set)
+_OPENAI = None
+if os.getenv("OPENAI_API_KEY"):
+    try:
+        from openai import OpenAI
+        _OPENAI = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    except Exception:
+        _OPENAI = None
 
 MODEL_CONTEXT_SIZES = {
-    # local models (ollama) — rough defaults
     "tinyllama": 2048,
     "mistral":   8192,
     "llama3":    8192,
     "gemma":     8192,
-    # hosted defaults (OpenAI-style) — you can override with env
-    "gpt-4o-mini": 128000,
-    "gpt-4o":      128000,
 }
-DEFAULT_CONTEXT = 8192
+DEFAULT_CONTEXT = 2048
 
 ANSWER_RULES = (
     "Answer ONLY the latest user message. "
@@ -37,27 +28,20 @@ ANSWER_RULES = (
     "One clean answer—no preambles like 'Certainly'."
 )
 
-# -------------------- history helpers --------------------
-
 def _estimate_tokens(text: str) -> int:
-    # super-light token estimate
     return max(1, len(text.split()))
 
 def _history_path(project: str) -> str:
     return f"sessions/{project.lower().replace(' ', '_')}.json"
 
 def load_user_history_only(project: str, max_tokens: int) -> str:
-    """
-    Load recent USER prompts only (no assistant text) to avoid echoing.
-    """
     path = _history_path(project)
     if not os.path.exists(path):
         return ""
     with open(path, "r") as f:
         lines = [ln.strip() for ln in f if ln.strip()]
 
-    items = []
-    used = 0
+    items, used = [], 0
     for line in reversed(lines):
         try:
             entry = json.loads(line)
@@ -78,109 +62,78 @@ def load_user_history_only(project: str, max_tokens: int) -> str:
         return ""
     return "<RECENT_USER_MESSAGES>\n" + "".join(items) + "</RECENT_USER_MESSAGES>\n"
 
-def _format_retrieval_block(snippets: List[Dict]) -> str:
+def _format_retrieval_block(snippets: List[Dict[str, Any]]) -> str:
     if not snippets:
         return ""
     lines = []
     for s in snippets:
         title = s.get("title") or "Untitled"
         src = s.get("source") or ""
-        body = (s.get("text") or "")[:1200]
-        lines.append(f"- {title}{(' — ' + src) if src else ''}\n{body}")
+        txt = (s.get("text") or "")[:1200]
+        lines.append(f"- {title}{(' — ' + src) if src else ''}\n{txt}")
     return "<RETRIEVED_KNOWLEDGE>\n" + "\n\n".join(lines) + "\n</RETRIEVED_KNOWLEDGE>\n"
 
-# -------------------- model caller (OpenAI first, then Ollama) --------------------
+def _call_ollama(prompt: str, system_prompt: str, model: str = "llama3") -> str:
+    input_text = f"<|system|>{system_prompt}\n<|user|>{prompt}"
+    try:
+        res = subprocess.run(
+            ["ollama", "run", model],
+            input=input_text,
+            text=True,
+            capture_output=True
+        )
+        out = (res.stdout or "").strip()
+        if not out:
+            raise RuntimeError(res.stderr or "ollama produced no output")
+        return out
+    except FileNotFoundError:
+        raise RuntimeError("ollama binary not found")
+    except Exception as e:
+        raise RuntimeError(f"ollama error: {e}")
 
-def _call_openai(system_prompt: str, user_prompt: str, model: str) -> str:
-    """
-    Calls any OpenAI-compatible endpoint if OPENAI_API_KEY is set.
-    Supports custom base URL (e.g., OpenRouter) via OPENAI_BASE_URL.
-    """
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise RuntimeError("OPENAI_API_KEY not set")
+def _call_openai(prompt: str, system_prompt: str, model: str = "gpt-4o-mini") -> str:
+    if not _OPENAI:
+        raise RuntimeError("OpenAI client not available")
+    try:
+        resp = _OPENAI.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.6,
+        )
+        return (resp.choices[0].message.content or "").strip()
+    except Exception as e:
+        raise RuntimeError(f"OpenAI error: {e}")
 
-    if OpenAI is None:
-        raise RuntimeError("openai package not installed")
-
-    base_url = os.getenv("OPENAI_BASE_URL")  # e.g. https://openrouter.ai/api/v1
-    client = OpenAI(api_key=api_key, base_url=base_url) if base_url else OpenAI(api_key=api_key)
-
-    resp = client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user",   "content": user_prompt},
-        ],
-        temperature=float(os.getenv("MODEL_TEMPERATURE", "0.5")),
-    )
-    return (resp.choices[0].message.content or "").strip()
-
-def _call_remote_ollama(system_prompt: str, user_prompt: str, model: str) -> str:
+def _choose_backend():
     """
-    Calls a remote Ollama server via HTTP if OLLAMA_HOST is set.
-    Example OLLAMA_HOST: http://localhost:11434
-    """
-    host = os.getenv("OLLAMA_HOST", "").rstrip("/")
-    if not host:
-        raise RuntimeError("OLLAMA_HOST not set")
-    prompt = f"<|system|>{system_prompt}\n<|user|>{user_prompt}"
-    r = requests.post(f"{host}/api/generate", json={"model": model, "prompt": prompt, "stream": False}, timeout=120)
-    r.raise_for_status()
-    data = r.json()
-    return (data.get("response") or "").strip()
-
-def _call_local_ollama(system_prompt: str, user_prompt: str, model: str) -> str:
-    """
-    Falls back to local Ollama subprocess (your laptop).
-    """
-    if shutil.which("ollama") is None:
-        raise FileNotFoundError("ollama binary not found")
-    input_text = f"<|system|>{system_prompt}\n<|user|>{user_prompt}"
-    res = subprocess.run(
-        ["ollama", "run", model],
-        input=input_text,
-        text=True,
-        capture_output=True,
-    )
-    out = (res.stdout or "").strip()
-    if not out and res.stderr:
-        raise RuntimeError(res.stderr.strip())
-    return out
-
-def call_model(system_prompt: str, user_prompt: str, model: str) -> str:
-    """
-    Priority:
-      1) OPENAI_API_KEY present -> OpenAI/OpenRouter/etc.
-      2) OLLAMA_HOST set        -> remote Ollama server
-      3) local 'ollama' binary  -> your Mac dev env
+    If OPENAI_API_KEY is set, use OpenAI (great for Render).
+    Otherwise try local Ollama (great for your laptop).
     """
     if os.getenv("OPENAI_API_KEY"):
-        return _call_openai(system_prompt, user_prompt, model)
-    if os.getenv("OLLAMA_HOST"):
-        return _call_remote_ollama(system_prompt, user_prompt, model)
-    return _call_local_ollama(system_prompt, user_prompt, model)
-
-# -------------------- main generate functions --------------------
+        return "openai"
+    return "ollama"
 
 def generate_response(
     prompt: str,
-    voices: list[str],
+    voices: List[str],
     randomize: bool = False,
     project: str = "Personal Operating Manual",
-    model: str = None,
-    retrieval_context: Optional[list[dict]] = None,
+    model: str = "llama3",
+    retrieval_context: Optional[List[Dict[str, Any]]] = None,
 ):
     output = {}
     today = datetime.now().strftime("%A, %B %d, %Y")
-
-    # model selection: allow env override (for Render)
-    model = model or os.getenv("MODEL_NAME", "gpt-4o-mini")
     max_ctx = MODEL_CONTEXT_SIZES.get(model, DEFAULT_CONTEXT)
-    history_budget = int(max_ctx * float(os.getenv("MEMORY_BUDGET_FRACTION", "0.4")))
+    history_budget = int(max_ctx * 0.4)
 
-    history_text = load_user_history_only(project, history_budget)
-    retrieval_block = _format_retrieval_block(retrieval_context or [])
+    user_history = load_user_history_only(project, history_budget)
+    retr_block = _format_retrieval_block(retrieval_context or [])
+
+    backend = _choose_backend()
+    openai_model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")  # allow override
 
     for voice in voices:
         if voice == "SyntaxPrime":
@@ -188,9 +141,9 @@ def generate_response(
         elif voice == "SyntaxBot":
             persona = "You are SyntaxBot: poetic, chaotic, metaphor-rich, occasionally feral."
         elif voice == "Nil.exe":
-            persona = "You are Nil.exe: logical, dry, blunt. You debug Carl's thinking with concise critique."
+            persona = "You are Nil.exe: logical, dry, blunt. You debug Carl with concise critique."
         elif voice == "GhadaGPT":
-            persona = "You are GhadaGPT: practical, warm, loving, constructively judgmental for Carl's own good."
+            persona = "You are GhadaGPT: practical, warm, loving, constructively judgmental."
         else:
             persona = "Be helpful, concise, and accurate."
 
@@ -200,14 +153,17 @@ def generate_response(
         )
 
         user_prompt = (
-            (history_text if history_text else "")
-            + (retrieval_block if retrieval_block else "")
+            (user_history if user_history else "")
+            + (retr_block if retr_block else "")
             + "User's new message:\n" + prompt + "\n\n"
             "Respond now as one clean answer (no transcripts)."
         )
 
         try:
-            reply = call_model(system_prompt, user_prompt, model=model)
+            if backend == "openai":
+                reply = _call_openai(user_prompt, system_prompt, model=openai_model)
+            else:
+                reply = _call_ollama(user_prompt, system_prompt, model=model)
         except Exception as e:
             reply = f"(Generation error: {e})"
 
@@ -215,24 +171,50 @@ def generate_response(
 
     return output
 
-
-# simple token stream stub for /stream (keeps your endpoint working)
+# Streaming version (kept simple: OpenAI only if key exists; otherwise we fall back to non-streaming)
 def stream_generate(
     prompt: str,
-    voices: list[str],
+    voices: List[str],
     project: str = "Personal Operating Manual",
-    model: str = None,
-    retrieval_context: Optional[list[dict]] = None,
+    model: str = "llama3",
+    retrieval_context: Optional[List[Dict[str, Any]]] = None,
 ):
-    """
-    For now we just yield the whole thing as one chunk per voice to keep
-    the streaming route alive without complicating SSE.
-    """
-    resp = generate_response(
-        prompt, voices, project=project, model=model, retrieval_context=retrieval_context
-    )
-    # join voices into a single stream chunk
-    for v, txt in resp.items():
-        yield f"\n\n[{v}] {txt}"
+    if os.getenv("OPENAI_API_KEY") and _OPENAI:
+        today = datetime.now().strftime("%A, %B %d, %Y")
+        user_history = load_user_history_only(project, int(MODEL_CONTEXT_SIZES.get(model, DEFAULT_CONTEXT) * 0.4))
+        retr_block = _format_retrieval_block(retrieval_context or [])
+        # Stream only Syntax Prime for now (simple)
+        system_prompt = (
+            "You are Syntax Prime: thoughtful, strategic, emotionally literate with a dry sense of humor. "
+            f"Today is {today}. {ANSWER_RULES}"
+        )
+        user_prompt = (user_history or "") + (retr_block or "") + "User's new message:\n" + prompt
+
+        try:
+            stream = _OPENAI.chat.completions.create(
+                model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=0.6,
+                stream=True,
+            )
+            yield "BEGIN_STREAM\n"
+            for chunk in stream:
+                delta = chunk.choices[0].delta.content or ""
+                if delta:
+                    yield delta
+            yield "\nEND_STREAM"
+            return
+        except Exception as e:
+            yield f"(stream error: {e})"
+            return
+
+    # Fallback: non-streaming single shot
+    one = generate_response(prompt, voices, project=project, model=model, retrieval_context=retrieval_context)
+    # Emit as one block
+    yield json.dumps(one)
+
 
 
