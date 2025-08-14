@@ -10,53 +10,53 @@
   <link rel="icon" type="image/png" href="/static/favicon.png">
 
   <style>
-    /* ===============================
-       Layout variables (JS keeps in sync)
-       =============================== */
+    /* ===== Layout vars (kept in sync by JS) ===== */
     :root{
       --header-h: 72px;
       --composer-h: 170px;
     }
 
-    /* Chat area uses dynamic viewport to avoid iOS toolbars jitter */
+    body { margin: 0; }
+
+    header { padding: 12px 16px 6px 16px; }
+
+    /* Chat area uses dynamic viewport to avoid iOS toolbar jumps */
     main.chat{
       height: calc(100dvh - var(--header-h));
-      overflow: hidden; /* thread handles its own scroll */
+      overflow: hidden;                /* thread itself scrolls */
     }
 
-    /* Thread scroll area (reserve space for composer) */
+    /* Thread scroll area (room for composer) */
     .thread{
       height: calc(100% - var(--composer-h));
-      overflow:auto;
-      padding: 8px 8px calc(var(--composer-h) + 16px) 8px;
-      display:flex; flex-direction:column; gap:10px;
+      overflow: auto;
+      padding: 8px 8px calc(var(--composer-h) + 16px) 8px; /* extra bottom so last bubble isn’t hidden */
+      display: flex; flex-direction: column; gap: 10px;
+      scroll-behavior: smooth;
     }
 
-    /* Message bubbles */
+    /* Bubbles */
     .msg{ display:flex; }
     .msg.right{ justify-content:flex-end; }
     .bubble{
-      max-width:80%;
-      padding:10px 14px;
-      border-radius:12px;
-      border:1px solid #3b3b3b;
-      white-space:pre-wrap;
-      line-height:1.45;
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid #3b3b3b;
+      white-space: pre-wrap;
+      line-height: 1.45;
+      word-wrap: break-word;
     }
     .bubble.user{ background:#1f2937; border-color:#374151; }
-    .bubble.bot{ background:#111827; border-color:#4b5563; }
+    .bubble.bot { background:#111827; border-color:#4b5563; }
     .role{ font-weight:700; opacity:.85; margin-bottom:4px; }
 
-    /* ===============================
-       Header bits
-       =============================== */
+    /* Header bits */
     header .bar{ display:flex; align-items:center; gap:12px; justify-content:space-between; }
     header .left{ display:flex; align-items:center; gap:12px; }
     header h1{ margin:0; }
 
-    /* ===============================
-       Composer (fixed to bottom)
-       =============================== */
+    /* ===== Composer (fixed to bottom) ===== */
     .composer{
       position: fixed; left: 0; right: 0; bottom: 0;
       background: #0b0b0b; border-top: 1px solid #303030;
@@ -64,10 +64,8 @@
       z-index: 20;
     }
     .composer__form{ display:flex; flex-direction:column; gap:10px; }
-
     .row{ display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; }
     .row--top{ align-items:flex-end; }
-
     .stack{ display:flex; flex-direction:column; gap:6px; }
     .stack .lbl{ font-size:.9rem; color:#aaa; }
     .grow{ flex:1; }
@@ -86,7 +84,7 @@
       border:none; border-radius:8px; font-weight:700; cursor:pointer;
     }
 
-    /* Advanced controls */
+    /* “More” */
     .advanced{ border-top:1px dashed #333; padding-top:8px; margin-top:8px; }
     .advanced > summary{
       list-style:none; cursor:pointer; user-select:none;
@@ -94,18 +92,16 @@
     }
     .advanced > summary::marker{ display:none; }
     .advanced[open] > summary{ background:#111; }
-
     .checks{ display:flex; gap:12px; flex-wrap:wrap; }
-    .btn-secondary{
-      padding:8px 12px; background:#333; color:#fff; border:none; border-radius:6px; cursor:pointer;
-    }
+    .btn-secondary{ padding:8px 12px; background:#333; color:#fff; border:none; border-radius:6px; cursor:pointer; }
 
-    /* Tighten on phones */
+    /* ===== Tighten on phones ===== */
     @media (max-width: 600px){
       .row{ flex-direction:column; align-items:stretch; }
       #promptBox{ min-height:140px; }
       .submit{ width:100%; }
       .checks{ flex-direction:column; gap:6px; }
+      .bubble{ max-width: 92%; }
     }
   </style>
 </head>
@@ -118,7 +114,6 @@
         <h1>Ghostline</h1>
       </div>
 
-      <!-- Logout button with confirm -->
       <form action="{{ url_for('logout') }}" method="get" id="logoutForm" style="display:inline;">
         <button type="submit"
                 aria-label="Log out"
@@ -145,17 +140,13 @@
     <div class="thread" id="thread">
       {% if conversation and conversation|length > 0 %}
         {% set display_names = {'SyntaxPrime':'Syntax Prime','SyntaxBot':'SyntaxBot','Nil.exe':'Nil.exe','GhadaGPT':'GhadaGPT'} %}
-
         {% for turn in conversation %}
-          <!-- User -->
           <div class="msg right">
             <div class="bubble user">
               <div class="role">You</div>
               <div>{{ turn.user | e }}</div>
             </div>
           </div>
-
-          <!-- Assistant replies -->
           {% for voice, reply in turn.responses.items() %}
             <div class="msg">
               <div class="bubble bot">
@@ -178,8 +169,7 @@
 
   <!-- Composer -->
   <div class="composer" id="composer">
-    <!-- MAIN PROMPT FORM (no nested forms) -->
-    <form method="POST" class="composer__form">
+    <form method="POST" class="composer__form" id="mainForm">
       <div class="row row--top">
         <label class="stack">
           <span class="lbl">📂 Project</span>
@@ -200,7 +190,6 @@
       </div>
     </form>
 
-    <!-- Advanced controls (separate forms, not nested) -->
     <details class="advanced" id="advancedControls">
       <summary>More</summary>
 
@@ -215,10 +204,9 @@
         </div>
       </div>
 
-      <!-- A tiny form just to carry voice options with next submit -->
+      <!-- lightweight carrier for voices/random -->
       <form id="voicesForm"></form>
 
-      <!-- Upload / OCR -->
       <div class="row">
         <form action="/upload" method="post" enctype="multipart/form-data" class="inline">
           <label class="stack">
@@ -229,7 +217,6 @@
         </form>
       </div>
 
-      <!-- Export -->
       <div class="row">
         <form id="exportForm" class="inline">
           <button type="submit" class="btn-secondary">📤 Export Session</button>
@@ -238,19 +225,13 @@
     </details>
   </div>
 
-  <!-- Scripts -->
   <script>
-    // Confirm logout
-    const logoutForm = document.getElementById('logoutForm');
-    if (logoutForm) {
-      logoutForm.addEventListener('submit', (e) => {
-        if (!confirm('Log out of Ghostline?\nYou’ll need the password to log back in.')) {
-          e.preventDefault();
-        }
-      });
-    }
+    // confirm logout
+    document.getElementById('logoutForm')?.addEventListener('submit', (e) => {
+      if (!confirm('Log out of Ghostline?\nYou’ll need the password to log back in.')) e.preventDefault();
+    });
 
-    // Keep CSS vars synced to actual header/composer sizes
+    // keep CSS vars synced (prevents header cutting off first response on mobile)
     function updateHeights(){
       const header = document.querySelector('header');
       const composer = document.getElementById('composer');
@@ -259,49 +240,45 @@
       const thread = document.getElementById('thread');
       if (thread) thread.scrollTop = thread.scrollHeight;
     }
-    window.addEventListener('load', updateHeights);
+    window.addEventListener('load', () => setTimeout(updateHeights, 50)); // after fonts/images
     window.addEventListener('resize', updateHeights);
     new ResizeObserver(updateHeights).observe(document.getElementById('composer'));
 
-    // Auto-resize textarea + keep newest messages visible
+    // auto-resize textarea & Enter-to-send
     const ta = document.getElementById('promptBox');
+    const mainForm = document.getElementById('mainForm');
     if (ta){
-      const fit = () => {
-        ta.style.height = 'auto';
-        ta.style.height = Math.min(240, ta.scrollHeight) + 'px';
-      };
+      const fit = () => { ta.style.height='auto'; ta.style.height = Math.min(240, ta.scrollHeight) + 'px'; };
       ta.addEventListener('input', fit);
-      ta.addEventListener('focus', () => {
-        setTimeout(() => {
-          fit();
-          document.getElementById('thread')?.scrollTo({ top: 1e9, behavior: 'smooth' });
-        }, 100);
-      });
+      ta.addEventListener('focus', () => setTimeout(() => {
+        fit();
+        document.getElementById('thread')?.scrollTo({ top: 1e9 });
+      }, 100));
       fit();
 
-      // Enter to send (Shift+Enter = newline)
-      ta.addEventListener('keydown', function (e) {
+      ta.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
-          // Before submitting, copy "voices/random" checkboxes into the main form
-          const voicesForm = document.getElementById('voicesForm');
-          const mainForm   = document.querySelector('.composer__form');
-          if (voicesForm && mainForm) {
-            // Remove any previous hidden clones
-            [...mainForm.querySelectorAll('input[name="voices"], input[name="random"]')].forEach(n => n.remove());
-            // Clone checked boxes into the main form
-            voicesForm.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-              if (cb.checked) {
-                const clone = cb.cloneNode(true);
-                clone.id = ''; // avoid duplicate IDs
-                mainForm.appendChild(clone);
-              }
-            });
-          }
-          this.form.submit();
+          copyVoiceOptions();
+          mainForm.submit();
         }
       });
     }
+
+    // copy checked voice/random inputs into main form before submit
+    function copyVoiceOptions(){
+      const voicesForm = document.getElementById('voicesForm');
+      if (!voicesForm || !mainForm) return;
+      // remove old clones
+      [...mainForm.querySelectorAll('input[name="voices"], input[name="random"]')].forEach(n => n.remove());
+      voicesForm.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        if (cb.checked) {
+          const clone = cb.cloneNode(true); clone.id = '';
+          mainForm.appendChild(clone);
+        }
+      });
+    }
+    mainForm?.addEventListener('submit', copyVoiceOptions);
 
     // Export uses current project
     document.getElementById('exportForm')?.addEventListener('submit', function (e) {
@@ -310,9 +287,9 @@
       window.location.href = '/export/' + encodeURIComponent(proj);
     });
 
-    // Open the “More” panel on desktop by default; keep collapsed on phones
+    // “More” open on desktop, collapsed on phones
     const adv = document.getElementById('advancedControls');
-    const setAdv = () => { if (window.innerWidth > 900) adv.open = true; else adv.open = false; };
+    const setAdv = () => { adv.open = window.innerWidth > 900; };
     window.addEventListener('load', setAdv);
     window.addEventListener('resize', setAdv);
   </script>

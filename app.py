@@ -1,19 +1,17 @@
 from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify
 from utils.ghostline_engine import generate_response, stream_generate
-from utils.rag_basic import retrieve, is_ready, load_corpus  # RAG imports
-from utils.scraper import scrape_url                         # Scraper
+from utils.rag_basic import retrieve, is_ready, load_corpus
+from utils.scraper import scrape_url
 from utils.gmail_client import list_overnight, search as gmail_search
-import os
-import json
-import io
+import os, json, io
 
-# OCR/File Parsing Imports
+# OCR/File Parsing
 import pytesseract
 from PIL import Image
-import fitz  # PyMuPDF
+import fitz
 import docx
 
-# Optional: load from .env file
+# .env support
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -24,50 +22,32 @@ app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'ghostline-default-key')
 PASSWORD = os.getenv('GHOSTLINE_PASSWORD', 'open_the_gate')
 
-# Central place to pick the chat model (can be overridden in Render env)
+# Choose model via env; override on Render with CHAT_MODEL
 CHAT_MODEL = os.getenv("CHAT_MODEL", os.getenv("OPENROUTER_MODEL", "openrouter/auto"))
 
-# Make sure sessions dir exists
+# sessions dir
 os.makedirs("sessions", exist_ok=True)
 
 PROJECTS = [
-    'Personal Operating Manual',
-    'AMCF',
-    'BCDodgeme',
-    'Rose and Angel',
-    'Meals N Feelz',
-    'TV Signals',
-    'Damn It Carl',
-    'HalalBot',
-    'Kitchen',
-    'Health',
-    'Side Quests'
+    'Personal Operating Manual','AMCF','BCDodgeme','Rose and Angel','Meals N Feelz',
+    'TV Signals','Damn It Carl','HalalBot','Kitchen','Health','Side Quests'
 ]
 
-# gz OK; rag loader handles .gz
 CORPUS_PATH = "data/cleaned/ghostline_sources.jsonl.gz"
 
-# --- Auto-load the corpus at startup / on (re)deploy (Flask 3 safe) ---
 def _boot_load_corpus():
     try:
         load_corpus(CORPUS_PATH)
         app.logger.info("✅ Brain loaded from %s", CORPUS_PATH)
     except Exception as e:
         app.logger.warning("⚠️ Brain load failed: %s", e)
-
 _boot_load_corpus()
 
-# --- conversation loader (tail last N turns) ---
+
 def load_conversation(project: str, limit: int = 50):
-    """
-    Reads sessions/<project>.json and returns a list of turns like:
-      {"user": "...", "responses": {"SyntaxPrime": "...", ...}}
-    Most recent at the end.
-    """
     path = f"sessions/{project.lower().replace(' ', '_')}.json"
     if not os.path.exists(path):
         return []
-
     turns = []
     with open(path, "r", encoding="utf-8") as f:
         lines = [ln.strip() for ln in f if ln.strip()]
@@ -113,18 +93,8 @@ def index():
             except Exception as e:
                 response_data = {"SyntaxPrime": f"Gmail check failed: {e}"}
 
-            session_path = f"sessions/{project.lower().replace(' ', '_')}.json"
-            with open(session_path, 'a', encoding='utf-8') as f:
-                json.dump({'prompt': user_input, 'response': response_data}, f); f.write('\n')
-
-            conversation = load_conversation(project, limit=50)
-            return render_template(
-                'index.html',
-                projects=PROJECTS,
-                response_data=response_data,
-                conversation=conversation,
-                current_project=project
-            )
+            _append_session(project, user_input, response_data)
+            return _render(project, response_data)
 
         # ---- Command: gmail search <query> ----
         if user_input.lower().startswith("gmail search "):
@@ -145,18 +115,8 @@ def index():
             except Exception as e:
                 response_data = {"SyntaxPrime": f"Gmail search failed: {e}"}
 
-            session_path = f"sessions/{project.lower().replace(' ', '_')}.json"
-            with open(session_path, 'a', encoding='utf-8') as f:
-                json.dump({'prompt': user_input, 'response': response_data}, f); f.write('\n')
-
-            conversation = load_conversation(project, limit=50)
-            return render_template(
-                'index.html',
-                projects=PROJECTS,
-                response_data=response_data,
-                conversation=conversation,
-                current_project=project
-            )
+            _append_session(project, user_input, response_data)
+            return _render(project, response_data)
 
         # ---- Command: scrape <url> ----
         if user_input.lower().startswith("scrape "):
@@ -175,54 +135,46 @@ def index():
                     summary_prompt, use_voices, random_toggle,
                     project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
                 )
+            _append_session(project, user_input, response_data)
+            return _render(project, response_data)
 
-            # Save and return
-            session_path = f"sessions/{project.lower().replace(' ', '_')}.json"
-            with open(session_path, 'a', encoding='utf-8') as f:
-                json.dump({'prompt': user_input, 'response': response_data}, f)
-                f.write('\n')
-
-            conversation = load_conversation(project, limit=50)
-            return render_template(
-                'index.html',
-                projects=PROJECTS,
-                response_data=response_data,
-                conversation=conversation,
-                current_project=project
-            )
-
-        # ---- Normal flow: retrieve + generate ----
+        # ---- Normal flow ----
         retrieval_ctx = retrieve(user_input, k=5, project_filter=project) if is_ready() else []
         response_data = generate_response(
             user_input, use_voices, random_toggle,
             project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
         )
+        _append_session(project, user_input, response_data)
 
-        # Save to project session file
-        session_path = f"sessions/{project.lower().replace(' ', '_')}.json"
-        with open(session_path, 'a', encoding='utf-8') as f:
-            json.dump({'prompt': user_input, 'response': response_data}, f)
-            f.write('\n')
+    return _render(selected_project, response_data)
 
-    conversation = load_conversation(selected_project, limit=50)
+
+def _append_session(project: str, user_input: str, response_data: dict):
+    path = f"sessions/{project.lower().replace(' ', '_')}.json"
+    with open(path, 'a', encoding='utf-8') as f:
+        json.dump({'prompt': user_input, 'response': response_data}, f)
+        f.write('\n')
+
+
+def _render(project: str, response_data: dict):
+    conversation = load_conversation(project, limit=50)
     return render_template(
         'index.html',
         projects=PROJECTS,
         response_data=response_data,
         conversation=conversation,
-        current_project=selected_project
+        current_project=project
     )
 
-# --- STREAMING ENDPOINT (plain text stream) ---
+
+# --- STREAMING (plain text) ---
 @app.route('/stream', methods=['POST'])
 def stream():
     if not session.get('logged_in'):
         return "Unauthorized", 401
-
     user_input = request.form['user_input'].strip()
     project = request.form['project']
     use_voices = request.form.getlist('voices') or ['SyntaxPrime']
-
     retrieval_ctx = retrieve(user_input, k=5, project_filter=project) if is_ready() else []
 
     def generate():
@@ -234,7 +186,8 @@ def stream():
 
     return app.response_class(generate(), mimetype='text/plain')
 
-# --- RELOAD BRAIN (no restart needed) ---
+
+# --- RELOAD BRAIN ---
 @app.route('/reload_corpus')
 def reload_corpus():
     if not session.get('logged_in'):
@@ -244,6 +197,7 @@ def reload_corpus():
         return "Brain reloaded ✅", 200
     except Exception as e:
         return f"Reload failed: {e}", 500
+
 
 # --- HEALTH CHECK ---
 @app.route('/healthz')
@@ -255,9 +209,25 @@ def healthz():
     except Exception as e:
         ok = False
         details["corpus_error"] = str(e)
-
     status = {"status": "ok" if ok else "error", **details}
     return jsonify(status), (200 if ok else 500)
+
+
+# --- DEBUG RAG: see what the retriever returns ---
+@app.route('/debug/rag')
+def debug_rag():
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    q = request.args.get('query', '').strip()
+    k = int(request.args.get('k', 5))
+    project = request.args.get('project', '').strip() or None
+    if not q:
+        return jsonify({"ok": False, "error": "missing query"}), 400
+    if not is_ready():
+        return jsonify({"ok": False, "error": "corpus not loaded"}), 500
+    hits = retrieve(q, k=k, project_filter=project)
+    return jsonify({"ok": True, "count": len(hits), "results": hits})
+
 
 # --- AUTH ---
 @app.route('/login', methods=['GET', 'POST'])
@@ -276,6 +246,7 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
+
 # --- EXPORT SESSION ---
 @app.route('/export/<project>')
 def export_session(project):
@@ -283,7 +254,6 @@ def export_session(project):
     try:
         with open(session_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
-
         content = ""
         for line in lines:
             entry = json.loads(line)
@@ -291,11 +261,9 @@ def export_session(project):
             for voice, reply in entry['response'].items():
                 content += f"- **{voice}**: {reply}\n"
             content += "\n---\n\n"
-
         file_stream = io.BytesIO()
         file_stream.write(content.encode('utf-8'))
         file_stream.seek(0)
-
         return send_file(
             file_stream,
             mimetype='text/markdown',
@@ -305,28 +273,23 @@ def export_session(project):
     except FileNotFoundError:
         return f"No session data found for project: {project}", 404
 
+
 # --- UPLOAD / OCR ---
 @app.route('/upload', methods=['POST'])
 def upload_file():
     file = request.files.get('file')
     if not file or not file.filename:
         return "No file uploaded", 400
-
     filename = file.filename.lower()
 
     if filename.endswith(('.png', '.jpg', '.jpeg')):
-        img = Image.open(file.stream)
-        text = pytesseract.image_to_string(img)
+        img = Image.open(file.stream); text = pytesseract.image_to_string(img)
     elif filename.endswith('.pdf'):
-        file.stream.seek(0)
-        data = file.read()
+        file.stream.seek(0); data = file.read()
         doc = fitz.open(stream=data, filetype="pdf")
-        text = ""
-        for page in doc:
-            text += page.get_text()
+        text = "".join(page.get_text() for page in doc)
     elif filename.endswith('.docx'):
-        file.stream.seek(0)
-        document = docx.Document(file)
+        file.stream.seek(0); document = docx.Document(file)
         text = "\n".join(p.text for p in document.paragraphs)
     else:
         return "Unsupported file type", 400
@@ -335,6 +298,7 @@ def upload_file():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
 

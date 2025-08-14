@@ -1,17 +1,13 @@
 # utils/rag_basic.py
 from __future__ import annotations
 
-import json
-import gzip
-import threading
+import json, gzip, threading
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
-# Lightweight TF‑IDF retrieval
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
 
-# Default location (can be overridden by load_corpus(path))
 _DEFAULT_JSONL_PATH = Path("data/cleaned/ghostline_sources.jsonl")
 
 _lock = threading.Lock()
@@ -22,31 +18,22 @@ _current_path: Optional[Path] = None
 
 
 def _open_text(path: Path):
-    """
-    Open a text file that may be plain .jsonl or gzip-compressed .jsonl.gz
-    Returns a text-mode file object (iterator over lines).
-    """
+    """Open .jsonl or .jsonl.gz as text."""
     if str(path).endswith(".gz"):
         return gzip.open(path, "rt", encoding="utf-8")
     return path.open("r", encoding="utf-8")
 
 
 def _normalize_record(obj: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """
-    Map heterogeneous fields to a normalized schema.
-    Returns None if no usable 'text'.
-    """
+    """Map various schemas to {title,text,project,source,_raw}. Return None if no usable text."""
     text = obj.get("text") or obj.get("content") or ""
     if not text:
         return None
-    title = obj.get("title") or obj.get("name") or ""
-    project = obj.get("project") or obj.get("folder") or ""
-    source = obj.get("source") or obj.get("url") or ""
     return {
-        "title": title,
+        "title": obj.get("title") or obj.get("name") or "",
         "text": text,
-        "project": project,
-        "source": source,
+        "project": obj.get("project") or obj.get("folder") or "",
+        "source": obj.get("source") or obj.get("url") or "",
         "_raw": obj,
     }
 
@@ -71,31 +58,25 @@ def _read_jsonl(path: Path) -> List[Dict[str, Any]]:
 
 
 def load_corpus(jsonl_path: str | Path = _DEFAULT_JSONL_PATH) -> None:
-    """
-    Build/refresh the TF‑IDF index from a JSONL or JSONL.GZ file.
-    Thread‑safe; replaces the in‑memory index atomically.
-    """
+    """Build/refresh a TF‑IDF index from a JSONL or JSONL.GZ file (thread‑safe)."""
     global _vectorizer, _matrix, _docs, _current_path
     with _lock:
         p = Path(jsonl_path)
         parsed = _read_jsonl(p)
 
-        # Build new vectorizer/index
         corpus = [d["text"] for d in parsed]
         if corpus:
             vec = TfidfVectorizer(
                 lowercase=True,
                 ngram_range=(1, 2),
-                max_features=100_000,
+                max_features=120_000,
             )
             mat = vec.fit_transform(corpus)
-            # Swap in atomically
             _vectorizer = vec
             _matrix = mat
             _docs = parsed
             _current_path = p
         else:
-            # Empty index
             _vectorizer = None
             _matrix = None
             _docs = []
@@ -138,7 +119,7 @@ def retrieve(query: str, k: int = 5, project_filter: Optional[str] = None) -> Li
     return results
 
 
-# Try to load a default corpus at import time (non‑fatal if missing)
+# Try to load a default corpus at import time (non‑fatal)
 try:
     load_corpus(_DEFAULT_JSONL_PATH)
 except Exception:
