@@ -15,11 +15,24 @@
     }
     body { margin: 0; }
 
-    header { padding: 12px 16px 6px 16px; }
+    header {
+      padding: 12px 16px 6px 16px;
+      position: relative;
+      z-index: 10;
+    }
     header .bar { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
     header .left { display: flex; align-items: center; gap: 12px; }
-    header h1 { margin: 0; font-size: 1.6rem; }
-    header .tagline { margin-top: 6px; font-style: italic; font-size: 0.95rem; color: #ccc; }
+    header h1 {
+      margin: 0;
+      font-size: 1.6rem;
+      transition: opacity 0.3s ease;
+    }
+    header .tagline {
+      margin-top: 6px;
+      font-style: italic;
+      font-size: 0.95rem;
+      color: #ccc;
+    }
 
     main.chat {
       height: calc(100dvh - var(--header-h));
@@ -55,7 +68,8 @@
     .composer {
       position: fixed;
       left: 0; right: 0; bottom: 0;
-      background: #0b0b0b; border-top: 1px solid #303030;
+      background: #0b0b0b;
+      border-top: 1px solid #303030;
       padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
       z-index: 20;
     }
@@ -108,20 +122,21 @@
     /* --- MOBILE OVERRIDES --- */
     @media (max-width: 600px) {
       header {
-        padding: 8px 12px 4px 12px;
+        padding: 4px 10px 2px 10px;
       }
 
       header img {
-        width: 40px;
+        width: 32px;
       }
 
       header h1 {
-        font-size: 1.2rem;
+        font-size: 1rem;
+        margin: 0;
       }
 
       .tagline {
-        font-size: 0.75rem;
-        margin-top: 2px;
+        font-size: 0.7rem;
+        margin-top: 0;
       }
 
       .mobile-hide {
@@ -139,8 +154,8 @@
       }
 
       #promptBox {
-        min-height: 100px;
-        max-height: 180px;
+        min-height: 90px;
+        max-height: 160px;
         font-size: 0.9rem;
         padding: 8px 10px;
       }
@@ -162,18 +177,17 @@
       }
 
       .composer__form .lbl {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
       }
     }
   </style>
 </head>
-
 <body class="dark-mode">
   <header>
     <div class="bar">
       <div class="left">
         <img src="/static/syntax-buffering.png" alt="Syntax Prime Logo" width="64" style="vertical-align: middle;">
-        <h1>Ghostline</h1>
+        <h1 id="pageTitle">Ghostline</h1>
       </div>
       <form action="{{ url_for('logout') }}" method="get" id="logoutForm" style="display:inline;">
         <button type="submit" aria-label="Log out" title="Log out"
@@ -273,6 +287,7 @@
     </details>
   </div>
 
+  <!-- Scripts -->
   <script>
     document.getElementById('logoutForm')?.addEventListener('submit', (e) => {
       if (!confirm('Log out of Ghostline?\nYou’ll need the password to log back in.')) e.preventDefault();
@@ -324,6 +339,7 @@
         }
       });
     }
+
     mainForm?.addEventListener('submit', copyVoiceOptions);
 
     document.getElementById('exportForm')?.addEventListener('submit', function (e) {
@@ -336,9 +352,25 @@
     const setAdv = () => { adv.open = window.innerWidth > 900; };
     window.addEventListener('load', setAdv);
     window.addEventListener('resize', setAdv);
+
+    // Sticky fade-out for h1 on scroll (mobile only)
+    const title = document.getElementById('pageTitle');
+    const thread = document.getElementById('thread');
+
+    function fadeTitleOnScroll() {
+      if (window.innerWidth <= 600 && title && thread) {
+        const scrollY = thread.scrollTop;
+        title.style.opacity = Math.max(0, 1 - scrollY / 40).toFixed(2);
+      }
+    }
+
+    if (thread && title) {
+      thread.addEventListener('scroll', fadeTitleOnScroll);
+    }
   </script>
 </body>
 </html>
+
 
 
 
