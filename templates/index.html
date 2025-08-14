@@ -2,125 +2,96 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Ghostline – Creative Intelligence System</title>
   <link rel="stylesheet" href="/static/style.css">
   <link rel="stylesheet" href="/static/loader.css">
-  <script src="/static/main.js" defer></script>
   <link rel="icon" type="image/png" href="/static/favicon.png">
 
   <style>
     /* ===============================
-       Mobile-first layout variables
+       Layout variables (kept in sync by JS)
        =============================== */
     :root{
-      --header-h: 72px;          /* JS will keep these in sync */
+      --header-h: 72px;
       --composer-h: 170px;
-      --gap: 10px;
     }
+    body{ margin:0; }
 
-    /* Base */
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body { margin: 0; background:#0a0a0a; color:#eaeaea; }
-
-    /* Make all form controls 16px+ to prevent iOS zoom */
-    input, select, textarea, button { font-size: 16px; }
-
-    /* ===============================
-       Header (sticky, not fixed)
-       =============================== */
-    header{
-      position: sticky;
-      top: 0;
-      z-index: 15;
-      background: #0b0b0b;
-      padding: 12px 16px 8px;
-      border-bottom: 1px solid #222;
-    }
-    header .bar{
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-    }
+    /* ---------- Header ---------- */
+    header{ padding:12px 16px 6px 16px; }
+    header .bar{ display:flex; align-items:center; gap:12px; justify-content:space-between; }
     header .left{ display:flex; align-items:center; gap:12px; }
-    header h1{ margin:0; font-size:32px; line-height:1; }
-    header p{
-      margin:8px 0 0 0; font-style:italic; font-size:0.95rem; color:#ccc;
+    header h1{ margin:0; }
+    header .tagline{ margin-top:6px; font-style:italic; font-size:0.95rem; color:#ccc; }
+
+    /* Hide the long part of the tagline on phones */
+    @media (max-width: 600px){
+      .mobile-hide{ display:none; }
+      header .tagline{ margin-top:4px; font-size:0.85rem; }
     }
 
-    /* ===============================
-       Chat area & thread
-       =============================== */
+    /* ---------- Chat area ---------- */
     main.chat{
-      /* Use 100svh to avoid iOS toolbar jumpiness */
-      height: calc(100svh - var(--header-h));
-      overflow: hidden; /* the thread itself scrolls */
+      height: calc(100dvh - var(--header-h));
+      overflow: hidden; /* thread owns scroll */
     }
     .thread{
       height: calc(100% - var(--composer-h));
       overflow: auto;
-      padding: 8px 10px calc(var(--composer-h) + 16px) 10px; /* extra bottom = avoid overlap by composer */
-      display:flex; flex-direction:column; gap: var(--gap);
+      padding: 8px 8px calc(var(--composer-h) + 16px) 8px; /* ensures last bubble isn't hidden */
+      display: flex; flex-direction: column; gap: 10px;
       scroll-behavior: smooth;
     }
 
-    /* Message bubbles */
+    /* ---------- Bubbles ---------- */
     .msg{ display:flex; }
     .msg.right{ justify-content:flex-end; }
     .bubble{
-      max-width: 92%;
+      max-width: 80%;
       padding: 10px 14px;
       border-radius: 12px;
-      border: 1px solid #333;
-      background:#111;
+      border: 1px solid #3b3b3b;
+      background:#111827;
+      color:#eaeaea;
       white-space: pre-wrap;
       line-height: 1.45;
-      word-break: break-word;
+      word-wrap: break-word;
     }
     .bubble.user{ background:#1f2937; border-color:#374151; }
     .bubble.bot { background:#111827; border-color:#4b5563; }
-    .role{ font-weight:700; opacity:.85; margin-bottom:4px; }
+    .role{ font-weight:700; opacity:.9; margin-bottom:4px; }
 
-    /* ===============================
-       Bottom composer (fixed)
-       =============================== */
+    /* ---------- Composer (fixed to bottom) ---------- */
     .composer{
-      position: fixed;
-      left: 0; right: 0; bottom: 0;
-      background: #0b0b0b;
-      border-top: 1px solid #222;
+      position: fixed; left: 0; right: 0; bottom: 0;
+      background: #0b0b0b; border-top: 1px solid #303030;
       padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
       z-index: 20;
     }
-    .composer__form{
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
+    .composer__form{ display:flex; flex-direction:column; gap:10px; }
     .row{ display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; }
+    .row--top{ align-items:flex-end; }
     .stack{ display:flex; flex-direction:column; gap:6px; }
-    .stack .lbl{ font-size:.95rem; color:#bcbcbc; }
+    .stack .lbl{ font-size:.9rem; color:#aaa; }
+    .grow{ flex:1; }
 
-    #projectSelect { min-width: 240px; padding:10px; border-radius:8px; background:#111; color:#eee; border:1px solid #333; }
     #promptBox{
       width:100%;
-      min-height: 120px;
-      max-height: 260px;
-      padding: 12px;
-      border-radius: 12px;
+      min-height:110px;
+      max-height:240px;
       background:#111; color:#eee;
-      border:1px solid #333;
-      resize: vertical;
+      border:1px solid #333; border-radius:10px;
+      padding:10px 12px; resize:vertical;
     }
 
     .submit{
-      padding: 12px 16px;
-      background:#6A0DAD; color:#fff;
-      border:none; border-radius:10px; font-weight:700; cursor:pointer;
-      width: 100%;
+      padding:10px 16px; background:#6A0DAD; color:#fff;
+      border:none; border-radius:8px; font-weight:700; cursor:pointer;
     }
 
-    /* “More” panel */
-    .advanced{ border-top:1px dashed #2b2b2b; padding-top:8px; margin-top:8px; }
+    /* ---------- “More” section ---------- */
+    .advanced{ border-top:1px dashed #333; padding-top:8px; margin-top:8px; }
     .advanced > summary{
       list-style:none; cursor:pointer; user-select:none;
       padding:6px 10px; background:#151515; border:1px solid #333; border-radius:8px; width:max-content;
@@ -128,61 +99,64 @@
     .advanced > summary::marker{ display:none; }
     .advanced[open] > summary{ background:#111; }
     .checks{ display:flex; gap:12px; flex-wrap:wrap; }
-    .btn-secondary{ padding:10px 12px; background:#333; color:#fff; border:none; border-radius:8px; cursor:pointer; }
+    .btn-secondary{ padding:8px 12px; background:#333; color:#fff; border:none; border-radius:6px; cursor:pointer; }
 
-    /* ===============================
-       Phone tweaks
-       =============================== */
+    /* ---------- Phone tweaks ---------- */
     @media (max-width: 600px){
-      header h1{ font-size: 30px; }
-      .row{ flex-direction: column; align-items: stretch; }
-      #projectSelect{ width: 100%; }
-      #promptBox{ min-height: 140px; }
-      .checks{ flex-direction: column; gap: 6px; }
+      .row{ flex-direction:column; align-items:stretch; }
+      #promptBox{ min-height:140px; }
+      .submit{ width:100%; }
+      .checks{ flex-direction:column; gap:6px; }
+      .bubble{ max-width: 92%; }
     }
   </style>
 </head>
 
 <body class="dark-mode">
-  <!-- HEADER -->
-  <header id="siteHeader">
+  <header>
     <div class="bar">
       <div class="left">
         <img src="/static/syntax-buffering.png" alt="Syntax Prime Logo" width="64" style="vertical-align: middle;">
         <h1>Ghostline</h1>
       </div>
 
+      <!-- Logout button with confirm -->
       <form action="{{ url_for('logout') }}" method="get" id="logoutForm" style="display:inline;">
         <button type="submit"
                 aria-label="Log out"
                 title="Log out"
-                style="background-color:#333; color:#fff; padding:8px 14px; border:none; border-radius:10px; cursor:pointer;">
+                style="background-color:#333; color:#fff; padding:6px 12px; border:none; border-radius:8px; cursor:pointer;">
           🚨 Logout
         </button>
       </form>
     </div>
 
-    <p>Syntax Prime is online. Minimal patience. Maximum sarcasm.</p>
+    <!-- Tagline (long part hidden on phones) -->
+    <p class="tagline">
+      Syntax Prime is online. <span class="mobile-hide">Minimal patience. Maximum sarcasm.</span>
+    </p>
   </header>
 
-  <!-- Loader (unchanged) -->
+  <!-- Thinking / loader -->
   <div id="loader" style="display:none;">
     <img src="/static/syntax-buffering.png" alt="Syntax Prime buffering..." width="100"><br>
     Syntax Prime is buffering your next poor decision…
   </div>
 
-  <!-- CHAT -->
+  <!-- Threaded chat -->
   <main class="chat">
     <div class="thread" id="thread">
       {% if conversation and conversation|length > 0 %}
         {% set display_names = {'SyntaxPrime':'Syntax Prime','SyntaxBot':'SyntaxBot','Nil.exe':'Nil.exe','GhadaGPT':'GhadaGPT'} %}
         {% for turn in conversation %}
+          <!-- user -->
           <div class="msg right">
             <div class="bubble user">
               <div class="role">You</div>
               <div>{{ turn.user | e }}</div>
             </div>
           </div>
+          <!-- assistant(s) -->
           {% for voice, reply in turn.responses.items() %}
             <div class="msg">
               <div class="bubble bot">
@@ -203,10 +177,11 @@
     </div>
   </main>
 
-  <!-- COMPOSER -->
+  <!-- Composer -->
   <div class="composer" id="composer">
+    <!-- Main prompt form -->
     <form method="POST" class="composer__form" id="mainForm">
-      <div class="row">
+      <div class="row row--top">
         <label class="stack">
           <span class="lbl">📂 Project</span>
           <select name="project" id="projectSelect">
@@ -216,16 +191,17 @@
           </select>
         </label>
 
-        <label class="stack">
+        <label class="stack grow">
           <span class="lbl">💬 Prompt</span>
           <textarea name="user_input" id="promptBox" required
-            placeholder="Type your prompt... (Enter to send, Shift+Enter for newline)"></textarea>
+                    placeholder="Type your prompt... (Enter to send, Shift+Enter for newline)"></textarea>
         </label>
 
         <button class="submit" type="submit">Submit</button>
       </div>
     </form>
 
+    <!-- Advanced controls (separate tiny forms so the main form stays clean) -->
     <details class="advanced" id="advancedControls">
       <summary>More</summary>
 
@@ -243,6 +219,7 @@
       <!-- carrier for voices/random -->
       <form id="voicesForm"></form>
 
+      <!-- Upload / OCR -->
       <div class="row">
         <form action="/upload" method="post" enctype="multipart/form-data" class="inline">
           <label class="stack">
@@ -253,6 +230,7 @@
         </form>
       </div>
 
+      <!-- Export -->
       <div class="row">
         <form id="exportForm" class="inline">
           <button type="submit" class="btn-secondary">📤 Export Session</button>
@@ -261,24 +239,23 @@
     </details>
   </div>
 
-  <!-- JS: tiny helpers to keep sizes in sync & UX nice on phones -->
+  <!-- Scripts -->
   <script>
     // Confirm logout
     document.getElementById('logoutForm')?.addEventListener('submit', (e) => {
       if (!confirm('Log out of Ghostline?\nYou’ll need the password to log back in.')) e.preventDefault();
     });
 
-    // Keep CSS vars synced with actual header/composer heights
+    // Keep CSS vars synced with real header/composer sizes
     function updateHeights(){
-      const header   = document.getElementById('siteHeader');
+      const header = document.querySelector('header');
       const composer = document.getElementById('composer');
-      if (header)  document.documentElement.style.setProperty('--header-h',  header.offsetHeight + 'px');
-      if (composer)document.documentElement.style.setProperty('--composer-h',composer.offsetHeight + 'px');
-      // Nudge to bottom
-      const t = document.getElementById('thread');
-      if (t) t.scrollTop = t.scrollHeight;
+      if (header)  document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
+      if (composer) document.documentElement.style.setProperty('--composer-h', composer.offsetHeight + 'px');
+      const thread = document.getElementById('thread');
+      if (thread) thread.scrollTop = thread.scrollHeight;
     }
-    window.addEventListener('load', () => setTimeout(updateHeights, 60));
+    window.addEventListener('load', () => setTimeout(updateHeights, 50)); // after fonts/images
     window.addEventListener('resize', updateHeights);
     new ResizeObserver(updateHeights).observe(document.getElementById('composer'));
 
@@ -286,12 +263,12 @@
     const ta = document.getElementById('promptBox');
     const mainForm = document.getElementById('mainForm');
     if (ta){
-      const fit = () => { ta.style.height = 'auto'; ta.style.height = Math.min(260, ta.scrollHeight) + 'px'; };
+      const fit = () => { ta.style.height = 'auto'; ta.style.height = Math.min(240, ta.scrollHeight) + 'px'; };
       ta.addEventListener('input', fit);
       ta.addEventListener('focus', () => setTimeout(() => {
         fit();
         document.getElementById('thread')?.scrollTo({ top: 1e9 });
-      }, 120));
+      }, 100));
       fit();
 
       ta.addEventListener('keydown', (e) => {
@@ -303,9 +280,11 @@
       });
     }
 
+    // Copy checked voices/random into main form before submit
     function copyVoiceOptions(){
       const voicesForm = document.getElementById('voicesForm');
       if (!voicesForm || !mainForm) return;
+      // remove old clones
       [...mainForm.querySelectorAll('input[name="voices"], input[name="random"]')].forEach(n => n.remove());
       voicesForm.querySelectorAll('input[type="checkbox"]').forEach(cb => {
         if (cb.checked) {
@@ -317,13 +296,13 @@
     mainForm?.addEventListener('submit', copyVoiceOptions);
 
     // Export = current project
-    document.getElementById('exportForm')?.addEventListener('submit', function(e){
+    document.getElementById('exportForm')?.addEventListener('submit', function (e) {
       e.preventDefault();
       const proj = document.getElementById('projectSelect').value;
       window.location.href = '/export/' + encodeURIComponent(proj);
     });
 
-    // “More” open on desktop, collapsed on phones
+    // Open “More” on desktop, keep closed on phones
     const adv = document.getElementById('advancedControls');
     const setAdv = () => { adv.open = window.innerWidth > 900; };
     window.addEventListener('load', setAdv);
