@@ -9,105 +9,161 @@
   <link rel="icon" type="image/png" href="/static/favicon.png">
 
   <style>
-    /* ===============================
-       Layout variables (kept in sync by JS)
-       =============================== */
-    :root{
+    :root {
       --header-h: 72px;
       --composer-h: 170px;
     }
-    body{ margin:0; }
+    body { margin: 0; }
 
-    /* ---------- Header ---------- */
-    header{ padding:12px 16px 6px 16px; }
-    header .bar{ display:flex; align-items:center; gap:12px; justify-content:space-between; }
-    header .left{ display:flex; align-items:center; gap:12px; }
-    header h1{ margin:0; }
-    header .tagline{ margin-top:6px; font-style:italic; font-size:0.95rem; color:#ccc; }
+    header { padding: 12px 16px 6px 16px; }
+    header .bar { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
+    header .left { display: flex; align-items: center; gap: 12px; }
+    header h1 { margin: 0; font-size: 1.6rem; }
+    header .tagline { margin-top: 6px; font-style: italic; font-size: 0.95rem; color: #ccc; }
 
-    /* Hide the long part of the tagline on phones */
-    @media (max-width: 600px){
-      .mobile-hide{ display:none; }
-      header .tagline{ margin-top:4px; font-size:0.85rem; }
-    }
-
-    /* ---------- Chat area ---------- */
-    main.chat{
+    main.chat {
       height: calc(100dvh - var(--header-h));
-      overflow: hidden; /* thread owns scroll */
+      overflow: hidden;
     }
-    .thread{
+    .thread {
       height: calc(100% - var(--composer-h));
       overflow: auto;
-      padding: 8px 8px calc(var(--composer-h) + 16px) 8px; /* ensures last bubble isn't hidden */
-      display: flex; flex-direction: column; gap: 10px;
+      padding: 8px 8px calc(var(--composer-h) + 16px) 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
       scroll-behavior: smooth;
     }
 
-    /* ---------- Bubbles ---------- */
-    .msg{ display:flex; }
-    .msg.right{ justify-content:flex-end; }
-    .bubble{
+    .msg { display: flex; }
+    .msg.right { justify-content: flex-end; }
+    .bubble {
       max-width: 80%;
       padding: 10px 14px;
       border-radius: 12px;
       border: 1px solid #3b3b3b;
-      background:#111827;
-      color:#eaeaea;
+      background: #111827;
+      color: #eaeaea;
       white-space: pre-wrap;
       line-height: 1.45;
       word-wrap: break-word;
     }
-    .bubble.user{ background:#1f2937; border-color:#374151; }
-    .bubble.bot { background:#111827; border-color:#4b5563; }
-    .role{ font-weight:700; opacity:.9; margin-bottom:4px; }
+    .bubble.user { background: #1f2937; border-color: #374151; }
+    .bubble.bot { background: #111827; border-color: #4b5563; }
+    .role { font-weight: 700; opacity: .9; margin-bottom: 4px; }
 
-    /* ---------- Composer (fixed to bottom) ---------- */
-    .composer{
-      position: fixed; left: 0; right: 0; bottom: 0;
+    .composer {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
       background: #0b0b0b; border-top: 1px solid #303030;
       padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
       z-index: 20;
     }
-    .composer__form{ display:flex; flex-direction:column; gap:10px; }
-    .row{ display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; }
-    .row--top{ align-items:flex-end; }
-    .stack{ display:flex; flex-direction:column; gap:6px; }
-    .stack .lbl{ font-size:.9rem; color:#aaa; }
-    .grow{ flex:1; }
+    .composer__form { display: flex; flex-direction: column; gap: 10px; }
+    .row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+    .row--top { align-items: flex-end; }
+    .stack { display: flex; flex-direction: column; gap: 6px; }
+    .stack .lbl { font-size: .9rem; color: #aaa; }
+    .grow { flex: 1; }
 
-    #promptBox{
-      width:100%;
-      min-height:110px;
-      max-height:240px;
-      background:#111; color:#eee;
-      border:1px solid #333; border-radius:10px;
-      padding:10px 12px; resize:vertical;
+    #promptBox {
+      width: 100%;
+      min-height: 110px;
+      max-height: 240px;
+      background: #111; color: #eee;
+      border: 1px solid #333; border-radius: 10px;
+      padding: 10px 12px; resize: vertical;
     }
 
-    .submit{
-      padding:10px 16px; background:#6A0DAD; color:#fff;
-      border:none; border-radius:8px; font-weight:700; cursor:pointer;
+    .submit {
+      padding: 10px 16px; background: #6A0DAD; color: #fff;
+      border: none; border-radius: 8px; font-weight: 700; cursor: pointer;
     }
 
-    /* ---------- “More” section ---------- */
-    .advanced{ border-top:1px dashed #333; padding-top:8px; margin-top:8px; }
-    .advanced > summary{
-      list-style:none; cursor:pointer; user-select:none;
-      padding:6px 10px; background:#151515; border:1px solid #333; border-radius:8px; width:max-content;
+    .advanced {
+      border-top: 1px dashed #333;
+      padding-top: 8px;
+      margin-top: 8px;
     }
-    .advanced > summary::marker{ display:none; }
-    .advanced[open] > summary{ background:#111; }
-    .checks{ display:flex; gap:12px; flex-wrap:wrap; }
-    .btn-secondary{ padding:8px 12px; background:#333; color:#fff; border:none; border-radius:6px; cursor:pointer; }
+    .advanced > summary {
+      list-style: none; cursor: pointer; user-select: none;
+      padding: 6px 10px;
+      background: #151515;
+      border: 1px solid #333;
+      border-radius: 8px;
+      width: max-content;
+    }
+    .advanced > summary::marker { display: none; }
+    .advanced[open] > summary { background: #111; }
+    .checks { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-secondary {
+      padding: 8px 12px;
+      background: #333;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
 
-    /* ---------- Phone tweaks ---------- */
-    @media (max-width: 600px){
-      .row{ flex-direction:column; align-items:stretch; }
-      #promptBox{ min-height:140px; }
-      .submit{ width:100%; }
-      .checks{ flex-direction:column; gap:6px; }
-      .bubble{ max-width: 92%; }
+    /* --- MOBILE OVERRIDES --- */
+    @media (max-width: 600px) {
+      header {
+        padding: 8px 12px 4px 12px;
+      }
+
+      header img {
+        width: 40px;
+      }
+
+      header h1 {
+        font-size: 1.2rem;
+      }
+
+      .tagline {
+        font-size: 0.75rem;
+        margin-top: 2px;
+      }
+
+      .mobile-hide {
+        display: none;
+      }
+
+      .row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+
+      .stack {
+        gap: 4px;
+      }
+
+      #promptBox {
+        min-height: 100px;
+        max-height: 180px;
+        font-size: 0.9rem;
+        padding: 8px 10px;
+      }
+
+      .submit {
+        width: 100%;
+        font-size: 1rem;
+        padding: 10px;
+      }
+
+      .checks {
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .bubble {
+        max-width: 92%;
+        font-size: 0.9rem;
+      }
+
+      .composer__form .lbl {
+        font-size: 0.85rem;
+      }
     }
   </style>
 </head>
@@ -119,44 +175,34 @@
         <img src="/static/syntax-buffering.png" alt="Syntax Prime Logo" width="64" style="vertical-align: middle;">
         <h1>Ghostline</h1>
       </div>
-
-      <!-- Logout button with confirm -->
       <form action="{{ url_for('logout') }}" method="get" id="logoutForm" style="display:inline;">
-        <button type="submit"
-                aria-label="Log out"
-                title="Log out"
+        <button type="submit" aria-label="Log out" title="Log out"
                 style="background-color:#333; color:#fff; padding:6px 12px; border:none; border-radius:8px; cursor:pointer;">
           🚨 Logout
         </button>
       </form>
     </div>
-
-    <!-- Tagline (long part hidden on phones) -->
     <p class="tagline">
       Syntax Prime is online. <span class="mobile-hide">Minimal patience. Maximum sarcasm.</span>
     </p>
   </header>
 
-  <!-- Thinking / loader -->
   <div id="loader" style="display:none;">
     <img src="/static/syntax-buffering.png" alt="Syntax Prime buffering..." width="100"><br>
     Syntax Prime is buffering your next poor decision…
   </div>
 
-  <!-- Threaded chat -->
   <main class="chat">
     <div class="thread" id="thread">
       {% if conversation and conversation|length > 0 %}
         {% set display_names = {'SyntaxPrime':'Syntax Prime','SyntaxBot':'SyntaxBot','Nil.exe':'Nil.exe','GhadaGPT':'GhadaGPT'} %}
         {% for turn in conversation %}
-          <!-- user -->
           <div class="msg right">
             <div class="bubble user">
               <div class="role">You</div>
               <div>{{ turn.user | e }}</div>
             </div>
           </div>
-          <!-- assistant(s) -->
           {% for voice, reply in turn.responses.items() %}
             <div class="msg">
               <div class="bubble bot">
@@ -177,9 +223,7 @@
     </div>
   </main>
 
-  <!-- Composer -->
   <div class="composer" id="composer">
-    <!-- Main prompt form -->
     <form method="POST" class="composer__form" id="mainForm">
       <div class="row row--top">
         <label class="stack">
@@ -190,21 +234,17 @@
             {% endfor %}
           </select>
         </label>
-
         <label class="stack grow">
           <span class="lbl">💬 Prompt</span>
           <textarea name="user_input" id="promptBox" required
                     placeholder="Type your prompt... (Enter to send, Shift+Enter for newline)"></textarea>
         </label>
-
         <button class="submit" type="submit">Submit</button>
       </div>
     </form>
 
-    <!-- Advanced controls (separate tiny forms so the main form stays clean) -->
     <details class="advanced" id="advancedControls">
       <summary>More</summary>
-
       <div class="row">
         <span class="lbl">🤖 Who responds?</span>
         <div class="checks">
@@ -215,11 +255,7 @@
           <label><input type="checkbox" name="random" form="voicesForm"> 🎲 Random</label>
         </div>
       </div>
-
-      <!-- carrier for voices/random -->
       <form id="voicesForm"></form>
-
-      <!-- Upload / OCR -->
       <div class="row">
         <form action="/upload" method="post" enctype="multipart/form-data" class="inline">
           <label class="stack">
@@ -229,8 +265,6 @@
           <input type="submit" value="Analyze" class="btn-secondary">
         </form>
       </div>
-
-      <!-- Export -->
       <div class="row">
         <form id="exportForm" class="inline">
           <button type="submit" class="btn-secondary">📤 Export Session</button>
@@ -239,38 +273,37 @@
     </details>
   </div>
 
-  <!-- Scripts -->
   <script>
-    // Confirm logout
     document.getElementById('logoutForm')?.addEventListener('submit', (e) => {
       if (!confirm('Log out of Ghostline?\nYou’ll need the password to log back in.')) e.preventDefault();
     });
 
-    // Keep CSS vars synced with real header/composer sizes
-    function updateHeights(){
+    function updateHeights() {
       const header = document.querySelector('header');
       const composer = document.getElementById('composer');
-      if (header)  document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
+      if (header) document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
       if (composer) document.documentElement.style.setProperty('--composer-h', composer.offsetHeight + 'px');
       const thread = document.getElementById('thread');
       if (thread) thread.scrollTop = thread.scrollHeight;
     }
-    window.addEventListener('load', () => setTimeout(updateHeights, 50)); // after fonts/images
+
+    window.addEventListener('load', () => setTimeout(updateHeights, 50));
     window.addEventListener('resize', updateHeights);
     new ResizeObserver(updateHeights).observe(document.getElementById('composer'));
 
-    // Auto-resize textarea & Enter-to-send
     const ta = document.getElementById('promptBox');
     const mainForm = document.getElementById('mainForm');
-    if (ta){
-      const fit = () => { ta.style.height = 'auto'; ta.style.height = Math.min(240, ta.scrollHeight) + 'px'; };
+    if (ta) {
+      const fit = () => {
+        ta.style.height = 'auto';
+        ta.style.height = Math.min(240, ta.scrollHeight) + 'px';
+      };
       ta.addEventListener('input', fit);
       ta.addEventListener('focus', () => setTimeout(() => {
         fit();
         document.getElementById('thread')?.scrollTo({ top: 1e9 });
       }, 100));
       fit();
-
       ta.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
@@ -280,11 +313,9 @@
       });
     }
 
-    // Copy checked voices/random into main form before submit
-    function copyVoiceOptions(){
+    function copyVoiceOptions() {
       const voicesForm = document.getElementById('voicesForm');
       if (!voicesForm || !mainForm) return;
-      // remove old clones
       [...mainForm.querySelectorAll('input[name="voices"], input[name="random"]')].forEach(n => n.remove());
       voicesForm.querySelectorAll('input[type="checkbox"]').forEach(cb => {
         if (cb.checked) {
@@ -295,14 +326,12 @@
     }
     mainForm?.addEventListener('submit', copyVoiceOptions);
 
-    // Export = current project
     document.getElementById('exportForm')?.addEventListener('submit', function (e) {
       e.preventDefault();
       const proj = document.getElementById('projectSelect').value;
       window.location.href = '/export/' + encodeURIComponent(proj);
     });
 
-    // Open “More” on desktop, keep closed on phones
     const adv = document.getElementById('advancedControls');
     const setAdv = () => { adv.open = window.innerWidth > 900; };
     window.addEventListener('load', setAdv);
@@ -310,6 +339,7 @@
   </script>
 </body>
 </html>
+
 
 
 
