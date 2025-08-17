@@ -260,6 +260,7 @@
             </div>
           {% endfor %}
         {% endfor %}
+        <div id="bottom-anchor"></div>
       {% else %}
         <div class="msg">
           <div class="bubble bot">
@@ -267,12 +268,13 @@
             <div>Say something and I'll talk back. Try "What day is it?"</div>
           </div>
         </div>
+        <div id="bottom-anchor"></div>
       {% endif %}
     </div>
   </main>
 
   <div class="composer" id="composer">
-    <form method="POST" class="composer__form" id="mainForm">
+    <form method="POST" action="/#bottom-anchor" class="composer__form" id="mainForm">
       <div class="row row--top">
         <label class="stack">
           <span class="lbl">📂 Project</span>
@@ -329,7 +331,10 @@
 
     function scrollToBottom() {
       const thread = document.getElementById('thread');
-      if (thread) {
+      const anchor = document.getElementById('bottom-anchor');
+      if (thread && anchor) {
+        anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      } else if (thread) {
         thread.scrollTop = thread.scrollHeight;
       }
     }
@@ -339,24 +344,22 @@
       const composer = document.getElementById('composer');
       if (header) document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
       if (composer) document.documentElement.style.setProperty('--composer-h', composer.offsetHeight + 'px');
-      setTimeout(scrollToBottom, 100);
     }
 
-    // Force scroll to bottom on page load
+    // Auto-scroll on page load
     window.addEventListener('load', () => {
-      setTimeout(updateHeights, 100);
+      updateHeights();
+      setTimeout(scrollToBottom, 100);
       setTimeout(scrollToBottom, 300);
-      setTimeout(scrollToBottom, 500); // Extra insurance
+      
+      // If there's a hash fragment, scroll to it
+      if (window.location.hash === '#bottom-anchor') {
+        setTimeout(scrollToBottom, 500);
+      }
     });
     
     window.addEventListener('resize', updateHeights);
     new ResizeObserver(updateHeights).observe(document.getElementById('composer'));
-
-    // Check for new content and scroll (in case page loaded with new messages)
-    if (window.location.search.includes('new=1') || document.referrer.includes(window.location.hostname)) {
-      setTimeout(scrollToBottom, 100);
-      setTimeout(scrollToBottom, 500);
-    }
 
     const ta = document.getElementById('promptBox');
     const mainForm = document.getElementById('mainForm');
@@ -375,6 +378,7 @@
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
           copyVoiceOptions();
+          mainForm.action = '/#bottom-anchor';
           mainForm.submit();
         }
       });
@@ -392,7 +396,10 @@
       });
     }
 
-    mainForm?.addEventListener('submit', copyVoiceOptions);
+    mainForm?.addEventListener('submit', () => {
+      mainForm.action = '/#bottom-anchor';
+      copyVoiceOptions();
+    });
 
     document.getElementById('exportForm')?.addEventListener('submit', function (e) {
       e.preventDefault();
