@@ -57,7 +57,7 @@
       border: 1px solid #3b3b3b;
       background: #1f2937;
       color: #f3f4f6;
-      white-space: pre-wrap;
+      white-space: pre-line;
       line-height: 1.45;
       word-wrap: break-word;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -248,14 +248,14 @@
           <div class="msg right">
             <div class="bubble user">
               <div class="role">You</div>
-              <div>{{ turn.user | e }}</div>
+              <div>{{ turn.user | trim | e }}</div>
             </div>
           </div>
           {% for voice, reply in turn.responses.items() %}
             <div class="msg">
               <div class="bubble bot">
                 <div class="role">{{ display_names.get(voice, voice) }}</div>
-                <div>{{ reply | e }}</div>
+                <div>{{ reply | trim | e }}</div>
               </div>
             </div>
           {% endfor %}
@@ -327,36 +327,35 @@
       if (!confirm('Log out of Ghostline?\nYou'll need the password to log back in.')) e.preventDefault();
     });
 
+    function scrollToBottom() {
+      const thread = document.getElementById('thread');
+      if (thread) {
+        thread.scrollTop = thread.scrollHeight;
+      }
+    }
+
     function updateHeights() {
       const header = document.querySelector('header');
       const composer = document.getElementById('composer');
       if (header) document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
       if (composer) document.documentElement.style.setProperty('--composer-h', composer.offsetHeight + 'px');
-      scrollToBottom();
+      setTimeout(scrollToBottom, 100);
     }
 
-    function scrollToBottom() {
-      const thread = document.getElementById('thread');
-      if (thread) {
-        setTimeout(() => {
-          thread.scrollTop = thread.scrollHeight;
-        }, 100);
-      }
-    }
-
+    // Force scroll to bottom on page load
     window.addEventListener('load', () => {
-      setTimeout(updateHeights, 50);
-      setTimeout(scrollToBottom, 200); // Extra scroll after load
+      setTimeout(updateHeights, 100);
+      setTimeout(scrollToBottom, 300);
+      setTimeout(scrollToBottom, 500); // Extra insurance
     });
+    
     window.addEventListener('resize', updateHeights);
     new ResizeObserver(updateHeights).observe(document.getElementById('composer'));
 
-    // Scroll to bottom after form submission
-    const mainForm = document.getElementById('mainForm');
-    if (mainForm) {
-      mainForm.addEventListener('submit', () => {
-        setTimeout(scrollToBottom, 500); // Scroll after page reloads
-      });
+    // Check for new content and scroll (in case page loaded with new messages)
+    if (window.location.search.includes('new=1') || document.referrer.includes(window.location.hostname)) {
+      setTimeout(scrollToBottom, 100);
+      setTimeout(scrollToBottom, 500);
     }
 
     const ta = document.getElementById('promptBox');
@@ -369,7 +368,7 @@
       ta.addEventListener('input', fit);
       ta.addEventListener('focus', () => setTimeout(() => {
         fit();
-        document.getElementById('thread')?.scrollTo({ top: 1e9 });
+        scrollToBottom();
       }, 100));
       fit();
       ta.addEventListener('keydown', (e) => {
@@ -423,8 +422,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-
