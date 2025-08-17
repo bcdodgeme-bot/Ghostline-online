@@ -10,3 +10,8 @@ services:
         sync: false
       - key: GHOSTLINE_PASSWORD
         sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: CHAT_MODEL
+        value: "openrouter/auto"
+        sync: false

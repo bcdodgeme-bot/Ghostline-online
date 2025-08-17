@@ -1,6 +1,4 @@
-# utils/scraper.py
 from __future__ import annotations
-
 import requests
 from typing import Dict, Any
 
@@ -16,14 +14,12 @@ try:
 except Exception:
     Document = None
 
-
 DEFAULT_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
         "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     )
 }
-
 
 def fetch_url(url: str, timeout: float = 15.0) -> str:
     """
@@ -41,8 +37,7 @@ def fetch_url(url: str, timeout: float = 15.0) -> str:
             raise ValueError(f"Unsupported content type: {ctype or 'unknown'}")
     return resp.text or ""
 
-
-def _extract_with_trafilatura(html: str, url: str | None = None) -> str | None:
+def extract_with_trafilatura(html: str, url: str | None = None) -> str | None:
     if not trafilatura:
         return None
     try:
@@ -58,8 +53,7 @@ def _extract_with_trafilatura(html: str, url: str | None = None) -> str | None:
     except Exception:
         return None
 
-
-def _extract_with_readability(html: str) -> str | None:
+def extract_with_readability(html: str) -> str | None:
     if not Document:
         return None
     try:
@@ -79,7 +73,6 @@ def _extract_with_readability(html: str) -> str | None:
     except Exception:
         return None
 
-
 def scrape_url(url: str) -> Dict[str, Any]:
     """
     Fetches a URL and extracts readable text.
@@ -90,17 +83,17 @@ def scrape_url(url: str) -> Dict[str, Any]:
         html = fetch_url(url)
     except Exception as e:
         return {"ok": False, "error": f"fetch failed: {e}"}
-
+    
     # Try trafilatura first, then readability as a fallback
-    text = _extract_with_trafilatura(html, url=url)
+    text = extract_with_trafilatura(html, url=url)
     if not text:
-        text = _extract_with_readability(html)
-
+        text = extract_with_readability(html)
+    
     if text:
         # Trim very long pages to something sane for a prompt
         text = text.strip()
         if len(text) > 60_000:
             text = text[:60_000] + "\n\n[...truncated...]"
         return {"ok": True, "text": text, "url": url}
-
+    
     return {"ok": False, "error": "could not extract readable text"}
