@@ -332,13 +332,32 @@
       const composer = document.getElementById('composer');
       if (header) document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
       if (composer) document.documentElement.style.setProperty('--composer-h', composer.offsetHeight + 'px');
-      const thread = document.getElementById('thread');
-      if (thread) thread.scrollTop = thread.scrollHeight;
+      scrollToBottom();
     }
 
-    window.addEventListener('load', () => setTimeout(updateHeights, 50));
+    function scrollToBottom() {
+      const thread = document.getElementById('thread');
+      if (thread) {
+        setTimeout(() => {
+          thread.scrollTop = thread.scrollHeight;
+        }, 100);
+      }
+    }
+
+    window.addEventListener('load', () => {
+      setTimeout(updateHeights, 50);
+      setTimeout(scrollToBottom, 200); // Extra scroll after load
+    });
     window.addEventListener('resize', updateHeights);
     new ResizeObserver(updateHeights).observe(document.getElementById('composer'));
+
+    // Scroll to bottom after form submission
+    const mainForm = document.getElementById('mainForm');
+    if (mainForm) {
+      mainForm.addEventListener('submit', () => {
+        setTimeout(scrollToBottom, 500); // Scroll after page reloads
+      });
+    }
 
     const ta = document.getElementById('promptBox');
     const mainForm = document.getElementById('mainForm');
