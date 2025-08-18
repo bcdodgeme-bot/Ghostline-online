@@ -101,7 +101,7 @@ def index():
                     "Group related threads, call out anything urgent, and suggest 3 next actions:\n\n"
                     + "\n".join(lines)
                 )
-                retrieval_ctx = retrieve(summary_prompt, k=5, project_filter=project) if is_ready() else []
+                retrieval_ctx = retrieve(summary_prompt, k=5) if is_ready() else []
                 response_data = generate_response(
                     summary_prompt, use_voices, random_toggle,
                     project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
@@ -123,7 +123,7 @@ def index():
                     "Give key points, who it's from, and any required follow‑ups:\n\n"
                     + "\n".join(lines)
                 )
-                retrieval_ctx = retrieve(summary_prompt, k=5, project_filter=project) if is_ready() else []
+                retrieval_ctx = retrieve(summary_prompt, k=5) if is_ready() else []
                 response_data = generate_response(
                     summary_prompt, use_voices, random_toggle,
                     project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
@@ -146,7 +146,7 @@ def index():
                     "Use bullets and keep it tight and actionable.\n\n"
                     f"--- SCRAPED CONTENT START ---\n{result['text']}\n--- SCRAPED CONTENT END ---"
                 )
-                retrieval_ctx = retrieve(summary_prompt, k=5, project_filter=project) if is_ready() else []
+                retrieval_ctx = retrieve(summary_prompt, k=5) if is_ready() else []
                 response_data = generate_response(
                     summary_prompt, use_voices, random_toggle,
                     project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
@@ -155,7 +155,7 @@ def index():
             return _render(project, response_data)
 
         # ---- Normal flow ----
-        retrieval_ctx = retrieve(user_input, k=5, project_filter=project) if is_ready() else []
+        retrieval_ctx = retrieve(user_input, k=5) if is_ready() else []
         response_data = generate_response(
             user_input, use_voices, random_toggle,
             project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
@@ -191,7 +191,7 @@ def stream():
     user_input = request.form['user_input'].strip()
     project = request.form['project']
     use_voices = request.form.getlist('voices') or ['SyntaxPrime']
-    retrieval_ctx = retrieve(user_input, k=5, project_filter=project) if is_ready() else []
+    retrieval_ctx = retrieve(user_input, k=5) if is_ready() else []
 
     def generate():
         for chunk in stream_generate(
@@ -236,12 +236,11 @@ def debug_rag():
         return "Unauthorized", 401
     q = request.args.get('query', '').strip()
     k = int(request.args.get('k', 5))
-    project = request.args.get('project', '').strip() or None
     if not q:
         return jsonify({"ok": False, "error": "missing query"}), 400
     if not is_ready():
         return jsonify({"ok": False, "error": "corpus not loaded"}), 500
-    hits = retrieve(q, k=k, project_filter=project)
+    hits = retrieve(q, k=k)
     return jsonify({"ok": True, "count": len(hits), "results": hits})
 
 
@@ -372,5 +371,4 @@ def upload_file():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
 
