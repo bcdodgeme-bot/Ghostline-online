@@ -409,8 +409,8 @@
     }
 
     // Set initial export link and update when project changes
-    document.addEventListener('DOMContentLoaded', updateExportLink);
-    document.getElementById('projectSelect')?.addEventListener('change', updateExportLink);
+window.addEventListener('load', updateExportLink);
+document.getElementById('projectSelect')?.addEventListener('change', updateExportLink);
 
     const adv = document.getElementById('advancedControls');
     const setAdv = () => { adv.open = window.innerWidth > 900; };
