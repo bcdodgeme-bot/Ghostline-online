@@ -248,14 +248,14 @@
           <div class="msg right">
             <div class="bubble user">
               <div class="role">You</div>
-              <div>{{ turn.user | trim | e }}</div>
+              <div>{{ turn.user | trim | markdown }}</div>
             </div>
           </div>
           {% for voice, reply in turn.responses.items() %}
             <div class="msg">
               <div class="bubble bot">
                 <div class="role">{{ display_names.get(voice, voice) }}</div>
-                <div>{{ reply | trim | e }}</div>
+                <div>{{ reply | trim | markdown }}</div>
               </div>
             </div>
           {% endfor %}
@@ -316,9 +316,7 @@
         </form>
       </div>
       <div class="row">
-        <form id="exportForm" class="inline">
-          <button type="submit" class="btn-secondary">📤 Export Session</button>
-        </form>
+        <a href="#" id="exportLink" class="btn-secondary" style="text-decoration: none; display: inline-block;">📤 Export Session</a>
       </div>
     </details>
   </div>
@@ -401,11 +399,18 @@
       copyVoiceOptions();
     });
 
-    document.getElementById('exportForm')?.addEventListener('submit', function (e) {
-      e.preventDefault();
+    // Update export link when project changes
+    function updateExportLink() {
       const proj = document.getElementById('projectSelect').value;
-      window.location.href = '/export/' + encodeURIComponent(proj);
-    });
+      const exportLink = document.getElementById('exportLink');
+      if (exportLink) {
+        exportLink.href = '/export/' + encodeURIComponent(proj);
+      }
+    }
+
+    // Set initial export link and update when project changes
+    document.addEventListener('DOMContentLoaded', updateExportLink);
+    document.getElementById('projectSelect')?.addEventListener('change', updateExportLink);
 
     const adv = document.getElementById('advancedControls');
     const setAdv = () => { adv.open = window.innerWidth > 900; };

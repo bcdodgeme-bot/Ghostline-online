@@ -11,6 +11,10 @@ from PIL import Image
 import fitz
 import docx
 
+# Markdown support
+import markdown
+from markupsafe import Markup
+
 # .env support
 try:
     from dotenv import load_dotenv
@@ -34,6 +38,18 @@ PROJECTS = [
 ]
 
 CORPUS_PATH = "data/cleaned/ghostline_sources.jsonl.gz"
+
+# Markdown filter for Jinja2
+def markdown_filter(text):
+    """Convert markdown to HTML"""
+    if not text:
+        return ""
+    # Configure markdown with basic extensions
+    md = markdown.Markdown(extensions=['nl2br', 'fenced_code'])
+    return Markup(md.convert(text))
+
+# Register markdown filter
+app.jinja_env.filters['markdown'] = markdown_filter
 
 def _boot_load_corpus():
     try:
@@ -104,7 +120,7 @@ def index():
                 lines = [f"- {m['date']} — {m['from']} — {m['subject']}" for m in msgs]
                 summary_prompt = (
                     f"Summarize the most relevant messages for query: '{query_text}'. "
-                    "Give key points, who it’s from, and any required follow‑ups:\n\n"
+                    "Give key points, who it's from, and any required follow‑ups:\n\n"
                     + "\n".join(lines)
                 )
                 retrieval_ctx = retrieve(summary_prompt, k=5, project_filter=project) if is_ready() else []
@@ -229,75 +245,17 @@ def debug_rag():
     return jsonify({"ok": True, "count": len(hits), "results": hits})
 
 
-# --- AUTH ---
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    error = None
-    if request.method == 'POST':
-        if request.form['password'] == PASSWORD:
-            session['logged_in'] = True
-            return redirect(url_for('index'))
-        else:
-            error = "Wrong password."
-    return render_template('login.html', error=error)
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('login'))
-
-
-# --- EXPORT SESSION ---
-@app.route('/export/<project>')
-def export_session(project):
-    session_path = f'sessions/{project.lower().replace(" ", "_")}.json'
+# --- DEBUG: Sample entries to see data structure ---
+@app.route('/debug/sample')
+def debug_sample():
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
     try:
-        with open(session_path, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-        content = ""
-        for line in lines:
-            entry = json.loads(line)
-            content += f"### Prompt:\n{entry['prompt']}\n"
-            for voice, reply in entry['response'].items():
-                content += f"- **{voice}**: {reply}\n"
-            content += "\n---\n\n"
-        file_stream = io.BytesIO()
-        file_stream.write(content.encode('utf-8'))
-        file_stream.seek(0)
-        return send_file(
-            file_stream,
-            mimetype='text/markdown',
-            as_attachment=True,
-            download_name=f"{project}_session.md"
-        )
-    except FileNotFoundError:
-        return f"No session data found for project: {project}", 404
-
-
-# --- UPLOAD / OCR ---
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    file = request.files.get('file')
-    if not file or not file.filename:
-        return "No file uploaded", 400
-    filename = file.filename.lower()
-
-    if filename.endswith(('.png', '.jpg', '.jpeg')):
-        img = Image.open(file.stream); text = pytesseract.image_to_string(img)
-    elif filename.endswith('.pdf'):
-        file.stream.seek(0); data = file.read()
-        doc = fitz.open(stream=data, filetype="pdf")
-        text = "".join(page.get_text() for page in doc)
-    elif filename.endswith('.docx'):
-        file.stream.seek(0); document = docx.Document(file)
-        text = "\n".join(p.text for p in document.paragraphs)
-    else:
-        return "Unsupported file type", 400
-
-    return f"<pre>{text}</pre>"
-
-if __name__ == '__main__':
-    app.run(debug=True)
+        # Get a few sample entries to see their structure
+        import gzip
+        samples = []
+        with gzip.open('data/cleaned/ghostline_sources.jsonl.gz', 'rt', encoding='utf-8') as f
 
 
 

@@ -2,7 +2,7 @@ services:
   - type: web
     name: ghostline
     env: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: ./build.sh
     startCommand: gunicorn app:app -w 2 -k gthread --threads 8 --timeout 120
     autoDeploy: true
     envVars:
