@@ -255,9 +255,122 @@ def debug_sample():
         # Get a few sample entries to see their structure
         import gzip
         samples = []
-        with gzip.open('data/cleaned/ghostline_sources.jsonl.gz', 'rt', encoding='utf-8') as f
+        with gzip.open('data/cleaned/ghostline_sources.jsonl.gz', 'rt', encoding='utf-8') as f:
+            for i, line in enumerate(f):
+                if i >= 5:  # Just first 5 entries
+                    break
+                try:
+                    entry = json.loads(line)
+                    # Only show metadata, not full content
+                    sample = {k: v for k, v in entry.items() if k != 'content'}
+                    sample['content_length'] = len(entry.get('content', ''))
+                    samples.append(sample)
+                except:
+                    continue
+        
+        return jsonify({"ok": True, "samples": samples})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
 
 
+# --- AUTH ---
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = None
+    if request.method == 'POST':
+        if request.form['password'] == PASSWORD:
+            session['logged_in'] = True
+            return redirect(url_for('index'))
+        else:
+            error = "Wrong password."
+    return render_template('login.html', error=error)
 
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+
+# --- EXPORT SESSION ---
+@app.route('/export/<project>')
+def export_session(project):
+    session_path = f'sessions/{project.lower().replace(" ", "_")}.json'
+    try:
+        with open(session_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        content = ""
+        for line in lines:
+            entry = json.loads(line)
+            content += f"### Prompt:\n{entry['prompt']}\n"
+            for voice, reply in entry['response'].items():
+                content += f"- **{voice}**: {reply}\n"
+            content += "\n---\n\n"
+        file_stream = io.BytesIO()
+        file_stream.write(content.encode('utf-8'))
+        file_stream.seek(0)
+        return send_file(
+            file_stream,
+            mimetype='text/markdown',
+            as_attachment=True,
+            download_name=f"{project}_session.md"
+        )
+    except FileNotFoundError:
+        return f"No session data found for project: {project}", 404
+
+
+# --- UPLOAD / OCR ---
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    try:
+        file = request.files.get('file')
+        if not file or not file.filename:
+            return "No file uploaded", 400
+        
+        filename = file.filename.lower()
+        text = ""
+
+        if filename.endswith(('.png', '.jpg', '.jpeg')):
+            try:
+                img = Image.open(file.stream)
+                text = pytesseract.image_to_string(img)
+                if not text.strip():
+                    text = "No text detected in image"
+            except Exception as e:
+                return f"OCR Error: {str(e)}. Tesseract might not be installed on server.", 500
+                
+        elif filename.endswith('.pdf'):
+            try:
+                file.stream.seek(0)
+                data = file.read()
+                doc = fitz.open(stream=data, filetype="pdf")
+                text = "".join(page.get_text() for page in doc)
+                if not text.strip():
+                    text = "No text found in PDF"
+            except Exception as e:
+                return f"PDF Error: {str(e)}", 500
+                
+        elif filename.endswith('.docx'):
+            try:
+                file.stream.seek(0)
+                document = docx.Document(file)
+                text = "\n".join(p.text for p in document.paragraphs)
+                if not text.strip():
+                    text = "No text found in Word document"
+            except Exception as e:
+                return f"Word Document Error: {str(e)}", 500
+        else:
+            return "Unsupported file type. Supported: PNG, JPG, JPEG, PDF, DOCX", 400
+
+        # Truncate very long text
+        if len(text) > 10000:
+            text = text[:10000] + "\n\n[...truncated...]"
+            
+        return f"<pre>{text}</pre>"
+        
+    except Exception as e:
+        return f"Upload Error: {str(e)}", 500
+
+if __name__ == '__main__':
+    app.run(debug=True)
 
 
