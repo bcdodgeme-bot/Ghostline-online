@@ -1,0 +1,12 @@
+# Ignore large data files
+data/cleaned/*.gz
+data/raw*/
+sessions/
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore environment files
+.env

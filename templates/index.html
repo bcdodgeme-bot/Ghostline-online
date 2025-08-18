@@ -316,7 +316,7 @@
         </form>
       </div>
       <div class="row">
-        <a href="#" id="exportLink" class="btn-secondary" style="text-decoration: none; display: inline-block;">📤 Export Session</a>
+       <a href="/export/Personal%20Operating%20Manual" class="btn-secondary" style="text-decoration: none; display: inline-block;">📤 Export Session</a>
       </div>
     </details>
   </div>
@@ -409,7 +409,10 @@
     }
 
     // Set initial export link and update when project changes
-window.addEventListener('load', updateExportLink);
+// Set initial export link and update when project changes
+window.addEventListener('load', () => {
+  setTimeout(updateExportLink, 100);
+});
 document.getElementById('projectSelect')?.addEventListener('change', updateExportLink);
 
     const adv = document.getElementById('advancedControls');
