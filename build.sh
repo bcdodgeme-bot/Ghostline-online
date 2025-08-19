@@ -11,6 +11,14 @@ apt-get update
 echo "🔍 Installing Tesseract OCR..."
 apt-get install -y tesseract-ocr tesseract-ocr-eng
 
+# Find where Tesseract was installed and add to PATH
+echo "🔍 Finding Tesseract installation path..."
+which tesseract || echo "Tesseract not found in current PATH"
+find /usr -name "tesseract" -type f 2>/dev/null || echo "Tesseract binary not found"
+
+# Try common installation paths
+export PATH="/usr/bin:/usr/local/bin:$PATH"
+
 # Verify Tesseract installation
 echo "✅ Verifying Tesseract installation..."
 tesseract --version
