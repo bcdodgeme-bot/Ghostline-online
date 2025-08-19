@@ -11,6 +11,29 @@ from PIL import Image
 import fitz
 import docx
 
+# Configure Tesseract path for deployment
+try:
+    # Try to find tesseract executable
+    import subprocess
+    result = subprocess.run(['which', 'tesseract'], capture_output=True, text=True)
+    if result.returncode == 0:
+        tesseract_path = result.stdout.strip()
+        pytesseract.pytesseract.tesseract_cmd = tesseract_path
+        print(f"Found Tesseract at: {tesseract_path}")
+    else:
+        # Try common paths
+        common_paths = ['/usr/bin/tesseract', '/usr/local/bin/tesseract']
+        for path in common_paths:
+            try:
+                subprocess.run([path, '--version'], capture_output=True, check=True)
+                pytesseract.pytesseract.tesseract_cmd = path
+                print(f"Using Tesseract at: {path}")
+                break
+            except:
+                continue
+except Exception as e:
+    print(f"Warning: Could not configure Tesseract path: {e}")
+
 # Markdown support
 import markdown
 from markupsafe import Markup
