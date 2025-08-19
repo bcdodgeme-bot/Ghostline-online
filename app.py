@@ -6,33 +6,9 @@ from utils.gmail_client import list_overnight, search as gmail_search
 import os, json, io
 
 # OCR/File Parsing
-import pytesseract
 from PIL import Image
 import fitz
 import docx
-
-# Configure Tesseract path for deployment
-try:
-    # Try to find tesseract executable
-    import subprocess
-    result = subprocess.run(['which', 'tesseract'], capture_output=True, text=True)
-    if result.returncode == 0:
-        tesseract_path = result.stdout.strip()
-        pytesseract.pytesseract.tesseract_cmd = tesseract_path
-        print(f"Found Tesseract at: {tesseract_path}")
-    else:
-        # Try common paths
-        common_paths = ['/usr/bin/tesseract', '/usr/local/bin/tesseract']
-        for path in common_paths:
-            try:
-                subprocess.run([path, '--version'], capture_output=True, check=True)
-                pytesseract.pytesseract.tesseract_cmd = path
-                print(f"Using Tesseract at: {path}")
-                break
-            except:
-                continue
-except Exception as e:
-    print(f"Warning: Could not configure Tesseract path: {e}")
 
 # Markdown support
 import markdown
@@ -295,28 +271,25 @@ def debug_sample():
         return jsonify({"ok": False, "error": str(e)})
 
 
-# --- DEBUG: Check if Tesseract is installed ---
-@app.route('/debug/tesseract')
-def debug_tesseract():
+# --- DEBUG: Check EasyOCR status ---
+@app.route('/debug/ocr')
+def debug_ocr():
     if not session.get('logged_in'):
         return "Unauthorized", 401
     
     try:
-        import subprocess
-        result = subprocess.run(['tesseract', '--version'], 
-                              capture_output=True, text=True, timeout=10)
+        import easyocr
+        import numpy as np
         
-        if result.returncode == 0:
-            return f"<pre>✅ Tesseract found!\n\nVersion info:\n{result.stdout}\n\nStderr (if any):\n{result.stderr}</pre>"
-        else:
-            return f"<pre>❌ Tesseract command failed (return code {result.returncode})\n\nStdout:\n{result.stdout}\n\nStderr:\n{result.stderr}</pre>"
-            
-    except FileNotFoundError:
-        return "<pre>❌ Tesseract not found - command 'tesseract' not available</pre>"
-    except subprocess.TimeoutExpired:
-        return "<pre>❌ Tesseract command timed out</pre>"
+        # Test EasyOCR initialization
+        reader = easyocr.Reader(['en'])
+        
+        return "<pre>✅ EasyOCR is working!\n\nSupported languages: English\nReady for image analysis!</pre>"
+        
+    except ImportError as e:
+        return f"<pre>❌ EasyOCR not installed: {str(e)}</pre>"
     except Exception as e:
-        return f"<pre>❌ Error testing Tesseract: {str(e)}</pre>"
+        return f"<pre>❌ EasyOCR error: {str(e)}</pre>"
 
 
 # --- AUTH ---
@@ -377,12 +350,27 @@ def upload_file():
 
         if filename.endswith(('.png', '.jpg', '.jpeg')):
             try:
+                # Use EasyOCR (no system dependencies required)
+                import easyocr
+                import numpy as np
+                
+                # Convert PIL image to numpy array
+                file.stream.seek(0)  # Reset stream position
                 img = Image.open(file.stream)
-                text = pytesseract.image_to_string(img)
+                img_array = np.array(img)
+                
+                # Initialize EasyOCR reader
+                reader = easyocr.Reader(['en'])
+                
+                # Extract text
+                results = reader.readtext(img_array)
+                text = '\n'.join([result[1] for result in results if result[1].strip()])
+                
                 if not text.strip():
                     text = "No text detected in image"
+                    
             except Exception as e:
-                return f"OCR Error: {str(e)}. Tesseract might not be installed on server.", 500
+                return f"OCR Error: {str(e)}. EasyOCR processing failed.", 500
                 
         elif filename.endswith('.pdf'):
             try:
