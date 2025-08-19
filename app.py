@@ -272,6 +272,30 @@ def debug_sample():
         return jsonify({"ok": False, "error": str(e)})
 
 
+# --- DEBUG: Check if Tesseract is installed ---
+@app.route('/debug/tesseract')
+def debug_tesseract():
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    try:
+        import subprocess
+        result = subprocess.run(['tesseract', '--version'], 
+                              capture_output=True, text=True, timeout=10)
+        
+        if result.returncode == 0:
+            return f"<pre>✅ Tesseract found!\n\nVersion info:\n{result.stdout}\n\nStderr (if any):\n{result.stderr}</pre>"
+        else:
+            return f"<pre>❌ Tesseract command failed (return code {result.returncode})\n\nStdout:\n{result.stdout}\n\nStderr:\n{result.stderr}</pre>"
+            
+    except FileNotFoundError:
+        return "<pre>❌ Tesseract not found - command 'tesseract' not available</pre>"
+    except subprocess.TimeoutExpired:
+        return "<pre>❌ Tesseract command timed out</pre>"
+    except Exception as e:
+        return f"<pre>❌ Error testing Tesseract: {str(e)}</pre>"
+
+
 # --- AUTH ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
