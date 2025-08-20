@@ -1,18 +1,28 @@
-# utils/rag_basic.py - Powerful RAG system for Ghostline
+# utils/rag_basic.py - Fixed version with proper exports
 import json
 import os
 import pickle
-import numpy as np
 import gzip
-from typing import List, Dict, Tuple
-import openai
+from typing import List, Dict
 from datetime import datetime
-import re
+
+try:
+    import numpy as np
+    import openai
+    DEPENDENCIES_AVAILABLE = True
+except ImportError as e:
+    print(f"Missing dependencies: {e}")
+    DEPENDENCIES_AVAILABLE = False
+
+# Global RAG instance
+_rag_system = None
 
 class SimpleRAG:
     def __init__(self, data_dir: str = "rag_data"):
-        """Simple RAG system for Ghostline project"""
-        # Get API key from environment (Render sets this)
+        if not DEPENDENCIES_AVAILABLE:
+            raise ImportError("Missing required dependencies: numpy, openai")
+            
+        # Get API key from environment
         api_key = os.getenv('OPENAI_API_KEY')
         if not api_key:
             raise ValueError("OPENAI_API_KEY environment variable not set")
@@ -22,7 +32,6 @@ class SimpleRAG:
         self.chunks_file = os.path.join(data_dir, "chunks.json")
         self.embeddings_file = os.path.join(data_dir, "embeddings.pkl")
         
-        # Create data directory if it doesn't exist
         os.makedirs(data_dir, exist_ok=True)
         
         self.chunks = []
@@ -30,68 +39,18 @@ class SimpleRAG:
         self.load_existing_data()
     
     def chunk_text(self, text: str, max_words: int = 500) -> List[str]:
-        """Break text into chunks of roughly max_words"""
         words = text.split()
         chunks = []
         
         for i in range(0, len(words), max_words):
             chunk = " ".join(words[i:i + max_words])
-            if len(chunk.strip()) > 50:  # Skip tiny chunks
+            if len(chunk.strip()) > 50:
                 chunks.append(chunk.strip())
         
         return chunks
     
-    def load_and_chunk_jsonl_gz(self, jsonl_gz_file_path: str) -> List[Dict]:
-        """Load compressed JSONL file and convert to chunks with metadata"""
-        print(f"Loading JSONL.GZ file: {jsonl_gz_file_path}")
-        
-        all_chunks = []
-        chunk_id = 0
-        line_count = 0
-        
-        with gzip.open(jsonl_gz_file_path, 'rt', encoding='utf-8') as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                
-                line_count += 1
-                if line_count % 1000 == 0:
-                    print(f"Processed {line_count} lines, created {len(all_chunks)} chunks", end='\r')
-                
-                try:
-                    # Parse each line as JSON
-                    data = json.loads(line)
-                    
-                    # Extract text content from the JSON line
-                    text_content = self.extract_text_from_json_line(data)
-                    
-                    if text_content and len(text_content.strip()) > 50:
-                        # Chunk the text if it's long
-                        text_chunks = self.chunk_text(text_content, max_words=400)
-                        
-                        for chunk_text in text_chunks:
-                            chunk = {
-                                "id": chunk_id,
-                                "text": chunk_text,
-                                "source": f"line_{line_count}",
-                                "created_at": datetime.now().isoformat()
-                            }
-                            all_chunks.append(chunk)
-                            chunk_id += 1
-                
-                except json.JSONDecodeError as e:
-                    print(f"Error parsing line {line_count}: {e}")
-                    continue
-        
-        print(f"\nProcessed {line_count} lines, created {len(all_chunks)} chunks")
-        return all_chunks
-    
     def extract_text_from_json_line(self, json_obj: Dict) -> str:
-        """Extract meaningful text from a JSON line"""
         texts = []
-        
-        # Common field names that might contain text
         text_fields = ['text', 'content', 'message', 'body', 'description', 'title', 'question', 'answer']
         
         def extract_from_obj(obj, prefix=""):
@@ -110,81 +69,208 @@ class SimpleRAG:
                         texts.append(item.strip())
         
         extract_from_obj(json_obj)
-        
         return " ".join(texts) if texts else ""
     
+    def load_and_chunk_jsonl_gz(self, jsonl_gz_file_path: str) -> List[Dict]:
+        print(f"Loading JSONL.GZ file: {jsonl_gz_file_path}")
+        
+        all_chunks = []
+        chunk_id = 0
+        line_count = 0
+        
+        try:
+            with gzip.open(jsonl_gz_file_path, 'rt', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    
+                    line_count += 1
+                    if line_count % 1000 == 0:
+                        print(f"Processed {line_count} lines, created {len(all_chunks)} chunks")
+                    
+                    try:
+                        data = json.loads(line)
+                        text_content = self.extract_text_from_json_line(data)
+                        
+                        if text_content and len(text_content.strip()) > 50:
+                            text_chunks = self.chunk_text(text_content, max_words=400)
+                            
+                            for chunk_text in text_chunks:
+                                chunk = {
+                                    "id": chunk_id,
+                                    "text": chunk_text,
+                                    "source": f"line_{line_count}",
+                                    "created_at": datetime.now().isoformat()
+                                }
+                                all_chunks.append(chunk)
+                                chunk_id += 1
+                    
+                    except json.JSONDecodeError:
+                        continue
+        except Exception as e:
+            print(f"Error loading file: {e}")
+            return []
+        
+        print(f"Processed {line_count} lines, created {len(all_chunks)} chunks")
+        return all_chunks
+    
     def create_embedding(self, text: str) -> List[float]:
-        """Create embedding for a text using OpenAI"""
         try:
             response = self.client.embeddings.create(
                 input=text,
-                model="text-embedding-3-small"  # Cheaper and faster
+                model="text-embedding-3-small"
             )
             return response.data[0].embedding
         except Exception as e:
             print(f"Error creating embedding: {e}")
-            return [0.0] * 1536  # Default embedding size
+            return [0.0] * 1536
     
     def build_index(self, jsonl_gz_file_path: str):
-        """Build the RAG index from your JSONL.GZ file"""
         print("Building RAG index...")
         
-        # Load and chunk the JSONL.GZ
         self.chunks = self.load_and_chunk_jsonl_gz(jsonl_gz_file_path)
         
-        # Create embeddings for each chunk
+        if not self.chunks:
+            print("No chunks loaded - aborting index build")
+            return
+        
         print("Creating embeddings...")
         self.embeddings = []
         
         for i, chunk in enumerate(self.chunks):
-            print(f"Processing chunk {i + 1}/{len(self.chunks)}", end='\r')
+            if i % 100 == 0:
+                print(f"Processing chunk {i + 1}/{len(self.chunks)}")
             embedding = self.create_embedding(chunk["text"])
             self.embeddings.append(embedding)
         
-        print(f"\nCreated embeddings for {len(self.chunks)} chunks")
-        
-        # Save everything
+        print(f"Created embeddings for {len(self.chunks)} chunks")
         self.save_data()
         print("RAG index built and saved!")
     
     def save_data(self):
-        """Save chunks and embeddings to disk"""
-        with open(self.chunks_file, 'w', encoding='utf-8') as f:
-            json.dump(self.chunks, f, indent=2, ensure_ascii=False)
-        
-        with open(self.embeddings_file, 'wb') as f:
-            pickle.dump(self.embeddings, f)
+        try:
+            with open(self.chunks_file, 'w', encoding='utf-8') as f:
+                json.dump(self.chunks, f, indent=2, ensure_ascii=False)
+            
+            with open(self.embeddings_file, 'wb') as f:
+                pickle.dump(self.embeddings, f)
+        except Exception as e:
+            print(f"Error saving data: {e}")
     
     def load_existing_data(self):
-        """Load existing chunks and embeddings if they exist"""
         if os.path.exists(self.chunks_file) and os.path.exists(self.embeddings_file):
-            print("Loading existing RAG data...")
-            
-            with open(self.chunks_file, 'r', encoding='utf-8') as f:
-                self.chunks = json.load(f)
-            
-            with open(self.embeddings_file, 'rb') as f:
-                self.embeddings = pickle.load(f)
-            
-            print(f"Loaded {len(self.chunks)} chunks with embeddings")
+            try:
+                print("Loading existing RAG data...")
+                
+                with open(self.chunks_file, 'r', encoding='utf-8') as f:
+                    self.chunks = json.load(f)
+                
+                with open(self.embeddings_file, 'rb') as f:
+                    self.embeddings = pickle.load(f)
+                
+                print(f"Loaded {len(self.chunks)} chunks with embeddings")
+            except Exception as e:
+                print(f"Error loading existing data: {e}")
+                self.chunks = []
+                self.embeddings = []
     
     def cosine_similarity(self, a: List[float], b: List[float]) -> float:
-        """Calculate cosine similarity between two vectors"""
+        if not DEPENDENCIES_AVAILABLE:
+            return 0.0
         a = np.array(a)
         b = np.array(b)
         return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
     
     def search(self, query: str, top_k: int = 5) -> List[Dict]:
-        """Search for relevant chunks given a query"""
         if not self.chunks or not self.embeddings:
             return []
         
-        # Create embedding for the query
         query_embedding = self.create_embedding(query)
-        
-        # Calculate similarities
         similarities = []
+        
         for i, chunk_embedding in enumerate(self.embeddings):
             similarity = self.cosine_similarity(query_embedding, chunk_embedding)
             similarities.append((similarity, i))
+        
+        similarities.sort(reverse=True, key=lambda x: x[0])
+        
+        results = []
+        for similarity, idx in similarities[:top_k]:
+            chunk = self.chunks[idx].copy()
+            chunk["similarity"] = similarity
+            results.append(chunk)
+        
+        return results
+
+# Initialize RAG system
+def _get_rag_system():
+    global _rag_system
+    if _rag_system is None:
+        try:
+            if DEPENDENCIES_AVAILABLE:
+                _rag_system = SimpleRAG()
+                print("RAG system initialized")
+            else:
+                print("RAG system disabled - missing dependencies")
+        except Exception as e:
+            print(f"Failed to initialize RAG system: {e}")
+            _rag_system = None
+    return _rag_system
+
+# Public API functions (these are what app.py imports)
+def retrieve(query: str, k: int = 5):
+    """Retrieve relevant context using the RAG system"""
+    rag = _get_rag_system()
+    if not rag:
+        return []
+    
+    try:
+        results = rag.search(query, top_k=k)
+        return [{"text": result["text"], "source": result["source"]} for result in results]
+    except Exception as e:
+        print(f"RAG retrieval error: {e}")
+        return []
+
+def is_ready():
+    """Check if RAG system is ready"""
+    rag = _get_rag_system()
+    return rag is not None and len(rag.chunks) > 0
+
+def load_corpus(path):
+    """Load the corpus (build the RAG index)"""
+    global _rag_system
+    try:
+        if not DEPENDENCIES_AVAILABLE:
+            raise ImportError("Missing required dependencies")
+        
+        _rag_system = SimpleRAG()
+        _rag_system.build_index(path)
+        print("RAG corpus loaded successfully")
+    except Exception as e:
+        print(f"RAG corpus load failed: {e}")
+        _rag_system = None
+        raise
+
+# Test functions
+def test_system():
+    """Test if the system is working"""
+    print("Testing RAG system...")
+    print(f"Dependencies available: {DEPENDENCIES_AVAILABLE}")
+    print(f"System ready: {is_ready()}")
+    
+    if is_ready():
+        results = retrieve("test query", k=3)
+        print(f"Test search returned {len(results)} results")
+    
+    return is_ready()
+
+# Auto-initialize
+if DEPENDENCIES_AVAILABLE:
+    _get_rag_system()
+else:
+    print("RAG system initialization skipped - missing dependencies")
+
+# Ensure these functions are available for import
+__all__ = ['retrieve', 'is_ready', 'load_corpus', 'test_system']
 
