@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify
 from utils.ghostline_engine import generate_response, stream_generate
-# TEMPORARILY DISABLED: from utils.rag_basic import retrieve, is_ready, load_corpus
 from utils.scraper import scrape_url
 from utils.gmail_client import (
     list_overnight, search as gmail_search,
@@ -8,6 +7,8 @@ from utils.gmail_client import (
     get_next_meeting, format_calendar_summary
 )
 import os, json, io
+import threading
+import time
 
 # OCR/File Parsing
 from PIL import Image
@@ -42,6 +43,12 @@ PROJECTS = [
 
 CORPUS_PATH = "data/cleaned/ghostline_sources.jsonl.gz"
 
+# Global RAG system state
+_rag_system = None
+_rag_building = False
+_rag_build_progress = ""
+_rag_build_error = None
+
 # Markdown filter for Jinja2
 def markdown_filter(text):
     """Convert markdown to HTML"""
@@ -54,22 +61,56 @@ def markdown_filter(text):
 # Register markdown filter
 app.jinja_env.filters['markdown'] = markdown_filter
 
-# TEMPORARILY DISABLED RAG FUNCTIONS
+# RAG functions that work with global state
 def retrieve(query: str, k: int = 5):
-    """Dummy function - RAG disabled for debugging"""
-    return []
+    """Retrieve relevant context using the RAG system"""
+    global _rag_system
+    if not _rag_system:
+        return []
+    
+    try:
+        # Import here to avoid startup issues
+        from utils.rag_basic import SimpleRAG
+        results = _rag_system.search(query, top_k=k)
+        return [{"text": result["text"], "source": result["source"]} for result in results]
+    except Exception as e:
+        app.logger.error(f"RAG retrieval error: {e}")
+        return []
 
 def is_ready():
-    """Dummy function - RAG disabled for debugging"""
-    return False
+    """Check if RAG system is ready"""
+    global _rag_system
+    return _rag_system is not None
 
-def load_corpus(path):
-    """Dummy function - RAG disabled for debugging"""
-    app.logger.info("RAG system disabled for debugging")
-    pass
-
-# Don't try to load corpus on startup
-# _boot_load_corpus()
+def build_brain_background():
+    """Build the RAG system in background"""
+    global _rag_system, _rag_building, _rag_build_progress, _rag_build_error
+    
+    try:
+        _rag_building = True
+        _rag_build_progress = "Initializing RAG system..."
+        app.logger.info("Starting brain build...")
+        
+        # Import RAG system
+        from utils.rag_basic import SimpleRAG
+        
+        _rag_build_progress = "Creating RAG instance..."
+        rag = SimpleRAG()
+        
+        _rag_build_progress = "Building index from ChatGPT history..."
+        rag.build_index(CORPUS_PATH)
+        
+        _rag_build_progress = "Brain build complete!"
+        _rag_system = rag
+        _rag_building = False
+        
+        app.logger.info(f"Brain build successful! Loaded {len(rag.chunks)} chunks")
+        
+    except Exception as e:
+        _rag_building = False
+        _rag_build_error = str(e)
+        _rag_build_progress = f"Build failed: {e}"
+        app.logger.error(f"Brain build failed: {e}")
 
 
 def load_conversation(project: str, limit: int = 50):
@@ -295,6 +336,46 @@ def _render(project: str, response_data: dict):
     )
 
 
+# --- BRAIN BUILDING ENDPOINTS ---
+@app.route('/build_brain', methods=['POST'])
+def build_brain():
+    """Manually trigger brain building"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    global _rag_building
+    
+    if _rag_building:
+        return jsonify({"ok": False, "error": "Brain is already building"}), 400
+    
+    if is_ready():
+        return jsonify({"ok": False, "error": "Brain is already built"}), 400
+    
+    # Start building in background
+    thread = threading.Thread(target=build_brain_background)
+    thread.daemon = True
+    thread.start()
+    
+    return jsonify({"ok": True, "message": "Brain building started"})
+
+@app.route('/brain_status')
+def brain_status():
+    """Check brain building status"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    global _rag_system, _rag_building, _rag_build_progress, _rag_build_error
+    
+    status = {
+        "ready": is_ready(),
+        "building": _rag_building,
+        "progress": _rag_build_progress,
+        "error": _rag_build_error,
+        "chunks": len(_rag_system.chunks) if _rag_system else 0
+    }
+    
+    return jsonify(status)
+
 # --- STREAMING (plain text) ---
 @app.route('/stream', methods=['POST'])
 def stream():
@@ -315,25 +396,19 @@ def stream():
     return app.response_class(generate(), mimetype='text/plain')
 
 
-# --- RELOAD BRAIN ---
-@app.route('/reload_corpus')
-def reload_corpus():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    try:
-        load_corpus(CORPUS_PATH)
-        return "Brain reloaded (disabled for debugging)", 200
-    except Exception as e:
-        return f"Reload failed: {e}", 500
-
-
 # --- HEALTH CHECK ---
 @app.route('/healthz')
 def healthz():
-    ok = True
-    details = {"rag_disabled": True, "corpus_loaded": False}
-    status = {"status": "ok", **details}
-    return jsonify(status), 200
+    global _rag_system, _rag_building, _rag_build_progress
+    
+    status = {
+        "status": "ok",
+        "brain_ready": is_ready(),
+        "brain_building": _rag_building,
+        "brain_progress": _rag_build_progress,
+        "brain_chunks": len(_rag_system.chunks) if _rag_system else 0
+    }
+    return jsonify(status)
 
 
 # --- DEBUG RAG: see what the retriever returns ---
@@ -341,7 +416,14 @@ def healthz():
 def debug_rag():
     if not session.get('logged_in'):
         return "Unauthorized", 401
-    return jsonify({"ok": False, "error": "RAG disabled for debugging"})
+    q = request.args.get('query', '').strip()
+    k = int(request.args.get('k', 5))
+    if not q:
+        return jsonify({"ok": False, "error": "missing query"}), 400
+    if not is_ready():
+        return jsonify({"ok": False, "error": "brain not ready"}), 500
+    hits = retrieve(q, k=k)
+    return jsonify({"ok": True, "count": len(hits), "results": hits})
 
 
 # --- DEBUG: Sample entries to see data structure ---
@@ -371,6 +453,153 @@ def debug_sample():
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)})
 
+
+# --- BRAIN CONTROL PAGE ---
+@app.route('/brain')
+def brain_control():
+    """Brain control dashboard"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Ghostline Brain Control</title>
+        <style>
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #0f0f0f; 
+                color: #fff; 
+                margin: 0; 
+                padding: 20px; 
+            }
+            .container { max-width: 800px; margin: 0 auto; }
+            .status-box { 
+                background: #1a1a1a; 
+                border: 1px solid #333; 
+                border-radius: 8px; 
+                padding: 20px; 
+                margin: 20px 0; 
+            }
+            .btn { 
+                background: #6366f1; 
+                color: white; 
+                border: none; 
+                padding: 12px 24px; 
+                border-radius: 8px; 
+                cursor: pointer; 
+                font-size: 16px;
+                margin: 10px 5px;
+            }
+            .btn:hover { background: #5855eb; }
+            .btn:disabled { background: #666; cursor: not-allowed; }
+            .progress { 
+                background: #333; 
+                border-radius: 4px; 
+                height: 8px; 
+                margin: 10px 0; 
+                overflow: hidden;
+            }
+            .progress-bar { 
+                background: #6366f1; 
+                height: 100%; 
+                transition: width 0.3s ease;
+            }
+            #status { font-family: monospace; }
+            .error { color: #ef4444; }
+            .success { color: #10b981; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Ghostline Brain Control</h1>
+            <p>Manage the RAG system that gives Syntax Prime access to your ChatGPT history.</p>
+            
+            <div class="status-box">
+                <h3>Brain Status</h3>
+                <div id="status">Loading...</div>
+                <div id="progress-container" style="display: none;">
+                    <div class="progress">
+                        <div class="progress-bar" id="progress-bar"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="status-box">
+                <h3>Controls</h3>
+                <button class="btn" id="build-btn" onclick="buildBrain()">Build Brain</button>
+                <button class="btn" onclick="refreshStatus()">Refresh Status</button>
+                <button class="btn" onclick="window.location.href='/'">Back to Chat</button>
+            </div>
+            
+            <div class="status-box">
+                <h3>Info</h3>
+                <p><strong>What this does:</strong> Processes your 41MB ChatGPT history file into searchable chunks.</p>
+                <p><strong>Time required:</strong> 5-10 minutes on first build.</p>
+                <p><strong>Memory usage:</strong> High during build, normal after completion.</p>
+            </div>
+        </div>
+        
+        <script>
+            let statusInterval;
+            
+            function refreshStatus() {
+                fetch('/brain_status')
+                    .then(r => r.json())
+                    .then(data => {
+                        const statusDiv = document.getElementById('status');
+                        const buildBtn = document.getElementById('build-btn');
+                        
+                        let statusText = '';
+                        if (data.ready) {
+                            statusText = `<span class="success">✓ Brain Ready</span><br>Chunks loaded: ${data.chunks}`;
+                            buildBtn.disabled = true;
+                            buildBtn.textContent = 'Brain Already Built';
+                        } else if (data.building) {
+                            statusText = `<span style="color: #f59e0b;">⚡ Building...</span><br>${data.progress}`;
+                            buildBtn.disabled = true;
+                            buildBtn.textContent = 'Building...';
+                        } else if (data.error) {
+                            statusText = `<span class="error">✗ Error</span><br>${data.error}`;
+                            buildBtn.disabled = false;
+                            buildBtn.textContent = 'Retry Build';
+                        } else {
+                            statusText = '<span style="color: #fbbf24;">○ Brain Not Built</span><br>Ready to build';
+                            buildBtn.disabled = false;
+                            buildBtn.textContent = 'Build Brain';
+                        }
+                        
+                        statusDiv.innerHTML = statusText;
+                    })
+                    .catch(e => {
+                        document.getElementById('status').innerHTML = `<span class="error">Connection error: ${e}</span>`;
+                    });
+            }
+            
+            function buildBrain() {
+                fetch('/build_brain', { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.ok) {
+                            // Start monitoring progress
+                            statusInterval = setInterval(refreshStatus, 2000);
+                        } else {
+                            alert('Build failed: ' + data.error);
+                        }
+                    })
+                    .catch(e => alert('Build request failed: ' + e));
+            }
+            
+            // Initial status check
+            refreshStatus();
+            
+            // Auto-refresh every 5 seconds
+            setInterval(refreshStatus, 5000);
+        </script>
+    </body>
+    </html>
+    """
 
 # --- DEBUG: Check EasyOCR status ---
 @app.route('/debug/ocr')
