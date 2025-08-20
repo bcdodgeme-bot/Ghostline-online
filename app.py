@@ -57,9 +57,9 @@ app.jinja_env.filters['markdown'] = markdown_filter
 def _boot_load_corpus():
     try:
         load_corpus(CORPUS_PATH)
-        app.logger.info("✅ Brain loaded from %s", CORPUS_PATH)
+        app.logger.info("Brain loaded from %s", CORPUS_PATH)
     except Exception as e:
-        app.logger.warning("⚠️ Brain load failed: %s", e)
+        app.logger.warning("Brain load failed: %s", e)
 _boot_load_corpus()
 
 
@@ -313,7 +313,7 @@ def reload_corpus():
         return redirect(url_for('login'))
     try:
         load_corpus(CORPUS_PATH)
-        return "Brain reloaded ✅", 200
+        return "Brain reloaded", 200
     except Exception as e:
         return f"Reload failed: {e}", 500
 
@@ -388,12 +388,12 @@ def debug_ocr():
         # Test EasyOCR initialization
         reader = easyocr.Reader(['en'])
         
-        return "<pre>✅ EasyOCR is working!\n\nSupported languages: English\nReady for image analysis!</pre>"
+        return "<pre>EasyOCR is working!\n\nSupported languages: English\nReady for image analysis!</pre>"
         
     except ImportError as e:
-        return f"<pre>❌ EasyOCR not installed: {str(e)}</pre>"
+        return f"<pre>EasyOCR not installed: {str(e)}</pre>"
     except Exception as e:
-        return f"<pre>❌ EasyOCR error: {str(e)}</pre>"
+        return f"<pre>EasyOCR error: {str(e)}</pre>"
 
 
 # --- AUTH ---
@@ -509,4 +509,5 @@ def upload_file():
         return f"Upload Error: {str(e)}", 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
