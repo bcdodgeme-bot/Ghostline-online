@@ -1,10 +1,11 @@
-# utils/rag_basic.py - Fixed version with proper exports
+# utils/rag_basic.py - Batched RAG system to prevent memory crashes
 import json
 import os
 import pickle
 import gzip
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from datetime import datetime
+import math
 
 try:
     import numpy as np
@@ -17,8 +18,8 @@ except ImportError as e:
 # Global RAG instance
 _rag_system = None
 
-class SimpleRAG:
-    def __init__(self, data_dir: str = "rag_data"):
+class BatchedRAG:
+    def __init__(self, data_dir: str = "rag_data", batch_size: int = 20000):
         if not DEPENDENCIES_AVAILABLE:
             raise ImportError("Missing required dependencies: numpy, openai")
             
@@ -29,16 +30,59 @@ class SimpleRAG:
         
         self.client = openai.OpenAI(api_key=api_key)
         self.data_dir = data_dir
+        self.batch_size = batch_size
+        
+        # File paths
         self.chunks_file = os.path.join(data_dir, "chunks.json")
         self.embeddings_file = os.path.join(data_dir, "embeddings.pkl")
+        self.progress_file = os.path.join(data_dir, "batch_progress.json")
+        self.batch_dir = os.path.join(data_dir, "batches")
         
         os.makedirs(data_dir, exist_ok=True)
+        os.makedirs(self.batch_dir, exist_ok=True)
         
         self.chunks = []
         self.embeddings = []
+        self.batch_progress = self.load_batch_progress()
+        
+        # Load existing data
         self.load_existing_data()
     
+    def load_batch_progress(self) -> Dict:
+        """Load batch processing progress"""
+        if os.path.exists(self.progress_file):
+            with open(self.progress_file, 'r') as f:
+                return json.load(f)
+        return {
+            "completed_batches": 0,
+            "total_batches": 0,
+            "total_chunks_processed": 0,
+            "last_updated": None
+        }
+    
+    def save_batch_progress(self):
+        """Save batch processing progress"""
+        self.batch_progress["last_updated"] = datetime.now().isoformat()
+        with open(self.progress_file, 'w') as f:
+            json.dump(self.batch_progress, f, indent=2)
+    
+    def count_total_lines(self, jsonl_gz_file_path: str) -> int:
+        """Count total lines in the compressed file"""
+        print("Counting total lines in dataset...")
+        line_count = 0
+        try:
+            with gzip.open(jsonl_gz_file_path, 'rt', encoding='utf-8') as f:
+                for line in f:
+                    if line.strip():
+                        line_count += 1
+        except Exception as e:
+            print(f"Error counting lines: {e}")
+            return 0
+        print(f"Total lines in dataset: {line_count}")
+        return line_count
+    
     def chunk_text(self, text: str, max_words: int = 500) -> List[str]:
+        """Break text into chunks of roughly max_words"""
         words = text.split()
         chunks = []
         
@@ -50,6 +94,7 @@ class SimpleRAG:
         return chunks
     
     def extract_text_from_json_line(self, json_obj: Dict) -> str:
+        """Extract meaningful text from a JSON line"""
         texts = []
         text_fields = ['text', 'content', 'message', 'body', 'description', 'title', 'question', 'answer']
         
@@ -71,12 +116,16 @@ class SimpleRAG:
         extract_from_obj(json_obj)
         return " ".join(texts) if texts else ""
     
-    def load_and_chunk_jsonl_gz(self, jsonl_gz_file_path: str) -> List[Dict]:
-        print(f"Loading JSONL.GZ file: {jsonl_gz_file_path}")
+    def process_batch_lines(self, jsonl_gz_file_path: str, batch_num: int) -> List[Dict]:
+        """Process a specific batch of lines from the file"""
+        start_line = batch_num * self.batch_size
+        end_line = start_line + self.batch_size
         
-        all_chunks = []
-        chunk_id = 0
-        line_count = 0
+        batch_chunks = []
+        chunk_id = self.batch_progress["total_chunks_processed"]
+        current_line = 0
+        
+        print(f"Processing batch {batch_num + 1}: lines {start_line + 1} to {end_line}")
         
         try:
             with gzip.open(jsonl_gz_file_path, 'rt', encoding='utf-8') as f:
@@ -85,9 +134,14 @@ class SimpleRAG:
                     if not line:
                         continue
                     
-                    line_count += 1
-                    if line_count % 1000 == 0:
-                        print(f"Processed {line_count} lines, created {len(all_chunks)} chunks")
+                    # Skip lines until we reach our batch start
+                    if current_line < start_line:
+                        current_line += 1
+                        continue
+                    
+                    # Stop when we reach batch end
+                    if current_line >= end_line:
+                        break
                     
                     try:
                         data = json.loads(line)
@@ -100,22 +154,32 @@ class SimpleRAG:
                                 chunk = {
                                     "id": chunk_id,
                                     "text": chunk_text,
-                                    "source": f"line_{line_count}",
+                                    "source": f"line_{current_line + 1}",
+                                    "batch": batch_num,
                                     "created_at": datetime.now().isoformat()
                                 }
-                                all_chunks.append(chunk)
+                                batch_chunks.append(chunk)
                                 chunk_id += 1
                     
                     except json.JSONDecodeError:
-                        continue
+                        pass
+                    
+                    current_line += 1
+                    
+                    # Progress update within batch
+                    if current_line % 100 == 0:
+                        progress_in_batch = current_line - start_line
+                        print(f"Batch {batch_num + 1}: processed {progress_in_batch}/{self.batch_size} lines, created {len(batch_chunks)} chunks", end='\r')
+        
         except Exception as e:
-            print(f"Error loading file: {e}")
+            print(f"Error processing batch {batch_num}: {e}")
             return []
         
-        print(f"Processed {line_count} lines, created {len(all_chunks)} chunks")
-        return all_chunks
+        print(f"\nBatch {batch_num + 1} complete: created {len(batch_chunks)} chunks")
+        return batch_chunks
     
     def create_embedding(self, text: str) -> List[float]:
+        """Create embedding for a text using OpenAI"""
         try:
             response = self.client.embeddings.create(
                 input=text,
@@ -126,54 +190,126 @@ class SimpleRAG:
             print(f"Error creating embedding: {e}")
             return [0.0] * 1536
     
-    def build_index(self, jsonl_gz_file_path: str):
-        print("Building RAG index...")
+    def process_batch_embeddings(self, batch_chunks: List[Dict]) -> List[List[float]]:
+        """Create embeddings for a batch of chunks"""
+        print(f"Creating embeddings for {len(batch_chunks)} chunks...")
+        batch_embeddings = []
         
-        self.chunks = self.load_and_chunk_jsonl_gz(jsonl_gz_file_path)
-        
-        if not self.chunks:
-            print("No chunks loaded - aborting index build")
-            return
-        
-        print("Creating embeddings...")
-        self.embeddings = []
-        
-        for i, chunk in enumerate(self.chunks):
-            if i % 100 == 0:
-                print(f"Processing chunk {i + 1}/{len(self.chunks)}")
-            embedding = self.create_embedding(chunk["text"])
-            self.embeddings.append(embedding)
-        
-        print(f"Created embeddings for {len(self.chunks)} chunks")
-        self.save_data()
-        print("RAG index built and saved!")
-    
-    def save_data(self):
-        try:
-            with open(self.chunks_file, 'w', encoding='utf-8') as f:
-                json.dump(self.chunks, f, indent=2, ensure_ascii=False)
+        for i, chunk in enumerate(batch_chunks):
+            if i % 50 == 0:
+                print(f"Creating embeddings: {i + 1}/{len(batch_chunks)}", end='\r')
             
-            with open(self.embeddings_file, 'wb') as f:
-                pickle.dump(self.embeddings, f)
-        except Exception as e:
-            print(f"Error saving data: {e}")
+            embedding = self.create_embedding(chunk["text"])
+            batch_embeddings.append(embedding)
+        
+        print(f"\nCompleted embeddings for batch")
+        return batch_embeddings
+    
+    def save_batch_data(self, batch_num: int, batch_chunks: List[Dict], batch_embeddings: List[List[float]]):
+        """Save batch data to disk"""
+        batch_file = os.path.join(self.batch_dir, f"batch_{batch_num}.json")
+        embeddings_file = os.path.join(self.batch_dir, f"embeddings_{batch_num}.pkl")
+        
+        # Save chunks
+        with open(batch_file, 'w', encoding='utf-8') as f:
+            json.dump(batch_chunks, f, indent=2, ensure_ascii=False)
+        
+        # Save embeddings
+        with open(embeddings_file, 'wb') as f:
+            pickle.dump(batch_embeddings, f)
+        
+        print(f"Saved batch {batch_num + 1} data to disk")
+    
+    def load_all_batches(self):
+        """Load all completed batches into memory"""
+        print("Loading all completed batches...")
+        
+        all_chunks = []
+        all_embeddings = []
+        
+        for batch_num in range(self.batch_progress["completed_batches"]):
+            batch_file = os.path.join(self.batch_dir, f"batch_{batch_num}.json")
+            embeddings_file = os.path.join(self.batch_dir, f"embeddings_{batch_num}.pkl")
+            
+            if os.path.exists(batch_file) and os.path.exists(embeddings_file):
+                # Load chunks
+                with open(batch_file, 'r', encoding='utf-8') as f:
+                    batch_chunks = json.load(f)
+                
+                # Load embeddings
+                with open(embeddings_file, 'rb') as f:
+                    batch_embeddings = pickle.load(f)
+                
+                all_chunks.extend(batch_chunks)
+                all_embeddings.extend(batch_embeddings)
+                
+                print(f"Loaded batch {batch_num + 1}: {len(batch_chunks)} chunks")
+        
+        self.chunks = all_chunks
+        self.embeddings = all_embeddings
+        
+        print(f"Total loaded: {len(self.chunks)} chunks with embeddings")
+    
+    def build_index_in_batches(self, jsonl_gz_file_path: str):
+        """Build the RAG index using batch processing"""
+        print("Starting batched RAG index building...")
+        
+        # Count total lines if not already done
+        if self.batch_progress["total_batches"] == 0:
+            total_lines = self.count_total_lines(jsonl_gz_file_path)
+            total_batches = math.ceil(total_lines / self.batch_size)
+            
+            self.batch_progress["total_batches"] = total_batches
+            self.save_batch_progress()
+            
+            print(f"Will process {total_lines} lines in {total_batches} batches of {self.batch_size}")
+        
+        # Process remaining batches
+        start_batch = self.batch_progress["completed_batches"]
+        total_batches = self.batch_progress["total_batches"]
+        
+        for batch_num in range(start_batch, total_batches):
+            print(f"\n=== Processing Batch {batch_num + 1}/{total_batches} ===")
+            
+            try:
+                # Process batch lines into chunks
+                batch_chunks = self.process_batch_lines(jsonl_gz_file_path, batch_num)
+                
+                if not batch_chunks:
+                    print(f"No chunks created for batch {batch_num + 1}, skipping...")
+                    continue
+                
+                # Create embeddings for batch
+                batch_embeddings = self.process_batch_embeddings(batch_chunks)
+                
+                # Save batch to disk
+                self.save_batch_data(batch_num, batch_chunks, batch_embeddings)
+                
+                # Update progress
+                self.batch_progress["completed_batches"] = batch_num + 1
+                self.batch_progress["total_chunks_processed"] += len(batch_chunks)
+                self.save_batch_progress()
+                
+                print(f"Completed batch {batch_num + 1}/{total_batches}")
+                
+                # Clear memory for next batch
+                del batch_chunks
+                del batch_embeddings
+                
+            except Exception as e:
+                print(f"Error processing batch {batch_num + 1}: {e}")
+                break
+        
+        # Load all completed batches into memory
+        self.load_all_batches()
+        
+        print("Batched index building complete!")
     
     def load_existing_data(self):
-        if os.path.exists(self.chunks_file) and os.path.exists(self.embeddings_file):
-            try:
-                print("Loading existing RAG data...")
-                
-                with open(self.chunks_file, 'r', encoding='utf-8') as f:
-                    self.chunks = json.load(f)
-                
-                with open(self.embeddings_file, 'rb') as f:
-                    self.embeddings = pickle.load(f)
-                
-                print(f"Loaded {len(self.chunks)} chunks with embeddings")
-            except Exception as e:
-                print(f"Error loading existing data: {e}")
-                self.chunks = []
-                self.embeddings = []
+        """Load existing data if available"""
+        if self.batch_progress["completed_batches"] > 0:
+            print(f"Found {self.batch_progress['completed_batches']} completed batches")
+            self.load_all_batches()
     
     def cosine_similarity(self, a: List[float], b: List[float]) -> float:
         if not DEPENDENCIES_AVAILABLE:
@@ -202,6 +338,40 @@ class SimpleRAG:
             results.append(chunk)
         
         return results
+    
+    def get_build_status(self) -> Dict:
+        """Get current build status for progress tracking"""
+        total_batches = self.batch_progress["total_batches"]
+        completed_batches = self.batch_progress["completed_batches"]
+        
+        if total_batches == 0:
+            return {
+                "status": "not_started",
+                "progress": "Ready to build",
+                "percentage": 0,
+                "chunks_processed": 0,
+                "total_estimated_chunks": 0
+            }
+        
+        percentage = int((completed_batches / total_batches) * 100)
+        
+        if completed_batches >= total_batches:
+            return {
+                "status": "complete",
+                "progress": f"Build complete! {len(self.chunks)} chunks ready",
+                "percentage": 100,
+                "chunks_processed": len(self.chunks),
+                "total_estimated_chunks": len(self.chunks)
+            }
+        
+        return {
+            "status": "building",
+            "progress": f"Processing batch {completed_batches + 1}/{total_batches}",
+            "percentage": percentage,
+            "chunks_processed": self.batch_progress["total_chunks_processed"],
+            "batches_completed": completed_batches,
+            "total_batches": total_batches
+        }
 
 # Initialize RAG system
 def _get_rag_system():
@@ -209,8 +379,8 @@ def _get_rag_system():
     if _rag_system is None:
         try:
             if DEPENDENCIES_AVAILABLE:
-                _rag_system = SimpleRAG()
-                print("RAG system initialized")
+                _rag_system = BatchedRAG()
+                print("Batched RAG system initialized")
             else:
                 print("RAG system disabled - missing dependencies")
         except Exception as e:
@@ -218,7 +388,7 @@ def _get_rag_system():
             _rag_system = None
     return _rag_system
 
-# Public API functions (these are what app.py imports)
+# Public API functions
 def retrieve(query: str, k: int = 5):
     """Retrieve relevant context using the RAG system"""
     rag = _get_rag_system()
@@ -238,39 +408,32 @@ def is_ready():
     return rag is not None and len(rag.chunks) > 0
 
 def load_corpus(path):
-    """Load the corpus (build the RAG index)"""
+    """Load the corpus using batched processing"""
     global _rag_system
     try:
         if not DEPENDENCIES_AVAILABLE:
             raise ImportError("Missing required dependencies")
         
-        _rag_system = SimpleRAG()
-        _rag_system.build_index(path)
-        print("RAG corpus loaded successfully")
+        _rag_system = BatchedRAG()
+        _rag_system.build_index_in_batches(path)
+        print("Batched RAG corpus loaded successfully")
     except Exception as e:
         print(f"RAG corpus load failed: {e}")
         _rag_system = None
         raise
 
-# Test functions
-def test_system():
-    """Test if the system is working"""
-    print("Testing RAG system...")
-    print(f"Dependencies available: {DEPENDENCIES_AVAILABLE}")
-    print(f"System ready: {is_ready()}")
-    
-    if is_ready():
-        results = retrieve("test query", k=3)
-        print(f"Test search returned {len(results)} results")
-    
-    return is_ready()
+def get_build_status():
+    """Get build status for progress tracking"""
+    rag = _get_rag_system()
+    if rag:
+        return rag.get_build_status()
+    return {"status": "not_initialized", "progress": "", "percentage": 0}
 
 # Auto-initialize
 if DEPENDENCIES_AVAILABLE:
     _get_rag_system()
 else:
-    print("RAG system initialization skipped - missing dependencies")
+    print("Batched RAG system initialization skipped - missing dependencies")
 
-# Ensure these functions are available for import
-__all__ = ['retrieve', 'is_ready', 'load_corpus', 'test_system']
+__all__ = ['retrieve', 'is_ready', 'load_corpus', 'get_build_status']
 
