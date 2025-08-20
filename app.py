@@ -1,10 +1,12 @@
 from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify
 from utils.ghostline_engine import generate_response, stream_generate
-# OLD: from utils.rag_basic import retrieve, is_ready, load_corpus
-# NEW: Import our powerful RAG system
-from rag_system import SimpleRAG
+from utils.rag_basic import retrieve, is_ready, load_corpus
 from utils.scraper import scrape_url
-from utils.gmail_client import list_overnight, search as gmail_search
+from utils.gmail_client import (
+    list_overnight, search as gmail_search,
+    list_today_events, list_tomorrow_events, search_calendar, 
+    get_next_meeting, format_calendar_summary
+)
 import os, json, io
 
 # OCR/File Parsing
@@ -40,9 +42,6 @@ PROJECTS = [
 
 CORPUS_PATH = "data/cleaned/ghostline_sources.jsonl.gz"
 
-# Initialize the new RAG system
-rag_system = None
-
 # Markdown filter for Jinja2
 def markdown_filter(text):
     """Convert markdown to HTML"""
@@ -56,53 +55,11 @@ def markdown_filter(text):
 app.jinja_env.filters['markdown'] = markdown_filter
 
 def _boot_load_corpus():
-    """Load the RAG system on startup"""
-    global rag_system
     try:
-        rag_system = SimpleRAG()
-        
-        # Check if we already have an index built
-        if not rag_system.chunks:
-            app.logger.info("🧠 Building RAG index from %s (this may take a few minutes on first run)...", CORPUS_PATH)
-            rag_system.build_index(CORPUS_PATH)
-            app.logger.info("✅ RAG index built successfully!")
-        else:
-            app.logger.info("✅ RAG system loaded with existing index (%d chunks)", len(rag_system.chunks))
-            
+        load_corpus(CORPUS_PATH)
+        app.logger.info("✅ Brain loaded from %s", CORPUS_PATH)
     except Exception as e:
-        app.logger.warning("⚠️ RAG system load failed: %s", e)
-        rag_system = None
-
-# New helper functions for RAG compatibility
-def retrieve(query: str, k: int = 5):
-    """Retrieve relevant context using the new RAG system"""
-    if not rag_system:
-        return []
-    
-    try:
-        results = rag_system.search(query, top_k=k)
-        # Convert to the format your existing code expects
-        return [{"text": result["text"], "source": result["source"]} for result in results]
-    except Exception as e:
-        app.logger.error("RAG retrieval error: %s", e)
-        return []
-
-def is_ready():
-    """Check if RAG system is ready"""
-    return rag_system is not None and len(rag_system.chunks) > 0
-
-def load_corpus(path):
-    """Reload the corpus (for compatibility)"""
-    global rag_system
-    try:
-        rag_system = SimpleRAG()
-        rag_system.build_index(path)
-        app.logger.info("✅ RAG corpus reloaded")
-    except Exception as e:
-        app.logger.error("❌ RAG reload failed: %s", e)
-        raise
-
-# Boot up the RAG system
+        app.logger.warning("⚠️ Brain load failed: %s", e)
 _boot_load_corpus()
 
 
@@ -137,8 +94,8 @@ def index():
         use_voices = request.form.getlist('voices') or ['SyntaxPrime']
         random_toggle = 'random' in request.form
 
-        # ---- Command: gmail overnight ----
-        if user_input.lower().strip() == "gmail overnight":
+        # ---- Command: Gmail overnight (multiple aliases) ----
+        if user_input.lower().strip() in ["overnight", "mail", "emails", "inbox", "check mail"]:
             try:
                 msgs = list_overnight(max_results=25, unread_only=True)
                 lines = [f"- {m['date']} — {m['from']} — {m['subject']}" for m in msgs]
@@ -158,9 +115,14 @@ def index():
             _append_session(project, user_input, response_data)
             return _render(project, response_data)
 
-        # ---- Command: gmail search <query> ----
-        if user_input.lower().startswith("gmail search "):
-            query_text = user_input.split(" ", 2)[2].strip()
+        # ---- Command: Gmail search (multiple aliases) ----
+        if user_input.lower().startswith(("search ", "find ", "email about ")):
+            # Extract query after the command
+            for prefix in ["search ", "find ", "email about "]:
+                if user_input.lower().startswith(prefix):
+                    query_text = user_input[len(prefix):].strip()
+                    break
+            
             try:
                 msgs = gmail_search(query_text, max_results=25)
                 lines = [f"- {m['date']} — {m['from']} — {m['subject']}" for m in msgs]
@@ -176,6 +138,101 @@ def index():
                 )
             except Exception as e:
                 response_data = {"SyntaxPrime": f"Gmail search failed: {e}"}
+
+            _append_session(project, user_input, response_data)
+            return _render(project, response_data)
+
+        # ---- Command: Today's calendar ----
+        if user_input.lower().strip() in ["calendar", "today", "meetings", "schedule"]:
+            try:
+                events = list_today_events(max_results=20)
+                calendar_summary = format_calendar_summary(events, "Today's Calendar")
+                
+                summary_prompt = (
+                    f"Here's Carl's calendar for today. Summarize the key meetings and suggest priorities:\n\n"
+                    f"{calendar_summary}"
+                )
+                retrieval_ctx = retrieve(summary_prompt, k=5) if is_ready() else []
+                response_data = generate_response(
+                    summary_prompt, use_voices, random_toggle,
+                    project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+                )
+            except Exception as e:
+                response_data = {"SyntaxPrime": f"Calendar check failed: {e}"}
+
+            _append_session(project, user_input, response_data)
+            return _render(project, response_data)
+
+        # ---- Command: Tomorrow's calendar ----
+        if user_input.lower().strip() in ["tomorrow", "tomorrow's schedule", "next day"]:
+            try:
+                events = list_tomorrow_events(max_results=20)
+                calendar_summary = format_calendar_summary(events, "Tomorrow's Calendar")
+                
+                summary_prompt = (
+                    f"Here's Carl's calendar for tomorrow. Highlight important meetings and prep needed:\n\n"
+                    f"{calendar_summary}"
+                )
+                retrieval_ctx = retrieve(summary_prompt, k=5) if is_ready() else []
+                response_data = generate_response(
+                    summary_prompt, use_voices, random_toggle,
+                    project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+                )
+            except Exception as e:
+                response_data = {"SyntaxPrime": f"Tomorrow's calendar failed: {e}"}
+
+            _append_session(project, user_input, response_data)
+            return _render(project, response_data)
+
+        # ---- Command: Next meeting ----
+        if user_input.lower().strip() in ["next meeting", "next", "upcoming"]:
+            try:
+                next_meeting = get_next_meeting(hours_ahead=48)
+                if next_meeting:
+                    summary_prompt = (
+                        f"Carl's next meeting: {next_meeting['summary']} at {next_meeting['start_formatted']} "
+                        f"on {next_meeting['start'][:10]}. "
+                        f"Location: {next_meeting.get('location', 'Not specified')}. "
+                        f"Give a brief overview and any prep suggestions."
+                    )
+                else:
+                    summary_prompt = "No upcoming meetings found in the next 48 hours."
+                
+                retrieval_ctx = retrieve(summary_prompt, k=5) if is_ready() else []
+                response_data = generate_response(
+                    summary_prompt, use_voices, random_toggle,
+                    project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+                )
+            except Exception as e:
+                response_data = {"SyntaxPrime": f"Next meeting check failed: {e}"}
+
+            _append_session(project, user_input, response_data)
+            return _render(project, response_data)
+
+        # ---- Command: Search calendar ----
+        if user_input.lower().startswith(("meeting about ", "calendar search ")):
+            # Extract query after the command
+            for prefix in ["meeting about ", "calendar search "]:
+                if user_input.lower().startswith(prefix):
+                    query_text = user_input[len(prefix):].strip()
+                    break
+            
+            try:
+                events = search_calendar(query_text, days_ahead=30, max_results=10)
+                calendar_summary = format_calendar_summary(events, f"Calendar search: '{query_text}'")
+                
+                summary_prompt = (
+                    f"Carl searched his calendar for '{query_text}'. Here are the relevant meetings:\n\n"
+                    f"{calendar_summary}\n\n"
+                    f"Summarize the key meetings and any patterns or next steps."
+                )
+                retrieval_ctx = retrieve(summary_prompt, k=5) if is_ready() else []
+                response_data = generate_response(
+                    summary_prompt, use_voices, random_toggle,
+                    project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+                )
+            except Exception as e:
+                response_data = {"SyntaxPrime": f"Calendar search failed: {e}"}
 
             _append_session(project, user_input, response_data)
             return _render(project, response_data)
@@ -268,10 +325,6 @@ def healthz():
     details = {}
     try:
         details["corpus_loaded"] = bool(is_ready())
-        if rag_system:
-            details["rag_chunks"] = len(rag_system.chunks)
-        else:
-            details["rag_status"] = "not_initialized"
     except Exception as e:
         ok = False
         details["corpus_error"] = str(e)
@@ -292,42 +345,6 @@ def debug_rag():
         return jsonify({"ok": False, "error": "corpus not loaded"}), 500
     hits = retrieve(q, k=k)
     return jsonify({"ok": True, "count": len(hits), "results": hits})
-
-
-# --- NEW DEBUG: Test RAG search with details ---
-@app.route('/debug/rag_detailed')
-def debug_rag_detailed():
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
-    q = request.args.get('query', 'recipes').strip()
-    k = int(request.args.get('k', 5))
-    
-    if not rag_system:
-        return jsonify({"ok": False, "error": "RAG system not initialized"}), 500
-    
-    try:
-        results = rag_system.search(q, top_k=k)
-        detailed_results = []
-        
-        for result in results:
-            detailed_results.append({
-                "similarity": result["similarity"],
-                "source": result["source"],
-                "text_preview": result["text"][:200] + "..." if len(result["text"]) > 200 else result["text"],
-                "full_text": result["text"]
-            })
-        
-        return jsonify({
-            "ok": True, 
-            "query": q,
-            "total_chunks": len(rag_system.chunks),
-            "results_found": len(results),
-            "results": detailed_results
-        })
-        
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 # --- DEBUG: Sample entries to see data structure ---
