@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify
 from utils.ghostline_engine import generate_response, stream_generate
-from utils.rag_basic import retrieve, is_ready, load_corpus
+# OLD: from utils.rag_basic import retrieve, is_ready, load_corpus
+# NEW: Import our powerful RAG system
+from rag_system import SimpleRAG
 from utils.scraper import scrape_url
 from utils.gmail_client import list_overnight, search as gmail_search
 import os, json, io
@@ -38,6 +40,9 @@ PROJECTS = [
 
 CORPUS_PATH = "data/cleaned/ghostline_sources.jsonl.gz"
 
+# Initialize the new RAG system
+rag_system = None
+
 # Markdown filter for Jinja2
 def markdown_filter(text):
     """Convert markdown to HTML"""
@@ -51,11 +56,53 @@ def markdown_filter(text):
 app.jinja_env.filters['markdown'] = markdown_filter
 
 def _boot_load_corpus():
+    """Load the RAG system on startup"""
+    global rag_system
     try:
-        load_corpus(CORPUS_PATH)
-        app.logger.info("✅ Brain loaded from %s", CORPUS_PATH)
+        rag_system = SimpleRAG()
+        
+        # Check if we already have an index built
+        if not rag_system.chunks:
+            app.logger.info("🧠 Building RAG index from %s (this may take a few minutes on first run)...", CORPUS_PATH)
+            rag_system.build_index(CORPUS_PATH)
+            app.logger.info("✅ RAG index built successfully!")
+        else:
+            app.logger.info("✅ RAG system loaded with existing index (%d chunks)", len(rag_system.chunks))
+            
     except Exception as e:
-        app.logger.warning("⚠️ Brain load failed: %s", e)
+        app.logger.warning("⚠️ RAG system load failed: %s", e)
+        rag_system = None
+
+# New helper functions for RAG compatibility
+def retrieve(query: str, k: int = 5):
+    """Retrieve relevant context using the new RAG system"""
+    if not rag_system:
+        return []
+    
+    try:
+        results = rag_system.search(query, top_k=k)
+        # Convert to the format your existing code expects
+        return [{"text": result["text"], "source": result["source"]} for result in results]
+    except Exception as e:
+        app.logger.error("RAG retrieval error: %s", e)
+        return []
+
+def is_ready():
+    """Check if RAG system is ready"""
+    return rag_system is not None and len(rag_system.chunks) > 0
+
+def load_corpus(path):
+    """Reload the corpus (for compatibility)"""
+    global rag_system
+    try:
+        rag_system = SimpleRAG()
+        rag_system.build_index(path)
+        app.logger.info("✅ RAG corpus reloaded")
+    except Exception as e:
+        app.logger.error("❌ RAG reload failed: %s", e)
+        raise
+
+# Boot up the RAG system
 _boot_load_corpus()
 
 
@@ -96,7 +143,7 @@ def index():
                 msgs = list_overnight(max_results=25, unread_only=True)
                 lines = [f"- {m['date']} — {m['from']} — {m['subject']}" for m in msgs]
                 summary_prompt = (
-                    "Summarize these overnight emails into 5–8 concise bullets. "
+                    "Summarize these overnight emails into 5—8 concise bullets. "
                     "Group related threads, call out anything urgent, and suggest 3 next actions:\n\n"
                     + "\n".join(lines)
                 )
@@ -221,6 +268,10 @@ def healthz():
     details = {}
     try:
         details["corpus_loaded"] = bool(is_ready())
+        if rag_system:
+            details["rag_chunks"] = len(rag_system.chunks)
+        else:
+            details["rag_status"] = "not_initialized"
     except Exception as e:
         ok = False
         details["corpus_error"] = str(e)
@@ -241,6 +292,42 @@ def debug_rag():
         return jsonify({"ok": False, "error": "corpus not loaded"}), 500
     hits = retrieve(q, k=k)
     return jsonify({"ok": True, "count": len(hits), "results": hits})
+
+
+# --- NEW DEBUG: Test RAG search with details ---
+@app.route('/debug/rag_detailed')
+def debug_rag_detailed():
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    q = request.args.get('query', 'recipes').strip()
+    k = int(request.args.get('k', 5))
+    
+    if not rag_system:
+        return jsonify({"ok": False, "error": "RAG system not initialized"}), 500
+    
+    try:
+        results = rag_system.search(q, top_k=k)
+        detailed_results = []
+        
+        for result in results:
+            detailed_results.append({
+                "similarity": result["similarity"],
+                "source": result["source"],
+                "text_preview": result["text"][:200] + "..." if len(result["text"]) > 200 else result["text"],
+                "full_text": result["text"]
+            })
+        
+        return jsonify({
+            "ok": True, 
+            "query": q,
+            "total_chunks": len(rag_system.chunks),
+            "results_found": len(results),
+            "results": detailed_results
+        })
+        
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 # --- DEBUG: Sample entries to see data structure ---
@@ -406,4 +493,3 @@ def upload_file():
 
 if __name__ == '__main__':
     app.run(debug=True)
-

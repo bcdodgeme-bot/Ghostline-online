@@ -39,3 +39,4 @@ python-dateutil==2.9.0.post0
 click==8.2.1
 
 easyocr
+numpy
