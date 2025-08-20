@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify
 from utils.ghostline_engine import generate_response, stream_generate
-from utils.rag_basic import retrieve, is_ready, load_corpus
+# TEMPORARILY DISABLED: from utils.rag_basic import retrieve, is_ready, load_corpus
 from utils.scraper import scrape_url
 from utils.gmail_client import (
     list_overnight, search as gmail_search,
@@ -54,13 +54,22 @@ def markdown_filter(text):
 # Register markdown filter
 app.jinja_env.filters['markdown'] = markdown_filter
 
-def _boot_load_corpus():
-    try:
-        load_corpus(CORPUS_PATH)
-        app.logger.info("Brain loaded from %s", CORPUS_PATH)
-    except Exception as e:
-        app.logger.warning("Brain load failed: %s", e)
-_boot_load_corpus()
+# TEMPORARILY DISABLED RAG FUNCTIONS
+def retrieve(query: str, k: int = 5):
+    """Dummy function - RAG disabled for debugging"""
+    return []
+
+def is_ready():
+    """Dummy function - RAG disabled for debugging"""
+    return False
+
+def load_corpus(path):
+    """Dummy function - RAG disabled for debugging"""
+    app.logger.info("RAG system disabled for debugging")
+    pass
+
+# Don't try to load corpus on startup
+# _boot_load_corpus()
 
 
 def load_conversation(project: str, limit: int = 50):
@@ -313,7 +322,7 @@ def reload_corpus():
         return redirect(url_for('login'))
     try:
         load_corpus(CORPUS_PATH)
-        return "Brain reloaded", 200
+        return "Brain reloaded (disabled for debugging)", 200
     except Exception as e:
         return f"Reload failed: {e}", 500
 
@@ -322,14 +331,9 @@ def reload_corpus():
 @app.route('/healthz')
 def healthz():
     ok = True
-    details = {}
-    try:
-        details["corpus_loaded"] = bool(is_ready())
-    except Exception as e:
-        ok = False
-        details["corpus_error"] = str(e)
-    status = {"status": "ok" if ok else "error", **details}
-    return jsonify(status), (200 if ok else 500)
+    details = {"rag_disabled": True, "corpus_loaded": False}
+    status = {"status": "ok", **details}
+    return jsonify(status), 200
 
 
 # --- DEBUG RAG: see what the retriever returns ---
@@ -337,14 +341,7 @@ def healthz():
 def debug_rag():
     if not session.get('logged_in'):
         return "Unauthorized", 401
-    q = request.args.get('query', '').strip()
-    k = int(request.args.get('k', 5))
-    if not q:
-        return jsonify({"ok": False, "error": "missing query"}), 400
-    if not is_ready():
-        return jsonify({"ok": False, "error": "corpus not loaded"}), 500
-    hits = retrieve(q, k=k)
-    return jsonify({"ok": True, "count": len(hits), "results": hits})
+    return jsonify({"ok": False, "error": "RAG disabled for debugging"})
 
 
 # --- DEBUG: Sample entries to see data structure ---
