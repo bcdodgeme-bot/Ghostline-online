@@ -2,11 +2,11 @@ app = "ghostline-online"
 primary_region = "iad"
 
 [build]
+  dockerfile = "Dockerfile"
 
 [env]
   PORT = "5000"
   CHAT_MODEL = "openrouter/auto"
-  MISE_PYTHON_COMPILE = "1"
 
 [http_service]
   internal_port = 5000
