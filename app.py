@@ -762,4 +762,75 @@ def export_session(project):
         file_stream.seek(0)
         return send_file(
             file_stream,
-            mimetype='text
+            mimetype='text/markdown',
+            as_attachment=True,
+            download_name=f"{project}_session.md"
+        )
+    except FileNotFoundError:
+        return f"No session data found for project: {project}", 404
+
+
+# --- UPLOAD / OCR ---
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    try:
+        file = request.files.get('file')
+        if not file or not file.filename:
+            return "No file uploaded", 400
+        
+        filename = file.filename.lower()
+        text = ""
+
+        if filename.endswith(('.png', '.jpg', '.jpeg')):
+            try:
+                import easyocr
+                import numpy as np
+                
+                file.stream.seek(0)
+                img = Image.open(file.stream)
+                img_array = np.array(img)
+                
+                reader = easyocr.Reader(['en'])
+                results = reader.readtext(img_array)
+                text = '\n'.join([result[1] for result in results if result[1].strip()])
+                
+                if not text.strip():
+                    text = "No text detected in image"
+                    
+            except Exception as e:
+                return f"OCR Error: {str(e)}. EasyOCR processing failed.", 500
+                
+        elif filename.endswith('.pdf'):
+            try:
+                file.stream.seek(0)
+                data = file.read()
+                doc = fitz.open(stream=data, filetype="pdf")
+                text = "".join(page.get_text() for page in doc)
+                if not text.strip():
+                    text = "No text found in PDF"
+            except Exception as e:
+                return f"PDF Error: {str(e)}", 500
+                
+        elif filename.endswith('.docx'):
+            try:
+                file.stream.seek(0)
+                document = docx.Document(file)
+                text = "\n".join(p.text for p in document.paragraphs)
+                if not text.strip():
+                    text = "No text found in Word document"
+            except Exception as e:
+                return f"Word Document Error: {str(e)}", 500
+        else:
+            return "Unsupported file type. Supported: PNG, JPG, JPEG, PDF, DOCX", 400
+
+        if len(text) > 10000:
+            text = text[:10000] + "\n\n[...truncated...]"
+            
+        return f"<pre>{text}</pre>"
+        
+    except Exception as e:
+        return f"Upload Error: {str(e)}", 500
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
