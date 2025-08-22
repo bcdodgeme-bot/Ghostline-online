@@ -1,4 +1,4 @@
-# utils/rag_basic.py - Batched RAG system to prevent memory crashes
+# utils/rag_basic.py - Memory-optimized batched RAG system
 import json
 import os
 import pickle
@@ -6,6 +6,7 @@ import gzip
 from typing import List, Dict, Tuple
 from datetime import datetime
 import math
+import gc
 
 try:
     import numpy as np
@@ -19,7 +20,7 @@ except ImportError as e:
 _rag_system = None
 
 class BatchedRAG:
-    def __init__(self, data_dir: str = "rag_data", batch_size: int = 20000):
+    def __init__(self, data_dir: str = "rag_data", batch_size: int = 6000):  # Reduced batch size
         if not DEPENDENCIES_AVAILABLE:
             raise ImportError("Missing required dependencies: numpy, openai")
             
@@ -57,6 +58,7 @@ class BatchedRAG:
             "completed_batches": 0,
             "total_batches": 0,
             "total_chunks_processed": 0,
+            "total_embeddings_created": 0,
             "last_updated": None
         }
     
@@ -190,35 +192,99 @@ class BatchedRAG:
             print(f"Error creating embedding: {e}")
             return [0.0] * 1536
     
-    def process_batch_embeddings(self, batch_chunks: List[Dict]) -> List[List[float]]:
-        """Create embeddings for a batch of chunks"""
-        print(f"Creating embeddings for {len(batch_chunks)} chunks...")
-        batch_embeddings = []
+    def save_embedding_batch(self, batch_num: int, sub_batch_num: int, embeddings: List[List[float]], chunk_indices: List[int]):
+        """Save a sub-batch of embeddings to disk immediately"""
+        embedding_sub_file = os.path.join(self.batch_dir, f"embeddings_{batch_num}_{sub_batch_num}.pkl")
+        indices_sub_file = os.path.join(self.batch_dir, f"indices_{batch_num}_{sub_batch_num}.json")
         
-        for i, chunk in enumerate(batch_chunks):
-            if i % 50 == 0:
-                print(f"Creating embeddings: {i + 1}/{len(batch_chunks)}", end='\r')
-            
-            embedding = self.create_embedding(chunk["text"])
-            batch_embeddings.append(embedding)
+        # Save embeddings
+        with open(embedding_sub_file, 'wb') as f:
+            pickle.dump(embeddings, f)
         
-        print(f"\nCompleted embeddings for batch")
-        return batch_embeddings
+        # Save chunk indices for this sub-batch
+        with open(indices_sub_file, 'w') as f:
+            json.dump(chunk_indices, f)
+        
+        print(f"Saved embedding sub-batch {sub_batch_num} to disk")
     
-    def save_batch_data(self, batch_num: int, batch_chunks: List[Dict], batch_embeddings: List[List[float]]):
-        """Save batch data to disk"""
+    def process_batch_embeddings(self, batch_chunks: List[Dict], batch_num: int) -> int:
+        """Create embeddings with streaming saves to prevent memory buildup"""
+        total_chunks = len(batch_chunks)
+        print(f"Creating embeddings for {total_chunks} chunks with streaming saves...")
+        
+        # Process embeddings in smaller sub-batches and save immediately
+        embedding_batch_size = 50  # Reduced sub-batch size
+        sub_batch_count = 0
+        total_embeddings_created = 0
+        
+        for i in range(0, total_chunks, embedding_batch_size):
+            end_idx = min(i + embedding_batch_size, total_chunks)
+            sub_batch = batch_chunks[i:end_idx]
+            
+            # Calculate progress percentage
+            progress_pct = int((i / total_chunks) * 100)
+            overall_progress = int(((self.batch_progress["total_embeddings_created"] + i) / 
+                                  (self.batch_progress["total_chunks_processed"] + total_chunks)) * 100)
+            
+            print(f"Creating embeddings: {i + 1}-{end_idx}/{total_chunks} ({progress_pct}% batch, {overall_progress}% overall)")
+            
+            # Extract texts for this sub-batch
+            texts = [chunk["text"] for chunk in sub_batch]
+            chunk_indices = [chunk["id"] for chunk in sub_batch]
+            
+            try:
+                # Create embeddings for multiple texts in one API call
+                response = self.client.embeddings.create(
+                    input=texts,
+                    model="text-embedding-3-small"
+                )
+                
+                # Extract embeddings from response
+                sub_batch_embeddings = [data.embedding for data in response.data]
+                
+                # Immediately save to disk and free memory
+                self.save_embedding_batch(batch_num, sub_batch_count, sub_batch_embeddings, chunk_indices)
+                total_embeddings_created += len(sub_batch_embeddings)
+                
+                # Clear memory
+                del sub_batch_embeddings
+                del texts
+                del chunk_indices
+                gc.collect()  # Force garbage collection
+                
+            except Exception as e:
+                print(f"\nError creating embeddings for sub-batch {sub_batch_count}: {e}")
+                # Fallback to individual processing for this sub-batch
+                sub_batch_embeddings = []
+                chunk_indices = []
+                for chunk in sub_batch:
+                    embedding = self.create_embedding(chunk["text"])
+                    sub_batch_embeddings.append(embedding)
+                    chunk_indices.append(chunk["id"])
+                
+                # Save fallback results
+                self.save_embedding_batch(batch_num, sub_batch_count, sub_batch_embeddings, chunk_indices)
+                total_embeddings_created += len(sub_batch_embeddings)
+                
+                # Clear memory
+                del sub_batch_embeddings
+                del chunk_indices
+                gc.collect()
+            
+            sub_batch_count += 1
+        
+        print(f"\nCompleted all embeddings for batch {batch_num + 1}: {total_embeddings_created} embeddings created")
+        return total_embeddings_created
+    
+    def save_batch_data(self, batch_num: int, batch_chunks: List[Dict]):
+        """Save batch chunk data to disk"""
         batch_file = os.path.join(self.batch_dir, f"batch_{batch_num}.json")
-        embeddings_file = os.path.join(self.batch_dir, f"embeddings_{batch_num}.pkl")
         
         # Save chunks
         with open(batch_file, 'w', encoding='utf-8') as f:
             json.dump(batch_chunks, f, indent=2, ensure_ascii=False)
         
-        # Save embeddings
-        with open(embeddings_file, 'wb') as f:
-            pickle.dump(batch_embeddings, f)
-        
-        print(f"Saved batch {batch_num + 1} data to disk")
+        print(f"Saved batch {batch_num + 1} chunk data to disk")
     
     def load_all_batches(self):
         """Load all completed batches into memory"""
@@ -229,30 +295,47 @@ class BatchedRAG:
         
         for batch_num in range(self.batch_progress["completed_batches"]):
             batch_file = os.path.join(self.batch_dir, f"batch_{batch_num}.json")
-            embeddings_file = os.path.join(self.batch_dir, f"embeddings_{batch_num}.pkl")
             
-            if os.path.exists(batch_file) and os.path.exists(embeddings_file):
+            if os.path.exists(batch_file):
                 # Load chunks
                 with open(batch_file, 'r', encoding='utf-8') as f:
                     batch_chunks = json.load(f)
                 
-                # Load embeddings
-                with open(embeddings_file, 'rb') as f:
-                    batch_embeddings = pickle.load(f)
+                # Load all embedding sub-batches for this batch
+                batch_embeddings = []
+                sub_batch_num = 0
+                
+                while True:
+                    embedding_sub_file = os.path.join(self.batch_dir, f"embeddings_{batch_num}_{sub_batch_num}.pkl")
+                    indices_sub_file = os.path.join(self.batch_dir, f"indices_{batch_num}_{sub_batch_num}.json")
+                    
+                    if not os.path.exists(embedding_sub_file):
+                        break
+                    
+                    # Load embeddings sub-batch
+                    with open(embedding_sub_file, 'rb') as f:
+                        sub_embeddings = pickle.load(f)
+                    
+                    # Load indices sub-batch
+                    with open(indices_sub_file, 'r') as f:
+                        sub_indices = json.load(f)
+                    
+                    batch_embeddings.extend(sub_embeddings)
+                    sub_batch_num += 1
                 
                 all_chunks.extend(batch_chunks)
                 all_embeddings.extend(batch_embeddings)
                 
-                print(f"Loaded batch {batch_num + 1}: {len(batch_chunks)} chunks")
+                print(f"Loaded batch {batch_num + 1}: {len(batch_chunks)} chunks, {len(batch_embeddings)} embeddings")
         
         self.chunks = all_chunks
         self.embeddings = all_embeddings
         
-        print(f"Total loaded: {len(self.chunks)} chunks with embeddings")
+        print(f"Total loaded: {len(self.chunks)} chunks with {len(self.embeddings)} embeddings")
     
     def build_index_in_batches(self, jsonl_gz_file_path: str):
-        """Build the RAG index using batch processing"""
-        print("Starting batched RAG index building...")
+        """Build the RAG index using memory-optimized batch processing"""
+        print("Starting memory-optimized batched RAG index building...")
         
         # Count total lines if not already done
         if self.batch_progress["total_batches"] == 0:
@@ -277,24 +360,27 @@ class BatchedRAG:
                 
                 if not batch_chunks:
                     print(f"No chunks created for batch {batch_num + 1}, skipping...")
+                    self.batch_progress["completed_batches"] = batch_num + 1
+                    self.save_batch_progress()
                     continue
                 
-                # Create embeddings for batch
-                batch_embeddings = self.process_batch_embeddings(batch_chunks)
+                # Save chunks to disk
+                self.save_batch_data(batch_num, batch_chunks)
                 
-                # Save batch to disk
-                self.save_batch_data(batch_num, batch_chunks, batch_embeddings)
+                # Create embeddings with streaming saves
+                embeddings_created = self.process_batch_embeddings(batch_chunks, batch_num)
                 
                 # Update progress
                 self.batch_progress["completed_batches"] = batch_num + 1
                 self.batch_progress["total_chunks_processed"] += len(batch_chunks)
+                self.batch_progress["total_embeddings_created"] += embeddings_created
                 self.save_batch_progress()
                 
                 print(f"Completed batch {batch_num + 1}/{total_batches}")
                 
                 # Clear memory for next batch
                 del batch_chunks
-                del batch_embeddings
+                gc.collect()
                 
             except Exception as e:
                 print(f"Error processing batch {batch_num + 1}: {e}")
@@ -303,7 +389,7 @@ class BatchedRAG:
         # Load all completed batches into memory
         self.load_all_batches()
         
-        print("Batched index building complete!")
+        print("Memory-optimized batched index building complete!")
     
     def load_existing_data(self):
         """Load existing data if available"""
@@ -350,6 +436,7 @@ class BatchedRAG:
                 "progress": "Ready to build",
                 "percentage": 0,
                 "chunks_processed": 0,
+                "embeddings_created": 0,
                 "total_estimated_chunks": 0
             }
         
@@ -361,6 +448,7 @@ class BatchedRAG:
                 "progress": f"Build complete! {len(self.chunks)} chunks ready",
                 "percentage": 100,
                 "chunks_processed": len(self.chunks),
+                "embeddings_created": len(self.embeddings),
                 "total_estimated_chunks": len(self.chunks)
             }
         
@@ -369,6 +457,7 @@ class BatchedRAG:
             "progress": f"Processing batch {completed_batches + 1}/{total_batches}",
             "percentage": percentage,
             "chunks_processed": self.batch_progress["total_chunks_processed"],
+            "embeddings_created": self.batch_progress["total_embeddings_created"],
             "batches_completed": completed_batches,
             "total_batches": total_batches
         }
@@ -436,4 +525,3 @@ else:
     print("Batched RAG system initialization skipped - missing dependencies")
 
 __all__ = ['retrieve', 'is_ready', 'load_corpus', 'get_build_status']
-
