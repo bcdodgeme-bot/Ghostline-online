@@ -1,10 +1,12 @@
-# Ignore large data files
+# Ignore large data files except our main brain file
 data/cleaned/*.gz
+!data/cleaned/ghostline_sources.jsonl.gz
+
 data/raw*/
 sessions/
 
 # Ignore Python cache
-__pycache__/
+**pycache**/
 *.pyc
 *.pyo
 
