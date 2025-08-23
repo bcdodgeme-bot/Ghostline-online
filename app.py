@@ -512,9 +512,9 @@ def brain_control():
             
             <div class="status-box">
                 <h3>Batched Processing Info</h3>
-                <p><strong>New Approach:</strong> Processes 20,000 lines per batch to prevent memory crashes.</p>
+                <p><strong>New Approach:</strong> Processes 6,000 lines per batch to prevent memory crashes.</p>
                 <p><strong>Auto-Resume:</strong> If interrupted, continues from last completed batch.</p>
-                <p><strong>Memory Safe:</strong> Clears data between batches to stay under 2GB limit.</p>
+                <p><strong>Memory Safe:</strong> Clears data between batches to stay under memory limit.</p>
                 <p><strong>Persistent:</strong> Each batch saved separately, combined when complete.</p>
             </div>
         </div>
@@ -614,6 +614,26 @@ def brain_control():
     </body>
     </html>
     """
+
+# --- DEBUG FILES ---
+@app.route('/debug/files')
+def debug_files():
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    try:
+        if os.path.exists('data/cleaned/'):
+            files = os.listdir('data/cleaned/')
+            file_info = []
+            for f in files:
+                path = os.path.join('data/cleaned/', f)
+                size = os.path.getsize(path) if os.path.isfile(path) else 0
+                file_info.append(f"{f} ({size} bytes)")
+            return f"Files in data/cleaned/: {file_info}"
+        else:
+            return "data/cleaned/ directory not found"
+    except Exception as e:
+        return f"Error checking files: {e}"
 
 # --- STREAMING (plain text) ---
 @app.route('/stream', methods=['POST'])
