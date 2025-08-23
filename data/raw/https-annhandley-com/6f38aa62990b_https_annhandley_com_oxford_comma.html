@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head > <script type="text/javascript">
+/* <![CDATA[ */
+var gform;gform||(document.addEventListener("gform_main_scripts_loaded",function(){gform.scriptsLoaded=!0}),document.addEventListener("gform/theme/scripts_loaded",function(){gform.themeScriptsLoaded=!0}),window.addEventListener("DOMContentLoaded",function(){gform.domLoaded=!0}),gform={domLoaded:!1,scriptsLoaded:!1,themeScriptsLoaded:!1,isFormEditor:()=>"function"==typeof InitializeEditor,callIfLoaded:function(o){return!(!gform.domLoaded||!gform.scriptsLoaded||!gform.themeScriptsLoaded&&!gform.isFormEditor()||(gform.isFormEditor()&&console.warn("The use of gform.initializeOnLoaded() is deprecated in the form editor context and will be removed in Gravity Forms 3.1."),o(),0))},initializeOnLoaded:function(o){gform.callIfLoaded(o)||(document.addEventListener("gform_main_scripts_loaded",()=>{gform.scriptsLoaded=!0,gform.callIfLoaded(o)}),document.addEventListener("gform/theme/scripts_loaded",()=>{gform.themeScriptsLoaded=!0,gform.callIfLoaded(o)}),window.addEventListener("DOMContentLoaded",()=>{gform.domLoaded=!0,gform.callIfLoaded(o)}))},hooks:{action:{},filter:{}},addAction:function(o,r,e,t){gform.addHook("action",o,r,e,t)},addFilter:function(o,r,e,t){gform.addHook("filter",o,r,e,t)},doAction:function(o){gform.doHook("action",o,arguments)},applyFilters:function(o){return gform.doHook("filter",o,arguments)},removeAction:function(o,r){gform.removeHook("action",o,r)},removeFilter:function(o,r,e){gform.removeHook("filter",o,r,e)},addHook:function(o,r,e,t,n){null==gform.hooks[o][r]&&(gform.hooks[o][r]=[]);var d=gform.hooks[o][r];null==n&&(n=r+"_"+d.length),gform.hooks[o][r].push({tag:n,callable:e,priority:t=null==t?10:t})},doHook:function(r,o,e){var t;if(e=Array.prototype.slice.call(e,1),null!=gform.hooks[r][o]&&((o=gform.hooks[r][o]).sort(function(o,r){return o.priority-r.priority}),o.forEach(function(o){"function"!=typeof(t=o.callable)&&(t=window[t]),"action"==r?t.apply(null,e):e[0]=t.apply(null,e)})),"filter"==r)return e[0]},removeHook:function(o,r,t,n){var e;null!=gform.hooks[o][r]&&(e=(e=gform.hooks[o][r]).filter(function(o,r,e){return!!(null!=n&&n!=o.tag||null!=t&&t!=o.priority)}),gform.hooks[o][r]=e)}});
+/* ]]> */
+</script>
+
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name='robots' content='index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1' />
+	<style>img:is([sizes="auto" i], [sizes^="auto," i]) { contain-intrinsic-size: 3000px 1500px }</style>
+	
+<!-- Google Tag Manager for WordPress by gtm4wp.com -->
+<script data-cfasync="false" data-pagespeed-no-defer>
+	var gtm4wp_datalayer_name = "dataLayer";
+	var dataLayer = dataLayer || [];
+</script>
+<!-- End Google Tag Manager for WordPress by gtm4wp.com -->
+	<!-- This site is optimized with the Yoast SEO plugin v25.6 - https://yoast.com/wordpress/plugins/seo/ -->
+	<title>The Oxford Comma and Why We Argue Over Grammar</title>
+	<meta name="description" content="Nothing ignites fire in the gut of righteous grammar geeks more than the Oxford (aka serial) comma. Why is that?" />
+	<link rel="canonical" href="https://annhandley.com/oxford-comma/" />
+	<meta property="og:locale" content="en_US" />
+	<meta property="og:type" content="article" />
+	<meta property="og:title" content="The Oxford Comma and Why We Argue Over Grammar" />
+	<meta property="og:description" content="Nothing ignites fire in the gut of righteous grammar geeks more than the Oxford (aka serial) comma. Why is that?" />
+	<meta property="og:url" content="https://annhandley.com/oxford-comma/" />
+	<meta property="og:site_name" content="Ann Handley" />
+	<meta property="article:publisher" content="https://www.facebook.com/ann.handley" />
+	<meta property="article:published_time" content="2018-02-25T15:20:25+00:00" />
+	<meta property="article:modified_time" content="2019-01-04T15:54:53+00:00" />
+	<meta property="og:image" content="https://annhandley.com/ah/wp-content/uploads/2018/02/paul-trienekens-458611-unsplash-e1558041330135.jpg" />
+	<meta property="og:image:width" content="1000" />
+	<meta property="og:image:height" content="667" />
+	<meta property="og:image:type" content="image/jpeg" />
+	<meta name="author" content="Ann Handley" />
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:creator" content="@annhandley" />
+	<meta name="twitter:site" content="@annhandley" />
+	<meta name="twitter:label1" content="Written by" />
+	<meta name="twitter:data1" content="Ann Handley" />
+	<meta name="twitter:label2" content="Est. reading time" />
+	<meta name="twitter:data2" content="5 minutes" />
+	<script type="application/ld+json" class="yoast-schema-graph">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://annhandley.com/oxford-comma/","url":"https://annhandley.com/oxford-comma/","name":"The Oxford Comma and Why We Argue Over Grammar","isPartOf":{"@id":"https://annhandley.com/#website"},"primaryImageOfPage":{"@id":"https://annhandley.com/oxford-comma/#primaryimage"},"image":{"@id":"https://annhandley.com/oxford-comma/#primaryimage"},"thumbnailUrl":"https://annhandley.com/ah/wp-content/uploads/2018/02/paul-trienekens-458611-unsplash-e1558041330135.jpg","datePublished":"2018-02-25T15:20:25+00:00","dateModified":"2019-01-04T15:54:53+00:00","author":{"@id":"https://annhandley.com/#/schema/person/82b31a4f88235bf8103dece480e1f551"},"description":"Nothing ignites fire in the gut of righteous grammar geeks more than the Oxford (aka serial) comma. Why is that?","breadcrumb":{"@id":"https://annhandley.com/oxford-comma/#breadcrumb"},"inLanguage":"en-US","potentialAction":[{"@type":"ReadAction","target":["https://annhandley.com/oxford-comma/"]}]},{"@type":"ImageObject","inLanguage":"en-US","@id":"https://annhandley.com/oxford-comma/#primaryimage","url":"https://annhandley.com/ah/wp-content/uploads/2018/02/paul-trienekens-458611-unsplash-e1558041330135.jpg","contentUrl":"https://annhandley.com/ah/wp-content/uploads/2018/02/paul-trienekens-458611-unsplash-e1558041330135.jpg","width":1000,"height":667},{"@type":"BreadcrumbList","@id":"https://annhandley.com/oxford-comma/#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://annhandley.com/"},{"@type":"ListItem","position":2,"name":"The Oxford Comma and Why We Argue Over Grammar"}]},{"@type":"WebSite","@id":"https://annhandley.com/#website","url":"https://annhandley.com/","name":"Ann Handley","description":"Writer. Speaker. Marketer.","potentialAction":[{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"https://annhandley.com/?s={search_term_string}"},"query-input":{"@type":"PropertyValueSpecification","valueRequired":true,"valueName":"search_term_string"}}],"inLanguage":"en-US"},{"@type":"Person","@id":"https://annhandley.com/#/schema/person/82b31a4f88235bf8103dece480e1f551","name":"Ann Handley","image":{"@type":"ImageObject","inLanguage":"en-US","@id":"https://annhandley.com/#/schema/person/image/","url":"https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=96&d=mm&r=g","contentUrl":"https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=96&d=mm&r=g","caption":"Ann Handley"},"url":"https://annhandley.com/author/ann/"}]}</script>
+	<!-- / Yoast SEO plugin. -->
+
+
+<link rel='dns-prefetch' href='//use.typekit.net' />
+<link rel='dns-prefetch' href='//fonts.googleapis.com' />
+<link rel='dns-prefetch' href='//code.ionicframework.com' />
+<link rel="alternate" type="application/rss+xml" title="Ann Handley &raquo; Feed" href="https://annhandley.com/feed/" />
+<link rel="alternate" type="application/rss+xml" title="Ann Handley &raquo; Comments Feed" href="https://annhandley.com/comments/feed/" />
+<link rel="alternate" type="application/rss+xml" title="Ann Handley &raquo; The Oxford Comma and Why We Argue Over Grammar Comments Feed" href="https://annhandley.com/oxford-comma/feed/" />
+<link rel='stylesheet' id='ann-handley-css' href='https://annhandley.com/ah/wp-content/themes/annhandley/style.css' type='text/css' media='all' />
+<link rel='stylesheet' id='annhandley-fonts-css' href='https://fonts.googleapis.com/css?family=Open+Sans%3A400%2C400i%2C700&#038;ver=1.0.0' type='text/css' media='all' />
+<link rel='stylesheet' id='annhandley-ionicons-css' href='//code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css?ver=2.0.1' type='text/css' media='all' />
+<link rel='stylesheet' id='wp-block-library-css' href='https://annhandley.com/ah/wp-includes/css/dist/block-library/style.min.css' type='text/css' media='all' />
+<style id='classic-theme-styles-inline-css' type='text/css'>
+/*! This file is auto-generated */
+.wp-block-button__link{color:#fff;background-color:#32373c;border-radius:9999px;box-shadow:none;text-decoration:none;padding:calc(.667em + 2px) calc(1.333em + 2px);font-size:1.125em}.wp-block-file__button{background:#32373c;color:#fff;text-decoration:none}
+</style>
+<style id='global-styles-inline-css' type='text/css'>
+:root{--wp--preset--aspect-ratio--square: 1;--wp--preset--aspect-ratio--4-3: 4/3;--wp--preset--aspect-ratio--3-4: 3/4;--wp--preset--aspect-ratio--3-2: 3/2;--wp--preset--aspect-ratio--2-3: 2/3;--wp--preset--aspect-ratio--16-9: 16/9;--wp--preset--aspect-ratio--9-16: 9/16;--wp--preset--color--black: #000000;--wp--preset--color--cyan-bluish-gray: #abb8c3;--wp--preset--color--white: #ffffff;--wp--preset--color--pale-pink: #f78da7;--wp--preset--color--vivid-red: #cf2e2e;--wp--preset--color--luminous-vivid-orange: #ff6900;--wp--preset--color--luminous-vivid-amber: #fcb900;--wp--preset--color--light-green-cyan: #7bdcb5;--wp--preset--color--vivid-green-cyan: #00d084;--wp--preset--color--pale-cyan-blue: #8ed1fc;--wp--preset--color--vivid-cyan-blue: #0693e3;--wp--preset--color--vivid-purple: #9b51e0;--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple: linear-gradient(135deg,rgba(6,147,227,1) 0%,rgb(155,81,224) 100%);--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan: linear-gradient(135deg,rgb(122,220,180) 0%,rgb(0,208,130) 100%);--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange: linear-gradient(135deg,rgba(252,185,0,1) 0%,rgba(255,105,0,1) 100%);--wp--preset--gradient--luminous-vivid-orange-to-vivid-red: linear-gradient(135deg,rgba(255,105,0,1) 0%,rgb(207,46,46) 100%);--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray: linear-gradient(135deg,rgb(238,238,238) 0%,rgb(169,184,195) 100%);--wp--preset--gradient--cool-to-warm-spectrum: linear-gradient(135deg,rgb(74,234,220) 0%,rgb(151,120,209) 20%,rgb(207,42,186) 40%,rgb(238,44,130) 60%,rgb(251,105,98) 80%,rgb(254,248,76) 100%);--wp--preset--gradient--blush-light-purple: linear-gradient(135deg,rgb(255,206,236) 0%,rgb(152,150,240) 100%);--wp--preset--gradient--blush-bordeaux: linear-gradient(135deg,rgb(254,205,165) 0%,rgb(254,45,45) 50%,rgb(107,0,62) 100%);--wp--preset--gradient--luminous-dusk: linear-gradient(135deg,rgb(255,203,112) 0%,rgb(199,81,192) 50%,rgb(65,88,208) 100%);--wp--preset--gradient--pale-ocean: linear-gradient(135deg,rgb(255,245,203) 0%,rgb(182,227,212) 50%,rgb(51,167,181) 100%);--wp--preset--gradient--electric-grass: linear-gradient(135deg,rgb(202,248,128) 0%,rgb(113,206,126) 100%);--wp--preset--gradient--midnight: linear-gradient(135deg,rgb(2,3,129) 0%,rgb(40,116,252) 100%);--wp--preset--font-size--small: 13px;--wp--preset--font-size--medium: 20px;--wp--preset--font-size--large: 36px;--wp--preset--font-size--x-large: 42px;--wp--preset--spacing--20: 0.44rem;--wp--preset--spacing--30: 0.67rem;--wp--preset--spacing--40: 1rem;--wp--preset--spacing--50: 1.5rem;--wp--preset--spacing--60: 2.25rem;--wp--preset--spacing--70: 3.38rem;--wp--preset--spacing--80: 5.06rem;--wp--preset--shadow--natural: 6px 6px 9px rgba(0, 0, 0, 0.2);--wp--preset--shadow--deep: 12px 12px 50px rgba(0, 0, 0, 0.4);--wp--preset--shadow--sharp: 6px 6px 0px rgba(0, 0, 0, 0.2);--wp--preset--shadow--outlined: 6px 6px 0px -3px rgba(255, 255, 255, 1), 6px 6px rgba(0, 0, 0, 1);--wp--preset--shadow--crisp: 6px 6px 0px rgba(0, 0, 0, 1);}:where(.is-layout-flex){gap: 0.5em;}:where(.is-layout-grid){gap: 0.5em;}body .is-layout-flex{display: flex;}.is-layout-flex{flex-wrap: wrap;align-items: center;}.is-layout-flex > :is(*, div){margin: 0;}body .is-layout-grid{display: grid;}.is-layout-grid > :is(*, div){margin: 0;}:where(.wp-block-columns.is-layout-flex){gap: 2em;}:where(.wp-block-columns.is-layout-grid){gap: 2em;}:where(.wp-block-post-template.is-layout-flex){gap: 1.25em;}:where(.wp-block-post-template.is-layout-grid){gap: 1.25em;}.has-black-color{color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-color{color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-color{color: var(--wp--preset--color--white) !important;}.has-pale-pink-color{color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-color{color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-color{color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-color{color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-color{color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-color{color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-color{color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-color{color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-color{color: var(--wp--preset--color--vivid-purple) !important;}.has-black-background-color{background-color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-background-color{background-color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-background-color{background-color: var(--wp--preset--color--white) !important;}.has-pale-pink-background-color{background-color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-background-color{background-color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-background-color{background-color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-background-color{background-color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-background-color{background-color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-background-color{background-color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-background-color{background-color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-background-color{background-color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-background-color{background-color: var(--wp--preset--color--vivid-purple) !important;}.has-black-border-color{border-color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-border-color{border-color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-border-color{border-color: var(--wp--preset--color--white) !important;}.has-pale-pink-border-color{border-color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-border-color{border-color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-border-color{border-color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-border-color{border-color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-border-color{border-color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-border-color{border-color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-border-color{border-color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-border-color{border-color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-border-color{border-color: var(--wp--preset--color--vivid-purple) !important;}.has-vivid-cyan-blue-to-vivid-purple-gradient-background{background: var(--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple) !important;}.has-light-green-cyan-to-vivid-green-cyan-gradient-background{background: var(--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan) !important;}.has-luminous-vivid-amber-to-luminous-vivid-orange-gradient-background{background: var(--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange) !important;}.has-luminous-vivid-orange-to-vivid-red-gradient-background{background: var(--wp--preset--gradient--luminous-vivid-orange-to-vivid-red) !important;}.has-very-light-gray-to-cyan-bluish-gray-gradient-background{background: var(--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray) !important;}.has-cool-to-warm-spectrum-gradient-background{background: var(--wp--preset--gradient--cool-to-warm-spectrum) !important;}.has-blush-light-purple-gradient-background{background: var(--wp--preset--gradient--blush-light-purple) !important;}.has-blush-bordeaux-gradient-background{background: var(--wp--preset--gradient--blush-bordeaux) !important;}.has-luminous-dusk-gradient-background{background: var(--wp--preset--gradient--luminous-dusk) !important;}.has-pale-ocean-gradient-background{background: var(--wp--preset--gradient--pale-ocean) !important;}.has-electric-grass-gradient-background{background: var(--wp--preset--gradient--electric-grass) !important;}.has-midnight-gradient-background{background: var(--wp--preset--gradient--midnight) !important;}.has-small-font-size{font-size: var(--wp--preset--font-size--small) !important;}.has-medium-font-size{font-size: var(--wp--preset--font-size--medium) !important;}.has-large-font-size{font-size: var(--wp--preset--font-size--large) !important;}.has-x-large-font-size{font-size: var(--wp--preset--font-size--x-large) !important;}
+:where(.wp-block-post-template.is-layout-flex){gap: 1.25em;}:where(.wp-block-post-template.is-layout-grid){gap: 1.25em;}
+:where(.wp-block-columns.is-layout-flex){gap: 2em;}:where(.wp-block-columns.is-layout-grid){gap: 2em;}
+:root :where(.wp-block-pullquote){font-size: 1.5em;line-height: 1.6;}
+</style>
+<link rel='stylesheet' id='simple-social-icons-font-css' href='https://annhandley.com/ah/wp-content/plugins/simple-social-icons/css/style.css' type='text/css' media='all' />
+<link rel='stylesheet' id='iworks_upprev_frontend-css' href='https://annhandley.com/ah/wp-content/plugins/upprev/assets/styles/frontend.min.css' type='text/css' media='all' />
+<script type="text/javascript" src="https://use.typekit.net/zln5nzk.js?ver=1.0.0" id="annhandley-typekit-js"></script>
+<script type="text/javascript" id="annhandley-typekit-js-after">
+/* <![CDATA[ */
+try{Typekit.load({ async: false });}catch(e){}
+/* ]]> */
+</script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-includes/js/jquery/jquery.min.js" id="jquery-core-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-includes/js/jquery/jquery-migrate.min.js" id="jquery-migrate-js"></script>
+<script type="text/javascript" id="iworks_upprev_frontend-js-extra">
+/* <![CDATA[ */
+var iworks_upprev = {"animation":"flyout","close_button_show":"1","color_set":null,"compare":"simple","configuration":"simple","css_border_width":"2px 0 0 0","css_bottom":"5","css_side":"5","css_width":"360","excerpt_length":"20","excerpt_show":"1","ga_opt_noninteraction":"1","ga_track_clicks":"1","ga_track_views":"1","header_show":"1","header_text":null,"ignore_sticky_posts":"1","number_of_posts":"1","offset_element":"#comments","offset_percent":"75","reopen_button_show":"1","show_thumb":"1","taxonomy_limit":"0","thumb_height":null,"thumb_width":"48","url_new_window":"0","url_prefix":"","url_suffix":null,"position":{"raw":"right","top":0,"left":0,"center":0,"middle":0,"all":"right"},"title":"The Oxford Comma and Why We Argue Over Grammar","p":"4039","nonce":"85e9bbd959","ajaxurl":"https:\/\/annhandley.com\/ah\/wp-admin\/admin-ajax.php"};
+/* ]]> */
+</script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/plugins/upprev/assets/scripts/upprev.min.js" id="iworks_upprev_frontend-js"></script>
+<link rel="https://api.w.org/" href="https://annhandley.com/wp-json/" /><link rel="alternate" title="JSON" type="application/json" href="https://annhandley.com/wp-json/wp/v2/posts/4039" /><link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://annhandley.com/ah/xmlrpc.php?rsd" />
+
+<link rel='shortlink' href='https://annhandley.com/?p=4039' />
+<link rel="alternate" title="oEmbed (JSON)" type="application/json+oembed" href="https://annhandley.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fannhandley.com%2Foxford-comma%2F" />
+<link rel="alternate" title="oEmbed (XML)" type="text/xml+oembed" href="https://annhandley.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fannhandley.com%2Foxford-comma%2F&#038;format=xml" />
+
+<!-- Google Tag Manager for WordPress by gtm4wp.com -->
+<!-- GTM Container placement set to automatic -->
+<script data-cfasync="false" data-pagespeed-no-defer>
+	var dataLayer_content = {"pagePostType":"post","pagePostType2":"single-post","pageCategory":["blog","writing"],"pageAttributes":["content-writing","maine-truck-drivers","marketing-writing","oxford-comma","writing"],"pagePostAuthor":"Ann Handley"};
+	dataLayer.push( dataLayer_content );
+</script>
+<script data-cfasync="false" data-pagespeed-no-defer>
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-5WLC99C');
+</script>
+<!-- End Google Tag Manager for WordPress by gtm4wp.com --><link rel="icon" href="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicon.ico" />
+<link rel="pingback" href="https://annhandley.com/ah/xmlrpc.php" />
+<meta name="google-site-verification" content="QVmkHGydRdaIj0hPv2vjUJ3TleeljPNxd-Op0pFuK04" />
+<meta name="google-site-verification" content="2n8YhFOr_bBIRhOTA8V4kOcx9FPE89D_Ayun0frf7do" />
+<link rel="apple-touch-icon" sizes="180x180" href="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicons/favicon-32x32.png">
+<link rel="manifest" href="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicons/manifest.json">
+<link rel="mask-icon" href="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicons/safari-pinned-tab.svg" color="#e077cc">
+<meta name="msapplication-config" content="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicons/browserconfig.xml">
+<meta name="apple-mobile-web-app-title" content="Ann Handley">
+<meta name="application-name" content="Ann Handley">
+<meta name="theme-color" content="#ffffff">		<style type="text/css" id="wp-custom-css">
+			.page .at4-share {display:none !important}
+
+.navnews a {border: 2px solid #b551a9 !important}		</style>
+		<style type="text/css">
+ </style>
+</head>
+<body class="wp-singular post-template-default single single-post postid-4039 single-format-standard wp-theme-genesis wp-child-theme-annhandley fl-builder-2-9-2-1 fl-no-js header-full-width full-width-content genesis-breadcrumbs-hidden genesis-footer-widgets-visible">
+<!-- GTM Container placement set to automatic -->
+<!-- Google Tag Manager (noscript) -->
+				<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5WLC99C" height="0" width="0" style="display:none;visibility:hidden" aria-hidden="true"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+<!-- GTM Container placement set to automatic -->
+<!-- Google Tag Manager (noscript) --><div class="site-container"><ul class="genesis-skip-link"><li><a href="#genesis-nav-primary" class="screen-reader-shortcut"> Skip to primary navigation</a></li><li><a href="#genesis-content" class="screen-reader-shortcut"> Skip to main content</a></li><li><a href="#genesis-footer-widgets" class="screen-reader-shortcut"> Skip to footer</a></li></ul><header class="site-header"><div class="wrap"><div class="title-area"><p class="site-title"><a href="https://annhandley.com/">Ann Handley</a></p><p class="site-description">Writer. Speaker. Marketer.</p></div><nav class="nav-primary" aria-label="Main" id="genesis-nav-primary"><div class="wrap"><ul id="menu-main-menu" class="menu genesis-nav-menu menu-primary js-superfish"><li id="menu-item-2737" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2737"><a href="https://annhandley.com/about/"><span >About</span></a></li>
+<li id="menu-item-2743" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2743"><a href="https://annhandley.com/speaking/"><span >Speaking</span></a></li>
+<li id="menu-item-2747" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2747"><a href="https://annhandley.com/books/"><span >Books</span></a></li>
+<li id="menu-item-2742" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2742"><a href="https://annhandley.com/blog/"><span >Blog</span></a></li>
+<li id="menu-item-3676" class="homelink menu-item menu-item-type-custom menu-item-object-custom menu-item-home menu-item-3676"><a href="https://annhandley.com/#workwithannhome"><span >WORK WITH ANN</span></a></li>
+<li id="menu-item-4700" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-4700"><a href="https://annhandley.com/testimonials/"><span >Testimonials</span></a></li>
+<li id="menu-item-2738" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2738"><a href="https://annhandley.com/contact/"><span >Contact</span></a></li>
+<li id="menu-item-4378" class="navnews menu-item menu-item-type-post_type menu-item-object-page menu-item-4378"><a href="https://annhandley.com/newsletter/"><span >GET ANNARCHY</span></a></li>
+</ul></div></nav></div></header><div class="site-inner"><div class="wrap"><div class="content-sidebar-wrap"><main class="content" id="genesis-content"><article class="post-4039 post type-post status-publish format-standard has-post-thumbnail category-blog category-writing tag-content-writing tag-maine-truck-drivers tag-marketing-writing tag-oxford-comma tag-writing entry" aria-label="The Oxford Comma and Why We Argue Over Grammar"><header class="entry-header"><h1 class="entry-title">The Oxford Comma and Why We Argue Over Grammar</h1>
+</header><div class="entry-content"><figure id="attachment_4043" aria-describedby="caption-attachment-4043" style="width: 1024px" class="wp-caption aligncenter"><img decoding="async" class="wp-image-4043 size-large" src="https://annhandley.com/ah/wp-content/uploads/2018/02/paul-trienekens-458611-unsplash-1024x683.jpg" alt="" width="1024" height="683" /><figcaption id="caption-attachment-4043" class="wp-caption-text">Photo cred: Paul Trienekens on Unsplash</figcaption></figure>
+<p><em>This post is an expanded version of my biweekly newsletter content, which features a letter from me to you along with ideas worth sharing and a healthy dose of fun. Not on the list? You can <a href="https://annhandley.com/newsletter/" target="_blank" rel="noopener">subscribe right here</a>.</em></p>
+<p>Nothing ignites fire in the gut of righteous grammar geeks more than the serial—aka Oxford—comma.</p>
+<p>Why is that?</p>
+<p>Maybe you heard about the Maine dairy-truck drivers’ <a href="https://bangordailynews.com/2018/02/08/business/drivers-and-oxford-comma-come-up-big-in-dairy-lawsuit-settlement/" target="_blank" rel="noopener">recent legal victory</a> that hinged on a comma—actually, the lack of a comma. The truck drivers won an appeal against their employer, Oakhurst Dairy, regarding overtime pay. Last week Oakhurst settled the case and paid up.</p>
+<p>What&#8217;s a serial/Oxford comma? It&#8217;s the final comma in a list of things in a sentence. As in:</p>
+<blockquote>
+<p>Marketers love clever creative, remarkable ROI, and respect.</p>
+</blockquote>
+<p>The Oxford comma is that comma after &#8220;ROI.&#8221;</p>
+<p>Here&#8217;s a well-known explanation of how the Oxford comma adds critical clarity:</p>
+<p><img decoding="async" class="alignnone wp-image-4041 size-full" src="https://annhandley.com/ah/wp-content/uploads/2018/02/Oxford-comma-explained.png" alt="" width="658" height="874" /></p>
+<h3> </h3>
+<h3>One Morning in Maine</h3>
+<p>The Maine dairy story is a convoluted story, as most law-related stories are. Here are the basics:</p>
+<ul>
+<li>In 2014, three truck drivers sued the dairy for what they said was four years’ worth of overtime pay owed to them for deliveries they&#8217;d made.</li>
+<li>Oakhurst Dairy said NOPE, citing a law that lists distribution of dairy products as one of the activities ineligible for overtime pay.</li>
+<li>Maine state law at the time stated that workers are not entitled to overtime pay for: &#8220;The canning, processing, preserving, freezing, drying, marketing, storing, packing for shipment or distribution of: (1) Agricultural produce; (2) Meat and fish products; and (3) Perishable foods.&#8221;</li>
+<li><em>Aha&#8230;!</em> the lawyer for the truck drivers said.</li>
+<li>Without a comma after &#8220;shipment,&#8221; it&#8217;s the packing &#8220;for shipment or distribution&#8221; that&#8217;s not eligible for overtime—not the distribution itself. Only with a comma would &#8220;distribution&#8221; have been included as one of the series of activities ineligible for overtime.</li>
+<li>So: the law does not apply to the deliveries the drivers made. <em>Pay up, Oakhurst.</em></li>
+<li>The court (the US Court of Appeals for the First Circuit) agreed—and took 29 pages to say as much. Oxford comma enthusiasts high-fived!</li>
+<li>Earlier this month, Oakhurst Dairy settled, agreeing to pay $5 million to the drivers.</li>
+</ul>
+<p>The case of the dairy-truck drivers’ comma has got several things going for it, <a href="https://www.newyorker.com/culture/culture-desk/a-few-words-about-that-ten-million-dollar-serial-comma" target="_blank" rel="noopener">says</a> former New Yorker copyeditor Mary Norris.</p>
+<p>It’s got a David-and-Goliath showdown between the little guys and the corporate overlord.</p>
+<p>It’s got &#8220;guys driving around in trucks with copies of Strunk &amp; White in the glove box.&#8221;</p>
+<p>And, of course, it&#8217;s… wait for it…<em> got milk</em>.</p>
+<p>But it’s also got something else we love: It’s got people arguing over grammar.</p>
+<h3>People love love looooove to argue over grammar.</h3>
+<p>And we especially love to argue over the polarizing Oxford comma: defended as a beacon of clarity, derided as an unnecessary pest.</p>
+<p>Why does something as pedantic and ordinary as grammar ignite raging debate—both in Maine and in the rest of world? Even when there isn’t actual money at stake?</p>
+<p>And more broadly: Why do some of us love to correct the grammar of others? Love to sharpen our grammar chops on the soft underbelly of those unfortunates who might use <em>literally</em> to mean <em>figuratively</em>? Who misspell <em>lose</em> as <em>loose</em>?</p>
+<p>Maybe it has something to do with that word &#8220;rules&#8221; when it’s paired with &#8220;grammar&#8221;: Grammar rules seem strict, impenetrable, unyielding.</p>
+<p>Some grammar rules are more like laws or statutes—breaking them quickly creates anarchy: <em>&#8220;The U.S. Grammar Guild Monday announced that no more will traditional grammar rules English follow. Instead there will a new form of organizing sentences be.&#8221;</em> (<a href="https://www.theonion.com/rules-grammar-change-1819564233" target="_blank" rel="noopener">The Onion</a>)</p>
+<p>But others are more open to interpretation: Splitting infinitives (<em>to boldly go</em> is a famous one).</p>
+<p>Ending a sentence with a preposition.</p>
+<p>Using “they” as a singular pronoun.</p>
+<p>And the serial/Oxford comma.</p>
+<h3>Grammarians are thought of as judgy, humorless souls.</h3>
+<p>The type to correct you silently at a lunch counter when you&#8217;re ordering a sandwich. Many find work as editors or copyeditors.</p>
+<p>But most grammar sticklers I know come at it less based in judgment than in something more generous: <a href="https://annhandley.com/oxford-comma/#.WpLUR4JG2qA" target="_blank" rel="noopener">They want to help us all be understood.</a></p>
+<p>The editor is often silent and invisible, grafting weak sentences and buttressing feeble structure into something more hearty and lasting. They don’t get the credit for the bounty or the beauty, either: That glory lands squarely on the needy writer.</p>
+<p>So if we think of grammar less as rules and more as a handy set of guidelines for clear communication, then grammar works for us—not against us. Like the best editors.</p>
+<p>Grammar guidelines are often not hard-and-fast—because language is a living, changing thing.</p>
+<p>Language is constantly on the go, always up for a joy ride to god knows where&#8230;.</p>
+<p>&#8220;Grammar rules&#8221; stirs up in the righteous a feeling of right and wrong, of needing to put a stake in the ground, to polarize language: Black and white. Off and on. Yes and no. Smart and stupid.</p>
+<p>Again, occasionally it really matters (<em>overtime</em> or no <em>overtime</em>). But often it just doesn’t.</p>
+<p>Writing—like life—is often experienced more richly in its nuances. Nuance is the Petri dish for language—because language evolves when all of us collectively search for a word that captures a meaning better than some other word (<em>froyo, humblebrag. truther</em>.)</p>
+<p>So let’s get back to the original question:</p>
+<h3>Why do we enjoy a solid grammar throwdown, anyway?</h3>
+<p>Because grammar rules are often not really rules.</p>
+<p>And maybe because grammar is a debate we feel entitled to have an opinion on. (<em>On which we feel entitled to have an opinion?</em> You do you.)</p>
+<p>We might not be able to affect <a href="https://www.linkedin.com/pulse/power-meaty-metaphor-ann-handley/" target="_blank" rel="noopener">Net Neutrality</a> (a phrase added to the dictionary in 2017, bee tee dubs).</p>
+<p>We feel powerless about Russian meddling.</p>
+<p>The world can be a dark and horrifying place.</p>
+<p>But hold. Up. Just. One. Hot. Second!</p>
+<p>WE SURE AS HELL AREN’T GOING TO LET THAT LACK OF A COMMA SLIP BY.</p>
+<p> </p>
+<p>👉 👉 👉 Get a letter from me to you in your inbox, every two weeks! <a href="https://annhandley.com/newsletter">Sign up for free right here</a>.</p>
+
+
+<p></p>
+<div id="upprev-trigger"></div><!--<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+			xmlns:dc="http://purl.org/dc/elements/1.1/"
+			xmlns:trackback="http://madskills.com/public/xml/rss/module/trackback/">
+		<rdf:Description rdf:about="https://annhandley.com/oxford-comma/"
+    dc:identifier="https://annhandley.com/oxford-comma/"
+    dc:title="The Oxford Comma and Why We Argue Over Grammar"
+    trackback:ping="https://annhandley.com/oxford-comma/trackback/" />
+</rdf:RDF>-->
+</div><footer class="entry-footer"><p class="entry-meta"><span class="entry-categories">Filed Under: <a href="https://annhandley.com/category/blog/" rel="category tag">Annarchy</a>, <a href="https://annhandley.com/category/writing/" rel="category tag">Writing</a></span> <span class="entry-tags">Tagged With: <a href="https://annhandley.com/tag/content-writing/" rel="tag">content writing</a>, <a href="https://annhandley.com/tag/maine-truck-drivers/" rel="tag">Maine truck drivers</a>, <a href="https://annhandley.com/tag/marketing-writing/" rel="tag">marketing writing</a>, <a href="https://annhandley.com/tag/oxford-comma/" rel="tag">Oxford comma</a>, <a href="https://annhandley.com/tag/writing/" rel="tag">Writing</a></span></p></footer></article><div class="after-entry widget-area"><section id="text-5" class="widget widget_text"><div class="widget-wrap">			<div class="textwidget"><h3>SUBSCRIBE TO ANN&#8217;S NEWSLETTER,<br />
+<span style="color: #d07ec8;">TOTAL ANNARCHY:</span></h3>
+<h6>Get the letter 21,000+ people love to get. New writing, useful ideas, high-spirited shenanigans. Straight to your inbox. Every 2 weeks.</h6>
+<div class="AW-Form-1223224391"></div>
+<p><script type="text/javascript">(function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//forms.aweber.com/form/91/1223224391.js";
+    fjs.parentNode.insertBefore(js, fjs);
+    }(document, "script", "aweber-wjs-sje8260z2"));
+</script></p>
+</div>
+		</div></section>
+</div><div class="adjacent-entry-pagination pagination"><div class="pagination-previous alignleft"><a href="https://annhandley.com/slow-marketing/" rel="prev"><span class="screen-reader-text">Previous Post: </span><span class="adjacent-post-link">&#xAB; Slow Marketing Moment: A Snack Mix Story from 30,000 Feet</span></a></div><div class="pagination-next alignright"><a href="https://annhandley.com/library-story/" rel="next"><span class="screen-reader-text">Next Post: </span><span class="adjacent-post-link">The Story of This Guy Who Grew Up in a Library Made Me Realize I Did, Too (Kind Of) &#xBB;</span></a></div></div><h2 class="screen-reader-text">Reader Interactions</h2><div class="entry-comments" id="comments"><h3>Comments</h3><ol class="comment-list">
+	<li class="comment even thread-even depth-1" id="comment-9976">
+	<article id="article-comment-9976">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/471f50c2e85f0545cdcea3ec627aee80edc0a4f8e073cd66263f396a6d989191?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/471f50c2e85f0545cdcea3ec627aee80edc0a4f8e073cd66263f396a6d989191?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.typeacommunications.com" class="comment-author-link" rel="external nofollow">Carla Johnson</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-9976">February 26, 2018 at 6:58 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Why do we love to argue over grammar? Because it&#8217;s something we all use, in some fashion. Even not using it is using it. Physics? Nope. People clearly know when they&#8217;re out of their league. Neuroscience? Law? Fergetaboughit. Well, it may be the lawyers with whom we argue the most about grammar. And comprehension. Maybe that&#8217;s another Annarchy post. </p>
+<p>Every time I omit an Oxford comma I will now have an image of Stalin with pasties in my head. That&#8217;s a picture that definitely paints WAY MORE than 1,000 words.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-9976" data-commentid="9976" data-postid="4039" data-belowelement="article-comment-9976" data-respondelement="respond" data-replyto="Reply to Carla Johnson" aria-label="Reply to Carla Johnson">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor odd alt depth-2" id="comment-10015">
+	<article id="article-comment-10015">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Ann Handley</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-10015">February 27, 2018 at 5:44 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Good point, Carla&#8230;! And STALIN PASTIES: You&#8217;re welcome!</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-10015" data-commentid="10015" data-postid="4039" data-belowelement="article-comment-10015" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even depth-2" id="comment-10337">
+	<article id="article-comment-10337">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/dac567cb5f80607675fe1361dffec08f401c7a4da0801e6505e09754ad20c3e1?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/dac567cb5f80607675fe1361dffec08f401c7a4da0801e6505e09754ad20c3e1?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Carl Lum</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-10337">March 8, 2018 at 12:23 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Yup, Stalin with pasties. That&#8217;s indelible and should end this argument once and for all. Who could *possibly* eschew the Oxford Comma after this?</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-10337" data-commentid="10337" data-postid="4039" data-belowelement="article-comment-10337" data-respondelement="respond" data-replyto="Reply to Carl Lum" aria-label="Reply to Carl Lum">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt depth-2" id="comment-17311">
+	<article id="article-comment-17311">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/8b15f337db6381a17dbd2ebacb2f2b09375ce2ecb3d516d6adc62df822480137?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/8b15f337db6381a17dbd2ebacb2f2b09375ce2ecb3d516d6adc62df822480137?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Mary</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-17311">January 24, 2019 at 12:01 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Fugettaboutit, is the spelling,  just so you know. It&#8217;s a NY thing. I&#8217;m sure I did something grammatically wrong here, but whatevs.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-17311" data-commentid="17311" data-postid="4039" data-belowelement="article-comment-17311" data-respondelement="respond" data-replyto="Reply to Mary" aria-label="Reply to Mary">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even depth-2" id="comment-23779">
+	<article id="article-comment-23779">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/21139ed659f42d09ddb6ac347383c16eaccce411279f4f76bd6f269270dbd4f2?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/21139ed659f42d09ddb6ac347383c16eaccce411279f4f76bd6f269270dbd4f2?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">DRM</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-23779">October 21, 2020 at 3:16 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>So, shall we chat about the pronunciation mark &#8216;semicolon&#8217;?  I hear it&#8217;s an endangered species; seriously, my fiend.  ((:</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-23779" data-commentid="23779" data-postid="4039" data-belowelement="article-comment-23779" data-respondelement="respond" data-replyto="Reply to DRM" aria-label="Reply to DRM">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment odd alt depth-3" id="comment-27600">
+	<article id="article-comment-27600">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/a3ad1020956908e99ede050c7765a57cf2042983a5c12fcfc2ff81d9a4727d0b?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/a3ad1020956908e99ede050c7765a57cf2042983a5c12fcfc2ff81d9a4727d0b?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Otto Dial</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-27600">June 3, 2021 at 3:50 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>A semicolon, the PUNCTUATION mark, is used between two SENTENCES that are closely related—parallel, as it were. DRM’s jokey example is misused; the second part is not grammatically complete as a sentence.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-27600" data-commentid="27600" data-postid="4039" data-belowelement="article-comment-27600" data-respondelement="respond" data-replyto="Reply to Otto Dial" aria-label="Reply to Otto Dial">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+	<li class="comment even thread-odd thread-alt depth-1" id="comment-9979">
+	<article id="article-comment-9979">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/1333d230d7502d2b0a26cc33f43fcbab98a5e1d5a6777cf95fc9562589167f30?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/1333d230d7502d2b0a26cc33f43fcbab98a5e1d5a6777cf95fc9562589167f30?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.artillerymarketing.com" class="comment-author-link" rel="external nofollow">Douglas Burdett</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-9979">February 26, 2018 at 10:31 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Henceforth I will not be able to mentally disassociate the Oxford comma from Joseph Stalin&#8217;s pasties.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-9979" data-commentid="9979" data-postid="4039" data-belowelement="article-comment-9979" data-respondelement="respond" data-replyto="Reply to Douglas Burdett" aria-label="Reply to Douglas Burdett">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor odd alt depth-2" id="comment-10016">
+	<article id="article-comment-10016">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Ann Handley</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-10016">February 27, 2018 at 5:44 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>I dare you to try.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-10016" data-commentid="10016" data-postid="4039" data-belowelement="article-comment-10016" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even depth-2" id="comment-15167">
+	<article id="article-comment-15167">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/1b5933c52011c06512a6d5c2a1b1159840a402635d54a3bd3d6373e24643de4a?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/1b5933c52011c06512a6d5c2a1b1159840a402635d54a3bd3d6373e24643de4a?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://SimeonLaw.com" class="comment-author-link" rel="external nofollow">Mark Simeon</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-15167">September 20, 2018 at 10:58 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>lol  &#8220;&#8230; to mentally disassociate the Oxford comma &#8230;&#8221; &#8212; split infinitives are indeed hard to avoid  ;-)  But I digress.</p>
+<p>Join me as I venture down the rabbit hole.  I jumped in after Chuck Todd (MSNBC/Meet The Press Daily) teased his viewers to look up &#8220;Oxford comma&#8221; after reporting on Mike Pompeo&#8217;s admonishment to his staff on the correct use of commas.  Todd mocked it, since there appear to be many more important things to worry about, but it&#8217;s instructive, given the power of words, and the need to wield such power wisely.  The pen is indeed mightier than the sword. </p>
+<p>If you&#8217;re in the rabbit hole with me, ponder this.  Did you know:</p>
+<p>&#8211; &#8220;Grammarian&#8221; has it&#8217;s origins in magic?  Originally defined as &#8220;a learned man; wise man; person who knows Latin; magician ..&#8221; <a href="https://www.dictionary.com/browse/grammarian" rel="nofollow ugc">https://www.dictionary.com/browse/grammarian</a></p>
+<p>&#8211; &#8220;abra cadabra&#8221; is said to translate as &#8220;I speak, therefore I create&#8221;  <a href="https://mosaicmagazine.com/observation/2015/07/are-the-origins-of-abracadabra-jewish/" rel="nofollow ugc">https://mosaicmagazine.com/observation/2015/07/are-the-origins-of-abracadabra-jewish/</a> </p>
+<p>Learned men (and women) &#8212; yes, mostly lawyers &#8212; use language to, quite literally (not figuratively), create new life.  Many of us laughed at the notion that &#8220;Corporations are people too&#8221; but it&#8217;s no joke.   With the ability to live forever, and powers limited only by what is written in their Charters (themselves formed by artfully stringing together words correctly &#8220;spelled&#8221;) &#8212; corporations are indeed alive, and far more powerful than most of us mere mortals.</p>
+<p>Kinda makes you think, in a world where powerful people create &#8220;alternative facts&#8221;  with their own choice of words, speaking into existence new truths that leave the rest of us scratching our heads, and wondering, &#8220;wait &#8212; what the hell is happening?&#8221;</p>
+<p>Gotta get back to work.  Tip your server.  I&#8217;m here all week  ;-)</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-15167" data-commentid="15167" data-postid="4039" data-belowelement="article-comment-15167" data-respondelement="respond" data-replyto="Reply to Mark Simeon" aria-label="Reply to Mark Simeon">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment odd alt depth-3" id="comment-17705">
+	<article id="article-comment-17705">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/b08a4d9bb16d89d6864b7e7d5edfd8be5801060dec894d6c633bfe2c86964ef5?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/b08a4d9bb16d89d6864b7e7d5edfd8be5801060dec894d6c633bfe2c86964ef5?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">William B., Amarillo</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-17705">April 2, 2019 at 4:39 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>&gt;&gt; “Grammarian” has it’s origins in magic? &#8230; &#8221; &lt;&lt;<br />
+Always expand your contractions, at least mentally, before committing them to paper / e-mal / whatever.  Your statement is  equivalent to:  “Grammarian” has it is origins in magic? &#8230; &quot;  On a post about grammar? Why, why, why?</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-17705" data-commentid="17705" data-postid="4039" data-belowelement="article-comment-17705" data-respondelement="respond" data-replyto="Reply to William B., Amarillo" aria-label="Reply to William B., Amarillo">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-9982">
+	<article id="article-comment-9982">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c1b997acbfba420a34728cf7284eab7c9443431bd35065084bc9e5f3734eabbf?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c1b997acbfba420a34728cf7284eab7c9443431bd35065084bc9e5f3734eabbf?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://dont%20jhave%201" class="comment-author-link" rel="external nofollow">Bruce Sher</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-9982">February 27, 2018 at 12:29 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>On pointy and humorous to boot.</p>
+<p>love your books and Blog . <a href="mailto:witnessthequickness@gmnail.com">witnessthequickness@gmnail.com</a>.</p>
+<p>Bruce</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-9982" data-commentid="9982" data-postid="4039" data-belowelement="article-comment-9982" data-respondelement="respond" data-replyto="Reply to Bruce Sher" aria-label="Reply to Bruce Sher">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor odd alt depth-2" id="comment-10017">
+	<article id="article-comment-10017">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Ann Handley</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-10017">February 27, 2018 at 5:45 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Thanks, Bruce! I appreciate you swinging by!</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-10017" data-commentid="10017" data-postid="4039" data-belowelement="article-comment-10017" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment even depth-3" id="comment-17454">
+	<article id="article-comment-17454">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/1119fae4e3bc68a6d32c12b8e72a2f12211d3a4818b405f2d9b43e65b1eef6a7?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/1119fae4e3bc68a6d32c12b8e72a2f12211d3a4818b405f2d9b43e65b1eef6a7?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Boeckman</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-17454">February 19, 2019 at 4:26 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Ummm, isn’t it:</p>
+<p>YOUR swinging by?</p>
+<p>From former English teacher</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-17454" data-commentid="17454" data-postid="4039" data-belowelement="article-comment-17454" data-respondelement="respond" data-replyto="Reply to Boeckman" aria-label="Reply to Boeckman">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment odd alt depth-4" id="comment-25603">
+	<article id="article-comment-25603">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/1c9245f688e2599fdf6b058b72c34cab24633a72827b22594a3d45fb064a11de?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/1c9245f688e2599fdf6b058b72c34cab24633a72827b22594a3d45fb064a11de?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">mike seckerson</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-25603">January 12, 2021 at 12:30 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Yes, I thought so.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-25603" data-commentid="25603" data-postid="4039" data-belowelement="article-comment-25603" data-respondelement="respond" data-replyto="Reply to mike seckerson" aria-label="Reply to mike seckerson">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+	<li class="comment even thread-odd thread-alt depth-1" id="comment-9999">
+	<article id="article-comment-9999">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/87b39908592672ee570d4968bda69afa226104a29a7b2f65e24ef38a5fd2ed1d?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/87b39908592672ee570d4968bda69afa226104a29a7b2f65e24ef38a5fd2ed1d?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://velocitypartners.com/" class="comment-author-link" rel="external nofollow">Doug Kessler</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-9999">February 27, 2018 at 9:02 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>I&#8217;ve been grudgingly dragged into using the Oxford comma after a lifetime of using the Cambridge lack-of-comma. It makes me uncomfortable, self-conscious, and sad.  </p>
+<p>The Stalin/Stripper thing is such an edge use case and we pay a high price for protecting against it. </p>
+<p>For one thing: toner. </p>
+<p>Okay, a single, totally superfluous comma doesn&#8217;t take up much toner on its own but we&#8217;re talking trillions. That&#8217;s the carbon footprint of Ecuador every 6 weeks. (Admittedly, Ecuadorians live very green lives). (Only part of that is by choice). (But anyway:)</p>
+<p>I&#8217;ve written for, what, 30 years and never once had my lack of &#8216;luxury comma&#8217; lead to misinterpretation.</p>
+<p>But the &#8220;clients&#8221; have their &#8220;style guides&#8221; and my &#8220;agency&#8221; needs &#8220;money&#8221; for &#8220;foosball table maintenance&#8221; and &#8220;workers&#8221; so Oxford it is.</p>
+<p>Anyway: great, smart, and funny post.  Stalin.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-9999" data-commentid="9999" data-postid="4039" data-belowelement="article-comment-9999" data-respondelement="respond" data-replyto="Reply to Doug Kessler" aria-label="Reply to Doug Kessler">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor odd alt depth-2" id="comment-10018">
+	<article id="article-comment-10018">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Ann Handley</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-10018">February 27, 2018 at 5:46 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>I will give you an &#8220;the woods are lovely, dark and deep&#8221; Robert Frost exclusion. But only because Mary Norris does.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-10018" data-commentid="10018" data-postid="4039" data-belowelement="article-comment-10018" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even depth-2" id="comment-10158">
+	<article id="article-comment-10158">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/3e5c90508d10ef57a07064d924891f8282afd22d511c4b679be4e150e48a6172?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/3e5c90508d10ef57a07064d924891f8282afd22d511c4b679be4e150e48a6172?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">David Schach</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-10158">March 2, 2018 at 10:07 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>I pray that nobody prints the comments here because all those superfluous quotation marks/inverted commas (sSee, you ARE good at using extra commas!) are going to use the carbon footprint of the entire Americas in toner!</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-10158" data-commentid="10158" data-postid="4039" data-belowelement="article-comment-10158" data-respondelement="respond" data-replyto="Reply to David Schach" aria-label="Reply to David Schach">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor odd alt depth-3" id="comment-10219">
+	<article id="article-comment-10219">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Ann Handley</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-10219">March 4, 2018 at 2:30 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>LOL&#8230; true true.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-10219" data-commentid="10219" data-postid="4039" data-belowelement="article-comment-10219" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-10027">
+	<article id="article-comment-10027">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/e7075fd91b92e1e10e2b916584b3cf6665b33b7212429316e949b08aa7d55c3d?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/e7075fd91b92e1e10e2b916584b3cf6665b33b7212429316e949b08aa7d55c3d?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Ben Opsahl</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-10027">February 27, 2018 at 9:12 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>I remember that case. Got into a heated argument, of course. I argued that the lack of &#8220;and&#8221; actually made the sentence unambiguous. I hadn&#8217;t seen an article that covered this aspect until the one from the New Yorker you linked:</p>
+<p>&#8220;To the defendant’s contention that the series, in order to support the drivers’ reading, would have to contain a conjunction—“and”—before “packing,” the drivers, citing Antonin Scalia and Bryan Garner, said that the missing “and” was an instance of the rhetorical device called “asyndeton,” defined as “the omission or absence of a conjunction between parts of a sentence.”&#8221;</p>
+<p>Interesting. I concede!</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-10027" data-commentid="10027" data-postid="4039" data-belowelement="article-comment-10027" data-respondelement="respond" data-replyto="Reply to Ben Opsahl" aria-label="Reply to Ben Opsahl">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor odd alt depth-2" id="comment-10220">
+	<article id="article-comment-10220">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Ann Handley</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-10220">March 4, 2018 at 2:31 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Definitely. </p>
+<p>See also: This is one reason (or many reasons) why I&#8217;m not a lawyer.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-10220" data-commentid="10220" data-postid="4039" data-belowelement="article-comment-10220" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+	<li class="comment even thread-odd thread-alt depth-1" id="comment-10035">
+	<article id="article-comment-10035">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/31716630b828e79b5a6c0214c231c430fd1d1e86edf3dd45ef7f6f637dc45ecb?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/31716630b828e79b5a6c0214c231c430fd1d1e86edf3dd45ef7f6f637dc45ecb?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://garybloomer.com" class="comment-author-link" rel="external nofollow">Gary Bloomer</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-10035">February 27, 2018 at 11:04 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Insightful stuff, Ann for sure. Why do we argue over grammar? Let&#8217;s not.</p>
+<p>Instead, let&#8217;s simply embrace the fact that there those people who, quite rightly, use the Oxford/serial comma to separate out items in a list—items that deserve to stand as single entities, and that there are those who, grammatically, are simply wrong. </p>
+<p>And cue the haters &#8230; </p>
+<p>In the Frost example above [Ann], the woods are dark and deep, but with a comma, they become dark, and deep, so the meaning shifts although only slightly for sure: the distinction though is something that matters.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-10035" data-commentid="10035" data-postid="4039" data-belowelement="article-comment-10035" data-respondelement="respond" data-replyto="Reply to Gary Bloomer" aria-label="Reply to Gary Bloomer">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor odd alt depth-2" id="comment-10221">
+	<article id="article-comment-10221">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Ann Handley</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-10221">March 4, 2018 at 2:32 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Agreed.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-10221" data-commentid="10221" data-postid="4039" data-belowelement="article-comment-10221" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-10041">
+	<article id="article-comment-10041">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/6431d790830505877a2125b308d1c8b1602151fbfe4e0d1891e20c1cdfaf8ec8?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/6431d790830505877a2125b308d1c8b1602151fbfe4e0d1891e20c1cdfaf8ec8?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Alan Belniak</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-10041">February 28, 2018 at 12:50 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>And nary a mention of &#8220;Eats, shoots and leaves&#8221; &#8211; perhaps too easy?<br />
+Wonderful post, Ann.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-10041" data-commentid="10041" data-postid="4039" data-belowelement="article-comment-10041" data-respondelement="respond" data-replyto="Reply to Alan Belniak" aria-label="Reply to Alan Belniak">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor odd alt depth-2" id="comment-10222">
+	<article id="article-comment-10222">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Ann Handley</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-10222">March 4, 2018 at 2:32 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>LOL and thanks, friend! I appreciate you swinging by!</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-10222" data-commentid="10222" data-postid="4039" data-belowelement="article-comment-10222" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+	<li class="comment even thread-odd thread-alt depth-1" id="comment-10159">
+	<article id="article-comment-10159">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/16a472058150d315cd21de526030428469fc9905ee218bdb918cfe2ecdcc221a?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/16a472058150d315cd21de526030428469fc9905ee218bdb918cfe2ecdcc221a?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Annie</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-10159">March 2, 2018 at 10:16 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>People love the JFK/Stalin stripper example. It&#8217;s hilarious. I get it. But here&#8217;s the thing. The Oxford comma CREATES the exact same confusion if the first noun in the string changes. Another famous example:</p>
+<p>I want to thank my parents, Ayn Rand, and God. </p>
+<p>Without the Oxford comma, it reads as though this author has some pretty impressive parents. But look what happens when &#8220;parents&#8221; becomes &#8220;mother.&#8221;</p>
+<p>I want to thank my mother, Ayn Rand, and God.</p>
+<p>Now, the Oxford comma is to blame for the same problem! The Oxford comma makes it read as though the mother IS Ayn Rand. Without it, this sentence would be much clearer. </p>
+<p>Language evolves. Let&#8217;s not hold onto the Oxford comma just because we learned about it in grade school. Take it case by case and use the grammar that makes your writing the most readable.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-10159" data-commentid="10159" data-postid="4039" data-belowelement="article-comment-10159" data-respondelement="respond" data-replyto="Reply to Annie" aria-label="Reply to Annie">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor odd alt depth-2" id="comment-10218">
+	<article id="article-comment-10218">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Ann Handley</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-10218">March 4, 2018 at 2:29 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Annie! What a great example. Thank you. </p>
+<p>Although&#8230;. in that example, I might reword the sentence to read: &#8220;I want to thank Ayn Rand, God, and my mother.&#8221; </p>
+<p>Your point is a good one, though: &#8220;Take it case by case and use the grammar that makes your writing the most readable.&#8221; (HIGH-FIVE!)</p>
+<p>I am Team Oxford, philosophically. But in practice I am Team Reader.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-10218" data-commentid="10218" data-postid="4039" data-belowelement="article-comment-10218" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment even depth-3" id="comment-10294">
+	<article id="article-comment-10294">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/16a472058150d315cd21de526030428469fc9905ee218bdb918cfe2ecdcc221a?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/16a472058150d315cd21de526030428469fc9905ee218bdb918cfe2ecdcc221a?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Annie</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-10294">March 6, 2018 at 5:44 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Team Reader all day!</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-10294" data-commentid="10294" data-postid="4039" data-belowelement="article-comment-10294" data-respondelement="respond" data-replyto="Reply to Annie" aria-label="Reply to Annie">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-even depth-1" id="comment-10298">
+	<article id="article-comment-10298">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/cc7462c8415b979de699479ddf956096a3e74c47d0e3225140b5b58133a4f762?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/cc7462c8415b979de699479ddf956096a3e74c47d0e3225140b5b58133a4f762?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Linda</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-10298">March 6, 2018 at 7:53 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>I remember being told how important this comma was in my business law classes back in the 1970&#8217;s. The legal brief was a contested will that omitted the comma. The parent wanted his children to share in the estate equally but without the comma, it changed the distribution. It went to court and the court said without the comma, the last two siblings had to share what the other siblings each got individually. So it was 1, 1, 1, half and half. We went over a number of scenarios similar to that (and more relevant to business law) after that initial case. I have never forgotten that. I sometimes have to argue for the comma. I&#8217;m glad to see that it has come back into favor.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-10298" data-commentid="10298" data-postid="4039" data-belowelement="article-comment-10298" data-respondelement="respond" data-replyto="Reply to Linda" aria-label="Reply to Linda">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-odd thread-alt depth-1" id="comment-10304">
+	<article id="article-comment-10304">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/8505c0bc8f815734daaba014a8ea05714a3d2d600aa23e9282079aec77210cb8?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/8505c0bc8f815734daaba014a8ea05714a3d2d600aa23e9282079aec77210cb8?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">David K</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-10304">March 6, 2018 at 10:48 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>I’m more of a Shatner comma—or even a Walken comma fan, myself.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-10304" data-commentid="10304" data-postid="4039" data-belowelement="article-comment-10304" data-respondelement="respond" data-replyto="Reply to David K" aria-label="Reply to David K">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-even depth-1" id="comment-12896">
+	<article id="article-comment-12896">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/20657809ed4313087a5fd31e5a19f4742b65f5a82f93da128b37a4afd6779b0d?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/20657809ed4313087a5fd31e5a19f4742b65f5a82f93da128b37a4afd6779b0d?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.southeastdigitalmarketing.com/" class="comment-author-link" rel="external nofollow">Sean McGown</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-12896">June 20, 2018 at 4:17 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Yes, I can see why this could be an issue and I&#8217;m flexible enough to ask what the editing department I&#8217;m working for at the time recognizes as the correct way. However, because I am heavily involved with editing and mucking around in websites all day, I thought of something that makes me crazier. I don&#8217;t think anybody has mentioned the locust-like appearance of &amp;rquo; vs ’, &amp; instead of &amp;, %20 instead of a space, and any other number of HTML entities that makes the act of simply displaying punctionation of any kind a Battan Death March across different websites. Surely, the real hot topic here is UTF-8 v ISO-8859 Western. Or not.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-12896" data-commentid="12896" data-postid="4039" data-belowelement="article-comment-12896" data-respondelement="respond" data-replyto="Reply to Sean McGown" aria-label="Reply to Sean McGown">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-odd thread-alt depth-1" id="comment-17878">
+	<article id="article-comment-17878">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/a5e4512a992ad2bfdf3f8b06b3bab18723ed1cb15093900f2c5f7ea9d91f1adc?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/a5e4512a992ad2bfdf3f8b06b3bab18723ed1cb15093900f2c5f7ea9d91f1adc?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Denise</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-17878">April 19, 2019 at 7:51 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Great illustration.</p>
+<p>I hesitate to say much more.  I might make a mistake (typing, grammar, punctuation).</p>
+<p>Blame it on the insomnia.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-17878" data-commentid="17878" data-postid="4039" data-belowelement="article-comment-17878" data-respondelement="respond" data-replyto="Reply to Denise" aria-label="Reply to Denise">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-even depth-1" id="comment-21331">
+	<article id="article-comment-21331">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c07fe662d53449b93dc59c2d14ed891ff7709a849242ef5f323d7fd21ab3a501?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c07fe662d53449b93dc59c2d14ed891ff7709a849242ef5f323d7fd21ab3a501?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.rabbittrailreport.com" class="comment-author-link" rel="external nofollow">David</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-21331">June 11, 2020 at 4:37 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Yes, I&#8217;m a few years late, but I loved your explanation!  I linked to it from my brand new blog <a href="http://www.rabbittrailreport.com" rel="nofollow ugc">http://www.rabbittrailreport.com</a> (from the about page). Thanks so much for the chuckle!</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-21331" data-commentid="21331" data-postid="4039" data-belowelement="article-comment-21331" data-respondelement="respond" data-replyto="Reply to David" aria-label="Reply to David">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-odd thread-alt depth-1" id="comment-21337">
+	<article id="article-comment-21337">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/d74b5ca2325bfa1a99efa54d88dc4d51c0c55f990470e83aa13cd79ac732e7c0?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/d74b5ca2325bfa1a99efa54d88dc4d51c0c55f990470e83aa13cd79ac732e7c0?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Jeneen Hobby</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-21337">June 11, 2020 at 8:58 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>You need a comma after &#8220;comma&#8221; in the title of your article.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-21337" data-commentid="21337" data-postid="4039" data-belowelement="article-comment-21337" data-respondelement="respond" data-replyto="Reply to Jeneen Hobby" aria-label="Reply to Jeneen Hobby">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-even depth-1" id="comment-23794">
+	<article id="article-comment-23794">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/7eff57795c3cc57432ac13d3832aacbf82a233eba1257ddcdd0b20db113b136b?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/7eff57795c3cc57432ac13d3832aacbf82a233eba1257ddcdd0b20db113b136b?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.theencouragingscribe.wordpress.com" class="comment-author-link" rel="external nofollow">Lyn C</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-23794">October 22, 2020 at 6:45 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>I&#8217;m 72 and I never learnt about the Oxford comma at school; but then I only went to the ninth grade.  I do remember my 3rd grade teacher (Mrs Heron) teaching us easy ways to remember how to spell certain words&#8230;<br />
+ stationery  &#8211; papER<br />
+stationary &#8211; a cAR which has stopped<br />
+principal &#8211; head of school is your PAL<br />
+peace  &#8211; peace is good for my EArs<br />
+piece &#8211; I think I shall have a piece of PIE<br />
+If we were doing spelling, she had a marvelous way of making us remember the difference between hoping and hopping. If we got it wrong, she would take us out into the playground and make us hop around while saying, &#8220;I&#8217;m hoping I can soon stop hopping.&#8221;<br />
+Oh, and she just about blew a gasket if we wrote in a composition, &#8220;All of a sudden.&#8221;  She would say, &#8220;You can&#8217;t have half of a sudden, therefore you can&#8217;t have all of a sudden. The word is suddenly.&#8221;<br />
+Don&#8217;t remember many of my teachers with affection, but I do with Mrs Heron :D</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-23794" data-commentid="23794" data-postid="4039" data-belowelement="article-comment-23794" data-respondelement="respond" data-replyto="Reply to Lyn C" aria-label="Reply to Lyn C">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment even depth-2" id="comment-29423">
+	<article id="article-comment-29423">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/dab13dda20d9070c70a989cad291cf8936216a035f0ab38bd5dbba97acb72ee9?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/dab13dda20d9070c70a989cad291cf8936216a035f0ab38bd5dbba97acb72ee9?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Suzanne</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/oxford-comma/#comment-29423">September 22, 2021 at 1:48 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>As per my father regarding the importance of the comma…<br />
+What’s that in the road ahead?<br />
+What’s that in the road, ahead?<br />
+What’s for dinner tonight mother?<br />
+What’s for dinner tonight, mother?</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-29423" data-commentid="29423" data-postid="4039" data-belowelement="article-comment-29423" data-respondelement="respond" data-replyto="Reply to Suzanne" aria-label="Reply to Suzanne">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ol></div><div class="entry-pings"><h3>Trackbacks</h3><ol class="ping-list">		<li id="comment-19322" class="pingback even thread-even depth-1">
+			<article id="div-comment-19322" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="https://williamlwolf89.wordpress.com/2020/01/30/grammarly-review-is-it-the-best-grammar-checker-in-2020/" class="url" rel="ugc external nofollow">Grammarly Review: Is it the Best Grammar Checker in 2020? &#8211; SEO Tips By William</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/oxford-comma/#comment-19322"><time datetime="2020-01-30T21:44:09-05:00">January 30, 2020 at 9:44 pm</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] was the queen of forgetting the Oxford comma, a grammar convention that can help prevent ambiguity. After months of fixing it, guess what, I [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-19322" data-commentid="19322" data-postid="4039" data-belowelement="div-comment-19322" data-respondelement="respond" data-replyto="Reply to Grammarly Review: Is it the Best Grammar Checker in 2020? &#8211; SEO Tips By William" aria-label="Reply to Grammarly Review: Is it the Best Grammar Checker in 2020? &#8211; SEO Tips By William">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-21374" class="pingback odd alt thread-odd thread-alt depth-1">
+			<article id="div-comment-21374" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="https://vinrepository.wordpress.com/2020/06/14/the-best-soup-postmortem/" class="url" rel="ugc external nofollow">The Best Soup Postmortem &#8211; vin|REPOSITORY</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/oxford-comma/#comment-21374"><time datetime="2020-06-13T17:19:40-04:00">June 13, 2020 at 5:19 pm</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] and fast rule for it, and (2) where there are rules, I am inconsistent in enforcing them. Anyway, this was what I found instead. There’s a cute illustration of strippers and a nifty summary of a [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-21374" data-commentid="21374" data-postid="4039" data-belowelement="div-comment-21374" data-respondelement="respond" data-replyto="Reply to The Best Soup Postmortem &#8211; vin|REPOSITORY" aria-label="Reply to The Best Soup Postmortem &#8211; vin|REPOSITORY">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+</ol></div>	<div id="respond" class="comment-respond">
+		<h3 id="reply-title" class="comment-reply-title">Leave a Reply <small><a rel="nofollow" id="cancel-comment-reply-link" href="/oxford-comma/#respond" style="display:none;">Cancel reply</a></small></h3><form action="https://annhandley.com/ah/wp-comments-post.php" method="post" id="commentform" class="comment-form"><p class="comment-notes"><span id="email-notes">Your email address will not be published.</span> <span class="required-field-message">Required fields are marked <span class="required">*</span></span></p><p class="comment-form-comment"><label for="comment">Comment <span class="required">*</span></label> <textarea id="comment" name="comment" cols="45" rows="8" maxlength="65525" required></textarea></p><p class="comment-form-author"><label for="author">Name <span class="required">*</span></label> <input id="author" name="author" type="text" value="" size="30" maxlength="245" autocomplete="name" required /></p>
+<p class="comment-form-email"><label for="email">Email <span class="required">*</span></label> <input id="email" name="email" type="email" value="" size="30" maxlength="100" aria-describedby="email-notes" autocomplete="email" required /></p>
+<p class="comment-form-url"><label for="url">Website</label> <input id="url" name="url" type="url" value="" size="30" maxlength="200" autocomplete="url" /></p>
+<p class="form-submit"><input name="submit" type="submit" id="submit" class="submit" value="Post Comment" /> <input type='hidden' name='comment_post_ID' value='4039' id='comment_post_ID' />
+<input type='hidden' name='comment_parent' id='comment_parent' value='0' />
+</p><p style="display: none;"><input type="hidden" id="akismet_comment_nonce" name="akismet_comment_nonce" value="512f8b0db7" /></p><p style="display: none !important;" class="akismet-fields-container" data-prefix="ak_"><label>&#916;<textarea name="ak_hp_textarea" cols="45" rows="8" maxlength="100"></textarea></label><input type="hidden" id="ak_js_1" name="ak_js" value="180"/><script>document.getElementById( "ak_js_1" ).setAttribute( "value", ( new Date() ).getTime() );</script></p></form>	</div><!-- #respond -->
+	</main></div></div></div><div class="footer-optin"><div class="wrap"><section id="custom_html-3" class="widget_text widget widget_custom_html"><div class="widget_text widget-wrap"><div class="textwidget custom-html-widget"><h3><span style="color:#fff">Subscribe to Total </span><span style="color:#e077cc">ANNARCHY</span></h3>
+<h6>Get new writing, useful ideas, fresh links, and high-spirited shenanigans delivered to your inbox every two weeks.
+
+	</h6>
+
+	<a class="button" href="https://annhandley.com/newsletter/">SUBSCRIBE</a>
+
+<!--
+	<form class="mainopt" action="https://www.aweber.com/scripts/addlead.pl" method="post"><input type="hidden" name="meta_web_form_id" value="1483784026" /><input id="awf_tag-103757396" type="hidden" name="tag_103757396" value="footer_opt" /><input type="hidden" name="listname" value="totalannarchy" /><input type="hidden" name="meta_message" value="1" /><input type="hidden" name="redirect" value="https://annhandley.com/thank-you" id="redirect_bd89b556cf6bc1b80faed4ec90669c3a" /><input name="meta_redirect_onlist" type="hidden" value="https://annhandley.com/thank-you" /><input type="hidden" name="meta_adtracking" value="2019_New_AH_Form" /><input name="meta_message" type="hidden" value="1" /><input name="meta_required" type="hidden" value="email" /><input name="meta_forward_vars" type="hidden" value="0" /><input name="name" type="text" placeholder="FIRST NAME" /><input name="email" type="text" value="" placeholder="EMAIL ADDRESS" /><input name="submit" type="submit" value="SUBMIT" /></form>--> 
+
+
+	
+	</div></div></section>
+</div></div><footer class="site-footer"><p></p><div class="footer-widgets" id="genesis-footer-widgets"><h2 class="genesis-sidebar-title screen-reader-text">Footer</h2><div class="wrap"><div class="widget-area footer-widgets-1 footer-widget-area"><section id="text-3" class="widget widget_text"><div class="widget-wrap"><h3 class="widgettitle widget-title">COPYRIGHT 2025 ANN HANDLEY</h3>
+			<div class="textwidget"><p><span class="credits"><a href="https://minimadesigns.com/" target="_new" >SITE BY MINIMA DESIGNS</a></span></p>
+</div>
+		</div></section>
+<section id="simple-social-icons-2" class="widget simple-social-icons"><div class="widget-wrap"><ul class="alignleft"><li class="ssi-facebook"><a href="https://www.facebook.com/ann.handley/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-facebook" aria-labelledby="social-facebook-2"><title id="social-facebook-2">Facebook</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-facebook"></use></svg></a></li><li class="ssi-instagram"><a href="https://www.instagram.com/annhandley/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-instagram" aria-labelledby="social-instagram-2"><title id="social-instagram-2">Instagram</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-instagram"></use></svg></a></li><li class="ssi-linkedin"><a href="http://www.linkedin.com/in/annhandley/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-linkedin" aria-labelledby="social-linkedin-2"><title id="social-linkedin-2">LinkedIn</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-linkedin"></use></svg></a></li><li class="ssi-pinterest"><a href="http://pinterest.com/annhandley/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-pinterest" aria-labelledby="social-pinterest-2"><title id="social-pinterest-2">Pinterest</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-pinterest"></use></svg></a></li><li class="ssi-rss"><a href="http://feeds2.feedburner.com/ANNARCHY/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-rss" aria-labelledby="social-rss-2"><title id="social-rss-2">RSS</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-rss"></use></svg></a></li><li class="ssi-twitter"><a href="https://twitter.com/annhandley/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-twitter" aria-labelledby="social-twitter-2"><title id="social-twitter-2">Twitter</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-twitter"></use></svg></a></li></ul></div></section>
+</div><div class="widget-area footer-widgets-2 footer-widget-area"><section id="nav_menu-2" class="widget widget_nav_menu"><div class="widget-wrap"><h3 class="widgettitle widget-title">About</h3>
+<div class="menu-about-container"><ul id="menu-about" class="menu"><li id="menu-item-2779" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2779"><a href="https://annhandley.com/about/">Bio</a></li>
+<li id="menu-item-2778" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2778"><a href="https://annhandley.com/in-the-media/">In the Media</a></li>
+<li id="menu-item-3766" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-3766"><a href="https://annhandley.com/newsletter/">Newsletter</a></li>
+</ul></div></div></section>
+</div><div class="widget-area footer-widgets-3 footer-widget-area"><section id="nav_menu-3" class="widget widget_nav_menu"><div class="widget-wrap"><h3 class="widgettitle widget-title">Speaking</h3>
+<div class="menu-speaking-container"><ul id="menu-speaking" class="menu"><li id="menu-item-2970" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2970"><a href="https://annhandley.com/speaking/">Speaking</a></li>
+<li id="menu-item-2925" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2925"><a href="https://annhandley.com/meeting-planners/">For Meeting Planners</a></li>
+</ul></div></div></section>
+</div><div class="widget-area footer-widgets-4 footer-widget-area"><section id="nav_menu-4" class="widget widget_nav_menu"><div class="widget-wrap"><h3 class="widgettitle widget-title">The Books</h3>
+<div class="menu-the-books-container"><ul id="menu-the-books" class="menu"><li id="menu-item-2782" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-2782"><a target="_blank" href="http://bit.ly/EverybodyWrites">Everybody Writes</a></li>
+<li id="menu-item-2783" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-2783"><a target="_blank" href="https://www.amazon.com/gp/product/1118232607/ref=as_li_ss_tl?ie=UTF8&#038;camp=1789&#038;creative=390957&#038;creativeASIN=1118232607&#038;linkCode=as2&#038;tag=annarchy-20">Content Rules</a></li>
+</ul></div></div></section>
+</div></div></div></footer></div><script type="speculationrules">
+{"prefetch":[{"source":"document","where":{"and":[{"href_matches":"\/*"},{"not":{"href_matches":["\/ah\/wp-*.php","\/ah\/wp-admin\/*","\/ah\/wp-content\/uploads\/*","\/ah\/wp-content\/*","\/ah\/wp-content\/plugins\/*","\/ah\/wp-content\/themes\/annhandley\/*","\/ah\/wp-content\/themes\/genesis\/*","\/*\\?(.+)"]}},{"not":{"selector_matches":"a[rel~=\"nofollow\"]"}},{"not":{"selector_matches":".no-prefetch, .no-prefetch a"}}]},"eagerness":"conservative"}]}
+</script>
+<script type="text/javascript" src="//analytics.aweber.com/js/awt_analytics.js?id=8LvK"></script><style type="text/css" media="screen">#simple-social-icons-2 ul li a, #simple-social-icons-2 ul li a:hover, #simple-social-icons-2 ul li a:focus { background-color: #ffffff !important; border-radius: 0px; color: #000000 !important; border: 0px #ffffff solid !important; font-size: 20px; padding: 10px; }  #simple-social-icons-2 ul li a:hover, #simple-social-icons-2 ul li a:focus { background-color: #ffffff !important; border-color: #ffffff !important; color: #000000 !important; }  #simple-social-icons-2 ul li a:focus { outline: 1px dotted #ffffff !important; }</style><script type="text/javascript" src="https://annhandley.com/ah/wp-content/plugins/duracelltomi-google-tag-manager/dist/js/gtm4wp-form-move-tracker.js" id="gtm4wp-form-move-tracker-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-includes/js/comment-reply.min.js" id="comment-reply-js" async="async" data-wp-strategy="async"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-includes/js/hoverIntent.min.js" id="hoverIntent-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/genesis/lib/js/menu/superfish.min.js" id="superfish-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/genesis/lib/js/menu/superfish.args.min.js" id="superfish-args-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/genesis/lib/js/skip-links.min.js" id="skip-links-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/annhandley/js/global.js" id="annhandley-global-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/annhandley/js/match-height.js" id="annhandley-match-height-js"></script>
+<script type="text/javascript" id="annhandley-responsive-menu-js-extra">
+/* <![CDATA[ */
+var InfinityL10n = {"mainMenu":"Menu","subMenu":"Menu"};
+/* ]]> */
+</script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/annhandley/js/responsive-menu.js" id="annhandley-responsive-menu-js"></script>
+<script defer type="text/javascript" src="https://annhandley.com/ah/wp-content/plugins/akismet/_inc/akismet-frontend.js" id="akismet-frontend-js"></script>
+<script type="text/javascript" id="aweber-wpn-script-handle-js-extra">
+/* <![CDATA[ */
+var aweber_wpn_vars = {"plugin_base_path":"https:\/\/annhandley.com\/ah\/wp-content\/plugins\/aweber-web-form-widget\/php\/","register_aweber_service_worker":""};
+/* ]]> */
+</script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/plugins/aweber-web-form-widget/php/../src/js/aweber-wpn-script.js" id="aweber-wpn-script-handle-js"></script>
+</body></html>

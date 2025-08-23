@@ -1,0 +1,1633 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head > <script type="text/javascript">
+/* <![CDATA[ */
+var gform;gform||(document.addEventListener("gform_main_scripts_loaded",function(){gform.scriptsLoaded=!0}),document.addEventListener("gform/theme/scripts_loaded",function(){gform.themeScriptsLoaded=!0}),window.addEventListener("DOMContentLoaded",function(){gform.domLoaded=!0}),gform={domLoaded:!1,scriptsLoaded:!1,themeScriptsLoaded:!1,isFormEditor:()=>"function"==typeof InitializeEditor,callIfLoaded:function(o){return!(!gform.domLoaded||!gform.scriptsLoaded||!gform.themeScriptsLoaded&&!gform.isFormEditor()||(gform.isFormEditor()&&console.warn("The use of gform.initializeOnLoaded() is deprecated in the form editor context and will be removed in Gravity Forms 3.1."),o(),0))},initializeOnLoaded:function(o){gform.callIfLoaded(o)||(document.addEventListener("gform_main_scripts_loaded",()=>{gform.scriptsLoaded=!0,gform.callIfLoaded(o)}),document.addEventListener("gform/theme/scripts_loaded",()=>{gform.themeScriptsLoaded=!0,gform.callIfLoaded(o)}),window.addEventListener("DOMContentLoaded",()=>{gform.domLoaded=!0,gform.callIfLoaded(o)}))},hooks:{action:{},filter:{}},addAction:function(o,r,e,t){gform.addHook("action",o,r,e,t)},addFilter:function(o,r,e,t){gform.addHook("filter",o,r,e,t)},doAction:function(o){gform.doHook("action",o,arguments)},applyFilters:function(o){return gform.doHook("filter",o,arguments)},removeAction:function(o,r){gform.removeHook("action",o,r)},removeFilter:function(o,r,e){gform.removeHook("filter",o,r,e)},addHook:function(o,r,e,t,n){null==gform.hooks[o][r]&&(gform.hooks[o][r]=[]);var d=gform.hooks[o][r];null==n&&(n=r+"_"+d.length),gform.hooks[o][r].push({tag:n,callable:e,priority:t=null==t?10:t})},doHook:function(r,o,e){var t;if(e=Array.prototype.slice.call(e,1),null!=gform.hooks[r][o]&&((o=gform.hooks[r][o]).sort(function(o,r){return o.priority-r.priority}),o.forEach(function(o){"function"!=typeof(t=o.callable)&&(t=window[t]),"action"==r?t.apply(null,e):e[0]=t.apply(null,e)})),"filter"==r)return e[0]},removeHook:function(o,r,t,n){var e;null!=gform.hooks[o][r]&&(e=(e=gform.hooks[o][r]).filter(function(o,r,e){return!!(null!=n&&n!=o.tag||null!=t&&t!=o.priority)}),gform.hooks[o][r]=e)}});
+/* ]]> */
+</script>
+
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name='robots' content='index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1' />
+	<style>img:is([sizes="auto" i], [sizes^="auto," i]) { contain-intrinsic-size: 3000px 1500px }</style>
+	
+<!-- Google Tag Manager for WordPress by gtm4wp.com -->
+<script data-cfasync="false" data-pagespeed-no-defer>
+	var gtm4wp_datalayer_name = "dataLayer";
+	var dataLayer = dataLayer || [];
+</script>
+<!-- End Google Tag Manager for WordPress by gtm4wp.com -->
+	<!-- This site is optimized with the Yoast SEO plugin v25.6 - https://yoast.com/wordpress/plugins/seo/ -->
+	<title>Introducing Everybody Writes and a Free Gift for You</title>
+	<meta name="description" content="This is the official announcement of my new book, Everybody Writes, and I couldn’t be more thrilled to finally be sharing some details with you. I’m also excited to talk about a fun freebie for those who buy the book in the next few weeks." />
+	<link rel="canonical" href="https://annhandley.com/introducing-everybody-writes/" />
+	<meta property="og:locale" content="en_US" />
+	<meta property="og:type" content="article" />
+	<meta property="og:title" content="Introducing Everybody Writes and a Free Gift for You" />
+	<meta property="og:description" content="This is the official announcement of my new book, Everybody Writes, and I couldn’t be more thrilled to finally be sharing some details with you. I’m also excited to talk about a fun freebie for those who buy the book in the next few weeks." />
+	<meta property="og:url" content="https://annhandley.com/introducing-everybody-writes/" />
+	<meta property="og:site_name" content="Ann Handley" />
+	<meta property="article:publisher" content="https://www.facebook.com/ann.handley" />
+	<meta property="article:published_time" content="2014-07-29T11:45:53+00:00" />
+	<meta property="article:modified_time" content="2017-11-30T14:08:04+00:00" />
+	<meta property="og:image" content="https://annhandley.com/ah/wp-content/uploads/2014/07/EW-cover.jpg" />
+	<meta property="og:image:width" content="530" />
+	<meta property="og:image:height" content="530" />
+	<meta property="og:image:type" content="image/jpeg" />
+	<meta name="author" content="Ann Handley" />
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:creator" content="@annhandley" />
+	<meta name="twitter:site" content="@annhandley" />
+	<meta name="twitter:label1" content="Written by" />
+	<meta name="twitter:data1" content="Ann Handley" />
+	<meta name="twitter:label2" content="Est. reading time" />
+	<meta name="twitter:data2" content="6 minutes" />
+	<script type="application/ld+json" class="yoast-schema-graph">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://annhandley.com/introducing-everybody-writes/","url":"https://annhandley.com/introducing-everybody-writes/","name":"Introducing Everybody Writes and a Free Gift for You","isPartOf":{"@id":"https://annhandley.com/#website"},"primaryImageOfPage":{"@id":"https://annhandley.com/introducing-everybody-writes/#primaryimage"},"image":{"@id":"https://annhandley.com/introducing-everybody-writes/#primaryimage"},"thumbnailUrl":"https://annhandley.com/ah/wp-content/uploads/2014/07/EW-cover.jpg","datePublished":"2014-07-29T11:45:53+00:00","dateModified":"2017-11-30T14:08:04+00:00","author":{"@id":"https://annhandley.com/#/schema/person/82b31a4f88235bf8103dece480e1f551"},"description":"This is the official announcement of my new book, Everybody Writes, and I couldn’t be more thrilled to finally be sharing some details with you. I’m also excited to talk about a fun freebie for those who buy the book in the next few weeks.","breadcrumb":{"@id":"https://annhandley.com/introducing-everybody-writes/#breadcrumb"},"inLanguage":"en-US","potentialAction":[{"@type":"ReadAction","target":["https://annhandley.com/introducing-everybody-writes/"]}]},{"@type":"ImageObject","inLanguage":"en-US","@id":"https://annhandley.com/introducing-everybody-writes/#primaryimage","url":"https://annhandley.com/ah/wp-content/uploads/2014/07/EW-cover.jpg","contentUrl":"https://annhandley.com/ah/wp-content/uploads/2014/07/EW-cover.jpg","width":530,"height":530,"caption":"Everybody Writes cover"},{"@type":"BreadcrumbList","@id":"https://annhandley.com/introducing-everybody-writes/#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://annhandley.com/"},{"@type":"ListItem","position":2,"name":"Introducing &#8216;Everybody Writes&#8217; and a Free Gift for Anti-Mediocre Writers (This Means You)"}]},{"@type":"WebSite","@id":"https://annhandley.com/#website","url":"https://annhandley.com/","name":"Ann Handley","description":"Writer. Speaker. Marketer.","potentialAction":[{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"https://annhandley.com/?s={search_term_string}"},"query-input":{"@type":"PropertyValueSpecification","valueRequired":true,"valueName":"search_term_string"}}],"inLanguage":"en-US"},{"@type":"Person","@id":"https://annhandley.com/#/schema/person/82b31a4f88235bf8103dece480e1f551","name":"Ann Handley","image":{"@type":"ImageObject","inLanguage":"en-US","@id":"https://annhandley.com/#/schema/person/image/","url":"https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=96&d=mm&r=g","contentUrl":"https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=96&d=mm&r=g","caption":"Ann Handley"},"url":"https://annhandley.com/author/ann/"}]}</script>
+	<!-- / Yoast SEO plugin. -->
+
+
+<link rel='dns-prefetch' href='//use.typekit.net' />
+<link rel='dns-prefetch' href='//fonts.googleapis.com' />
+<link rel='dns-prefetch' href='//code.ionicframework.com' />
+<link rel="alternate" type="application/rss+xml" title="Ann Handley &raquo; Feed" href="https://annhandley.com/feed/" />
+<link rel="alternate" type="application/rss+xml" title="Ann Handley &raquo; Comments Feed" href="https://annhandley.com/comments/feed/" />
+<link rel="alternate" type="application/rss+xml" title="Ann Handley &raquo; Introducing &#8216;Everybody Writes&#8217; and a Free Gift for Anti-Mediocre Writers (This Means You) Comments Feed" href="https://annhandley.com/introducing-everybody-writes/feed/" />
+<link rel='stylesheet' id='ann-handley-css' href='https://annhandley.com/ah/wp-content/themes/annhandley/style.css' type='text/css' media='all' />
+<link rel='stylesheet' id='annhandley-fonts-css' href='https://fonts.googleapis.com/css?family=Open+Sans%3A400%2C400i%2C700&#038;ver=1.0.0' type='text/css' media='all' />
+<link rel='stylesheet' id='annhandley-ionicons-css' href='//code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css?ver=2.0.1' type='text/css' media='all' />
+<link rel='stylesheet' id='wp-block-library-css' href='https://annhandley.com/ah/wp-includes/css/dist/block-library/style.min.css' type='text/css' media='all' />
+<style id='classic-theme-styles-inline-css' type='text/css'>
+/*! This file is auto-generated */
+.wp-block-button__link{color:#fff;background-color:#32373c;border-radius:9999px;box-shadow:none;text-decoration:none;padding:calc(.667em + 2px) calc(1.333em + 2px);font-size:1.125em}.wp-block-file__button{background:#32373c;color:#fff;text-decoration:none}
+</style>
+<style id='global-styles-inline-css' type='text/css'>
+:root{--wp--preset--aspect-ratio--square: 1;--wp--preset--aspect-ratio--4-3: 4/3;--wp--preset--aspect-ratio--3-4: 3/4;--wp--preset--aspect-ratio--3-2: 3/2;--wp--preset--aspect-ratio--2-3: 2/3;--wp--preset--aspect-ratio--16-9: 16/9;--wp--preset--aspect-ratio--9-16: 9/16;--wp--preset--color--black: #000000;--wp--preset--color--cyan-bluish-gray: #abb8c3;--wp--preset--color--white: #ffffff;--wp--preset--color--pale-pink: #f78da7;--wp--preset--color--vivid-red: #cf2e2e;--wp--preset--color--luminous-vivid-orange: #ff6900;--wp--preset--color--luminous-vivid-amber: #fcb900;--wp--preset--color--light-green-cyan: #7bdcb5;--wp--preset--color--vivid-green-cyan: #00d084;--wp--preset--color--pale-cyan-blue: #8ed1fc;--wp--preset--color--vivid-cyan-blue: #0693e3;--wp--preset--color--vivid-purple: #9b51e0;--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple: linear-gradient(135deg,rgba(6,147,227,1) 0%,rgb(155,81,224) 100%);--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan: linear-gradient(135deg,rgb(122,220,180) 0%,rgb(0,208,130) 100%);--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange: linear-gradient(135deg,rgba(252,185,0,1) 0%,rgba(255,105,0,1) 100%);--wp--preset--gradient--luminous-vivid-orange-to-vivid-red: linear-gradient(135deg,rgba(255,105,0,1) 0%,rgb(207,46,46) 100%);--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray: linear-gradient(135deg,rgb(238,238,238) 0%,rgb(169,184,195) 100%);--wp--preset--gradient--cool-to-warm-spectrum: linear-gradient(135deg,rgb(74,234,220) 0%,rgb(151,120,209) 20%,rgb(207,42,186) 40%,rgb(238,44,130) 60%,rgb(251,105,98) 80%,rgb(254,248,76) 100%);--wp--preset--gradient--blush-light-purple: linear-gradient(135deg,rgb(255,206,236) 0%,rgb(152,150,240) 100%);--wp--preset--gradient--blush-bordeaux: linear-gradient(135deg,rgb(254,205,165) 0%,rgb(254,45,45) 50%,rgb(107,0,62) 100%);--wp--preset--gradient--luminous-dusk: linear-gradient(135deg,rgb(255,203,112) 0%,rgb(199,81,192) 50%,rgb(65,88,208) 100%);--wp--preset--gradient--pale-ocean: linear-gradient(135deg,rgb(255,245,203) 0%,rgb(182,227,212) 50%,rgb(51,167,181) 100%);--wp--preset--gradient--electric-grass: linear-gradient(135deg,rgb(202,248,128) 0%,rgb(113,206,126) 100%);--wp--preset--gradient--midnight: linear-gradient(135deg,rgb(2,3,129) 0%,rgb(40,116,252) 100%);--wp--preset--font-size--small: 13px;--wp--preset--font-size--medium: 20px;--wp--preset--font-size--large: 36px;--wp--preset--font-size--x-large: 42px;--wp--preset--spacing--20: 0.44rem;--wp--preset--spacing--30: 0.67rem;--wp--preset--spacing--40: 1rem;--wp--preset--spacing--50: 1.5rem;--wp--preset--spacing--60: 2.25rem;--wp--preset--spacing--70: 3.38rem;--wp--preset--spacing--80: 5.06rem;--wp--preset--shadow--natural: 6px 6px 9px rgba(0, 0, 0, 0.2);--wp--preset--shadow--deep: 12px 12px 50px rgba(0, 0, 0, 0.4);--wp--preset--shadow--sharp: 6px 6px 0px rgba(0, 0, 0, 0.2);--wp--preset--shadow--outlined: 6px 6px 0px -3px rgba(255, 255, 255, 1), 6px 6px rgba(0, 0, 0, 1);--wp--preset--shadow--crisp: 6px 6px 0px rgba(0, 0, 0, 1);}:where(.is-layout-flex){gap: 0.5em;}:where(.is-layout-grid){gap: 0.5em;}body .is-layout-flex{display: flex;}.is-layout-flex{flex-wrap: wrap;align-items: center;}.is-layout-flex > :is(*, div){margin: 0;}body .is-layout-grid{display: grid;}.is-layout-grid > :is(*, div){margin: 0;}:where(.wp-block-columns.is-layout-flex){gap: 2em;}:where(.wp-block-columns.is-layout-grid){gap: 2em;}:where(.wp-block-post-template.is-layout-flex){gap: 1.25em;}:where(.wp-block-post-template.is-layout-grid){gap: 1.25em;}.has-black-color{color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-color{color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-color{color: var(--wp--preset--color--white) !important;}.has-pale-pink-color{color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-color{color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-color{color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-color{color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-color{color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-color{color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-color{color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-color{color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-color{color: var(--wp--preset--color--vivid-purple) !important;}.has-black-background-color{background-color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-background-color{background-color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-background-color{background-color: var(--wp--preset--color--white) !important;}.has-pale-pink-background-color{background-color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-background-color{background-color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-background-color{background-color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-background-color{background-color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-background-color{background-color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-background-color{background-color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-background-color{background-color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-background-color{background-color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-background-color{background-color: var(--wp--preset--color--vivid-purple) !important;}.has-black-border-color{border-color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-border-color{border-color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-border-color{border-color: var(--wp--preset--color--white) !important;}.has-pale-pink-border-color{border-color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-border-color{border-color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-border-color{border-color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-border-color{border-color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-border-color{border-color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-border-color{border-color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-border-color{border-color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-border-color{border-color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-border-color{border-color: var(--wp--preset--color--vivid-purple) !important;}.has-vivid-cyan-blue-to-vivid-purple-gradient-background{background: var(--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple) !important;}.has-light-green-cyan-to-vivid-green-cyan-gradient-background{background: var(--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan) !important;}.has-luminous-vivid-amber-to-luminous-vivid-orange-gradient-background{background: var(--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange) !important;}.has-luminous-vivid-orange-to-vivid-red-gradient-background{background: var(--wp--preset--gradient--luminous-vivid-orange-to-vivid-red) !important;}.has-very-light-gray-to-cyan-bluish-gray-gradient-background{background: var(--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray) !important;}.has-cool-to-warm-spectrum-gradient-background{background: var(--wp--preset--gradient--cool-to-warm-spectrum) !important;}.has-blush-light-purple-gradient-background{background: var(--wp--preset--gradient--blush-light-purple) !important;}.has-blush-bordeaux-gradient-background{background: var(--wp--preset--gradient--blush-bordeaux) !important;}.has-luminous-dusk-gradient-background{background: var(--wp--preset--gradient--luminous-dusk) !important;}.has-pale-ocean-gradient-background{background: var(--wp--preset--gradient--pale-ocean) !important;}.has-electric-grass-gradient-background{background: var(--wp--preset--gradient--electric-grass) !important;}.has-midnight-gradient-background{background: var(--wp--preset--gradient--midnight) !important;}.has-small-font-size{font-size: var(--wp--preset--font-size--small) !important;}.has-medium-font-size{font-size: var(--wp--preset--font-size--medium) !important;}.has-large-font-size{font-size: var(--wp--preset--font-size--large) !important;}.has-x-large-font-size{font-size: var(--wp--preset--font-size--x-large) !important;}
+:where(.wp-block-post-template.is-layout-flex){gap: 1.25em;}:where(.wp-block-post-template.is-layout-grid){gap: 1.25em;}
+:where(.wp-block-columns.is-layout-flex){gap: 2em;}:where(.wp-block-columns.is-layout-grid){gap: 2em;}
+:root :where(.wp-block-pullquote){font-size: 1.5em;line-height: 1.6;}
+</style>
+<link rel='stylesheet' id='simple-social-icons-font-css' href='https://annhandley.com/ah/wp-content/plugins/simple-social-icons/css/style.css' type='text/css' media='all' />
+<link rel='stylesheet' id='iworks_upprev_frontend-css' href='https://annhandley.com/ah/wp-content/plugins/upprev/assets/styles/frontend.min.css' type='text/css' media='all' />
+<script type="text/javascript" src="https://use.typekit.net/zln5nzk.js?ver=1.0.0" id="annhandley-typekit-js"></script>
+<script type="text/javascript" id="annhandley-typekit-js-after">
+/* <![CDATA[ */
+try{Typekit.load({ async: false });}catch(e){}
+/* ]]> */
+</script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-includes/js/jquery/jquery.min.js" id="jquery-core-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-includes/js/jquery/jquery-migrate.min.js" id="jquery-migrate-js"></script>
+<script type="text/javascript" id="iworks_upprev_frontend-js-extra">
+/* <![CDATA[ */
+var iworks_upprev = {"animation":"flyout","close_button_show":"1","color_set":null,"compare":"simple","configuration":"simple","css_border_width":"2px 0 0 0","css_bottom":"5","css_side":"5","css_width":"360","excerpt_length":"20","excerpt_show":"1","ga_opt_noninteraction":"1","ga_track_clicks":"1","ga_track_views":"1","header_show":"1","header_text":null,"ignore_sticky_posts":"1","number_of_posts":"1","offset_element":"#comments","offset_percent":"75","reopen_button_show":"1","show_thumb":"1","taxonomy_limit":"0","thumb_height":null,"thumb_width":"48","url_new_window":"0","url_prefix":"","url_suffix":null,"position":{"raw":"right","top":0,"left":0,"center":0,"middle":0,"all":"right"},"title":"Introducing \u2018Everybody Writes\u2019 and a Free Gift for Anti-Mediocre Writers (This Means You)","p":"1753","nonce":"85e9bbd959","ajaxurl":"https:\/\/annhandley.com\/ah\/wp-admin\/admin-ajax.php"};
+/* ]]> */
+</script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/plugins/upprev/assets/scripts/upprev.min.js" id="iworks_upprev_frontend-js"></script>
+<link rel="https://api.w.org/" href="https://annhandley.com/wp-json/" /><link rel="alternate" title="JSON" type="application/json" href="https://annhandley.com/wp-json/wp/v2/posts/1753" /><link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://annhandley.com/ah/xmlrpc.php?rsd" />
+
+<link rel='shortlink' href='https://annhandley.com/?p=1753' />
+<link rel="alternate" title="oEmbed (JSON)" type="application/json+oembed" href="https://annhandley.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fannhandley.com%2Fintroducing-everybody-writes%2F" />
+<link rel="alternate" title="oEmbed (XML)" type="text/xml+oembed" href="https://annhandley.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fannhandley.com%2Fintroducing-everybody-writes%2F&#038;format=xml" />
+
+<!-- Google Tag Manager for WordPress by gtm4wp.com -->
+<!-- GTM Container placement set to automatic -->
+<script data-cfasync="false" data-pagespeed-no-defer>
+	var dataLayer_content = {"pagePostType":"post","pagePostType2":"single-post","pageCategory":["blog","annecdote","business","content","writing"],"pageAttributes":["everybody-writes"],"pagePostAuthor":"Ann Handley"};
+	dataLayer.push( dataLayer_content );
+</script>
+<script data-cfasync="false" data-pagespeed-no-defer>
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-5WLC99C');
+</script>
+<!-- End Google Tag Manager for WordPress by gtm4wp.com --><link rel="icon" href="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicon.ico" />
+<link rel="pingback" href="https://annhandley.com/ah/xmlrpc.php" />
+<meta name="google-site-verification" content="QVmkHGydRdaIj0hPv2vjUJ3TleeljPNxd-Op0pFuK04" />
+<meta name="google-site-verification" content="2n8YhFOr_bBIRhOTA8V4kOcx9FPE89D_Ayun0frf7do" />
+<link rel="apple-touch-icon" sizes="180x180" href="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicons/favicon-32x32.png">
+<link rel="manifest" href="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicons/manifest.json">
+<link rel="mask-icon" href="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicons/safari-pinned-tab.svg" color="#e077cc">
+<meta name="msapplication-config" content="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicons/browserconfig.xml">
+<meta name="apple-mobile-web-app-title" content="Ann Handley">
+<meta name="application-name" content="Ann Handley">
+<meta name="theme-color" content="#ffffff">		<style type="text/css" id="wp-custom-css">
+			.page .at4-share {display:none !important}
+
+.navnews a {border: 2px solid #b551a9 !important}		</style>
+		<style type="text/css">
+ </style>
+</head>
+<body class="wp-singular post-template-default single single-post postid-1753 single-format-standard wp-theme-genesis wp-child-theme-annhandley fl-builder-2-9-2-1 fl-no-js header-full-width full-width-content genesis-breadcrumbs-hidden genesis-footer-widgets-visible">
+<!-- GTM Container placement set to automatic -->
+<!-- Google Tag Manager (noscript) -->
+				<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5WLC99C" height="0" width="0" style="display:none;visibility:hidden" aria-hidden="true"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+<!-- GTM Container placement set to automatic -->
+<!-- Google Tag Manager (noscript) --><div class="site-container"><ul class="genesis-skip-link"><li><a href="#genesis-nav-primary" class="screen-reader-shortcut"> Skip to primary navigation</a></li><li><a href="#genesis-content" class="screen-reader-shortcut"> Skip to main content</a></li><li><a href="#genesis-footer-widgets" class="screen-reader-shortcut"> Skip to footer</a></li></ul><header class="site-header"><div class="wrap"><div class="title-area"><p class="site-title"><a href="https://annhandley.com/">Ann Handley</a></p><p class="site-description">Writer. Speaker. Marketer.</p></div><nav class="nav-primary" aria-label="Main" id="genesis-nav-primary"><div class="wrap"><ul id="menu-main-menu" class="menu genesis-nav-menu menu-primary js-superfish"><li id="menu-item-2737" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2737"><a href="https://annhandley.com/about/"><span >About</span></a></li>
+<li id="menu-item-2743" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2743"><a href="https://annhandley.com/speaking/"><span >Speaking</span></a></li>
+<li id="menu-item-2747" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2747"><a href="https://annhandley.com/books/"><span >Books</span></a></li>
+<li id="menu-item-2742" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2742"><a href="https://annhandley.com/blog/"><span >Blog</span></a></li>
+<li id="menu-item-3676" class="homelink menu-item menu-item-type-custom menu-item-object-custom menu-item-home menu-item-3676"><a href="https://annhandley.com/#workwithannhome"><span >WORK WITH ANN</span></a></li>
+<li id="menu-item-4700" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-4700"><a href="https://annhandley.com/testimonials/"><span >Testimonials</span></a></li>
+<li id="menu-item-2738" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2738"><a href="https://annhandley.com/contact/"><span >Contact</span></a></li>
+<li id="menu-item-4378" class="navnews menu-item menu-item-type-post_type menu-item-object-page menu-item-4378"><a href="https://annhandley.com/newsletter/"><span >GET ANNARCHY</span></a></li>
+</ul></div></nav></div></header><div class="site-inner"><div class="wrap"><div class="content-sidebar-wrap"><main class="content" id="genesis-content"><article class="post-1753 post type-post status-publish format-standard has-post-thumbnail category-blog category-annecdote category-business category-content category-writing tag-everybody-writes entry" aria-label="Introducing &#8216;Everybody Writes&#8217; and a Free Gift for Anti-Mediocre Writers (This Means You)"><header class="entry-header"><h1 class="entry-title">Introducing &#8216;Everybody Writes&#8217; and a Free Gift for Anti-Mediocre Writers (This Means You)</h1>
+</header><div class="entry-content"><p><strong>This is the official announcement of my new book, and I couldn’t be more thrilled to finally be sharing some details with you. I’m also excited to talk about a fun freebie for those who <a href="https://annhandley.com/everybodywrites/#buythebook" target="_blank">buy the book</a> in the next few weeks (more on that in a sec).</strong></p>
+<p>Writing a book is like birthing a Volkswagen. The process is about as pretty as you’d imagine that to be: it’s long and arduous and you sweat a lot, and most of the work is done while crying.</p>
+<p>But as with actual childbirth, I’ve forgotten all of the painful parts already. Because today, it’s like the family is coming over to get the first glimpse of her, and I couldn’t be happier to show her off. The new website is up at <a href="http://everybodywrites.com" target="_blank">EverybodyWrites.com</a>. (You know who does good work? Nick Westergaard and <a href="http://branddrivendigital.com" target="_blank">Brand Driven Digital</a>!)</p>
+<p>“Awesome” is one of those words that are applied far too liberally. But in this case, it’s necessary. Because it’s awesome that my artist-son, Evan WH Price, illustrated the cover:</p>
+<p><a href="http://184.154.246.108/~annhandl/ah/wp-content/uploads/2014/07/EW-cover.jpg"><img decoding="async" src="https://184.154.246.108/~annhandl/ah/wp-content/uploads/2014/07/EW-cover.jpg" alt="Everybody Writes cover" width="430" height="430" class="aligncenter wp-image-3266" srcset="https://annhandley.com/ah/wp-content/uploads/2014/07/EW-cover.jpg 530w, https://annhandley.com/ah/wp-content/uploads/2014/07/EW-cover-150x150.jpg 150w, https://annhandley.com/ah/wp-content/uploads/2014/07/EW-cover-300x300.jpg 300w" sizes="(max-width: 430px) 100vw, 430px" /></a></p>
+<p><strong><em>Everybody Writes: Your Go-To Guide to Creating Ridiculously Good Content</em>, due out from Wiley this September, is the guide to writing and publishing for a content marketing age.</strong></p>
+<p>It’s what might result if <em>The Elements of Style</em> and <em>On Writing</em> had a threesome with the Internet. (Technically not possible. But still.)</p>
+<h3><strong>Why I wrote this book</strong></h3>
+<p>I wrote this book because I couldn’t find what I wanted—part writing guide, part handbook on the rules of good sportsmanship in content marketing (based on the rules of journalism, in part), and all around reliable desk companion for anyone creating or directing content on behalf of brands.</p>
+<p>Many excellent books on writing already exist. But I’ve found that a lot of writing advice is really more aphorism than true advice.</p>
+<p>Alternatively, much of what passes for writing advice gets too deep in the weeds of grammar. Great if you’re looking to up your score on the SATs. Not so awesome if you just need some guidance on how not to sound like a total idiot when you craft this week’s customer mailing.</p>
+<p><strong>What’s harder to find is a book that functions for marketers as part writing and story guide, part instructional manual on the ground rules of ethical publishing, and part straight talk on some writing muscle-building processes and habits.</strong></p>
+<p><a href="http://184.154.246.108/~annhandl/ah/wp-content/uploads/2014/07/Everybody-Writes-laptop-sticker.jpg"><img decoding="async" src="https://184.154.246.108/~annhandl/ah/wp-content/uploads/2014/07/Everybody-Writes-laptop-sticker-225x300.jpg" alt="Everybody Writes laptop sticker" width="225" height="300" class="alignleft size-medium wp-image-3269" srcset="https://annhandley.com/ah/wp-content/uploads/2014/07/Everybody-Writes-laptop-sticker-225x300.jpg 225w, https://annhandley.com/ah/wp-content/uploads/2014/07/Everybody-Writes-laptop-sticker.jpg 768w" sizes="(max-width: 225px) 100vw, 225px" /></a></p>
+<p>What’s also hard to find is a book that distills some helpful ideas about the craft of content simply and (I hope) memorably, framed for the marketer and businessperson, as opposed to, say, the novelist or essayist or journalist.</p>
+<p><em>Everybody Writes</em> is everything I know about business writing, based on my (almost) 25 years of creating, editing, and publishing business content.</p>
+<p>I&#8217;m a notorious critic of my own work. But this book is among the best things I’ve ever produced—exceeded perhaps only by my actual children—and I’m proud of it.</p>
+<p>(If you know me personally, that’s saying a lot. For all of the Pure Marketer Blood flowing through my Marketer Veins, I&#8217;m ironically more likely to tell you what&#8217;s wrong with anything I&#8217;ve produced before I tell you what I actually like about it. Sad, maybe. But true.)</p>
+<h3><strong>What’s inside</strong></h3>
+<p><em>Everybody Writes</em> is your practical go-to guide, offering the most important and useful guideposts on the path toward better writing. The book consists of six parts:</p>
+<ul>
+<li><strong>How to Write Better</strong> <strong>(or How to Hate Writing Less</strong>, for the recovering or “adult onset” writer) offers some handy scaffolding and blueprints for better thinking and writing.</li>
+<li><strong>Writing Rules</strong> offers easy grammar and usage rules tailored for business in a fun, memorable way. (Enough to keep you looking sharp, but not too much to overwhelm you.)</li>
+<li><strong>Story Rules (Part 3) and Publishing Rules (Part 4)</strong> give some guidelines on elements that infuse your content with heart and soul and integrity, and layer it with a warm blanket of trust. There’s a lot to learn here from the ground rules of journalism and publishing, so those are covered, too.</li>
+<li><strong>Things Marketers Write</strong> gives you a super-tactical look at typical marketing tasks.</li>
+<li>And, finally, <strong>Content Tools</strong> delivers a reference list of resources and paraphernalia to help you produce your best work.</li>
+</ul>
+<p>Content can be complex, but it’s inherently easier to use your content as a driver of business when you start with a quality product, clear thinking, and good writing.</p>
+<h3><strong>Some huge thanks</strong></h3>
+<p>My name might be on this book, but many smart people helped, too—some of them considerably. Most special thanks to my dear friend <a href="http://duarte.com" target="_blank">Nancy Duarte</a> &#8212; I still can’t believe I convinced her to write the foreword. And huge thanks to another best buddy, <a href="http://braintraffic.com" target="_blank">Kristina Halvorson</a>, a brilliant content strategist who generously gave me the title of the book.</p>
+<p>Inside, you’ll find commentary and smarts from companies and marketers and people whose writing sets them apart, including Kristina, <a href="https://twitter.com/jchernov" target="_blank">Joe Chernov</a>, <a href="http://www.velocitypartners.co.uk/our-blog/" target="_blank">Doug Kessler</a>, <a href="http://timwasher.com" target="_blank">Tim Washer</a>, <a href="https://twitter.com/TPLDrew" target="_blank">Andrew Davis</a>, <a href="https://twitter.com/kerrygorgone" target="_blank">Kerry O’Shea Gorgone</a>, <a href="http://www.webinknow.com/" target="_blank">David Meerman Scott</a>, <a href="http://toprankblog.com" target="_blank">Lee Odden</a>, <a href="https://twitter.com/noyesjesse" target="_blank">Jesse Noyes</a>, <a href="http://www.jonathoncolman.org/" target="_blank">Jonathon Colman</a>, <a href="http://twitter.com/jasonmillerca" target="_blank">Jason Miller</a>, <a href="http://www.ahamediagroup.com/" target="_blank">Ahava Leibtag</a>, <a href="http://www.christopherspenn.com/" target="_blank">Chris Penn</a>, <a href="http://www.orbitmedia.com/" target="_blank">Andy Crestodina</a>, <a href="https://twitter.com/realdanlyons" target="_blank">Dan Lyons</a>, <a href="http://jaybaer.com" target="_blank">Jay Baer</a>, and <a href="http://copyblogger.com" target="_blank">Copyblogger</a>’s <a href="https://twitter.com/demianfarnworth" target="_blank">Demian Farnworth</a> and many folks on the MarketingProfs team (especially <a href="http://twitter.com/habesh" target="_blank">Vahe Habeshian</a>, and also <a href="https://www.facebook.com/prepobsessed" target="_blank">Corey O&#8217;Loughlin</a>, <a href="http://veronicamariajarski.com/" target="_blank">Veronica Jarski</a>, and <a href="https://twitter.com/Schremkopf" target="_blank">Tobias Schremmer</a>).</p>
+<h3><strong>A Gift for You</strong></h3>
+<p>So, back to you. I’m offering a free prize pack —an Anti-Mediocrity Content Toolkit (AMCT)—to anyone in the US who orders <em>Everybody Writes</em> by the launch date of September 15 and sends along a receipt.</p>
+<p><a href="https://annhandley.com/everybodywrites/#freestuff">Details are here</a>, but here’s a sneak peek at what’s inside the AMCT:</p>
+<p><a href="http://184.154.246.108/~annhandl/ah/wp-content/uploads/2014/08/Everybody-Writes-Anti-Mediocrity-Content-Toolkit.png"><img loading="lazy" decoding="async" src="https://184.154.246.108/~annhandl/ah/wp-content/uploads/2014/08/Everybody-Writes-Anti-Mediocrity-Content-Toolkit.png" alt="Everybody Writes Anti-Mediocrity Content Toolkit" width="385" height="385" class="aligncenter wp-image-3257" srcset="https://annhandley.com/ah/wp-content/uploads/2014/08/Everybody-Writes-Anti-Mediocrity-Content-Toolkit.png 620w, https://annhandley.com/ah/wp-content/uploads/2014/08/Everybody-Writes-Anti-Mediocrity-Content-Toolkit-150x150.png 150w, https://annhandley.com/ah/wp-content/uploads/2014/08/Everybody-Writes-Anti-Mediocrity-Content-Toolkit-300x300.png 300w" sizes="auto, (max-width: 385px) 100vw, 385px" /></a></p>
+<ul>
+<li><strong>An <em>Everybody Writes</em> laptop sticker.</strong> Slap it on your laptop, grab your usual table at the coffee shop, and bask in being outed as a decidedly non-mediocre writer.</li>
+<li><strong>A magic writing pen.</strong> You don’t really need a magic writing pen (the magic is in you), but it’s a handy talisman that delivers the will, courage, inspiration, gumption, and the wits to write. (Pro tip: Change the ink color each day so you can discern how many pages you produced the previous day. Author Neil Gaiman does this.)</li>
+<li><strong>A Hemingway-inspired drink coaster.</strong></li>
+<li><strong>A “privacy” door hanger</strong>, inspired by Stephen King.</li>
+<li><strong>A two-sided bookmark</strong> with (a) an original poem by me that gives the lowly page-marker some respect, and (b) 13 Writing Rules.</li>
+</ul>
+<p>So if this book feels like something you’ll enjoy—and I think you will—please consider ordering it now. Here&#8217;s how to also snag your free gift:</p>
+<ol>
+<li><strong><a href="https://annhandley.com/everybodywrites/#freestuff" target="_blank">Buy Everybody Writes</a> </strong>from the bookseller of your choice.</li>
+<li><strong>Email your purchase receipt </strong>(with address) to preorders (at) annhandley.com.</li>
+</ol>
+<p>As my mother might&#8217;ve said, you can’t afford not to buy it.</p>
+<p><a href="http://www.everybodywrites.com" target="_blank">Here&#8217;s the EverybodyWrites.com website again. </a></p>
+<p>And thank you for your support!</p>
+<div id="upprev-trigger"></div><!--<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+			xmlns:dc="http://purl.org/dc/elements/1.1/"
+			xmlns:trackback="http://madskills.com/public/xml/rss/module/trackback/">
+		<rdf:Description rdf:about="https://annhandley.com/introducing-everybody-writes/"
+    dc:identifier="https://annhandley.com/introducing-everybody-writes/"
+    dc:title="Introducing &#8216;Everybody Writes&#8217; and a Free Gift for Anti-Mediocre Writers (This Means You)"
+    trackback:ping="https://annhandley.com/introducing-everybody-writes/trackback/" />
+</rdf:RDF>-->
+</div><footer class="entry-footer"><p class="entry-meta"><span class="entry-categories">Filed Under: <a href="https://annhandley.com/category/blog/" rel="category tag">Annarchy</a>, <a href="https://annhandley.com/category/annecdote/" rel="category tag">Annecdote</a>, <a href="https://annhandley.com/category/business/" rel="category tag">Business</a>, <a href="https://annhandley.com/category/content/" rel="category tag">Content</a>, <a href="https://annhandley.com/category/writing/" rel="category tag">Writing</a></span> <span class="entry-tags">Tagged With: <a href="https://annhandley.com/tag/everybody-writes/" rel="tag">Everybody Writes</a></span></p></footer></article><div class="after-entry widget-area"><section id="text-5" class="widget widget_text"><div class="widget-wrap">			<div class="textwidget"><h3>SUBSCRIBE TO ANN&#8217;S NEWSLETTER,<br />
+<span style="color: #d07ec8;">TOTAL ANNARCHY:</span></h3>
+<h6>Get the letter 21,000+ people love to get. New writing, useful ideas, high-spirited shenanigans. Straight to your inbox. Every 2 weeks.</h6>
+<div class="AW-Form-1223224391"></div>
+<p><script type="text/javascript">(function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//forms.aweber.com/form/91/1223224391.js";
+    fjs.parentNode.insertBefore(js, fjs);
+    }(document, "script", "aweber-wjs-sje8260z2"));
+</script></p>
+</div>
+		</div></section>
+</div><div class="adjacent-entry-pagination pagination"><div class="pagination-previous alignleft"><a href="https://annhandley.com/word-crimes/" rel="prev"><span class="screen-reader-text">Previous Post: </span><span class="adjacent-post-link">&#xAB; Two Things to Love About Weird Al&#8217;s &#8216;Word Crimes&#8217;</span></a></div><div class="pagination-next alignright"><a href="https://annhandley.com/video-content-marketing-scrappy-trumps-slick/" rel="next"><span class="screen-reader-text">Next Post: </span><span class="adjacent-post-link">Scrappy Video Content Marketing: What If We Didn&#8217;t Try So Hard? &#xBB;</span></a></div></div><h2 class="screen-reader-text">Reader Interactions</h2><div class="entry-comments" id="comments"><h3>Comments</h3><ol class="comment-list">
+	<li class="comment even thread-even depth-1" id="comment-6054">
+	<article id="article-comment-6054">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/99f46950dc956d962fd7eb0b337cf2c6fd0e4e9482f158c03d989c48c6591337?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/99f46950dc956d962fd7eb0b337cf2c6fd0e4e9482f158c03d989c48c6591337?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.suddenlymarketing.com" class="comment-author-link" rel="external nofollow">Suddenly Jamie</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6054">July 29, 2014 at 8:21 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Just did the one-click preorder &amp; I can&#8217;t wait. Huge congrats on your baby VW, I mean book. And LOVE the cover. Nicely done! Looking forward to curling up with this one when it arrives in September. What a perfect way to indulge my inner back-to-school geek! </p>
+<p>Thank you, Ann. :)</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6054" data-commentid="6054" data-postid="1753" data-belowelement="article-comment-6054" data-respondelement="respond" data-replyto="Reply to Suddenly Jamie" aria-label="Reply to Suddenly Jamie">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor odd alt depth-2" id="comment-6060">
+	<article id="article-comment-6060">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.annhandley.com" class="comment-author-link" rel="external nofollow">Ann Handley</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6060">July 29, 2014 at 12:25 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Thanks, Jamie! &#8220;Baby Bug&#8221; has a nice ring, yes? :D</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6060" data-commentid="6060" data-postid="1753" data-belowelement="article-comment-6060" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+	<li class="comment even thread-odd thread-alt depth-1" id="comment-6055">
+	<article id="article-comment-6055">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/fa5451bf8af533267215d95b13df6bd9b26d4315c8b51af0417f2341e4bc0274?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/fa5451bf8af533267215d95b13df6bd9b26d4315c8b51af0417f2341e4bc0274?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.kipmeacham.com" class="comment-author-link" rel="external nofollow">Kip Meacham</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6055">July 29, 2014 at 8:30 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Congratulations, Ann.</p>
+<p>Can&#8217;t wait to read Everybody Writes!</p>
+<p>Quick question: (Already having looked around for the answer and not seeing it) How would you like me to send you my receipt?</p>
+<p>Thanks in advance, and sorry in advance if I missed the answer by simply not looking more closely.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6055" data-commentid="6055" data-postid="1753" data-belowelement="article-comment-6055" data-respondelement="respond" data-replyto="Reply to Kip Meacham" aria-label="Reply to Kip Meacham">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor odd alt depth-2" id="comment-6056">
+	<article id="article-comment-6056">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.annhandley.com" class="comment-author-link" rel="external nofollow">Ann Handley</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6056">July 29, 2014 at 9:00 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Hey Kip &#8212; Thank you! Details for the Free Stuff are at EverybodyWrites.com, but I&#8217;ll add it above, too. Receipt should go to preorders (at) annhandley.com. THANKS SO MUCH!</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6056" data-commentid="6056" data-postid="1753" data-belowelement="article-comment-6056" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-6057">
+	<article id="article-comment-6057">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/eb12866cc88ca6bbc9a77fd69824752b818d12146e8df86d6d8f854957d430b8?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/eb12866cc88ca6bbc9a77fd69824752b818d12146e8df86d6d8f854957d430b8?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://dontpanicmgmt.com" class="comment-author-link" rel="external nofollow">Jess</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6057">July 29, 2014 at 9:47 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>At first I somehow missed the word &#8220;anti&#8221; and thought you were calling me a mediocre writer. Then I thought, &#8220;Kind of rude, but I guess she&#8217;s right. I haven&#8217;t officially read the entire book yet!&#8221; :) </p>
+<p>So excited this has come to fruition! I am buying copies for the entire Don&#8217;t Panic team!</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6057" data-commentid="6057" data-postid="1753" data-belowelement="article-comment-6057" data-respondelement="respond" data-replyto="Reply to Jess" aria-label="Reply to Jess">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-6058">
+	<article id="article-comment-6058">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/f6c5d8279fe6b53314bb35bd1dacc0b85b1c20c2187e34869142b29e6baf895c?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/f6c5d8279fe6b53314bb35bd1dacc0b85b1c20c2187e34869142b29e6baf895c?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://thebrainbarn.com/" class="comment-author-link" rel="external nofollow">MIchael Haupt</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6058">July 29, 2014 at 10:36 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Huge congratulations, Ann!<br />
+In a world suffering from infobesity, this is a title sorely needed. Can&#8217;t wait.</p>
+<p>Incidentally, the book is listed as The Everybody Writes on <a href="http://www.amazon.co.uk/gp/product/1118905555/ref=as_li_tl" rel="nofollow">Amazon UK</a>, where I&#8217;ve pre-ordered.  You might want to get someone to look at that.</p>
+<p>Rock on!</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6058" data-commentid="6058" data-postid="1753" data-belowelement="article-comment-6058" data-respondelement="respond" data-replyto="Reply to MIchael Haupt" aria-label="Reply to MIchael Haupt">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor even depth-2" id="comment-6061">
+	<article id="article-comment-6061">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.annhandley.com" class="comment-author-link" rel="external nofollow">Ann Handley</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6061">July 29, 2014 at 12:25 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Thanks, Michael. Will definitely check that out&#8230; appreciate the heads up.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6061" data-commentid="6061" data-postid="1753" data-belowelement="article-comment-6061" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt depth-2" id="comment-6065">
+	<article id="article-comment-6065">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/973830413f2bdf7ee6233a57a15723fd2b927ea01c63a1961e55656aad83f9c0?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/973830413f2bdf7ee6233a57a15723fd2b927ea01c63a1961e55656aad83f9c0?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.wiley.com" class="comment-author-link" rel="external nofollow">Wiley Business Books (@WileyBiz)</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6065">July 29, 2014 at 3:42 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Thanks Michael! Some book pages haven&#8217;t fully updated yet. We&#8217;re on it and appreciate everyone&#8217;s eyes out there.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6065" data-commentid="6065" data-postid="1753" data-belowelement="article-comment-6065" data-respondelement="respond" data-replyto="Reply to Wiley Business Books (@WileyBiz)" aria-label="Reply to Wiley Business Books (@WileyBiz)">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-6059">
+	<article id="article-comment-6059">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/62ae6483665b517a03384ecb77394a4d838d105d721edaca69ae9bd7e7ee28e7?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/62ae6483665b517a03384ecb77394a4d838d105d721edaca69ae9bd7e7ee28e7?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Dalila</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6059">July 29, 2014 at 11:43 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Ah! If only the freebie set was sent to non-US buyers as well&#8230;</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6059" data-commentid="6059" data-postid="1753" data-belowelement="article-comment-6059" data-respondelement="respond" data-replyto="Reply to Dalila" aria-label="Reply to Dalila">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor odd alt depth-2" id="comment-6062">
+	<article id="article-comment-6062">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.annhandley.com" class="comment-author-link" rel="external nofollow">Ann Handley</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6062">July 29, 2014 at 12:26 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Yes &#8212; sorry about that. Postage would bankrupt me though, I&#8217;m afraid.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6062" data-commentid="6062" data-postid="1753" data-belowelement="article-comment-6062" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+	<li class="comment even thread-odd thread-alt depth-1" id="comment-6063">
+	<article id="article-comment-6063">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/01f7a4ebd73daa3dca9ab55014b81a5de0ea87ec5def4825d25bf9dc83720e9d?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/01f7a4ebd73daa3dca9ab55014b81a5de0ea87ec5def4825d25bf9dc83720e9d?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Nicole Denison</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6063">July 29, 2014 at 12:32 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Because my boss says I write like I talk &#8211; basically, long-winded jibberish ramblings.<br />
+I&#8217;m very excited about this &#8211; I am the mediocre writer to whom you speak. (I missed the word &#8216;anti&#8217; also).</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6063" data-commentid="6063" data-postid="1753" data-belowelement="article-comment-6063" data-respondelement="respond" data-replyto="Reply to Nicole Denison" aria-label="Reply to Nicole Denison">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor odd alt depth-2" id="comment-6077">
+	<article id="article-comment-6077">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.annhandley.com" class="comment-author-link" rel="external nofollow">Ann Handley</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6077">July 30, 2014 at 8:08 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>I can&#8217;t wait for you to be NON-mediocre, Nicole!</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6077" data-commentid="6077" data-postid="1753" data-belowelement="article-comment-6077" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-6064">
+	<article id="article-comment-6064">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/3c88d25e770efdb9b80c6076733ee9b53dc787f323132a5f85e204bd9fdf448e?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/3c88d25e770efdb9b80c6076733ee9b53dc787f323132a5f85e204bd9fdf448e?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.thecontentmotorist.com" class="comment-author-link" rel="external nofollow">Vinish Garg</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6064">July 29, 2014 at 1:06 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Congratulations for all the hard work you have put in for the book; it is time to rewards :). </p>
+<p>I shall look forward to reading it.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6064" data-commentid="6064" data-postid="1753" data-belowelement="article-comment-6064" data-respondelement="respond" data-replyto="Reply to Vinish Garg" aria-label="Reply to Vinish Garg">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor odd alt depth-2" id="comment-6078">
+	<article id="article-comment-6078">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.annhandley.com" class="comment-author-link" rel="external nofollow">Ann Handley</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6078">July 30, 2014 at 8:09 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Thank you so much Vinish.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6078" data-commentid="6078" data-postid="1753" data-belowelement="article-comment-6078" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+	<li class="comment even thread-odd thread-alt depth-1" id="comment-6066">
+	<article id="article-comment-6066">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/777c20b2212b6d522628513f57e1d8c944b3f5aa879d724ff602da6f7516dc42?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/777c20b2212b6d522628513f57e1d8c944b3f5aa879d724ff602da6f7516dc42?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.socialmediareinvention.com" class="comment-author-link" rel="external nofollow">Tony Faustino</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6066">July 29, 2014 at 3:47 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Yay Ann! I&#8217;m thrilled by the official announcement for Everybody Writes! Congratulations! I know you poured your heart and soul in this endeavor, and I&#8217;ve pre-ordered my copy via Amazon. I can&#8217;t wait till September for your book and David Meerman Scott&#8217;s newest offering. What an epic month because I get to enjoy the wisdom and knowledge of my marketing heroes &#8211; WooHoo! #buythebook</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6066" data-commentid="6066" data-postid="1753" data-belowelement="article-comment-6066" data-respondelement="respond" data-replyto="Reply to Tony Faustino" aria-label="Reply to Tony Faustino">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor odd alt depth-2" id="comment-6079">
+	<article id="article-comment-6079">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.annhandley.com" class="comment-author-link" rel="external nofollow">Ann Handley</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6079">July 30, 2014 at 8:10 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Thanks, my friend! And I&#8217;m excited about DM Scott&#8217;s too. He was a great help to me in motivating me on this one&#8230; and he probably doesn&#8217;t even realize that. :)</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6079" data-commentid="6079" data-postid="1753" data-belowelement="article-comment-6079" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-6067">
+	<article id="article-comment-6067">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/0ec1d6d226f401da906a2097bcf5ab7280c0baff4c23ba60c9be5a30ae0a67e6?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/0ec1d6d226f401da906a2097bcf5ab7280c0baff4c23ba60c9be5a30ae0a67e6?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://justinkozuch.com/" class="comment-author-link" rel="external nofollow">Justin Kozuch</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6067">July 29, 2014 at 5:03 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Delurking to say congrats on the new book! Will be shelling out some hard-earned bucks to pick this up.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6067" data-commentid="6067" data-postid="1753" data-belowelement="article-comment-6067" data-respondelement="respond" data-replyto="Reply to Justin Kozuch" aria-label="Reply to Justin Kozuch">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor odd alt depth-2" id="comment-6080">
+	<article id="article-comment-6080">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.annhandley.com" class="comment-author-link" rel="external nofollow">Ann Handley</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6080">July 30, 2014 at 8:10 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Big thanks, Justin! Happy you de-lurked.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6080" data-commentid="6080" data-postid="1753" data-belowelement="article-comment-6080" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+	<li class="comment even thread-odd thread-alt depth-1" id="comment-6068">
+	<article id="article-comment-6068">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/9107ad069928c417506a3098ded049350b7f4d2c95042dd838b97865ad1d2949?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/9107ad069928c417506a3098ded049350b7f4d2c95042dd838b97865ad1d2949?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://twitter.com/LenaWest" class="comment-author-link" rel="external nofollow">Lena West</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6068">July 29, 2014 at 6:11 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Congrats Ann! </p>
+<p>Just purchased my pre-ordered copy and sent my receipt in &#8212; c&#8217;mon 4-6 weeks hurry up and pass so I can get my Ann-goodies. :)</p>
+<p>Can&#8217;t wait to read it! :)</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6068" data-commentid="6068" data-postid="1753" data-belowelement="article-comment-6068" data-respondelement="respond" data-replyto="Reply to Lena West" aria-label="Reply to Lena West">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor odd alt depth-2" id="comment-6081">
+	<article id="article-comment-6081">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.annhandley.com" class="comment-author-link" rel="external nofollow">Ann Handley</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6081">July 30, 2014 at 8:10 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Thanks so much Lena!</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6081" data-commentid="6081" data-postid="1753" data-belowelement="article-comment-6081" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-6069">
+	<article id="article-comment-6069">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/fb410257547362b72599b6722809f2fc439e3438cd86c9927aff9de6ebdfef19?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/fb410257547362b72599b6722809f2fc439e3438cd86c9927aff9de6ebdfef19?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://WAsimmeR.com/index.php?itemid=1" class="comment-author-link" rel="external nofollow">Wasimmer.Com</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6069">July 29, 2014 at 7:37 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Hi, i do believe that i recognized you stopped at my website consequently i found return the actual like? . We are searching for difficulties to enhance the website! I suppose their sufficiently good to employ most of your notions!</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6069" data-commentid="6069" data-postid="1753" data-belowelement="article-comment-6069" data-respondelement="respond" data-replyto="Reply to Wasimmer.Com" aria-label="Reply to Wasimmer.Com">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-6070">
+	<article id="article-comment-6070">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/01ee83fb7666123b99cac0e75481f26211a4e735df0644fbefb13206958a3fb9?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/01ee83fb7666123b99cac0e75481f26211a4e735df0644fbefb13206958a3fb9?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.theintegrityteam.com" class="comment-author-link" rel="external nofollow">Gwen</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6070">July 29, 2014 at 8:19 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>You had me at 2-sided bookmark.</p>
+<p>Congrats, Ann. Can&#8217;t wait for you to learn me something.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6070" data-commentid="6070" data-postid="1753" data-belowelement="article-comment-6070" data-respondelement="respond" data-replyto="Reply to Gwen" aria-label="Reply to Gwen">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor even depth-2" id="comment-6082">
+	<article id="article-comment-6082">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.annhandley.com" class="comment-author-link" rel="external nofollow">Ann Handley</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6082">July 30, 2014 at 8:11 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Whatever it takes.. LOL. :D</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6082" data-commentid="6082" data-postid="1753" data-belowelement="article-comment-6082" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-even depth-1" id="comment-6071">
+	<article id="article-comment-6071">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/8efc48be11359f7d7c8a062476621c20b7793b2ab10371ac4e1095e9c7ba7635?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/8efc48be11359f7d7c8a062476621c20b7793b2ab10371ac4e1095e9c7ba7635?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Teri Kojetin</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6071">July 29, 2014 at 8:30 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Very excited about this, Ann! I&#8217;ve preordered mine via Amazon. I&#8217;ll get you the receipt. Can&#8217;t wait to get my copy in September. I actually went hard copy with this one over Kindle. :)</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6071" data-commentid="6071" data-postid="1753" data-belowelement="article-comment-6071" data-respondelement="respond" data-replyto="Reply to Teri Kojetin" aria-label="Reply to Teri Kojetin">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor even depth-2" id="comment-6083">
+	<article id="article-comment-6083">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.annhandley.com" class="comment-author-link" rel="external nofollow">Ann Handley</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6083">July 30, 2014 at 8:11 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>You&#8217;re the best. Thanks, Teri.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6083" data-commentid="6083" data-postid="1753" data-belowelement="article-comment-6083" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-6072">
+	<article id="article-comment-6072">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/7ff2720d5b7a0aa273672c68a0013ef231d0feb25c3159a62707c171a0b8ad24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/7ff2720d5b7a0aa273672c68a0013ef231d0feb25c3159a62707c171a0b8ad24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Jim Sutton</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6072">July 29, 2014 at 8:35 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Congratulations, Ann &#8211; I just ordered it from B&amp;N.  You got me hook, line, and sinker by comparing it to &#8220;The Elements of Style&#8221; and &#8220;On Writing&#8221; &#8212;though more the former than the latter.  Maybe &#8220;unnecessary words&#8221; will be okay, but only if they follow the rules of grammar.</p>
+<p>Jim</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6072" data-commentid="6072" data-postid="1753" data-belowelement="article-comment-6072" data-respondelement="respond" data-replyto="Reply to Jim Sutton" aria-label="Reply to Jim Sutton">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor even depth-2" id="comment-6084">
+	<article id="article-comment-6084">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.annhandley.com" class="comment-author-link" rel="external nofollow">Ann Handley</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6084">July 30, 2014 at 8:12 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>It means a lot to me that you are chiming in here, Jim. Thanks so much. And I hope the book lives up to expectations!!</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6084" data-commentid="6084" data-postid="1753" data-belowelement="article-comment-6084" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-even depth-1" id="comment-6073">
+	<article id="article-comment-6073">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/92f1d4bbb31867580ecb2d4e26b9b3e6a3b66dbcca6968c77cc8bd37038e0532?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/92f1d4bbb31867580ecb2d4e26b9b3e6a3b66dbcca6968c77cc8bd37038e0532?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http:/sherreymeyer.com" class="comment-author-link" rel="external nofollow">Sherrey Meyer</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6073">July 29, 2014 at 10:51 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Congratulations to you on moving Strunk &amp; White over! And to your brother on a very cool cover. Placed my pre-order and have emailed my receipt. Can&#8217;t wait until my copy ships and I can start reading, highlighting and using all that good stuff between the covers. Keep up the great work, Ann!</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6073" data-commentid="6073" data-postid="1753" data-belowelement="article-comment-6073" data-respondelement="respond" data-replyto="Reply to Sherrey Meyer" aria-label="Reply to Sherrey Meyer">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor even depth-2" id="comment-6085">
+	<article id="article-comment-6085">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.annhandley.com" class="comment-author-link" rel="external nofollow">Ann Handley</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6085">July 30, 2014 at 8:13 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Thanks, Sherrey! Appreciate the love. My brother would be capable, but the cover was actually illustrated by my son.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6085" data-commentid="6085" data-postid="1753" data-belowelement="article-comment-6085" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-6074">
+	<article id="article-comment-6074">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/68c7319a51ecd1f48663c193f8d6619e29e4ff58df4d6cf11f1ff772c859b90b?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/68c7319a51ecd1f48663c193f8d6619e29e4ff58df4d6cf11f1ff772c859b90b?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://disput.si" class="comment-author-link" rel="external nofollow">Nenad</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6074">July 30, 2014 at 12:37 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>No love for first European buyers? :)</p>
+<p>Oh, I see, the book will be released in Europe in October. :( </p>
+<p>Anywho, congrats, Ann! I&#8217;ll be anxiously waiting for the European release.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6074" data-commentid="6074" data-postid="1753" data-belowelement="article-comment-6074" data-respondelement="respond" data-replyto="Reply to Nenad" aria-label="Reply to Nenad">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor even depth-2" id="comment-6086">
+	<article id="article-comment-6086">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.annhandley.com" class="comment-author-link" rel="external nofollow">Ann Handley</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6086">July 30, 2014 at 8:14 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Nenad: Will you be at any US events this fall &#8212; perhaps Content Marketing World or the B2B Forum in Boston?</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6086" data-commentid="6086" data-postid="1753" data-belowelement="article-comment-6086" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment odd alt depth-3" id="comment-6088">
+	<article id="article-comment-6088">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/68c7319a51ecd1f48663c193f8d6619e29e4ff58df4d6cf11f1ff772c859b90b?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/68c7319a51ecd1f48663c193f8d6619e29e4ff58df4d6cf11f1ff772c859b90b?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://Disput.si" class="comment-author-link" rel="external nofollow">Nenad</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6088">July 31, 2014 at 3:57 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Unfortunately not this time</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6088" data-commentid="6088" data-postid="1753" data-belowelement="article-comment-6088" data-respondelement="respond" data-replyto="Reply to Nenad" aria-label="Reply to Nenad">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-6087">
+	<article id="article-comment-6087">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/a6c360d6e55b7e5c84c7a7c335271e104de4fda2258e4e47bb5642995aee8eed?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/a6c360d6e55b7e5c84c7a7c335271e104de4fda2258e4e47bb5642995aee8eed?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://veronicamariajarski.com/" class="comment-author-link" rel="external nofollow">Veronica Jarski</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6087">July 31, 2014 at 12:11 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Ann,</p>
+<p>Hooray! (confetti toss) I&#8217;m so happy for your new book. I can&#8217;t wait to read it. There&#8217;s a spot beside my well-worn copy of &#8220;Content Rules&#8221; for it. :)</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6087" data-commentid="6087" data-postid="1753" data-belowelement="article-comment-6087" data-respondelement="respond" data-replyto="Reply to Veronica Jarski" aria-label="Reply to Veronica Jarski">Reply</a></div>
+		
+	</article>
+	<ul class="children">
+
+	<li class="comment byuser comment-author-ann bypostauthor odd alt depth-2" id="comment-6089">
+	<article id="article-comment-6089">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.annhandley.com" class="comment-author-link" rel="external nofollow">Ann Handley</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6089">July 31, 2014 at 10:16 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Thanks, OV! And thanks for sharing your expertise in it, too! (I appreciate you warming the spot for me&#8230; ) : )</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6089" data-commentid="6089" data-postid="1753" data-belowelement="article-comment-6089" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+
+	<li class="comment even thread-odd thread-alt depth-1" id="comment-6090">
+	<article id="article-comment-6090">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/d2bfbff8098c573df889c32a3aa530e4b6b4e7fc59f085a87a443c8c0222343c?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/d2bfbff8098c573df889c32a3aa530e4b6b4e7fc59f085a87a443c8c0222343c?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.KrishnaDe.com" class="comment-author-link" rel="external nofollow">Krishna De</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6090">August 1, 2014 at 6:14 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Congratulations Ann and I can not wait to read it. Only wish I still lived in the US to get your pre-order goodies &#8211; everybody loves swag!</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6090" data-commentid="6090" data-postid="1753" data-belowelement="article-comment-6090" data-respondelement="respond" data-replyto="Reply to Krishna De" aria-label="Reply to Krishna De">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-even depth-1" id="comment-6092">
+	<article id="article-comment-6092">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/02b08bfc88c819504adfacc1fb769ad90707995403a0004f6674101314e89838?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/02b08bfc88c819504adfacc1fb769ad90707995403a0004f6674101314e89838?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://davidboozer.com" class="comment-author-link" rel="external nofollow">David Boozer</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6092">September 9, 2014 at 12:18 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Bought it. Loving It. And, applying it. thanks Ann!</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6092" data-commentid="6092" data-postid="1753" data-belowelement="article-comment-6092" data-respondelement="respond" data-replyto="Reply to David Boozer" aria-label="Reply to David Boozer">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-odd thread-alt depth-1" id="comment-6093">
+	<article id="article-comment-6093">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/61b8f036b21777268934bb6d02e6f0b4ab8f50513533704806b902132cc8a8b4?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/61b8f036b21777268934bb6d02e6f0b4ab8f50513533704806b902132cc8a8b4?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://blog.skc-marketing.com/2014/09/challenge.html" class="comment-author-link" rel="external nofollow">Sadie</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6093">September 9, 2014 at 4:01 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>The hubs just bought me the book for our anniversary &#8211; we have a tradition to get each other a book each year since we got married in a library. Can&#8217;t wait to read it and start perfecting my writing skillz&#8230;<a href="http://blog.skc-marketing.com/2014/09/challenge.html" rel="nofollow ugc">http://blog.skc-marketing.com/2014/09/challenge.html</a></p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6093" data-commentid="6093" data-postid="1753" data-belowelement="article-comment-6093" data-respondelement="respond" data-replyto="Reply to Sadie" aria-label="Reply to Sadie">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-even depth-1" id="comment-6094">
+	<article id="article-comment-6094">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/8efae21df96f8260501bc1610b21e872a5a90329a198bee67a90ca104b381e04?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/8efae21df96f8260501bc1610b21e872a5a90329a198bee67a90ca104b381e04?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.embocadura.es" class="comment-author-link" rel="external nofollow">embocadura</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6094">November 7, 2014 at 8:29 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>I got this site from my friend who told me concerning this<br />
+website and at the moment this time I am browsing this web page and reading very informative articles at this time.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6094" data-commentid="6094" data-postid="1753" data-belowelement="article-comment-6094" data-respondelement="respond" data-replyto="Reply to embocadura" aria-label="Reply to embocadura">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-odd thread-alt depth-1" id="comment-6096">
+	<article id="article-comment-6096">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/b23788144d00f1ad592dc83b03a83e7407a3918298131a6cbd8779630e2c71bb?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/b23788144d00f1ad592dc83b03a83e7407a3918298131a6cbd8779630e2c71bb?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://referencement-automatique.fr/" class="comment-author-link" rel="external nofollow">campagne emailing</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6096">December 16, 2015 at 12:55 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Genuine Specifics Concerning My search engine optimization Success<br />
+31 year-old Daytona Beach-born Brittni Czapiewski spare-time hobbies includes seo drupal,<br />
+rc planes, playing music. Aside from that she gets empowered by<br />
+discovering and heading for new towns, cities and countries<br />
+as an example, to Bratislava.<br />
+Usually the proof of the seo wordpress is incorporated in the feasting<br />
+Ask yourself how seo drupal sneak up on everyone</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6096" data-commentid="6096" data-postid="1753" data-belowelement="article-comment-6096" data-respondelement="respond" data-replyto="Reply to campagne emailing" aria-label="Reply to campagne emailing">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-even depth-1" id="comment-6098">
+	<article id="article-comment-6098">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/2d3d7710c1a7ea218d79eaf5f033afa9e1187958db43290fa246b9369c2f3a42?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/2d3d7710c1a7ea218d79eaf5f033afa9e1187958db43290fa246b9369c2f3a42?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.instagram.com/fashiondemander/" class="comment-author-link" rel="external nofollow">fashion</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6098">March 29, 2016 at 8:24 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>It&#8217;s really a great and useful piece of info. I&#8217;m satisfied that<br />
+you shared this helpful information with us. Please stay us up to<br />
+date like this. Thank you for sharing.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6098" data-commentid="6098" data-postid="1753" data-belowelement="article-comment-6098" data-respondelement="respond" data-replyto="Reply to fashion" aria-label="Reply to fashion">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-odd thread-alt depth-1" id="comment-6099">
+	<article id="article-comment-6099">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/29a1141827392c53f34e3d23c1e716b30455b18d58d795d40c04ad3a2a6d7bf2?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/29a1141827392c53f34e3d23c1e716b30455b18d58d795d40c04ad3a2a6d7bf2?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://digitalmarketingcuration.com/" class="comment-author-link" rel="external nofollow">Deepak Varadarajan</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6099">July 17, 2016 at 4:08 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Just bought this book. I am late a bit late I know but I am excited. I hope this helps me get a better understanding of writing as I have just recently started my own blog on Marketing.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6099" data-commentid="6099" data-postid="1753" data-belowelement="article-comment-6099" data-respondelement="respond" data-replyto="Reply to Deepak Varadarajan" aria-label="Reply to Deepak Varadarajan">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-even depth-1" id="comment-6100">
+	<article id="article-comment-6100">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/261bdb16b5eda42377e6030b75bff1b8c038ab9fe75936228ff69acc782c5c25?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/261bdb16b5eda42377e6030b75bff1b8c038ab9fe75936228ff69acc782c5c25?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.e-rabatte.de/" class="comment-author-link" rel="external nofollow">vistaprint.de gutschein</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-6100">August 4, 2016 at 7:06 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Simply want to say your article is as astonishing.<br />
+The clearness in your post is just cool and i could assume you&#8217;re an expert on this subject.<br />
+Fine with your permission let me to grab your feed to keep up to date with forthcoming post.<br />
+Thanks a million and please carry on the gratifying work.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6100" data-commentid="6100" data-postid="1753" data-belowelement="article-comment-6100" data-respondelement="respond" data-replyto="Reply to vistaprint.de gutschein" aria-label="Reply to vistaprint.de gutschein">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-odd thread-alt depth-1" id="comment-18846">
+	<article id="article-comment-18846">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/1c230ccd017bc2ea2291afa2bb2a64b855b53c9807cbfdc7ae5874c707ec4ad3?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/1c230ccd017bc2ea2291afa2bb2a64b855b53c9807cbfdc7ae5874c707ec4ad3?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://khelopcgames.com" class="comment-author-link" rel="external nofollow">ameer</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/introducing-everybody-writes/#comment-18846">October 9, 2019 at 11:15 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Find a combination of &#8220;Writing Guide&#8221; and &#8220;Guide on Good Mathematical Spirit Rules in Content</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-18846" data-commentid="18846" data-postid="1753" data-belowelement="article-comment-18846" data-respondelement="respond" data-replyto="Reply to ameer" aria-label="Reply to ameer">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ol></div><div class="entry-pings"><h3>Trackbacks</h3><ol class="ping-list">		<li id="comment-6075" class="pingback even thread-even depth-1">
+			<article id="div-comment-6075" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="http://www.scoop.it/t/writing-me/p/4025509873/2014/07/30/introducing-everybody-writes-and-a-free-gift-for-you" class="url" rel="ugc external nofollow">Introducing Everybody Writes and a Free Gift fo...</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6075"><time datetime="2014-07-30T13:38:09-04:00">July 30, 2014 at 1:38 pm</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] This is the official announcement of my new book, Everybody Writes, and I couldn&rsquo;t be more thrilled to finally be sharing some details with you. I&rsquo;m also excited to talk about a fun freebie for those who buy the book in the next few weeks.&nbsp; [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6075" data-commentid="6075" data-postid="1753" data-belowelement="div-comment-6075" data-respondelement="respond" data-replyto="Reply to Introducing Everybody Writes and a Free Gift fo..." aria-label="Reply to Introducing Everybody Writes and a Free Gift fo...">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6076" class="pingback odd alt thread-odd thread-alt depth-1">
+			<article id="div-comment-6076" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="http://www.scoop.it/t/training-ebook-social-media-web-design/p/4025519939/2014/07/30/introducing-everybody-writes-and-a-free-gift-for-you" class="url" rel="ugc external nofollow">Introducing Everybody Writes and a Free Gift fo...</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6076"><time datetime="2014-07-30T18:17:05-04:00">July 30, 2014 at 6:17 pm</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] Questo &egrave; l&#039;annuncio ufficiale del mio nuovo libro, tutti scrivono, e non potrei essere pi&ugrave; entusiasta di essere finalmente condividere alcuni dettagli con voi. Sono anche felice di parlare di un omaggio divertente per chi acquista il libro nelle prossime settimane.&nbsp; [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6076" data-commentid="6076" data-postid="1753" data-belowelement="div-comment-6076" data-respondelement="respond" data-replyto="Reply to Introducing Everybody Writes and a Free Gift fo..." aria-label="Reply to Introducing Everybody Writes and a Free Gift fo...">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6091" class="pingback even thread-even depth-1">
+			<article id="div-comment-6091" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="http://tekstforfattertips.dk/tekster-til-content-marketing-everybody-writes/" class="url" rel="ugc external nofollow">Ny bibel om tekster til content marketing: &quot;Everybody Writes&quot;</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6091"><time datetime="2014-09-01T08:41:25-04:00">September 1, 2014 at 8:41 am</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] Citaterne i blogindlægget er hentet fra produktsiden på Amazon og fra Handleys eget blogindlæg &#8220;Introducing ‘Everybody Writes’ and a Free Gift for Anti-Mediocre Writers (This Means You)&#8220;. [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6091" data-commentid="6091" data-postid="1753" data-belowelement="div-comment-6091" data-respondelement="respond" data-replyto="Reply to Ny bibel om tekster til content marketing: &quot;Everybody Writes&quot;" aria-label="Reply to Ny bibel om tekster til content marketing: &quot;Everybody Writes&quot;">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6095" class="pingback odd alt thread-odd thread-alt depth-1">
+			<article id="div-comment-6095" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="http://joelbullock.me/jay-z-annie-and-making-unusual-connections/" class="url" rel="ugc external nofollow">Jay-Z, Annie, and Making Unusual Connections | Joel Bullock</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6095"><time datetime="2015-09-07T06:57:02-04:00">September 7, 2015 at 6:57 am</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] &#8211; Ann Handley &#8220;Introdcing Everybody Writes&#8221; [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6095" data-commentid="6095" data-postid="1753" data-belowelement="div-comment-6095" data-respondelement="respond" data-replyto="Reply to Jay-Z, Annie, and Making Unusual Connections | Joel Bullock" aria-label="Reply to Jay-Z, Annie, and Making Unusual Connections | Joel Bullock">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6097" class="pingback even thread-even depth-1">
+			<article id="div-comment-6097" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="http://getheartmarketing.com/our-favorite-things-10-marketing-books-and-podcasts/" class="url" rel="ugc external nofollow">Our Favorite Things: 10 Marketing Books And Podcasts</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6097"><time datetime="2016-01-19T11:56:12-05:00">January 19, 2016 at 11:56 am</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] Everybody Writes by Ann Handley <a href="https://www.annhandley.com/2014/07/29/introducing-everybody-writes/" rel="nofollow ugc">https://www.annhandley.com/2014/07/29/introducing-everybody-writes/</a> [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6097" data-commentid="6097" data-postid="1753" data-belowelement="div-comment-6097" data-respondelement="respond" data-replyto="Reply to Our Favorite Things: 10 Marketing Books And Podcasts" aria-label="Reply to Our Favorite Things: 10 Marketing Books And Podcasts">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6101" class="pingback odd alt thread-odd thread-alt depth-1">
+			<article id="div-comment-6101" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="https://gregorycware.wordpress.com/2017/02/17/9-marketing-books-to-read-before-q1-ends/" class="url" rel="ugc external nofollow">9 Marketing Books to Read Before Q1 Ends | Gregory Ware Digital Marketing Blog</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6101"><time datetime="2017-02-17T08:04:47-05:00">February 17, 2017 at 8:04 am</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] looking for a hybrid of a &#8220;writing guide&#8221; and &#8220;handbook on the rules of good sportsmanship in content [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6101" data-commentid="6101" data-postid="1753" data-belowelement="div-comment-6101" data-respondelement="respond" data-replyto="Reply to 9 Marketing Books to Read Before Q1 Ends | Gregory Ware Digital Marketing Blog" aria-label="Reply to 9 Marketing Books to Read Before Q1 Ends | Gregory Ware Digital Marketing Blog">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6102" class="pingback even thread-even depth-1">
+			<article id="div-comment-6102" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="https://seocompanyorg.wordpress.com/2017/02/17/9-marketing-books-to-read-before-q1-ends/" class="url" rel="ugc external nofollow">9 Marketing Books to Read Before Q1 Ends &#8211; Search Engine Optimisation Company</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6102"><time datetime="2017-02-17T08:05:49-05:00">February 17, 2017 at 8:05 am</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] looking for a hybrid of a &#8220;writing guide&#8221; and &#8220;handbook on the rules of good sportsmanship in content [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6102" data-commentid="6102" data-postid="1753" data-belowelement="div-comment-6102" data-respondelement="respond" data-replyto="Reply to 9 Marketing Books to Read Before Q1 Ends &#8211; Search Engine Optimisation Company" aria-label="Reply to 9 Marketing Books to Read Before Q1 Ends &#8211; Search Engine Optimisation Company">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6103" class="pingback odd alt thread-odd thread-alt depth-1">
+			<article id="div-comment-6103" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="https://ldnseoservices.wordpress.com/2017/02/17/9-marketing-books-to-read-before-q1-ends/" class="url" rel="ugc external nofollow">9 Marketing Books to Read Before Q1 Ends &#8211; London SEO Services</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6103"><time datetime="2017-02-17T08:06:10-05:00">February 17, 2017 at 8:06 am</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] looking for a hybrid of a &#8220;writing guide&#8221; and &#8220;handbook on the rules of good sportsmanship in content [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6103" data-commentid="6103" data-postid="1753" data-belowelement="div-comment-6103" data-respondelement="respond" data-replyto="Reply to 9 Marketing Books to Read Before Q1 Ends &#8211; London SEO Services" aria-label="Reply to 9 Marketing Books to Read Before Q1 Ends &#8211; London SEO Services">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6104" class="pingback even thread-even depth-1">
+			<article id="div-comment-6104" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="http://gozel.tv/9-marketing-books-to-read-before-q1-ends/" class="url" rel="ugc external nofollow">9 Marketing Books to Read Before Q1 Ends &#8211; Gozel News</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6104"><time datetime="2017-02-17T08:06:53-05:00">February 17, 2017 at 8:06 am</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] looking for a hybrid of a &#8220;writing guide&#8221; and &#8220;handbook on the rules of good sportsmanship in content [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6104" data-commentid="6104" data-postid="1753" data-belowelement="div-comment-6104" data-respondelement="respond" data-replyto="Reply to 9 Marketing Books to Read Before Q1 Ends &#8211; Gozel News" aria-label="Reply to 9 Marketing Books to Read Before Q1 Ends &#8211; Gozel News">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6105" class="pingback odd alt thread-odd thread-alt depth-1">
+			<article id="div-comment-6105" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="https://doracfletcher.wordpress.com/2017/02/17/9-marketing-books-to-read-before-q1-ends/" class="url" rel="ugc external nofollow">9 Marketing Books to Read Before Q1 Ends &#8211; doracfletcher</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6105"><time datetime="2017-02-17T08:10:31-05:00">February 17, 2017 at 8:10 am</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] looking for a hybrid of a &#8220;writing guide&#8221; and &#8220;handbook on the rules of good sportsmanship in content [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6105" data-commentid="6105" data-postid="1753" data-belowelement="div-comment-6105" data-respondelement="respond" data-replyto="Reply to 9 Marketing Books to Read Before Q1 Ends &#8211; doracfletcher" aria-label="Reply to 9 Marketing Books to Read Before Q1 Ends &#8211; doracfletcher">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6106" class="pingback even thread-even depth-1">
+			<article id="div-comment-6106" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="https://firepathdigital.wordpress.com/2017/02/17/9-marketing-books-to-read-before-q1-ends/" class="url" rel="ugc external nofollow">9 Marketing Books to Read Before Q1 Ends &#8211; Fire Path Digital</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6106"><time datetime="2017-02-17T08:11:50-05:00">February 17, 2017 at 8:11 am</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] looking for a hybrid of a &#8220;writing guide&#8221; and &#8220;handbook on the rules of good sportsmanship in content [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6106" data-commentid="6106" data-postid="1753" data-belowelement="div-comment-6106" data-respondelement="respond" data-replyto="Reply to 9 Marketing Books to Read Before Q1 Ends &#8211; Fire Path Digital" aria-label="Reply to 9 Marketing Books to Read Before Q1 Ends &#8211; Fire Path Digital">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6107" class="pingback odd alt thread-odd thread-alt depth-1">
+			<article id="div-comment-6107" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="https://jimmypriceblogger.wordpress.com/2017/02/17/9-marketing-books-to-read-before-q1-ends/" class="url" rel="ugc external nofollow">9 Marketing Books to Read Before Q1 Ends | Jimmy Price</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6107"><time datetime="2017-02-17T08:14:37-05:00">February 17, 2017 at 8:14 am</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] looking for a hybrid of a &#8220;writing guide&#8221; and &#8220;handbook on the rules of good sportsmanship in content [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6107" data-commentid="6107" data-postid="1753" data-belowelement="div-comment-6107" data-respondelement="respond" data-replyto="Reply to 9 Marketing Books to Read Before Q1 Ends | Jimmy Price" aria-label="Reply to 9 Marketing Books to Read Before Q1 Ends | Jimmy Price">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6108" class="pingback even thread-even depth-1">
+			<article id="div-comment-6108" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="http://themarketingivy.com/2017/02/17/9-marketing-books-to-read-before-q1-ends/" class="url" rel="ugc external nofollow">9 Marketing Books to Read Before Q1 Ends &#8211; THE MARKETING IVY</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6108"><time datetime="2017-02-17T08:19:17-05:00">February 17, 2017 at 8:19 am</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] looking for a hybrid of a &#8220;writing guide&#8221; and &#8220;handbook on the rules of good sportsmanship in content [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6108" data-commentid="6108" data-postid="1753" data-belowelement="div-comment-6108" data-respondelement="respond" data-replyto="Reply to 9 Marketing Books to Read Before Q1 Ends &#8211; THE MARKETING IVY" aria-label="Reply to 9 Marketing Books to Read Before Q1 Ends &#8211; THE MARKETING IVY">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6109" class="pingback odd alt thread-odd thread-alt depth-1">
+			<article id="div-comment-6109" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="http://marketdiag.com/9-marketing-books-to-read-before-q1-ends/" class="url" rel="ugc external nofollow">9 Marketing Books to Read Before Q1 Ends</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6109"><time datetime="2017-02-17T08:58:53-05:00">February 17, 2017 at 8:58 am</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] looking for a hybrid of a &#8220;writing guide&#8221; and &#8220;handbook on the rules of good sportsmanship in content [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6109" data-commentid="6109" data-postid="1753" data-belowelement="div-comment-6109" data-respondelement="respond" data-replyto="Reply to 9 Marketing Books to Read Before Q1 Ends" aria-label="Reply to 9 Marketing Books to Read Before Q1 Ends">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6110" class="pingback even thread-even depth-1">
+			<article id="div-comment-6110" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="http://www.insideman.co.za/9-marketing-books-to-read-before-q1-ends/" class="url" rel="ugc external nofollow">9 Marketing Books to Read Before Q1 Ends - InsideMan Media</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6110"><time datetime="2017-02-17T09:06:13-05:00">February 17, 2017 at 9:06 am</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] looking for a hybrid of a &#8220;writing guide&#8221; and &#8220;handbook on the rules of good sportsmanship in content [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6110" data-commentid="6110" data-postid="1753" data-belowelement="div-comment-6110" data-respondelement="respond" data-replyto="Reply to 9 Marketing Books to Read Before Q1 Ends - InsideMan Media" aria-label="Reply to 9 Marketing Books to Read Before Q1 Ends - InsideMan Media">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6111" class="pingback odd alt thread-odd thread-alt depth-1">
+			<article id="div-comment-6111" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="http://www.brianmawdsley.com/9-marketing-books-to-read-before-q1-ends/" class="url" rel="ugc external nofollow">9 Marketing Books to Read Before Q1 Ends - Brian Mawdsley</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6111"><time datetime="2017-02-17T09:51:11-05:00">February 17, 2017 at 9:51 am</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] looking for a hybrid of a &#8220;writing guide&#8221; and &#8220;handbook on the rules of good sportsmanship in content [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6111" data-commentid="6111" data-postid="1753" data-belowelement="div-comment-6111" data-respondelement="respond" data-replyto="Reply to 9 Marketing Books to Read Before Q1 Ends - Brian Mawdsley" aria-label="Reply to 9 Marketing Books to Read Before Q1 Ends - Brian Mawdsley">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6112" class="pingback even thread-even depth-1">
+			<article id="div-comment-6112" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="http://smsshop.net/9-marketing-books-to-read-before-q1-ends/" class="url" rel="ugc external nofollow">9 Marketing Books to Read Before Q1 Ends &#8211; Smyrna Themes</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6112"><time datetime="2017-02-17T15:42:46-05:00">February 17, 2017 at 3:42 pm</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] looking for a hybrid of a &quot;writing guide&quot; and &quot;handbook on the rules of good sportsmanship in content [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6112" data-commentid="6112" data-postid="1753" data-belowelement="div-comment-6112" data-respondelement="respond" data-replyto="Reply to 9 Marketing Books to Read Before Q1 Ends &#8211; Smyrna Themes" aria-label="Reply to 9 Marketing Books to Read Before Q1 Ends &#8211; Smyrna Themes">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6113" class="pingback odd alt thread-odd thread-alt depth-1">
+			<article id="div-comment-6113" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="https://gaspfourdigital.wordpress.com/2017/02/17/9-marketing-books-to-read-before-q1-ends/" class="url" rel="ugc external nofollow">9 Marketing Books to Read Before Q1 Ends | Gaspfour Digital</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6113"><time datetime="2017-02-17T16:44:19-05:00">February 17, 2017 at 4:44 pm</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] looking for a hybrid of a &#8220;writing guide&#8221; and &#8220;handbook on the rules of good sportsmanship in content [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6113" data-commentid="6113" data-postid="1753" data-belowelement="div-comment-6113" data-respondelement="respond" data-replyto="Reply to 9 Marketing Books to Read Before Q1 Ends | Gaspfour Digital" aria-label="Reply to 9 Marketing Books to Read Before Q1 Ends | Gaspfour Digital">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6114" class="pingback even thread-even depth-1">
+			<article id="div-comment-6114" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="http://criemails.com/9-marketing-books-to-read-before-q1-ends/" class="url" rel="ugc external nofollow">9 Marketing Books to Read Before Q1 Ends &#8211; CRI Emails</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6114"><time datetime="2017-02-17T17:56:46-05:00">February 17, 2017 at 5:56 pm</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] looking for a hybrid of a &#8220;writing guide&#8221; and &#8220;handbook on the rules of good sportsmanship in content [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6114" data-commentid="6114" data-postid="1753" data-belowelement="div-comment-6114" data-respondelement="respond" data-replyto="Reply to 9 Marketing Books to Read Before Q1 Ends &#8211; CRI Emails" aria-label="Reply to 9 Marketing Books to Read Before Q1 Ends &#8211; CRI Emails">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6115" class="pingback odd alt thread-odd thread-alt depth-1">
+			<article id="div-comment-6115" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="https://amazonmike.wordpress.com/2017/02/17/9-marketing-books-to-read-before-q1-ends/" class="url" rel="ugc external nofollow">9 Marketing Books to Read Before Q1 Ends | Steve Johnson</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6115"><time datetime="2017-02-17T18:35:00-05:00">February 17, 2017 at 6:35 pm</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] looking for a hybrid of a &#8220;writing guide&#8221; and &#8220;handbook on the rules of good sportsmanship in content [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6115" data-commentid="6115" data-postid="1753" data-belowelement="div-comment-6115" data-respondelement="respond" data-replyto="Reply to 9 Marketing Books to Read Before Q1 Ends | Steve Johnson" aria-label="Reply to 9 Marketing Books to Read Before Q1 Ends | Steve Johnson">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6116" class="pingback even thread-even depth-1">
+			<article id="div-comment-6116" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="http://blog.elilogan.com/9-marketing-books-to-read-before-q1-ends" class="url" rel="ugc external nofollow">9 Marketing Books to Read Before Q1 Ends - Blog.EliLogan.com</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6116"><time datetime="2017-02-17T21:16:53-05:00">February 17, 2017 at 9:16 pm</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] looking for a hybrid of a &#8220;writing guide&#8221; and &#8220;handbook on the rules of good sportsmanship in content [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6116" data-commentid="6116" data-postid="1753" data-belowelement="div-comment-6116" data-respondelement="respond" data-replyto="Reply to 9 Marketing Books to Read Before Q1 Ends - Blog.EliLogan.com" aria-label="Reply to 9 Marketing Books to Read Before Q1 Ends - Blog.EliLogan.com">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6117" class="pingback odd alt thread-odd thread-alt depth-1">
+			<article id="div-comment-6117" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="http://www.madcashcentral.com/9-marketing-books-to-read-before-q1-ends/" class="url" rel="ugc external nofollow">9 Marketing Books to Read Before Q1 Ends - Madcashcentral APE - Internet Advertising, Business &amp; Marketing Blog :</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6117"><time datetime="2017-02-17T22:03:41-05:00">February 17, 2017 at 10:03 pm</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] looking for a hybrid of a &#8220;writing guide&#8221; and &#8220;handbook on the rules of good sportsmanship in content [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6117" data-commentid="6117" data-postid="1753" data-belowelement="div-comment-6117" data-respondelement="respond" data-replyto="Reply to 9 Marketing Books to Read Before Q1 Ends - Madcashcentral APE - Internet Advertising, Business &amp; Marketing Blog :" aria-label="Reply to 9 Marketing Books to Read Before Q1 Ends - Madcashcentral APE - Internet Advertising, Business &amp; Marketing Blog :">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6118" class="pingback even thread-even depth-1">
+			<article id="div-comment-6118" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="http://marketingnewssource.info/9-marketing-books-to-read-before-q1-ends/" class="url" rel="ugc external nofollow">9 Marketing Books to Read Before Q1 Ends &#8211; Marketing News Source</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6118"><time datetime="2017-02-17T22:10:45-05:00">February 17, 2017 at 10:10 pm</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] looking for a hybrid of a &#8220;writing guide&#8221; and &#8220;handbook on the rules of good sportsmanship in content [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6118" data-commentid="6118" data-postid="1753" data-belowelement="div-comment-6118" data-respondelement="respond" data-replyto="Reply to 9 Marketing Books to Read Before Q1 Ends &#8211; Marketing News Source" aria-label="Reply to 9 Marketing Books to Read Before Q1 Ends &#8211; Marketing News Source">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6119" class="pingback odd alt thread-odd thread-alt depth-1">
+			<article id="div-comment-6119" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="http://onlinedigitalprofits.com/9-marketing-books-to-read-before-q1-ends/" class="url" rel="ugc external nofollow">9 Marketing Books to Read Before Q1 Ends |</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6119"><time datetime="2017-02-18T04:36:29-05:00">February 18, 2017 at 4:36 am</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] looking for a hybrid of a &#8220;writing guide&#8221; and &#8220;handbook on the rules of good sportsmanship in content [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6119" data-commentid="6119" data-postid="1753" data-belowelement="div-comment-6119" data-respondelement="respond" data-replyto="Reply to 9 Marketing Books to Read Before Q1 Ends |" aria-label="Reply to 9 Marketing Books to Read Before Q1 Ends |">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6120" class="pingback even thread-even depth-1">
+			<article id="div-comment-6120" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="http://www.lucidmart.com/9-marketing-books-to-read-before-q1-ends/" class="url" rel="ugc external nofollow">9 Marketing Books to Read Before Q1 Ends &#8211; Lucid Biz Intelligence</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6120"><time datetime="2017-02-22T20:53:40-05:00">February 22, 2017 at 8:53 pm</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] looking for a hybrid of a &#8220;writing guide&#8221; and &#8220;handbook on the rules of good sportsmanship in content [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6120" data-commentid="6120" data-postid="1753" data-belowelement="div-comment-6120" data-respondelement="respond" data-replyto="Reply to 9 Marketing Books to Read Before Q1 Ends &#8211; Lucid Biz Intelligence" aria-label="Reply to 9 Marketing Books to Read Before Q1 Ends &#8211; Lucid Biz Intelligence">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-6121" class="pingback odd alt thread-odd thread-alt depth-1">
+			<article id="div-comment-6121" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="http://moneynews.com.ng/2017/02/28/9-marketing-books-to-read-before-q1-ends/" class="url" rel="ugc external nofollow">9 Marketing Books to Read Before Q1 Ends &#8211; Money News</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/introducing-everybody-writes/#comment-6121"><time datetime="2017-03-11T15:26:53-05:00">March 11, 2017 at 3:26 pm</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] looking for a hybrid of a &#8220;writing guide&#8221; and &#8220;handbook on the rules of good sportsmanship in content [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-6121" data-commentid="6121" data-postid="1753" data-belowelement="div-comment-6121" data-respondelement="respond" data-replyto="Reply to 9 Marketing Books to Read Before Q1 Ends &#8211; Money News" aria-label="Reply to 9 Marketing Books to Read Before Q1 Ends &#8211; Money News">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+</ol></div>	<div id="respond" class="comment-respond">
+		<h3 id="reply-title" class="comment-reply-title">Leave a Reply <small><a rel="nofollow" id="cancel-comment-reply-link" href="/introducing-everybody-writes/#respond" style="display:none;">Cancel reply</a></small></h3><form action="https://annhandley.com/ah/wp-comments-post.php" method="post" id="commentform" class="comment-form"><p class="comment-notes"><span id="email-notes">Your email address will not be published.</span> <span class="required-field-message">Required fields are marked <span class="required">*</span></span></p><p class="comment-form-comment"><label for="comment">Comment <span class="required">*</span></label> <textarea id="comment" name="comment" cols="45" rows="8" maxlength="65525" required></textarea></p><p class="comment-form-author"><label for="author">Name <span class="required">*</span></label> <input id="author" name="author" type="text" value="" size="30" maxlength="245" autocomplete="name" required /></p>
+<p class="comment-form-email"><label for="email">Email <span class="required">*</span></label> <input id="email" name="email" type="email" value="" size="30" maxlength="100" aria-describedby="email-notes" autocomplete="email" required /></p>
+<p class="comment-form-url"><label for="url">Website</label> <input id="url" name="url" type="url" value="" size="30" maxlength="200" autocomplete="url" /></p>
+<p class="form-submit"><input name="submit" type="submit" id="submit" class="submit" value="Post Comment" /> <input type='hidden' name='comment_post_ID' value='1753' id='comment_post_ID' />
+<input type='hidden' name='comment_parent' id='comment_parent' value='0' />
+</p><p style="display: none;"><input type="hidden" id="akismet_comment_nonce" name="akismet_comment_nonce" value="2f1f1ec113" /></p><p style="display: none !important;" class="akismet-fields-container" data-prefix="ak_"><label>&#916;<textarea name="ak_hp_textarea" cols="45" rows="8" maxlength="100"></textarea></label><input type="hidden" id="ak_js_1" name="ak_js" value="224"/><script>document.getElementById( "ak_js_1" ).setAttribute( "value", ( new Date() ).getTime() );</script></p></form>	</div><!-- #respond -->
+	</main></div></div></div><div class="footer-optin"><div class="wrap"><section id="custom_html-3" class="widget_text widget widget_custom_html"><div class="widget_text widget-wrap"><div class="textwidget custom-html-widget"><h3><span style="color:#fff">Subscribe to Total </span><span style="color:#e077cc">ANNARCHY</span></h3>
+<h6>Get new writing, useful ideas, fresh links, and high-spirited shenanigans delivered to your inbox every two weeks.
+
+	</h6>
+
+	<a class="button" href="https://annhandley.com/newsletter/">SUBSCRIBE</a>
+
+<!--
+	<form class="mainopt" action="https://www.aweber.com/scripts/addlead.pl" method="post"><input type="hidden" name="meta_web_form_id" value="1483784026" /><input id="awf_tag-103757396" type="hidden" name="tag_103757396" value="footer_opt" /><input type="hidden" name="listname" value="totalannarchy" /><input type="hidden" name="meta_message" value="1" /><input type="hidden" name="redirect" value="https://annhandley.com/thank-you" id="redirect_bd89b556cf6bc1b80faed4ec90669c3a" /><input name="meta_redirect_onlist" type="hidden" value="https://annhandley.com/thank-you" /><input type="hidden" name="meta_adtracking" value="2019_New_AH_Form" /><input name="meta_message" type="hidden" value="1" /><input name="meta_required" type="hidden" value="email" /><input name="meta_forward_vars" type="hidden" value="0" /><input name="name" type="text" placeholder="FIRST NAME" /><input name="email" type="text" value="" placeholder="EMAIL ADDRESS" /><input name="submit" type="submit" value="SUBMIT" /></form>--> 
+
+
+	
+	</div></div></section>
+</div></div><footer class="site-footer"><p></p><div class="footer-widgets" id="genesis-footer-widgets"><h2 class="genesis-sidebar-title screen-reader-text">Footer</h2><div class="wrap"><div class="widget-area footer-widgets-1 footer-widget-area"><section id="text-3" class="widget widget_text"><div class="widget-wrap"><h3 class="widgettitle widget-title">COPYRIGHT 2025 ANN HANDLEY</h3>
+			<div class="textwidget"><p><span class="credits"><a href="https://minimadesigns.com/" target="_new" >SITE BY MINIMA DESIGNS</a></span></p>
+</div>
+		</div></section>
+<section id="simple-social-icons-2" class="widget simple-social-icons"><div class="widget-wrap"><ul class="alignleft"><li class="ssi-facebook"><a href="https://www.facebook.com/ann.handley/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-facebook" aria-labelledby="social-facebook-2"><title id="social-facebook-2">Facebook</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-facebook"></use></svg></a></li><li class="ssi-instagram"><a href="https://www.instagram.com/annhandley/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-instagram" aria-labelledby="social-instagram-2"><title id="social-instagram-2">Instagram</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-instagram"></use></svg></a></li><li class="ssi-linkedin"><a href="http://www.linkedin.com/in/annhandley/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-linkedin" aria-labelledby="social-linkedin-2"><title id="social-linkedin-2">LinkedIn</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-linkedin"></use></svg></a></li><li class="ssi-pinterest"><a href="http://pinterest.com/annhandley/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-pinterest" aria-labelledby="social-pinterest-2"><title id="social-pinterest-2">Pinterest</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-pinterest"></use></svg></a></li><li class="ssi-rss"><a href="http://feeds2.feedburner.com/ANNARCHY/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-rss" aria-labelledby="social-rss-2"><title id="social-rss-2">RSS</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-rss"></use></svg></a></li><li class="ssi-twitter"><a href="https://twitter.com/annhandley/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-twitter" aria-labelledby="social-twitter-2"><title id="social-twitter-2">Twitter</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-twitter"></use></svg></a></li></ul></div></section>
+</div><div class="widget-area footer-widgets-2 footer-widget-area"><section id="nav_menu-2" class="widget widget_nav_menu"><div class="widget-wrap"><h3 class="widgettitle widget-title">About</h3>
+<div class="menu-about-container"><ul id="menu-about" class="menu"><li id="menu-item-2779" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2779"><a href="https://annhandley.com/about/">Bio</a></li>
+<li id="menu-item-2778" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2778"><a href="https://annhandley.com/in-the-media/">In the Media</a></li>
+<li id="menu-item-3766" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-3766"><a href="https://annhandley.com/newsletter/">Newsletter</a></li>
+</ul></div></div></section>
+</div><div class="widget-area footer-widgets-3 footer-widget-area"><section id="nav_menu-3" class="widget widget_nav_menu"><div class="widget-wrap"><h3 class="widgettitle widget-title">Speaking</h3>
+<div class="menu-speaking-container"><ul id="menu-speaking" class="menu"><li id="menu-item-2970" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2970"><a href="https://annhandley.com/speaking/">Speaking</a></li>
+<li id="menu-item-2925" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2925"><a href="https://annhandley.com/meeting-planners/">For Meeting Planners</a></li>
+</ul></div></div></section>
+</div><div class="widget-area footer-widgets-4 footer-widget-area"><section id="nav_menu-4" class="widget widget_nav_menu"><div class="widget-wrap"><h3 class="widgettitle widget-title">The Books</h3>
+<div class="menu-the-books-container"><ul id="menu-the-books" class="menu"><li id="menu-item-2782" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-2782"><a target="_blank" href="http://bit.ly/EverybodyWrites">Everybody Writes</a></li>
+<li id="menu-item-2783" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-2783"><a target="_blank" href="https://www.amazon.com/gp/product/1118232607/ref=as_li_ss_tl?ie=UTF8&#038;camp=1789&#038;creative=390957&#038;creativeASIN=1118232607&#038;linkCode=as2&#038;tag=annarchy-20">Content Rules</a></li>
+</ul></div></div></section>
+</div></div></div></footer></div><script type="speculationrules">
+{"prefetch":[{"source":"document","where":{"and":[{"href_matches":"\/*"},{"not":{"href_matches":["\/ah\/wp-*.php","\/ah\/wp-admin\/*","\/ah\/wp-content\/uploads\/*","\/ah\/wp-content\/*","\/ah\/wp-content\/plugins\/*","\/ah\/wp-content\/themes\/annhandley\/*","\/ah\/wp-content\/themes\/genesis\/*","\/*\\?(.+)"]}},{"not":{"selector_matches":"a[rel~=\"nofollow\"]"}},{"not":{"selector_matches":".no-prefetch, .no-prefetch a"}}]},"eagerness":"conservative"}]}
+</script>
+<script type="text/javascript" src="//analytics.aweber.com/js/awt_analytics.js?id=8LvK"></script><style type="text/css" media="screen">#simple-social-icons-2 ul li a, #simple-social-icons-2 ul li a:hover, #simple-social-icons-2 ul li a:focus { background-color: #ffffff !important; border-radius: 0px; color: #000000 !important; border: 0px #ffffff solid !important; font-size: 20px; padding: 10px; }  #simple-social-icons-2 ul li a:hover, #simple-social-icons-2 ul li a:focus { background-color: #ffffff !important; border-color: #ffffff !important; color: #000000 !important; }  #simple-social-icons-2 ul li a:focus { outline: 1px dotted #ffffff !important; }</style><script type="text/javascript" src="https://annhandley.com/ah/wp-content/plugins/duracelltomi-google-tag-manager/dist/js/gtm4wp-form-move-tracker.js" id="gtm4wp-form-move-tracker-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-includes/js/comment-reply.min.js" id="comment-reply-js" async="async" data-wp-strategy="async"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-includes/js/hoverIntent.min.js" id="hoverIntent-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/genesis/lib/js/menu/superfish.min.js" id="superfish-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/genesis/lib/js/menu/superfish.args.min.js" id="superfish-args-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/genesis/lib/js/skip-links.min.js" id="skip-links-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/annhandley/js/global.js" id="annhandley-global-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/annhandley/js/match-height.js" id="annhandley-match-height-js"></script>
+<script type="text/javascript" id="annhandley-responsive-menu-js-extra">
+/* <![CDATA[ */
+var InfinityL10n = {"mainMenu":"Menu","subMenu":"Menu"};
+/* ]]> */
+</script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/annhandley/js/responsive-menu.js" id="annhandley-responsive-menu-js"></script>
+<script defer type="text/javascript" src="https://annhandley.com/ah/wp-content/plugins/akismet/_inc/akismet-frontend.js" id="akismet-frontend-js"></script>
+<script type="text/javascript" id="aweber-wpn-script-handle-js-extra">
+/* <![CDATA[ */
+var aweber_wpn_vars = {"plugin_base_path":"https:\/\/annhandley.com\/ah\/wp-content\/plugins\/aweber-web-form-widget\/php\/","register_aweber_service_worker":""};
+/* ]]> */
+</script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/plugins/aweber-web-form-widget/php/../src/js/aweber-wpn-script.js" id="aweber-wpn-script-handle-js"></script>
+</body></html>

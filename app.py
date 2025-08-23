@@ -47,6 +47,8 @@ CORPUS_PATH = "data/cleaned/ghostline_sources.jsonl.gz"
 # Global RAG system state
 _rag_building = False
 _rag_build_error = None
+_brain_building = False
+_brain_build_error = None
 
 # Markdown filter for Jinja2
 def markdown_filter(text):
@@ -79,6 +81,30 @@ def build_brain_background():
         _rag_build_error = str(e)
         app.logger.error(f"Batched brain build failed: {e}")
 
+def build_new_brain_background():
+    """Build new brain from raw sources on server"""
+    global _brain_building, _brain_build_error
+    
+    try:
+        _brain_building = True
+        _brain_build_error = None
+        app.logger.info("Starting server-side brain building from raw sources...")
+        
+        from build_brain_fixed2 import build_new_brain
+        result_path = build_new_brain()
+        
+        # Copy the new brain to the expected location
+        import shutil
+        shutil.copy(str(result_path), CORPUS_PATH)
+        app.logger.info(f"New brain saved to {CORPUS_PATH}")
+        
+        _brain_building = False
+        app.logger.info("Server-side brain build complete!")
+        
+    except Exception as e:
+        _brain_building = False
+        _brain_build_error = str(e)
+        app.logger.error(f"Server-side brain build failed: {e}")
 
 def load_conversation(project: str, limit: int = 50):
     path = f"sessions/{project.lower().replace(' ', '_')}.json"
@@ -325,27 +351,58 @@ def build_brain():
     
     return jsonify({"ok": True, "message": "Batched brain building started"})
 
+@app.route('/build_new_brain', methods=['POST'])
+def build_new_brain():
+    """Build brain from raw sources on server"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    global _brain_building
+    
+    if _brain_building:
+        return jsonify({"ok": False, "error": "Brain is already building"}), 400
+    
+    # Start server-side building in background
+    thread = threading.Thread(target=build_new_brain_background)
+    thread.daemon = True
+    thread.start()
+    
+    return jsonify({"ok": True, "message": "Server-side brain building started"})
+
 @app.route('/brain_status')
 def brain_status():
     """Enhanced brain status with batch progress"""
     if not session.get('logged_in'):
         return "Unauthorized", 401
     
-    global _rag_building, _rag_build_error
+    global _rag_building, _rag_build_error, _brain_building, _brain_build_error
     
     # Get detailed build status from the batched system
     build_status = get_build_status()
     
-    status = {
-        "ready": build_status["status"] == "complete",
-        "building": _rag_building or build_status["status"] == "building", 
-        "progress": build_status["progress"],
-        "error": _rag_build_error,
-        "percentage": build_status["percentage"],
-        "chunks": build_status.get("chunks_processed", 0),
-        "batches_completed": build_status.get("batches_completed", 0),
-        "total_batches": build_status.get("total_batches", 0)
-    }
+    # Check if server-side building is in progress
+    if _brain_building:
+        status = {
+            "ready": False,
+            "building": True,
+            "progress": "Building brain from raw sources on server...",
+            "error": _brain_build_error,
+            "percentage": 50,  # Indeterminate progress
+            "chunks": 0,
+            "batches_completed": 0,
+            "total_batches": 1
+        }
+    else:
+        status = {
+            "ready": build_status["status"] == "complete",
+            "building": _rag_building or build_status["status"] == "building", 
+            "progress": build_status["progress"],
+            "error": _rag_build_error or _brain_build_error,
+            "percentage": build_status["percentage"],
+            "chunks": build_status.get("chunks_processed", 0),
+            "batches_completed": build_status.get("batches_completed", 0),
+            "total_batches": build_status.get("total_batches", 0)
+        }
     
     return jsonify(status)
 
@@ -360,7 +417,7 @@ def brain_control():
     <!DOCTYPE html>
     <html>
     <head>
-        <title>Ghostline Brain Control v0.1.9.6</title>
+        <title>Ghostline Brain Control v0.1.9.7</title>
         <style>
             body { 
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -389,6 +446,8 @@ def brain_control():
             }
             .btn:hover { background: #5855eb; }
             .btn:disabled { background: #666; cursor: not-allowed; }
+            .btn.server-build { background: #059669; }
+            .btn.server-build:hover { background: #047857; }
             
             /* Enhanced progress bar for batches */
             .progress-container { 
@@ -477,8 +536,8 @@ def brain_control():
     </head>
     <body>
         <div class="container">
-            <h1>Ghostline Brain Control v0.1.9.6</h1>
-            <p>Batched RAG system - processes your ChatGPT history in memory-safe chunks.</p>
+            <h1>Ghostline Brain Control v0.1.9.7</h1>
+            <p>Batched RAG system with server-side brain building from raw sources.</p>
             
             <div class="status-box">
                 <h3>Brain Status</h3>
@@ -505,17 +564,18 @@ def brain_control():
             
             <div class="status-box">
                 <h3>Controls</h3>
-                <button class="btn" id="build-btn" onclick="buildBrain()">Build Brain</button>
+                <button class="btn" id="build-btn" onclick="buildBrain()">Build Brain (from file)</button>
+                <button class="btn server-build" id="server-build-btn" onclick="buildNewBrain()">Build Brain (from sources)</button>
                 <button class="btn" onclick="refreshStatus()">Refresh Status</button>
                 <button class="btn" onclick="window.location.href='/'">Back to Chat</button>
             </div>
             
             <div class="status-box">
-                <h3>Batched Processing Info</h3>
-                <p><strong>New Approach:</strong> Processes 6,000 lines per batch to prevent memory crashes.</p>
-                <p><strong>Auto-Resume:</strong> If interrupted, continues from last completed batch.</p>
-                <p><strong>Memory Safe:</strong> Clears data between batches to stay under memory limit.</p>
-                <p><strong>Persistent:</strong> Each batch saved separately, combined when complete.</p>
+                <h3>Build Options</h3>
+                <p><strong>Build Brain (from file):</strong> Uses existing brain file with batched processing.</p>
+                <p><strong>Build Brain (from sources):</strong> Creates fresh brain from raw HTML/TXT/JSON files on server.</p>
+                <p><strong>Memory Safe:</strong> Both approaches work with Railway's 32GB RAM.</p>
+                <p><strong>Auto-Resume:</strong> Batched processing continues from last completed batch.</p>
             </div>
         </div>
         
@@ -528,6 +588,7 @@ def brain_control():
                     .then(data => {
                         const statusDiv = document.getElementById('status');
                         const buildBtn = document.getElementById('build-btn');
+                        const serverBuildBtn = document.getElementById('server-build-btn');
                         const progressContainer = document.getElementById('progress-container');
                         const progressBar = document.getElementById('progress-bar');
                         const progressText = document.getElementById('progress-text');
@@ -540,6 +601,8 @@ def brain_control():
                             statusText = `<span class="success">✓ Brain Ready</span><br>Total chunks: ${data.chunks.toLocaleString()}`;
                             buildBtn.disabled = true;
                             buildBtn.textContent = 'Brain Complete';
+                            serverBuildBtn.disabled = true;
+                            serverBuildBtn.textContent = 'Brain Complete';
                             progressContainer.style.display = 'none';
                             batchInfo.style.display = 'none';
                             etaDiv.textContent = '';
@@ -567,19 +630,25 @@ def brain_control():
                             
                             buildBtn.disabled = true;
                             buildBtn.textContent = 'Building...';
+                            serverBuildBtn.disabled = true;
+                            serverBuildBtn.textContent = 'Building...';
                             
                         } else if (data.error) {
                             statusText = `<span class="error">✗ Build Failed</span><br>${data.error}`;
                             buildBtn.disabled = false;
-                            buildBtn.textContent = 'Retry Build';
+                            buildBtn.textContent = 'Retry Build (from file)';
+                            serverBuildBtn.disabled = false;
+                            serverBuildBtn.textContent = 'Retry Build (from sources)';
                             progressContainer.style.display = 'none';
                             batchInfo.style.display = 'none';
                             etaDiv.textContent = '';
                             
                         } else {
-                            statusText = '<span style="color: #fbbf24;">○ Brain Not Built</span><br>Ready for batched processing';
+                            statusText = '<span style="color: #fbbf24;">○ Brain Not Built</span><br>Ready for building';
                             buildBtn.disabled = false;
-                            buildBtn.textContent = 'Build Brain';
+                            buildBtn.textContent = 'Build Brain (from file)';
+                            serverBuildBtn.disabled = false;
+                            serverBuildBtn.textContent = 'Build Brain (from sources)';
                             progressContainer.style.display = 'none';
                             batchInfo.style.display = 'none';
                             etaDiv.textContent = '';
@@ -594,6 +663,19 @@ def brain_control():
             
             function buildBrain() {
                 fetch('/build_brain', { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.ok) {
+                            statusInterval = setInterval(refreshStatus, 3000);
+                        } else {
+                            alert('Build failed: ' + data.error);
+                        }
+                    })
+                    .catch(e => alert('Build request failed: ' + e));
+            }
+            
+            function buildNewBrain() {
+                fetch('/build_new_brain', { method: 'POST' })
                     .then(r => r.json())
                     .then(data => {
                         if (data.ok) {
@@ -622,6 +704,9 @@ def debug_files():
         return "Unauthorized", 401
     
     try:
+        result = ["=== Debug Files Report ===\n"]
+        
+        # Check data/cleaned directory
         if os.path.exists('data/cleaned/'):
             files = os.listdir('data/cleaned/')
             file_info = []
@@ -629,9 +714,24 @@ def debug_files():
                 path = os.path.join('data/cleaned/', f)
                 size = os.path.getsize(path) if os.path.isfile(path) else 0
                 file_info.append(f"{f} ({size} bytes)")
-            return f"Files in data/cleaned/: {file_info}"
+            result.append(f"Files in data/cleaned/: {file_info}\n")
         else:
-            return "data/cleaned/ directory not found"
+            result.append("data/cleaned/ directory not found\n")
+        
+        # Check for raw data folders
+        raw_folders = []
+        for item in os.listdir('data/'):
+            if item.startswith('raw_') and os.path.isdir(f'data/{item}'):
+                file_count = len(list(os.listdir(f'data/{item}')))
+                raw_folders.append(f"{item} ({file_count} files)")
+        
+        if raw_folders:
+            result.append(f"Raw data folders: {raw_folders}")
+        else:
+            result.append("No raw data folders found")
+        
+        return "<pre>" + "\n".join(result) + "</pre>"
+        
     except Exception as e:
         return f"Error checking files: {e}"
 

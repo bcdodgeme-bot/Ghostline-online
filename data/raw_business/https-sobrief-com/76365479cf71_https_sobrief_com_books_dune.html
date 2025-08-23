@@ -1,0 +1,4538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Dune by Frank Herbert | Summary, Analysis, FAQ</title>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="darkreader-lock">
+
+<meta name="theme-color" content="#ffffff">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+<link rel="dns-prefetch" href="https://images.sobrief.com">
+<link rel="preconnect" href="https://images.sobrief.com" crossorigin>
+
+<link rel="icon" href="https://images.sobrief.com/public/logo-circle-lines-32.png" />
+<link rel="apple-touch-icon" href="https://images.sobrief.com/public/icon-512.png" />
+
+<style>
+
+
+
+:root {
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, Arial, 'Helvetica Neue', 'Segoe UI', Roboto, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  
+  --font-serif: "Iowan Old Style", "New York", "Sitka Text", Palatino, "Book Antiqua", "Noto Serif", "Roboto Serif", 'Georgia Pro', Georgia, 'Times New Roman', 'DejaVu Serif', 'Merriweather', serif;
+
+	--transition-secs: 0.06s;
+	--transition-ease: ease-in-out;
+
+	scroll-padding: 155px;
+
+	--safe-area-top: env(safe-area-inset-top);
+	--safe-area-bottom: env(safe-area-inset-bottom);
+}
+
+@media (max-width: 600px) {
+  :root {
+    scroll-padding: calc(120px + env(safe-area-inset-top));
+  }
+}
+
+
+.theme-light {
+    --page-bg-colors: 255, 255, 255;
+    --page-bg: rgb(var(--page-bg-colors));
+    --text-color: rgb(0, 0, 0);
+    --text-color2: rgba(0, 0, 0, 0.6);
+    --text-color3: rgba(0, 0, 0, 0.45);
+    --text-color4: #333;
+    --text-color5: #ddd;
+    --text-color6: #444;
+    --text-color-alt: var(--text-color);
+
+    --link-color: rgb(52, 101, 204);
+
+    --selection-bg: rgb(0, 0, 0);
+    --selection-color: rgba(255, 255, 255, 0.95);
+    --placeholder-color: rgba(0,0,0,0.5);
+    --border-color: rgba(0, 0, 0, 0.24);
+    --border-color2: #eee;
+    --border-color3: #eaeaea;
+    --border-color3: #e0e0e0;
+
+    --bg1: rgb(255, 255, 255);
+    --bg2: rgb(250, 250, 250);
+    --bg3: rgb(247, 247, 247);
+    --bg4: rgb(248, 248, 248);
+    --bg5: rgb(240, 240, 240);
+    --bg6: rgb(255, 255, 255);
+    --bg7: rgb(244, 244, 244);
+    --bg8: rgb(253, 253, 253);
+
+    --input-bg: rgb(255, 255, 255);
+    --toolbar-cta-bg: rgb(255, 255, 255);
+    --toolbar-cta-color: rgb(0, 0, 0);
+    --toolbar-cta-border: 1px solid rgba(0, 0, 0, 0.1);
+
+    --input-bg-hover: #f9f9f9;
+
+    --menu-bg: rgb(255, 255, 255);
+    --menu-bg-alt: rgb(255, 255, 255);
+    --menu-bg-hover: rgb(247, 247, 247);
+    --menu-sep-bg: rgb(241, 241, 241);
+
+    --dialog-wrap-bg: rgba(255,255,255,0.5);
+    --dialog-bg: rgb(255, 255, 255);
+    --play-button-bg: rgb(51, 51, 54);
+    --dialog-button-bg: #000;
+
+    --progress-bg: rgb(0,0,0,0.11);
+    --progress-bg2: rgb(0,0,0,0.05);
+    --progress-handle: rgb(72, 72, 72);
+    --progress-handle: rgba(0,0,0,0.9);
+    --progress-handle: rgb(51,51,54);
+
+    --onboard-progress-bg: rgb(0,0,0,0.95);
+
+    --player-handle: rgb(0,0,0,0.12);
+
+    --image-invert: none;
+    --image-invert2: invert(100%);
+
+    --badge-border-color: rgba(0, 0, 0, 0.82);
+    --cover-radius: 2px;
+    --cover-radius2: 2px;
+
+    --filled-button-bg: rgb(30, 25, 35);
+    --filled-button-bg: rgb(0,0,0);
+    --filled-button-color: #fff;
+
+    --filled-button-choice-bg: rgb(30, 25, 35);
+    --filled-button-choice-bg: rgb(0,0,0);
+    --filled-button-choice-color: #eee;
+
+    --box-bg: #fff;
+    --box-border: #eaeaea;
+
+    --button-badge-bg: rgb(234, 234, 234);
+    --button-badge-color: var(--text-color);
+    --button-badge-selected-bg: rgb(30, 25, 35);
+    --button-badge-selected-color: #fff;
+
+    --inline-link-border: 2px solid rgba(0,0,0,0.1);
+    --inline-link-over-border: 2px solid rgba(0,0,0,0.8);
+    --inline-link-border: 1px solid rgba(0,0,0,0.2);
+    --inline-link-over-border: 1px solid rgba(0,0,0,0.9);
+    --inline-link-over-border: 1px solid transparent;
+
+    --inline-link-color: var(--text-color);
+    --inline-link-over-color: var(--link-color);
+    --inline-link-bg: transparent;
+    --inline-link-over-bg: transparent;
+
+    --popover-bg: #fff;
+    --popover-border: 1px solid rgba(0, 0, 0, 0.2);
+    --popover-box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+
+    --header-inset-bg: rgba(0,0,0,0.03);
+    --header-inset-bg: #fff;
+}
+
+.theme-dark {
+    --page-bg-colors: 18, 18, 18;
+    --page-bg: rgb(var(--page-bg-colors));
+    --text-color: rgb(236, 236, 236);
+    --text-color2: rgba(255, 255, 255, 0.5);
+    --text-color3: rgba(255, 255, 255, 0.35);
+    --text-color4: rgba(255, 255, 255, 0.8);
+    --text-color5: rgba(255, 255, 255, 0.25);
+    --text-color6: rgba(255, 255, 255, 0.8);
+    --text-color-alt: rgba(0,0,0,0.9);
+
+    --link-color: rgb(50, 145, 242);
+    --link-color: rgb(77, 163, 255);
+
+    --selection-bg: rgba(255, 255, 255, 0.9);
+    --selection-color: rgba(0,0,0,0.95);
+    --placeholder-color: rgba(255, 255, 255, 0.45);
+    --border-color: rgba(255, 255, 255, 0.2);
+    --border-color2: rgba(255, 255, 255, 0.2);
+    --border-color3: rgb(70, 70, 70);
+
+    --bg1: rgb(44, 44, 44);
+    --bg2: rgb(30, 30, 30);
+    --bg3: rgb(34, 34, 34);
+    --bg4: rgb(35, 35, 35);
+    --bg5: rgb(40, 40, 40);
+    --bg6: rgb(47, 47, 47);
+    --bg7: rgb(44, 44, 44);
+    --bg8: rgb(47, 47, 47);
+
+    --input-bg: rgb(45, 45, 45);
+    --toolbar-cta-bg: rgb(255, 255, 255);
+    --toolbar-cta-color: rgb(0, 0, 0);
+    --toolbar-cta-border: 1px solid rgba(0, 0, 0, 0);
+
+    --input-bg-hover: transparent;
+
+    --menu-bg: rgb(44, 44, 44);
+    --menu-bg-alt: rgb(50, 50, 50);
+    --menu-bg-hover: rgb(59, 59, 59);
+    --menu-sep-bg: rgb(64, 64, 64);
+
+    --dialog-wrap-bg: rgba(255,255,255,0.15);
+    --dialog-bg: rgb(24, 24, 24);
+    --play-button-bg: rgba(255, 255, 255, 0.9);
+    --dialog-button-bg: rgb(24, 24, 24);
+
+    --progress-bg: rgba(255, 255, 255, 0.25);
+    --progress-bg2: rgba(255, 255, 255, 0.1);
+    --progress-handle: rgba(255, 255, 255, 1);
+
+    --onboard-progress-bg: rgba(255, 255, 255, 0.95);
+
+    --player-handle: rgba(255, 255, 255, 0.3);
+
+    --image-invert: invert(100%);
+    --image-invert2: none;
+
+    --badge-border-color: transparent;
+    --cover-radius: 12px;
+    --cover-radius2: 6px;
+
+    --filled-button-bg: #fff;
+    --filled-button-color: #000;
+
+    --filled-button-choice-bg: #fff;
+    --filled-button-choice-color: #000;
+
+    --box-bg: rgb(25, 25, 25);
+    --box-border: rgb(55, 55, 55);
+
+    --button-badge-bg: rgb(70, 70, 70);
+    --button-badge-color: #fff;
+    --button-badge-selected-bg: rgb(236, 236, 236);
+    --button-badge-selected-color: #000;
+
+    --inline-link-border: 1px solid rgba(255,255,255,0.4);
+    --inline-link-over-border: 1px solid rgba(255,255,255,0.8);
+    --inline-link-over-border: 1px solid transparent;
+
+    --inline-link-color: var(--text-color);
+    --inline-link-over-color: var(--link-color);
+    --inline-link-bg: transparent;
+    --inline-link-over-bg: rgba(255,255,255,0);
+
+    --popover-bg: var(--bg4);
+    --popover-border: 0px solid rgba(55, 55, 55, 1);
+    --popover-box-shadow: 0px 0px 3px rgba(18, 18, 18, 0.5);
+
+    --header-inset-bg: rgb(39, 39, 39);
+    --header-inset-bg: rgb(24, 24, 24);
+}
+
+
+* {
+	-webkit-touch-callout: none;                /* prevent callout to copy image, etc when tap to hold */
+	-webkit-text-size-adjust: none;             /* prevent webkit from resizing text to fit */
+	-webkit-tap-highlight-color: rgba(0,0,0,0); /* make transparent link selection, adjust last value opacity 0 to 1.0 */
+	-webkit-user-select: text;                  /* prevent copy paste, to allow, change 'none' to 'text' */
+}
+
+input, textarea {
+	-webkit-user-select: text;
+}
+
+*,
+*:before,
+*:after {
+  -webkit-box-sizing: border-box !important;
+     -moz-box-sizing: border-box !important;
+          box-sizing: border-box !important;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+html {
+	/*
+	scroll-behavior: smooth;
+	scroll-padding-top: 80px; */
+	line-height: 1.24;
+	-webkit-text-size-adjust: 100%;
+	-moz-tab-size: 4;
+	tab-size: 4;
+}
+
+body {
+	background: var(--page-bg);
+	color: var(--text-color);
+	font-family: var(--font-sans);
+/*
+	-webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;*/
+
+  /* handles dynamic island, notch, and other safe areas */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+.body-toolbar-fixed {
+  padding-top: calc(66px + env(safe-area-inset-top));
+}
+
+.cloak { 
+    visibility: hidden; 
+}
+
+::selection {
+	background-color: var(--selection-bg);
+	color: var(--selection-color);
+}
+
+a:link, a:visited, a:active {
+	color: var(--text-color);
+	text-decoration: none;
+}
+a:hover {
+	text-decoration: underline;
+}
+
+.container {/*
+	background: var(--settings-bg);
+	background: var(--page-bg);
+	min-height: 100%;*/
+	/*z-index: 3;*/
+	position: relative;
+}
+.onboard-container { 
+	min-height: 100vh;
+	overflow-x: hidden;
+  display: none;
+}
+.onboard-container-web {
+	min-height: 0px;
+}
+
+
+.wrap {
+	padding-bottom: 40px;
+	background: var(--page-bg);
+	min-height: 100vh;
+
+	display: flex;
+  align-items: center;
+}
+
+.wrap-content {
+  
+}
+
+.wrap-inner {
+	width: 100%;
+	max-width: 1150px;
+	max-width: 1088px;
+	max-width: 1107px;
+	margin: 0px auto;
+	padding: 0px 17px 0px 17px;
+	position: relative;
+}
+@media (max-width: 600px)
+{
+	.wrap-inner {
+		
+	}
+}
+
+
+
+.footer {
+	padding: 50px 0px 0px 0px;
+	text-align: center;
+	font-size: 12px;
+	line-height: 12px;
+  content-visibility: auto;
+}
+@media (max-width: 600px)
+{
+	.footer {
+		text-align: left;
+		padding-left: 10px;
+		padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+	}
+}
+.footer > span {
+	display: inline-block;
+	opacity: 1;
+	font-size: 12px;
+	position: relative;
+	top: -1px;
+}
+.footer a {
+	display: inline-block;
+	padding: 6px 5px;
+}
+@media (max-width: 600px)
+{
+	.footer a span {
+		display: none;
+	}
+}
+
+</style>
+
+
+
+<!-- Debug comment: isLocalEnvironment = false -->
+
+<!-- Critical CSS -->
+<link rel="preload" href="https://images.sobrief.com/public/scripts/style_1754770529909.css" as="style" fetchpriority="high">
+<link rel="stylesheet" href="https://images.sobrief.com/public/scripts/style_1754770529909.css">
+
+
+
+<!-- Non-critical CSS - Deferred loading -->
+<script>
+  // Try to use requestIdleCallback for optimal timing when browser is idle
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(function() {
+      loadNonCriticalCSS();
+    });
+  } else {
+    // Fallback to window load event (no delay needed)
+    window.addEventListener('load', loadNonCriticalCSS);
+  }
+  
+  function loadNonCriticalCSS() {
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://images.sobrief.com/public/scripts/style2_1754770529909.css';
+    document.head.appendChild(link);
+  }
+</script>
+
+<!-- Fallback for JS disabled browsers -->
+<noscript>
+  <link href="https://images.sobrief.com/public/scripts/style2_1754770529909.css" rel="stylesheet">
+</noscript>
+
+
+
+
+<link rel="manifest" href="https://images.sobrief.com/public/manifest2.json">
+
+
+
+
+
+
+  <link rel="preload" as="image" href="https://images.sobrief.com/social/cover_dune_360px_1747140233.jpg" fetchpriority="high">
+
+  <link rel="canonical" href="https://sobrief.com/books/dune" />
+  
+  <meta property="og:title" content="Dune by Frank Herbert | Summary, Analysis, FAQ" />
+  <meta property="og:description" content="Plot Summary: 1) Arrival on the Desert Planet 2) The Test of Humanity 3) Whispers of Betrayal" />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://sobrief.com/books/dune" />
+  <meta property="og:image" content="https://sobrief.s3.us-west-1.amazonaws.com/social/book_2483082.png" />
+
+  <meta name="twitter:title" content="Dune by Frank Herbert | Summary, Analysis, FAQ" />
+  <meta name="twitter:description" content="Plot Summary: 1) Arrival on the Desert Planet 2) The Test of Humanity 3) Whispers of Betrayal" />
+  <meta name="twitter:url" content="https://sobrief.com/books/dune" />
+  <meta name="twitter:image" content="https://sobrief.s3.us-west-1.amazonaws.com/social/book_2483082.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <meta name="description" content="Plot Summary: 1) Arrival on the Desert Planet 2) The Test of Humanity 3) Whispers of Betrayal" />
+
+  <meta http-equiv="content-language" content="en">
+
+  <link rel="alternate" hreflang="en" href="https://sobrief.com/books/dune" />
+  
+
+  
+
+  <script type="application/ld+json">
+  [
+    
+    {
+      "@context": "http://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Books",
+          "item": "https://sobrief.com"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Science Fiction",
+          "item": "https://sobrief.com/genres/science-fiction"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Dune",
+          "item": "https://sobrief.com/books/dune"
+        }
+      ]
+    },
+    
+    {
+      "@context": "http://schema.org",
+      "@type": "Book",
+      "@id": "https://sobrief.com/books/dune",
+      "url": "https://sobrief.com/books/dune",
+      "name": "Dune",
+      "description": "Plot Summary: 1) Arrival on the Desert Planet 2) The Test of Humanity 3) Whispers of Betrayal",
+      "author": [
+        {
+          "@type": "Person",
+          "name": "Frank Herbert",
+          "url": "https://sobrief.com/books/dune#Author"
+        }
+      ],
+      
+      "dateModified": "2025-01-31T20:26:49.935Z",
+      "isbn": "9780593099322",
+      "numberOfPages": 658,
+      "bookEdition": "First Edition",
+      "genre": "Science Fiction",
+      "image": "https://sobrief.s3.us-west-1.amazonaws.com/social/book_2483082.png",
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.69",
+        "ratingCount": "224"
+      }
+      
+    }
+  ]
+</script>
+
+</head>
+<body class="theme-light body-toolbar-fixed">
+
+<div class="menu-bg" id="menu_bg" onclick="toggleContents()"></div>
+
+
+
+
+
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M6R665R5"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+
+
+
+
+<div class="notch-blur"></div>
+
+<div id="toolbar" class="toolbar  toolbar-center -toolbar-with-button ">
+  <div class="wrap-inner">
+
+  	<div id="back_button" class="back-button"></div>
+
+    <a href="/" class="logo" alt="SoBrief" aria-label="SoBrief"><span></span><b>SoBrief</b></a>
+
+    <div class="toolbar-links">
+      <a href="/lists">Lists</a> <a href="/trending">Trending</a> <a href="/new">New</a>  
+    </div>
+
+    <div class="toolbar-right">
+
+    	
+
+	    
+	    	<div id="instant_input_container" class="instant-input-container">
+
+		    <form action="/search" method="get" onsubmit="return showSearchLoading()">
+			    <div id="instant_input_wrap" class="instant-input-wrap">
+
+			      <div class="instant-input-icon" onclick="document.getElementById('instant_input').focus()"></div>
+				  
+			      <input id="instant_input_top" type="text" name="q" class="instant-input" placeholder="Find a book..." title="Title | Author | Topic | ISBN" />
+
+				  <div class="instant-input-barcode" onclick="openBookScanner()"></div>
+
+			    </div>
+				</form>
+
+			</div>
+
+
+			<div id="toolbar_button" class="toolbar-button -toolbar-button-visible" onclick="toolbarButtonClick()">Start free trial</div>
+
+			<div id="main_menu_wrap" class="main-menu-wrap">
+
+				<div id="search_toggle_button" class="search-toggle-button" onclick="toggleSearch()"><span></span></div>
+
+				<div id="main_menu_button" class="main-menu-button" onclick="toggleMainMenu()"><span></span></div>
+
+	      <div id="main_menu" class="main-menu">
+
+	      	<div id="main_menu_header" class="main-menu-header" style="display:none;">
+
+	      		<div id="main_menu_email" class="main-menu-email"></div>
+	      		<div id="main_menu_plan" class="main-menu-plan"></div>
+
+	      	</div>
+
+			<a id="sign_in_link_menu" href="" onclick="showSignInDialog(); return false;" class="menu-item-sign-in"><span></span>Sign In</a>
+
+	      	<div id="main_menu_header_sep" class="main-menu-sep"><div></div></div>
+
+	      	<a class="menu-item-mobile menu-item-lists" href="/lists"><span></span>Lists</a>
+	        <a class="menu-item-mobile menu-item-trending" href="/trending"><span></span>Trending</a>
+	        <a class="menu-item-mobile menu-item-new" href="/new"><span></span>New</a>
+
+	        <div class="main-menu-sep menu-item-mobile"><div></div></div>
+
+	        <a id="bookmarks_link_menu" href="/library" onclick="return openLibrary()" class="menu-item-bookmarks"><span></span>Your Library</a>
+
+			<a id="app_link_menu" href="/app" class="menu-item-app"><span></span>Get the App</a>
+
+			<a id="settings_link_menu" href="" onclick="showSettingsDialog(); return false;" class="menu-item-settings"><span></span>Settings</a>
+
+			<a id="manage_link_menu" href="" onclick="manageSubscription(); return false;" class="menu-item-manage" style="display:none"><span></span>Manage Subscription</a>
+
+	        <div id="bookmarks_menu_sep" class="main-menu-sep" style="display:none"><div></div></div>
+
+			<a id="upgrade_link_menu" href="" onclick="upgradeMenuItemClick(); return false;" class="menu-item-upgrade" style="display:none"><span></span>Upgrade to Pro</a>
+	        <a id="lifetime_link_menu" href="" onclick="showLifetimeDialog(); return false;" class="menu-item-lifetime" style="display:none"><span></span>Get Lifetime Access</a>
+
+
+	      	<div id="affiliate_menu_sep" class="main-menu-sep"><div></div></div>
+
+			<a href="https://docs.sobrief.com/en/collections/10166492-faqs" target="_blank" class="menu-item-support"><span></span>Support</a>
+	      	<a id="affiliate_link_menu" href="/affiliate" class="menu-item-affiliate"><span></span>Affiliate</a>
+
+	        
+	        
+	        <a id="sign_out_link_menu" href="" onclick="signOut(); return false;" class="menu-item-sign-out" style="display:none"><span></span>Sign Out</a>
+	      
+	      </div>
+
+			</div>
+
+		</div>
+
+  </div>
+</div>
+
+
+
+
+
+
+
+<div id="search_loading" class="search-loading ">
+
+	<div class="wrap-inner">
+
+		<div class="instant-progress-top-wrap">
+
+      <div class="instant-progress instant-progress-top"><div></div></div>
+      <div class="instant-loading-text">Searching...</div>
+
+    </div>
+
+	</div>
+
+</div>
+
+
+<div id="book_header_wrap" class="book-header-wrap">
+
+  <div class="wrap-inner" style="z-index:3">
+
+    
+
+    
+    <div class="book-language-wrap">
+
+      <div id="book_language_button" class="book-language" onclick="toggleLanguageMenu(this)">
+        <i></i><div>English</div><span></span>
+      </div>
+      <div class="book-language-menu">
+        
+          
+            <div id="lang_en" onclick="if (true) { handleFictionTranslation('en', 2483082, 'dune') } else { getTranslation('en', this) }; return false;" data-lang-code="en" data-native="English"><span></span>English<b>English</b></div>
+          
+        
+          
+            <div id="lang_es" onclick="if (true) { handleFictionTranslation('es', 2483082, 'dune') } else { getTranslation('es', this) }; return false;" data-lang-code="es" data-native="Español"><span></span>Español<b>Spanish</b></div>
+          
+        
+          
+            <div id="lang_zh" onclick="if (true) { handleFictionTranslation('zh', 2483082, 'dune') } else { getTranslation('zh', this) }; return false;" data-lang-code="zh" data-native="简体中文"><span></span>简体中文<b>Chinese</b></div>
+          
+        
+          
+            <div id="lang_fr" onclick="if (true) { handleFictionTranslation('fr', 2483082, 'dune') } else { getTranslation('fr', this) }; return false;" data-lang-code="fr" data-native="Français"><span></span>Français<b>French</b></div>
+          
+        
+          
+            <div id="lang_de" onclick="if (true) { handleFictionTranslation('de', 2483082, 'dune') } else { getTranslation('de', this) }; return false;" data-lang-code="de" data-native="Deutsch"><span></span>Deutsch<b>German</b></div>
+          
+        
+          
+            <div id="lang_ja" onclick="if (true) { handleFictionTranslation('ja', 2483082, 'dune') } else { getTranslation('ja', this) }; return false;" data-lang-code="ja" data-native="日本語"><span></span>日本語<b>Japanese</b></div>
+          
+        
+          
+            <div id="lang_pt" onclick="if (true) { handleFictionTranslation('pt', 2483082, 'dune') } else { getTranslation('pt', this) }; return false;" data-lang-code="pt" data-native="Português"><span></span>Português<b>Portuguese</b></div>
+          
+        
+          
+            <div id="lang_it" onclick="if (true) { handleFictionTranslation('it', 2483082, 'dune') } else { getTranslation('it', this) }; return false;" data-lang-code="it" data-native="Italiano"><span></span>Italiano<b>Italian</b></div>
+          
+        
+          
+            <div id="lang_ko" onclick="if (true) { handleFictionTranslation('ko', 2483082, 'dune') } else { getTranslation('ko', this) }; return false;" data-lang-code="ko" data-native="한국어"><span></span>한국어<b>Korean</b></div>
+          
+        
+          
+            <div id="lang_ru" onclick="if (true) { handleFictionTranslation('ru', 2483082, 'dune') } else { getTranslation('ru', this) }; return false;" data-lang-code="ru" data-native="Русский"><span></span>Русский<b>Russian</b></div>
+          
+        
+          
+            <div id="lang_nl" onclick="if (true) { handleFictionTranslation('nl', 2483082, 'dune') } else { getTranslation('nl', this) }; return false;" data-lang-code="nl" data-native="Nederlands"><span></span>Nederlands<b>Dutch</b></div>
+          
+        
+          
+            <div id="lang_ar" onclick="if (true) { handleFictionTranslation('ar', 2483082, 'dune') } else { getTranslation('ar', this) }; return false;" data-lang-code="ar" data-native="العربية"><span></span>العربية<b>Arabic</b></div>
+          
+        
+          
+            <div id="lang_pl" onclick="if (true) { handleFictionTranslation('pl', 2483082, 'dune') } else { getTranslation('pl', this) }; return false;" data-lang-code="pl" data-native="Polski"><span></span>Polski<b>Polish</b></div>
+          
+        
+          
+            <div id="lang_hi" onclick="if (true) { handleFictionTranslation('hi', 2483082, 'dune') } else { getTranslation('hi', this) }; return false;" data-lang-code="hi" data-native="हिन्दी"><span></span>हिन्दी<b>Hindi</b></div>
+          
+        
+          
+            <div id="lang_vi" onclick="if (true) { handleFictionTranslation('vi', 2483082, 'dune') } else { getTranslation('vi', this) }; return false;" data-lang-code="vi" data-native="Tiếng Việt"><span></span>Tiếng Việt<b>Vietnamese</b></div>
+          
+        
+          
+            <div id="lang_sv" onclick="if (true) { handleFictionTranslation('sv', 2483082, 'dune') } else { getTranslation('sv', this) }; return false;" data-lang-code="sv" data-native="Svenska"><span></span>Svenska<b>Swedish</b></div>
+          
+        
+          
+            <div id="lang_el" onclick="if (true) { handleFictionTranslation('el', 2483082, 'dune') } else { getTranslation('el', this) }; return false;" data-lang-code="el" data-native="Ελληνικά"><span></span>Ελληνικά<b>Greek</b></div>
+          
+        
+          
+            <div id="lang_tr" onclick="if (true) { handleFictionTranslation('tr', 2483082, 'dune') } else { getTranslation('tr', this) }; return false;" data-lang-code="tr" data-native="Türkçe"><span></span>Türkçe<b>Turkish</b></div>
+          
+        
+          
+            <div id="lang_th" onclick="if (true) { handleFictionTranslation('th', 2483082, 'dune') } else { getTranslation('th', this) }; return false;" data-lang-code="th" data-native="ไทย"><span></span>ไทย<b>Thai</b></div>
+          
+        
+          
+            <div id="lang_cs" onclick="if (true) { handleFictionTranslation('cs', 2483082, 'dune') } else { getTranslation('cs', this) }; return false;" data-lang-code="cs" data-native="Čeština"><span></span>Čeština<b>Czech</b></div>
+          
+        
+          
+            <div id="lang_ro" onclick="if (true) { handleFictionTranslation('ro', 2483082, 'dune') } else { getTranslation('ro', this) }; return false;" data-lang-code="ro" data-native="Română"><span></span>Română<b>Romanian</b></div>
+          
+        
+          
+            <div id="lang_hu" onclick="if (true) { handleFictionTranslation('hu', 2483082, 'dune') } else { getTranslation('hu', this) }; return false;" data-lang-code="hu" data-native="Magyar"><span></span>Magyar<b>Hungarian</b></div>
+          
+        
+          
+            <div id="lang_uk" onclick="if (true) { handleFictionTranslation('uk', 2483082, 'dune') } else { getTranslation('uk', this) }; return false;" data-lang-code="uk" data-native="Українська"><span></span>Українська<b>Ukrainian</b></div>
+          
+        
+          
+            <div id="lang_id" onclick="if (true) { handleFictionTranslation('id', 2483082, 'dune') } else { getTranslation('id', this) }; return false;" data-lang-code="id" data-native="Bahasa Indonesia"><span></span>Bahasa Indonesia<b>Indonesian</b></div>
+          
+        
+          
+            <div id="lang_da" onclick="if (true) { handleFictionTranslation('da', 2483082, 'dune') } else { getTranslation('da', this) }; return false;" data-lang-code="da" data-native="Dansk"><span></span>Dansk<b>Danish</b></div>
+          
+        
+          
+            <div id="lang_fi" onclick="if (true) { handleFictionTranslation('fi', 2483082, 'dune') } else { getTranslation('fi', this) }; return false;" data-lang-code="fi" data-native="Suomi"><span></span>Suomi<b>Finnish</b></div>
+          
+        
+          
+            <div id="lang_bg" onclick="if (true) { handleFictionTranslation('bg', 2483082, 'dune') } else { getTranslation('bg', this) }; return false;" data-lang-code="bg" data-native="Български"><span></span>Български<b>Bulgarian</b></div>
+          
+        
+          
+            <div id="lang_he" onclick="if (true) { handleFictionTranslation('he', 2483082, 'dune') } else { getTranslation('he', this) }; return false;" data-lang-code="he" data-native="עברית"><span></span>עברית<b>Hebrew</b></div>
+          
+        
+          
+            <div id="lang_no" onclick="if (true) { handleFictionTranslation('no', 2483082, 'dune') } else { getTranslation('no', this) }; return false;" data-lang-code="no" data-native="Norsk"><span></span>Norsk<b>Norwegian</b></div>
+          
+        
+          
+            <div id="lang_hr" onclick="if (true) { handleFictionTranslation('hr', 2483082, 'dune') } else { getTranslation('hr', this) }; return false;" data-lang-code="hr" data-native="Hrvatski"><span></span>Hrvatski<b>Croatian</b></div>
+          
+        
+          
+            <div id="lang_ca" onclick="if (true) { handleFictionTranslation('ca', 2483082, 'dune') } else { getTranslation('ca', this) }; return false;" data-lang-code="ca" data-native="Català"><span></span>Català<b>Catalan</b></div>
+          
+        
+          
+            <div id="lang_sk" onclick="if (true) { handleFictionTranslation('sk', 2483082, 'dune') } else { getTranslation('sk', this) }; return false;" data-lang-code="sk" data-native="Slovenčina"><span></span>Slovenčina<b>Slovak</b></div>
+          
+        
+          
+            <div id="lang_lt" onclick="if (true) { handleFictionTranslation('lt', 2483082, 'dune') } else { getTranslation('lt', this) }; return false;" data-lang-code="lt" data-native="Lietuvių"><span></span>Lietuvių<b>Lithuanian</b></div>
+          
+        
+          
+            <div id="lang_sl" onclick="if (true) { handleFictionTranslation('sl', 2483082, 'dune') } else { getTranslation('sl', this) }; return false;" data-lang-code="sl" data-native="Slovenščina"><span></span>Slovenščina<b>Slovenian</b></div>
+          
+        
+          
+            <div id="lang_sr" onclick="if (true) { handleFictionTranslation('sr', 2483082, 'dune') } else { getTranslation('sr', this) }; return false;" data-lang-code="sr" data-native="Српски"><span></span>Српски<b>Serbian</b></div>
+          
+        
+          
+            <div id="lang_et" onclick="if (true) { handleFictionTranslation('et', 2483082, 'dune') } else { getTranslation('et', this) }; return false;" data-lang-code="et" data-native="Eesti"><span></span>Eesti<b>Estonian</b></div>
+          
+        
+          
+            <div id="lang_lv" onclick="if (true) { handleFictionTranslation('lv', 2483082, 'dune') } else { getTranslation('lv', this) }; return false;" data-lang-code="lv" data-native="Latviešu"><span></span>Latviešu<b>Latvian</b></div>
+          
+        
+          
+            <div id="lang_fa" onclick="if (true) { handleFictionTranslation('fa', 2483082, 'dune') } else { getTranslation('fa', this) }; return false;" data-lang-code="fa" data-native="فارسی"><span></span>فارسی<b>Persian</b></div>
+          
+        
+          
+            <div id="lang_ml" onclick="if (true) { handleFictionTranslation('ml', 2483082, 'dune') } else { getTranslation('ml', this) }; return false;" data-lang-code="ml" data-native="മലയാളം"><span></span>മലയാളം<b>Malayalam</b></div>
+          
+        
+          
+            <div id="lang_ta" onclick="if (true) { handleFictionTranslation('ta', 2483082, 'dune') } else { getTranslation('ta', this) }; return false;" data-lang-code="ta" data-native="தமிழ்"><span></span>தமிழ்<b>Tamil</b></div>
+          
+        
+          
+            <div id="lang_ur" onclick="if (true) { handleFictionTranslation('ur', 2483082, 'dune') } else { getTranslation('ur', this) }; return false;" data-lang-code="ur" data-native="اردو"><span></span>اردو<b>Urdu</b></div>
+          
+        
+      </div>
+
+    </div>
+    
+
+    <nav class="breadcrumbs">
+      <a href="/">Books</a> <span class="breadcrumbs-chevron"></span><a href="/genres/science-fiction" style="font-weight:600">Science Fiction</a> <span class="breadcrumbs-chevron mobile-hide"></span><span class="mobile-hide" style="opacity:0.7">Dune</span>
+    </nav>
+
+    <div class="book-header">
+
+      <div id="bookmark_button" class="book-button book-button-bookmark" onclick="saveBookmark(2483082)"><span></span></div>
+      <div id="share_button" class="book-button book-button-share" onclick="shareBook()"><span></span></div>
+
+      <div class="book-header-left">
+      <picture>
+        <source srcset="https://images.sobrief.com/social/cover_dune_360px_1747140233.webp" type="image/webp">
+        <source srcset="https://images.sobrief.com/social/cover_dune_360px_1747140233.jpg" type="image/jpeg">
+        <img class="cover" src="https://images.sobrief.com/social/cover_dune_360px_1747140233.jpg" alt="Dune" fetchpriority="high" />
+      </picture>
+      </div>
+
+      <div class="book-header-right">
+
+        
+        <div class="book-series-wrap">
+          <a class="book-series" href="#Series">Dune #1</a>
+        </div>
+        
+
+        <h1 data-highlight="true">Dune</h1>
+
+        
+        <div class="book-subtitle" data-highlight="true"></div>
+        
+        <div class="book-author">
+          <i data-highlight="true">by </i><span data-highlight="true"><a href="/authors/frank-herbert">Frank Herbert</a></span> <span class="book-year">1965</span> <span class="book-pages">658 pages</span>
+
+          
+        </div>
+
+        
+          <a class="rating" href="#Reviews">
+
+            
+
+            <div class="rating-value" style="padding-left:0px; padding-right:8px;">
+              4.28
+            </div>
+
+            <div class="rating-stars">
+              
+              
+              
+
+              
+                <div class="rating-star"></div>
+              
+                <div class="rating-star"></div>
+              
+                <div class="rating-star"></div>
+              
+                <div class="rating-star"></div>
+              
+              
+              
+                <div class="rating-star-off"></div>
+              
+
+              <div class="ratings-value">
+                1.5M ratings
+              </div>
+            </div>
+
+          </a>
+        
+
+        
+        <div class="instant-book-topics">
+          
+          <div class="instant-book-topic immersive-topic">
+            <img src="/images/icon-music.png" alt="Music" class="immersive-topic-icon">
+            <span>Immersive</span>
+          </div><a class="instant-book-topic" href="/genres/science-fiction">Science Fiction</a><a class="instant-book-topic" href="/genres/fantasy">Fantasy</a><a class="instant-book-topic" href="/genres/science-fiction-fantasy">Science Fiction Fantasy</a>
+        </div>
+        
+
+        
+
+        <div class="play-button-container">
+
+          <div id="play_button_wrap" class="play-button-wrap" onclick="toggleBookAudio()">
+            <div id="play_button" class="play-button"><div></div></div>
+            <div class="play-button-label" id="listen_button">Listen</div>
+          </div>
+
+          
+          <div class="book-duration">17 minutes</div>
+          
+
+          
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="wrap" class="wrap-content">
+
+  <div class="wrap-inner">
+
+    <div id="loading" class="instant-loading" style="display:none">
+
+      <div id="instant_progress" class="instant-progress"><div></div></div>
+      <div class="instant-loading-text" id="instant_loading_text"></div>
+      <!-- <div class="instant-loading-warning" id="instant_loading_warning">(Please do not close or refresh the page)</div> -->
+
+    </div>
+
+    <div id="translate_loading" class="instant-loading" style="display:none;">
+
+      <div class="instant-progress"><div></div></div>
+      <div class="instant-loading-text">Translating...</div>
+
+    </div>
+
+    <div id="content_main" class="content-main">
+
+      <div class="content-main-right">
+
+        
+        <nav class="book-toc" id="toc" >
+
+          <div class="book-toc-header">
+              <div class="book-toc-header-left">
+                  <picture>
+                    <source srcset="https://images.sobrief.com/social/cover_dune_360px_1747140233.webp" type="image/webp">
+                    <source srcset="https://images.sobrief.com/social/cover_dune_360px_1747140233.jpg" type="image/jpeg">
+                    <img class="book-toc-cover" onclick="scrollToTop()" src="https://images.sobrief.com/social/cover_dune_360px_1747140233.jpg" alt="Dune" />
+                  </picture>
+              </div>
+              <div class="book-toc-header-right">
+                  <div class="book-toc-header-title">Dune</div>
+                  <div class="book-toc-header-author"><span>by </span><a href="/authors/frank-herbert">Frank Herbert</a></div>
+
+              </div>
+          </div>
+
+          <div class="book-toc-toggle" onclick="toggleContents()"></div>
+
+          <div class="book-toc-heading">Table of Contents</div>
+
+          <div class="book-toc-header-cta">
+            
+<div class="book-buy-button-wrap">
+
+  <div class="book-buy-button">
+    <i></i>
+    <a href="/buy/amazon/dune" target="_blank" rel="nofollow">Amazon</a>
+    <span onclick="toggleBuyMenu(this)"></span>
+  </div>
+
+  <div class="book-buy-button-menu">
+    <a href="/buy/kindle/dune" target="_blank" rel="nofollow" class="book-buy-item-kindle"><span></span>Kindle</a>
+    <a href="/buy/audible/dune" target="_blank" rel="nofollow" class="book-buy-item-audible"><span></span>Audible</a>
+  </div>
+
+</div>
+
+            <div id="listen_button_small_wrap" onclick="toggleBookAudio(false, true)" class="book-listen-button"><div><span></span></div><b id="listen_button_small">Listen</b></div><div id="toc_bookmark_button" class="book-bookmark-button" onclick="saveBookmark(2483082)"><div><span></span></div></div><div class="book-share-button" onclick="shareBook()"><div><span></span></div></div>
+          </div>
+
+          <div class="book-toc-inner">
+
+            
+
+            <ul id="toc_takeaways_list" class="book-toc-takeaways book-toc-fiction" >
+              
+                
+                  
+                  
+                  
+                  <li><a href="#Plot_Summary" >Plot Summary</a></li>
+                
+                  
+                    <ol>
+                  
+                  
+                  
+                  
+                  <li><a href="#Arrival_on_the_Desert_Planet" data-number="1">Arrival on the Desert Planet</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#The_Test_of_Humanity" data-number="2">The Test of Humanity</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#Whispers_of_Betrayal" data-number="3">Whispers of Betrayal</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#The_Dinner_of_Deception" data-number="4">The Dinner of Deception</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#The_Traitors_Bargain" data-number="5">The Traitor&#39;s Bargain</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#Escape_into_the_Sands" data-number="6">Escape into the Sands</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#The_Betrayal_Unfolds_in_Shadows" data-number="7">The Betrayal Unfolds in Shadows</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#The_Dukes_Last_Stand" data-number="8">The Duke&#39;s Last Stand</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#Paul_and_Jessicas_Desert_Flight" data-number="9">Paul and Jessica&#39;s Desert Flight</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#The_Fremens_Hidden_World" data-number="10">The Fremen&#39;s Hidden World</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#The_Rite_of_Passage" data-number="11">The Rite of Passage</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#The_Arena_of_Power" data-number="12">The Arena of Power</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#The_Awakening_of_Paul" data-number="13">The Awakening of Paul</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#The_Emperors_Reckoning" data-number="14">The Emperor&#39;s Reckoning</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#The_Battle_of_Arrakeen" data-number="15">The Battle of Arrakeen</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#The_Confrontation_with_Fate" data-number="16">The Confrontation with Fate</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#The_New_Order_Established" data-number="17">The New Order Established</a></li>
+                
+                  
+                  
+                    </ol>
+                  
+                  
+                  
+                  <li><a href="#Characters" >Characters</a></li>
+                
+                  
+                    <ol>
+                  
+                  
+                  
+                  
+                  <li><a href="#Duke_Leto_Atreides" data-number="18">Duke Leto Atreides</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#Lady_Jessica" data-number="19">Lady Jessica</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#Paul_Atreides" data-number="20">Paul Atreides</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#Baron_Vladimir_Harkonnen" data-number="21">Baron Vladimir Harkonnen</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#Dr_Wellington_Yueh" data-number="22">Dr. Wellington Yueh</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#Thufir_Hawat" data-number="23">Thufir Hawat</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#Gurney_Halleck" data-number="24">Gurney Halleck</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#Stilgar" data-number="25">Stilgar</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#Chani" data-number="26">Chani</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#Shaddam_IV" data-number="27">Shaddam IV</a></li>
+                
+                  
+                  
+                    </ol>
+                  
+                  
+                  
+                  <li><a href="#Plot_Devices" >Plot Devices</a></li>
+                
+                  
+                    <ol>
+                  
+                  
+                  
+                  
+                  <li><a href="#The_Gom_Jabbar_Test" data-number="28">The Gom Jabbar Test</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#The_Spice_Melange" data-number="29">The Spice Melange</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#The_Traitors_Bargain-2" data-number="30">The Traitor&#39;s Bargain</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#The_Voice" data-number="31">The Voice</a></li>
+                
+                  
+                  
+                  
+                  <li><a href="#The_Water_of_Life" data-number="32">The Water of Life</a></li>
+                
+                  
+                  
+                    </ol>
+                  
+                  
+                  
+                  <li><a href="#Analysis" data-number="33">Analysis</a></li>
+                
+                
+              
+
+              
+
+<li id="toc_answers" style=""><a href="#Answers">FAQ</a></li>
+
+<ol id="toc_answers_list" class="book-toc-takeaways" style="margin-bottom:15px">
+  
+    
+      <li><a href="#Synopsis_Basic_Details" data-number="1">Synopsis &amp; Basic Details</a></li>
+    
+      <li><a href="#What_is_Dune_about" data-number="2">What is Dune about?</a></li>
+    
+      <li><a href="#Why_should_I_read_Dune" data-number="3">Why should I read Dune?</a></li>
+    
+      <li><a href="#What_is_the_background_of_Dune" data-number="4">What is the background of Dune?</a></li>
+    
+      <li><a href="#What_are_the_most_memorable_quotes_in_Dune" data-number="5">What are the most memorable quotes in Dune?</a></li>
+    
+      <li><a href="#What_writing_style_narrative_choices_and_literary_techniques_does_Frank_Herbert_use" data-number="6">What writing style, narrative choices, and literary techniques does Frank Herbert use?</a></li>
+    
+      <li><a href="#Hidden_Details_Subtle_Connections" data-number="7">Hidden Details &amp; Subtle Connections</a></li>
+    
+      <li><a href="#What_are_some_minor_details_that_add_significant_meaning" data-number="8">What are some minor details that add significant meaning?</a></li>
+    
+      <li><a href="#What_are_some_subtle_foreshadowing_and_callbacks" data-number="9">What are some subtle foreshadowing and callbacks?</a></li>
+    
+      <li><a href="#What_are_some_unexpected_character_connections" data-number="10">What are some unexpected character connections?</a></li>
+    
+      <li><a href="#Who_are_the_most_significant_supporting_characters" data-number="11">Who are the most significant supporting characters?</a></li>
+    
+      <li><a href="#Psychological_Emotional_Relational_Analysis" data-number="12">Psychological, Emotional, &amp; Relational Analysis</a></li>
+    
+      <li><a href="#What_are_some_unspoken_motivations_of_the_characters" data-number="13">What are some unspoken motivations of the characters?</a></li>
+    
+      <li><a href="#What_psychological_complexities_do_the_characters_exhibit" data-number="14">What psychological complexities do the characters exhibit?</a></li>
+    
+      <li><a href="#What_are_the_major_emotional_turning_points" data-number="15">What are the major emotional turning points?</a></li>
+    
+      <li><a href="#How_do_relationship_dynamics_evolve" data-number="16">How do relationship dynamics evolve?</a></li>
+    
+      <li><a href="#Interpretation_Debate" data-number="17">Interpretation &amp; Debate</a></li>
+    
+      <li><a href="#Which_parts_of_the_story_remain_ambiguous_or_open-ended" data-number="18">Which parts of the story remain ambiguous or open-ended?</a></li>
+    
+      <li><a href="#What_are_some_debatable_controversial_scenes_or_moments_in_Dune" data-number="19">What are some debatable, controversial scenes or moments in Dune?</a></li>
+    
+      <li><a href="#Dune_Ending_Explained_How_It_Ends_What_It_Means" data-number="20">Dune Ending Explained: How It Ends &amp; What It Means</a></li>
+    
+  
+</ol>
+
+
+
+<li id="toc_reviews" style=""><a href="#Reviews">Review Summary</a></li>
+
+
+<li id="toc_series"><a href="#Series">Dune Series</a></li>
+
+
+
+<li id="toc_similar"><a href="#Similar_Books">Similar Books</a></li>
+
+
+<li id="toc_author" style="margin-top:20px; "><a href="#Author">About the Author</a></li>
+
+
+<li id="toc_author_books"><a href="#Other_Books_by_Author">Other Books by Author</a></li>
+
+
+
+<li id="toc_pdf" style="margin-top:20px"><a href="#Download_PDF">Download PDF</a></li>
+
+
+
+<li id="toc_epub"><a href="#Download_EPUB">Download EPUB</a></li>
+
+
+
+            </ul>
+
+            
+
+          </div>
+        </nav>
+
+      </div>
+
+      <div class="content-main-left">
+
+        <div class="book-nav">
+          <div class="book-nav-inner">
+
+            <a class="book-nav-item book-nav-selected" href="#Plot_Summary">Summary</a>
+            
+            <a class="book-nav-item" href="#Characters">Characters</a>
+            <a class="book-nav-item" href="#Plot_Devices">Plot Devices</a>
+            <a class="book-nav-item" href="#Analysis">Analysis</a>
+            
+            
+            <a class="book-nav-item" href="#Answers">FAQ</a> 
+            
+            <a class="book-nav-item" href="#Reviews">Reviews</a>
+            
+            <a class="book-nav-item" href="#Series">Series</a>
+            
+            
+            <a class="book-nav-item" href="#Similar_Books">Similar</a> 
+            
+            <a class="book-nav-item" href="#Author">Author</a>
+            
+            <a class="book-nav-item" href="#Download_PDF">Download</a>
+            
+
+          </div>
+        </div>
+
+        <div id="Key_Takeaways" style="margin-bottom:40px"></div>
+
+        <div class="book-content">
+
+          <div id="cta_book_top" class="book-cta book-cta-top">
+            <div class="book-cta-inner">
+              <div class="book-cta-title">Try Full Access for 7 Days</div>
+              <div class="book-cta-description">Unlock listening & more!</div>
+            </div>
+            <div class="book-cta-button" onclick="ctaClick('book-top')">Continue</div>
+          </div>
+          
+          <!-- Book content paywall wrapper -->
+          <div id="book_content_paywall_wrap">
+
+          <div id="takeaways_wrap" >
+
+            
+            <h2 id="Plot_Summary" style="margin-top:0px; padding-top:0px">Plot Summary</h2>
+            
+
+            <div class="chapter-wrap">
+
+              <div class="-book-card">
+
+                <div id="takeaways_text" class="chapter-summary instant-takeaways plot-summary">
+                  
+                    <h2 id="Arrival_on_the_Desert_Planet" tabindex="-1">Arrival on the Desert Planet</h2>
+<div class="plot-summary-tagline">The Atreides family arrives on Arrakis</div><p> <span data-link="duke-leto-atreides">Duke Leto Atreides</span>, his concubine <span data-link="lady-jessica">Jessica</span>, and their son <span data-link="paul-atreides">Paul</span> arrive on the desert planet Arrakis, also known as Dune. The planet is a harsh, arid world, but it is the only source of the valuable <span data-link="the-spice-melange">spice melange</span>. The Atreides have been given control of Arrakis by the Emperor, but they know it is a trap set by their enemies, the Harkonnens. As they settle into their new home, they are surrounded by intrigue and danger. Paul, a young man with extraordinary potential, begins to sense the weight of his destiny.</p>
+<h2 id="The_Test_of_Humanity" tabindex="-1">The Test of Humanity</h2>
+<div class="plot-summary-tagline">Paul faces a deadly test</div><p> <span data-link="paul-atreides">Paul</span> is visited by the Reverend Mother Gaius Helen Mohiam, who subjects him to a test with a <span data-link="the-gom-jabbar-test">gom jabbar</span>, a deadly poison needle. He must endure excruciating pain without withdrawing his hand from a box, proving he is human and not an animal driven by instinct. Paul passes the test, revealing his potential as the Kwisatz Haderach, a prophesied figure with the ability to see both the future and the past. This test marks the beginning of Paul's journey into a world of prophecy and power.</p>
+<h2 id="Whispers_of_Betrayal" tabindex="-1">Whispers of Betrayal</h2>
+<div class="plot-summary-tagline">Suspicion and treachery loom over House Atreides</div><p> <span data-link="duke-leto-atreides">Duke Leto</span> is aware of the dangers surrounding his family and suspects a traitor in their midst. <span data-link="thufir-hawat">Thufir Hawat</span>, the Duke's Master of Assassins, is tasked with uncovering the traitor. Meanwhile, <span data-link="lady-jessica">Jessica</span>, a Bene Gesserit with her own secrets, senses the tension and danger. The Atreides' new allies, the Fremen, are mysterious desert dwellers who may hold the key to survival on Arrakis. As the Duke navigates political and personal challenges, the threat of betrayal hangs over them all.</p>
+<h2 id="The_Dinner_of_Deception" tabindex="-1">The Dinner of Deception</h2>
+<div class="plot-summary-tagline">A tense dinner reveals hidden agendas</div><p> <span data-link="duke-leto-atreides">Duke Leto</span> hosts a dinner to solidify alliances and assess potential threats. The gathering is filled with political maneuvering and veiled threats. <span data-link="lady-jessica">Jessica</span> uses her Bene Gesserit training to read the guests, sensing danger and deceit. The dinner becomes a stage for power plays, with the Duke's enemies watching closely. Amidst the social niceties, the true peril of their situation becomes clear, as the Harkonnens' influence and the Emperor's hidden hand are felt.</p>
+<h2 id="The_Traitors_Bargain" tabindex="-1">The Traitor's Bargain</h2>
+<div class="plot-summary-tagline"><span data-link="dr-wellington-yueh">Dr. Yueh's</span> betrayal is revealed</div><p> <span data-link="dr-wellington-yueh">Dr. Wellington Yueh</span>, the Atreides' trusted physician, is revealed as the traitor. Driven by a desire to avenge his wife, who was tortured by the Harkonnens, Yueh has made a deal with the <span data-link="baron-vladimir-harkonnen">Baron Harkonnen</span>. He disables the Atreides' defenses, allowing the Harkonnens to attack. However, Yueh's betrayal is not complete; he provides <span data-link="duke-leto-atreides">Duke Leto</span> with a means to kill the Baron, a poison gas tooth, hoping to save <span data-link="lady-jessica">Jessica</span> and <span data-link="paul-atreides">Paul</span> in the process. The Duke is captured, and the fate of House Atreides hangs in the balance.</p>
+<h2 id="Escape_into_the_Sands" tabindex="-1">Escape into the Sands</h2>
+<div class="plot-summary-tagline"><span data-link="paul-atreides">Paul</span> and <span data-link="lady-jessica">Jessica</span> flee into the desert</div><p> As the Harkonnen attack unfolds, <span data-link="paul-atreides">Paul</span> and <span data-link="lady-jessica">Jessica</span> are captured but manage to escape into the desert. They are pursued by Harkonnen forces, but their Bene Gesserit training and Paul's emerging abilities help them survive. The harsh environment of Arrakis becomes both a threat and a refuge. As they navigate the treacherous sands, they must rely on their wits and each other to evade capture and find allies among the Fremen. Their journey into the desert marks the beginning of a new chapter in their lives.</p>
+<h2 id="The_Betrayal_Unfolds_in_Shadows" tabindex="-1">The Betrayal Unfolds in Shadows</h2>
+<div class="plot-summary-tagline"><span data-link="dr-wellington-yueh">Yueh's</span> treachery leads to chaos</div><p> <span data-link="dr-wellington-yueh">Dr. Yueh</span>, driven by a desire for revenge against the Harkonnens, betrays <span data-link="duke-leto-atreides">Duke Leto Atreides</span>. He disables the Atreides' defenses, allowing the Harkonnens to attack. However, Yueh's betrayal is not complete; he provides Duke Leto with a poison gas tooth, hoping to kill <span data-link="baron-vladimir-harkonnen">Baron Harkonnen</span>. The Duke is captured, and the fate of House Atreides hangs in the balance. Yueh's actions set off a chain of events that lead to the downfall of the Atreides, revealing the complex motives behind his betrayal.</p>
+<h2 id="The_Dukes_Last_Stand" tabindex="-1">The Duke's Last Stand</h2>
+<div class="plot-summary-tagline"><span data-link="duke-leto-atreides">Leto's</span> final act of defiance</div><p> Captured by the Harkonnens, <span data-link="duke-leto-atreides">Duke Leto</span> is brought before <span data-link="baron-vladimir-harkonnen">Baron Harkonnen</span>. Despite being drugged and weakened, Leto attempts to use the poison gas tooth given to him by <span data-link="dr-wellington-yueh">Yueh</span> to kill the Baron. However, the plan fails, and Leto dies, leaving the Baron alive. This moment marks the end of Duke Leto's resistance and the beginning of a new chapter for House Atreides. The Duke's death is a pivotal moment, highlighting the themes of sacrifice and the struggle for power.</p>
+<h2 id="Paul_and_Jessicas_Desert_Flight" tabindex="-1">Paul and Jessica's Desert Flight</h2>
+<div class="plot-summary-tagline">Escape into the harsh wilderness</div><p> As the Harkonnen attack unfolds, <span data-link="paul-atreides">Paul</span> and <span data-link="lady-jessica">Jessica</span> are captured but manage to escape into the desert. They are pursued by Harkonnen forces, but their Bene Gesserit training and Paul's emerging abilities help them survive. The harsh environment of Arrakis becomes both a threat and a refuge. As they navigate the treacherous sands, they must rely on their wits and each other to evade capture and find allies among the Fremen. Their journey into the desert marks the beginning of a new chapter in their lives.</p>
+<h2 id="The_Fremens_Hidden_World" tabindex="-1">The Fremen's Hidden World</h2>
+<div class="plot-summary-tagline">Discovery of a secretive society</div><p> <span data-link="paul-atreides">Paul</span> and <span data-link="lady-jessica">Jessica</span> are taken in by the Fremen, the desert-dwelling people of Arrakis. They discover a hidden world of survival and adaptation, where water is the most precious resource. The Fremen have their own customs, beliefs, and a deep connection to the desert. Paul begins to understand the significance of the Fremen in the larger struggle for Arrakis and the <span data-link="the-spice-melange">spice</span>. This chapter explores the themes of adaptation and the power of belief in shaping a society.</p>
+<h2 id="The_Rite_of_Passage" tabindex="-1">The Rite of Passage</h2>
+<div class="plot-summary-tagline"><span data-link="lady-jessica">Jessica's</span> initiation into Fremen culture</div><p> <span data-link="lady-jessica">Jessica</span> undergoes a dangerous ritual to become a Reverend Mother among the Fremen. She drinks the <span data-link="the-water-of-life">Water of Life</span>, a potent substance that unlocks her prescient abilities and connects her to the Fremen's collective memory. This rite of passage is a transformative experience, marking Jessica's acceptance into the Fremen community and her role as a leader. The chapter highlights the themes of transformation and the merging of different cultures.</p>
+<h2 id="The_Arena_of_Power" tabindex="-1">The Arena of Power</h2>
+<div class="plot-summary-tagline">Feyd-Rautha's deadly performance</div><p> On Giedi Prime, Feyd-Rautha Harkonnen participates in a gladiatorial match to prove his worth as the Baron's heir. The event is a display of power and manipulation, with political implications for the Harkonnens and the Emperor. Feyd-Rautha's cunning and ruthlessness are on full display as he navigates the deadly arena. This chapter explores the themes of power, ambition, and the dangerous games played by those in positions of authority.</p>
+<h2 id="The_Awakening_of_Paul" tabindex="-1">The Awakening of Paul</h2>
+<div class="plot-summary-tagline"><span data-link="paul-atreides">Paul</span> emerges from a deep trance</div><p> After three weeks in a coma, <span data-link="paul-atreides">Paul Atreides</span> awakens, having ingested the <span data-link="the-water-of-life">Water of Life</span>, a potent substance that only a Bene Gesserit Reverend Mother can survive. This act confirms his status as the Kwisatz Haderach, a prophesied figure with unparalleled prescient abilities. His awakening is a pivotal moment, marking his transformation into a leader capable of seeing the threads of the future. Paul realizes the full extent of his powers and the responsibilities they entail, setting the stage for the final confrontation with the Emperor and the Harkonnens.</p>
+<h2 id="The_Emperors_Reckoning" tabindex="-1">The Emperor's Reckoning</h2>
+<div class="plot-summary-tagline"><span data-link="shaddam-iv">Shaddam IV</span> faces his downfall</div><p> The <span data-link="shaddam-iv">Emperor Shaddam IV</span> arrives on Arrakis with his Sardaukar legions, intending to crush the Fremen rebellion. However, he underestimates the power of <span data-link="paul-atreides">Paul Muad'Dib</span> and the Fremen. Paul uses his newfound abilities to manipulate the situation, forcing the Emperor to confront the reality of his waning power. The Emperor's reliance on the Guild and the Bene Gesserit backfires as Paul reveals his control over the <span data-link="the-spice-melange">spice</span>, the lifeblood of the universe. This chapter highlights the Emperor's desperation and the shifting balance of power.</p>
+<h2 id="The_Battle_of_Arrakeen" tabindex="-1">The Battle of Arrakeen</h2>
+<div class="plot-summary-tagline">A decisive battle unfolds</div><p> The Fremen, led by <span data-link="paul-atreides">Paul</span>, launch a surprise attack on the Emperor's forces during a massive sandstorm. The battle is a testament to the Fremen's guerrilla tactics and Paul's strategic genius. The Sardaukar, once thought invincible, are overwhelmed by the Fremen's ferocity and the chaos of the storm. Paul demonstrates his leadership and combat prowess, solidifying his status as a legendary figure. The battle marks a turning point in the struggle for control of Arrakis, with the Fremen emerging victorious.</p>
+<h2 id="The_Confrontation_with_Fate" tabindex="-1">The Confrontation with Fate</h2>
+<div class="plot-summary-tagline"><span data-link="paul-atreides">Paul</span> faces his destiny</div><p> In the aftermath of the battle, <span data-link="paul-atreides">Paul</span> confronts the <span data-link="shaddam-iv">Emperor</span> and the remnants of the Harkonnen forces. He demands the Emperor's abdication and proposes a political marriage to Princess Irulan to secure his claim to the throne. This confrontation is a culmination of Paul's journey, as he embraces his role as a leader and a symbol of change. The chapter explores themes of power, destiny, and sacrifice, as Paul navigates the complex web of political and personal relationships that define his future.</p>
+<h2 id="The_New_Order_Established" tabindex="-1">The New Order Established</h2>
+<div class="plot-summary-tagline">A new era begins on Arrakis</div><p> With the <span data-link="shaddam-iv">Emperor</span> deposed and the Harkonnens defeated, <span data-link="paul-atreides">Paul</span> establishes a new order on Arrakis. He appoints <span data-link="stilgar">Stilgar</span> as the governor and promises to transform the desert planet into a paradise. However, Paul is acutely aware of the jihad that his rise to power will unleash across the universe. The chapter concludes with Paul reflecting on the cost of his victory and the responsibilities that come with it. The new order is both a triumph and a burden, as Paul grapples with the legacy he will leave behind.</p>
+<h1 id="Characters" tabindex="-1">Characters</h1>
+<h2 id="Duke_Leto_Atreides" tabindex="-1">Duke Leto Atreides</h2>
+<div class="plot-summary-tagline">Noble leader facing betrayal</div><p> Duke Leto is the head of House Atreides, a noble and honorable leader who is aware of the dangers posed by the Harkonnens and the Emperor. He is a loving father to <span data-link="paul-atreides">Paul</span> and a devoted partner to <span data-link="lady-jessica">Jessica</span>. Leto is determined to protect his family and his people, but he is caught in a web of political intrigue and betrayal. His strategic mind and sense of justice make him a respected leader, but his trust in those around him is tested.</p>
+<h2 id="Lady_Jessica" tabindex="-1">Lady Jessica</h2>
+<div class="plot-summary-tagline">Bene Gesserit with hidden strength</div><p> Jessica is the Duke's concubine and mother to <span data-link="paul-atreides">Paul</span>. Trained by the Bene Gesserit, she possesses extraordinary abilities, including the power of the <span data-link="the-voice">Voice</span>. Jessica is fiercely protective of her son and is aware of the prophecies surrounding him. She navigates the dangerous political landscape with intelligence and grace, using her skills to protect her family. Her loyalty to <span data-link="duke-leto-atreides">Leto</span> is unwavering, even as she grapples with the secrets she must keep.</p>
+<h2 id="Paul_Atreides" tabindex="-1">Paul Atreides</h2>
+<div class="plot-summary-tagline">Prophet and ruler of Arrakis</div><p> Paul emerges as the Kwisatz Haderach, a figure of immense power and foresight. His journey from a young noble to a legendary leader is marked by personal loss and the weight of prophecy. Paul is both a savior and a harbinger of change, destined to reshape the universe. His character embodies the themes of destiny, sacrifice, and the duality of power.</p>
+<h2 id="Baron_Vladimir_Harkonnen" tabindex="-1">Baron Vladimir Harkonnen</h2>
+<div class="plot-summary-tagline">Ruthless enemy of House Atreides</div><p> The Baron is the head of House Harkonnen, a cunning and cruel adversary of the Atreides. He orchestrates the plot to destroy <span data-link="duke-leto-atreides">Duke Leto</span> and seize control of Arrakis. The Baron's ambition knows no bounds, and he is willing to use any means to achieve his goals. His manipulation of those around him, including his own family, reveals his lack of morality and his desire for power.</p>
+<h2 id="Dr_Wellington_Yueh" tabindex="-1">Dr. Wellington Yueh</h2>
+<div class="plot-summary-tagline">Tragic betrayer seeking revenge</div><p> Yueh is the Atreides' trusted physician, a man torn between loyalty and revenge. He betrays <span data-link="duke-leto-atreides">Duke Leto</span> to the Harkonnens, hoping to avenge his wife's death. Despite his actions, Yueh's love for the Atreides leads him to provide a means for Leto to strike back at the Baron. His betrayal is a complex mix of personal vendetta and a desire to protect <span data-link="lady-jessica">Jessica</span> and <span data-link="paul-atreides">Paul</span>.</p>
+<h2 id="Thufir_Hawat" tabindex="-1">Thufir Hawat</h2>
+<div class="plot-summary-tagline">Master of Assassins and strategist</div><p> Hawat is the Duke's Mentat and Master of Assassins, a man of great intelligence and loyalty. He is tasked with uncovering the traitor within House Atreides and protecting the Duke. Hawat's dedication to <span data-link="duke-leto-atreides">Leto</span> is unwavering, but he is caught off guard by <span data-link="dr-wellington-yueh">Yueh's</span> betrayal. His strategic mind is a valuable asset, but the events on Arrakis challenge his abilities.</p>
+<h2 id="Gurney_Halleck" tabindex="-1">Gurney Halleck</h2>
+<div class="plot-summary-tagline">Loyal warrior and mentor</div><p> Gurney is a steadfast ally to <span data-link="paul-atreides">Paul</span>, providing guidance and support throughout the conflict. His loyalty to House Atreides and his personal vendetta against the Harkonnens drive his actions. Gurney's character highlights the themes of loyalty, revenge, and the enduring bonds of friendship. He is a symbol of the old order, adapting to the new realities of Arrakis.</p>
+<h2 id="Stilgar" tabindex="-1">Stilgar</h2>
+<div class="plot-summary-tagline">Fremen leader and ally</div><p> Stilgar is a key figure in the Fremen resistance and a trusted ally of <span data-link="paul-atreides">Paul</span>. His leadership and knowledge of the desert are instrumental in the Fremen's victory. Stilgar's character embodies the values of honor, loyalty, and adaptability. As the new governor of Arrakis, he represents the hope for a transformed planet and a better future for the Fremen.</p>
+<h2 id="Chani" tabindex="-1">Chani</h2>
+<div class="plot-summary-tagline">Fremen warrior and Paul's love</div><p> Chani is a fierce and loyal companion to <span data-link="paul-atreides">Paul</span>, embodying the spirit of the Fremen. Her relationship with Paul is central to his emotional journey, providing him with strength and grounding. Chani's character represents the resilience and adaptability of the Fremen people, as well as the personal sacrifices required in the pursuit of a greater cause.</p>
+<h2 id="Shaddam_IV" tabindex="-1">Shaddam IV</h2>
+<div class="plot-summary-tagline">Deposed Emperor of the Known Universe</div><p> Shaddam IV's reign ends with his defeat on Arrakis. His reliance on the Sardaukar and the Guild proves to be his downfall, as he underestimates the power of the Fremen and <span data-link="paul-atreides">Paul</span>. Shaddam's character is a study in the fragility of power and the consequences of hubris. His downfall marks the end of an era and the beginning of a new order.</p>
+<h1 id="Plot_Devices" tabindex="-1">Plot Devices</h1>
+<h2 id="The_Gom_Jabbar_Test" tabindex="-1">The Gom Jabbar Test</h2>
+<div class="plot-summary-tagline">A test of humanity and prophecy</div><p> The gom jabbar test is a pivotal moment for <span data-link="paul-atreides">Paul</span>, marking his potential as the Kwisatz Haderach. It is a test of pain and control, revealing his ability to transcend instinct and fear. This plot device introduces the theme of prophecy and destiny, setting the stage for Paul's journey and the challenges he will face.</p>
+<h2 id="The_Spice_Melange" tabindex="-1">The Spice Melange</h2>
+<div class="plot-summary-tagline">Central to power and survival</div><p> The spice is the most valuable substance in the universe, essential for space travel and extending life. Control of the spice is central to the power struggles on Arrakis. It is both a blessing and a curse, driving the actions of the characters and shaping the fate of worlds. The spice represents the themes of power, addiction, and the interconnectedness of all things.</p>
+<h2 id="The_Traitors_Bargain-2" tabindex="-1">The Traitor's Bargain</h2>
+<div class="plot-summary-tagline">A betrayal with complex motives</div><p> <span data-link="dr-wellington-yueh">Dr. Yueh's</span> betrayal is a key plot device, revealing the themes of loyalty, revenge, and sacrifice. His actions set the stage for the Harkonnen attack and the fall of House Atreides. Yueh's internal conflict and ultimate decision to aid <span data-link="duke-leto-atreides">Leto</span> in striking back at the Baron add depth to his character and complexity to the narrative.</p>
+<h2 id="The_Voice" tabindex="-1">The Voice</h2>
+<div class="plot-summary-tagline">A tool of control and influence</div><p> The Voice is a Bene Gesserit technique that allows the user to control others through tone and command. It is a symbol of the power and training of the Bene Gesserit, used by <span data-link="lady-jessica">Jessica</span> and <span data-link="paul-atreides">Paul</span> to influence events and protect themselves. The Voice represents the theme of control and the power of words in shaping reality.</p>
+<h2 id="The_Water_of_Life" tabindex="-1">The Water of Life</h2>
+<div class="plot-summary-tagline">Catalyst for transformation and prophecy</div><p> The Water of Life is a potent substance that plays a crucial role in <span data-link="paul-atreides">Paul's</span> transformation into the Kwisatz Haderach. It is both a test and a tool, unlocking prescient abilities and connecting the drinker to the collective memory of the Bene Gesserit. The Water of Life symbolizes the themes of transformation, destiny, and the merging of past and future.</p>
+<h1 id="Analysis" tabindex="-1">Analysis</h1>
+<div class="plot-summary-tagline">Dune's exploration of power and destiny</div><p> Frank Herbert's &quot;Dune&quot; is a complex tapestry of political intrigue, ecological themes, and the exploration of human potential. At its core, the novel examines the interplay of power, destiny, and the consequences of prophecy. Through the journey of <span data-link="paul-atreides">Paul Atreides</span>, Herbert delves into the burdens of leadership and the moral complexities of wielding immense power. The desert planet of Arrakis serves as a backdrop for a narrative that questions the nature of control and the impact of individual actions on the broader universe. &quot;Dune&quot; challenges readers to consider the balance between fate and free will, the cost of ambition, and the potential for transformation in the face of adversity.</p>
+
+
+                    
+                      
+                      <p class="instant-takeaways-date">Last updated: <time datetime="2025-01-31">January 31, 2025</time></p>
+                    
+                  
+                </div>
+
+              </div>
+
+              <div>
+                <a id="report_issue_button" class="inline-button inline-button-small" href="?report_issues=true">Report Issue</a>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- Paywall overlay positioned after takeaways but covers all content below -->
+          <div class="takeaways-paywall-overlay">
+            <div class="takeaways-paywall-gradient"></div>
+            <div class="takeaways-paywall-cta">
+              <button class="takeaways-continue-btn" onclick="handleTakeawaysPaywall()">
+                Continue Reading
+              </button>
+            </div>
+          </div>
+
+          
+          <!-- Purchase Card -->
+          <div class="chapter-wrap">
+            <div class="purchase-card">
+              <div class="purchase-card-heading">Want to read the full book?</div>
+              <div class="purchase-card-links">
+                <a href="/buy/amazon/dune" 
+                   target="_blank" 
+                   rel="nofollow" 
+                   class="purchase-card-link purchase-card-link-amazon"
+                   onclick="triggerNativeAction && triggerNativeAction('link_click')">
+                  <span class="purchase-card-link-icon"></span>
+                  Amazon
+                </a>
+                <a href="/buy/kindle/dune" 
+                   target="_blank" 
+                   rel="nofollow" 
+                   class="purchase-card-link purchase-card-link-kindle"
+                   onclick="triggerNativeAction && triggerNativeAction('link_click')">
+                  <span class="purchase-card-link-icon"></span>
+                  Kindle
+                </a>
+                <a href="/buy/audible/dune" 
+                   target="_blank" 
+                   rel="nofollow" 
+                   class="purchase-card-link purchase-card-link-audible"
+                   onclick="triggerNativeAction && triggerNativeAction('link_click')">
+                  <span class="purchase-card-link-icon"></span>
+                  Audible
+                </a>
+              </div>
+            </div>
+          </div>
+          
+
+          
+          <div id="Answers"></div>
+          <div id="answers_wrap" >
+
+            <h2 id="answers_heading">FAQ</h2>
+
+            <div class="chapter-wrap answers-wrap">
+
+              <div class="-book-card">
+
+                <div id="" class="chapter-summary">
+
+                  
+                  
+                    <div id="Synopsis_Basic_Details"></div>
+                    <h2>Synopsis &amp; Basic Details</h2>
+
+                  
+                    <div id="What_is_Dune_about"></div>
+                    <h3>What is Dune about?</h3>
+<ul>
+<li><strong>Political Intrigue &amp; Power</strong>: Dune is a story about the struggle for control of the desert planet Arrakis, the only source of the valuable <a href="#the-spice-melange">spice melange</a>. It involves political maneuvering, betrayal, and warfare between noble houses.</li>
+<li><strong>Prophecy &amp; Destiny</strong>: The story follows <a href="#paul-atreides">Paul Atreides</a>, a young man with extraordinary abilities, as he navigates his destiny as the prophesied Kwisatz Haderach, a figure with the power to see the future.</li>
+<li><strong>Ecological &amp; Cultural Exploration</strong>: Dune explores the unique ecology of Arrakis and the culture of its native inhabitants, the Fremen, highlighting themes of survival, adaptation, and the interconnectedness of life.</li>
+</ul>
+
+                  
+                    <div id="Why_should_I_read_Dune"></div>
+                    <h3>Why should I read Dune?</h3>
+<ul>
+<li><strong>Complex World-Building</strong>: Dune offers a richly detailed and immersive world with its own unique history, politics, religion, and ecology, providing a deeply engaging reading experience.</li>
+<li><strong>Exploration of Power &amp; Morality</strong>: The novel delves into the complexities of power, leadership, and the ethical dilemmas faced by those who wield it, prompting readers to question the nature of control and responsibility.</li>
+<li><strong>Timeless Themes &amp; Relevance</strong>: Dune explores timeless themes of destiny, free will, environmentalism, and the impact of religion and prophecy, making it relevant to contemporary readers.</li>
+</ul>
+
+                  
+                    <div id="What_is_the_background_of_Dune"></div>
+                    <h3>What is the background of Dune?</h3>
+<ul>
+<li><strong>Feudal Interstellar Empire</strong>: Dune is set in a far-future feudal society where noble houses control planets and resources, all under the rule of a Padishah Emperor. The Spacing Guild holds a monopoly on interstellar travel, and the Bene Gesserit are a powerful sisterhood with their own agenda.</li>
+<li><strong>Arrakis &amp; the Spice</strong>: The planet Arrakis, also known as Dune, is the only source of the <a href="#the-spice-melange">spice melange</a>, a substance essential for space travel and extending life. This makes Arrakis a focal point of political and economic power.</li>
+<li><strong>Bene Gesserit Breeding Program</strong>: The Bene Gesserit have a long-term breeding program aimed at creating the Kwisatz Haderach, a male with prescient abilities. This program and its goals are a major influence on the events of the story.</li>
+</ul>
+
+                  
+                    <div id="What_are_the_most_memorable_quotes_in_Dune"></div>
+                    <h3>What are the most memorable quotes in Dune?</h3>
+<ul>
+<li><strong>&quot;Fear is the mind-killer.&quot;</strong>: This quote, part of the Bene Gesserit Litany against Fear, highlights the importance of overcoming fear to achieve clarity and control, a central theme in the novel.</li>
+<li><strong>&quot;The spice must flow.&quot;</strong>: This quote emphasizes the importance of <a href="#the-spice-melange">melange</a> and the power it holds over the universe, driving the political and economic conflicts in the story.</li>
+<li><strong>&quot;I must not fear. Fear is the mind-killer. Fear is the little-death that brings total obliteration.&quot;</strong>: This quote, from the Bene Gesserit Litany against Fear, encapsulates the core philosophy of the Bene Gesserit and their approach to overcoming fear.</li>
+</ul>
+
+                  
+                    <div id="What_writing_style_narrative_choices_and_literary_techniques_does_Frank_Herbert_use"></div>
+                    <h3>What writing style, narrative choices, and literary techniques does Frank Herbert use?</h3>
+<ul>
+<li><strong>Complex Narrative Structure</strong>: Herbert employs a multi-layered narrative with shifting perspectives, internal monologues, and excerpts from fictional texts, creating a rich and immersive reading experience.</li>
+<li><strong>Emphasis on Themes &amp; Ideas</strong>: The novel prioritizes the exploration of complex themes and ideas over fast-paced action, using dialogue and internal reflections to delve into the characters' motivations and the story's deeper meanings.</li>
+<li><strong>Foreshadowing &amp; Symbolism</strong>: Herbert uses subtle foreshadowing, recurring symbols, and motifs to create a sense of destiny and interconnectedness, enhancing the novel's thematic depth and complexity.</li>
+</ul>
+<h2>Hidden Details &amp; Subtle Connections</h2>
+
+                  
+                    <div id="What_are_some_minor_details_that_add_significant_meaning"></div>
+                    <h3>What are some minor details that add significant meaning?</h3>
+<ul>
+<li><strong>The Bull's Head</strong>: The bull's head mounted on a board in the Atreides' new residence is not just a decoration; it's a symbol of the Harkonnen's brutality and a reminder of the Old Duke's death, foreshadowing the violence to come.</li>
+<li><strong>The Old Orange Catholic Bible</strong>: <a href="#dr-wellington-yueh">Dr. Yueh's</a> gift to <a href="#paul-atreides">Paul</a>, a small, old-fashioned book, is not just a sentimental item; it opens to a passage that was his dead wife's favorite, revealing his hidden grief and foreshadowing his betrayal.</li>
+<li><strong>The Key of Caladan</strong>: <a href="#duke-leto-atreides">Duke Leto's</a> act of hanging the key of Caladan Castle in the dining hall is a symbolic gesture of finality, emphasizing the irreversible nature of their move to Arrakis and the loss of their home.</li>
+</ul>
+
+                  
+                    <div id="What_are_some_subtle_foreshadowing_and_callbacks"></div>
+                    <h3>What are some subtle foreshadowing and callbacks?</h3>
+<ul>
+<li><strong>Paul's Dream of a Cavern</strong>: <a href="#paul-atreides">Paul's</a> dream of a cavern with dripping water and a girl with blue eyes foreshadows his future encounters with the Fremen and his relationship with <a href="#chani">Chani</a>.</li>
+<li><strong>The Reverend Mother's Words on Water</strong>: The Reverend Mother's comments about water starvation on Arrakis foreshadow the importance of water in the Fremen culture and the challenges the Atreides will face on the desert planet.</li>
+<li><strong>The Mention of Salusa Secundus</strong>: The discussion of Salusa Secundus as a prison planet foreshadows the origin of the Sardaukar and the harsh conditions that breed their ferocity, hinting at the Fremen's potential.</li>
+</ul>
+
+                  
+                    <div id="What_are_some_unexpected_character_connections"></div>
+                    <h3>What are some unexpected character connections?</h3>
+<ul>
+<li><strong>Jessica's Harkonnen Lineage</strong>: The revelation that <a href="#lady-jessica">Jessica</a> is the daughter of <a href="#baron-vladimir-harkonnen">Baron Harkonnen</a> adds a layer of complexity to her character and her motivations, highlighting the Bene Gesserit's long-term breeding program.</li>
+<li><strong>Yueh's Wife's Bene Gesserit Connection</strong>: The fact that <a href="#dr-wellington-yueh">Dr. Yueh's</a> wife was a Bene Gesserit reveals a hidden layer of Bene Gesserit influence and control, and explains his deep-seated hatred for the Harkonnens.</li>
+<li><strong>Kynes's Fremen Identity</strong>: The revelation that the Imperial Planetologist Kynes is also a Fremen leader highlights the interconnectedness of the Fremen and the planet, and foreshadows their role in the events to come.</li>
+</ul>
+
+                  
+                    <div id="Who_are_the_most_significant_supporting_characters"></div>
+                    <h3>Who are the most significant supporting characters?</h3>
+<ul>
+<li><strong><a href="#thufir-hawat">Thufir Hawat</a></strong>: As the Atreides' Mentat, Hawat's strategic mind and loyalty are crucial to the family's survival, and his eventual capture and manipulation by the Harkonnens highlight the dangers of betrayal.</li>
+<li><strong><a href="#gurney-halleck">Gurney Halleck</a></strong>: As a warrior and mentor to <a href="#paul-atreides">Paul</a>, Gurney's loyalty and fighting skills are essential to the Atreides' cause, and his presence provides a link to the old order and the values of House Atreides.</li>
+<li><strong>Duncan Idaho</strong>: As a skilled swordsman and diplomat, Duncan's mission to the Fremen is vital to the Atreides' survival, and his death is a significant loss that underscores the dangers of Arrakis.</li>
+</ul>
+<h2>Psychological, Emotional, &amp; Relational Analysis</h2>
+
+                  
+                    <div id="What_are_some_unspoken_motivations_of_the_characters"></div>
+                    <h3>What are some unspoken motivations of the characters?</h3>
+<ul>
+<li><strong>Jessica's Desire for a Son</strong>: <a href="#lady-jessica">Jessica's</a> decision to bear a son instead of a daughter is driven by her love for <a href="#duke-leto-atreides">Leto</a> and her desire to fulfill his wish, but also by her own ambition to produce the Kwisatz Haderach.</li>
+<li><strong>Yueh's Need for Revenge</strong>: <a href="#dr-wellington-yueh">Dr. Yueh's</a> betrayal is motivated by his deep-seated desire for revenge against the Harkonnens for torturing his wife, a motivation that overrides his loyalty to the Atreides.</li>
+<li><strong>The Baron's Fear of the Atreides</strong>: The <a href="#baron-vladimir-harkonnen">Baron's</a> intense hatred for the Atreides is rooted in a deep-seated fear of their popularity and their potential to challenge his power, driving his ruthless actions.</li>
+</ul>
+
+                  
+                    <div id="What_psychological_complexities_do_the_characters_exhibit"></div>
+                    <h3>What psychological complexities do the characters exhibit?</h3>
+<ul>
+<li><strong>Paul's Burden of Prescience</strong>: <a href="#paul-atreides">Paul</a> struggles with the weight of his prescient abilities, which force him to confront the inevitability of his destiny and the violence that lies ahead.</li>
+<li><strong>Jessica's Internal Conflict</strong>: <a href="#lady-jessica">Jessica</a> is torn between her loyalty to the Bene Gesserit and her love for her family, grappling with the consequences of her choices and the burden of her training.</li>
+<li><strong>The Baron's Sadistic Tendencies</strong>: The <a href="#baron-vladimir-harkonnen">Baron's</a> cruelty and sadism are not just a means to an end; they are a source of pleasure for him, revealing a deep-seated psychological darkness.</li>
+</ul>
+
+                  
+                    <div id="What_are_the_major_emotional_turning_points"></div>
+                    <h3>What are the major emotional turning points?</h3>
+<ul>
+<li><strong>Paul's Gom Jabbar Test</strong>: The <a href="#the-gom-jabbar-test">gom jabbar test</a> forces <a href="#paul-atreides">Paul</a> to confront his deepest fears and accept his potential, marking a turning point in his emotional and psychological development.</li>
+<li><strong>Leto's Death</strong>: The <a href="#duke-leto-atreides">Duke's</a> death is a major emotional turning point for <a href="#paul-atreides">Paul</a> and <a href="#lady-jessica">Jessica</a>, forcing them to confront the loss of their protector and the harsh realities of their situation.</li>
+<li><strong>Jessica's Transformation</strong>: <a href="#lady-jessica">Jessica's</a> experience with the <a href="#the-water-of-life">Water of Life</a> is a transformative emotional and spiritual journey, connecting her to the Fremen and solidifying her role as a leader.</li>
+</ul>
+
+                  
+                    <div id="How_do_relationship_dynamics_evolve"></div>
+                    <h3>How do relationship dynamics evolve?</h3>
+<ul>
+<li><strong>Leto and Jessica's Bond</strong>: The relationship between <a href="#duke-leto-atreides">Leto</a> and <a href="#lady-jessica">Jessica</a> evolves from a formal arrangement to a deep bond of love and respect, highlighting the power of human connection in the face of adversity.</li>
+<li><strong>Paul and Jessica's Mother-Son Dynamic</strong>: The relationship between <a href="#paul-atreides">Paul</a> and <a href="#lady-jessica">Jessica</a> shifts from a student-teacher dynamic to one of mutual respect and understanding, as Paul's abilities grow and he begins to challenge her authority.</li>
+<li><strong>Paul and Gurney's Loyalty</strong>: The bond between <a href="#paul-atreides">Paul</a> and <a href="#gurney-halleck">Gurney</a> is tested by betrayal and loss, but their loyalty to each other remains a constant force, highlighting the enduring power of friendship.</li>
+</ul>
+<h2>Interpretation &amp; Debate</h2>
+
+                  
+                    <div id="Which_parts_of_the_story_remain_ambiguous_or_open-ended"></div>
+                    <h3>Which parts of the story remain ambiguous or open-ended?</h3>
+<ul>
+<li><strong>The Nature of Paul's Prescience</strong>: The extent and limitations of <a href="#paul-atreides">Paul's</a> prescience are never fully explained, leaving the reader to question the nature of his power and the degree to which he controls his destiny.</li>
+<li><strong>The Bene Gesserit's True Motives</strong>: The Bene Gesserit's long-term goals and their true motivations remain ambiguous, leaving the reader to wonder about their ultimate role in the events of the story.</li>
+<li><strong>The Future of Arrakis</strong>: The ending of the novel leaves the future of Arrakis uncertain, with the potential for both utopia and dystopia, prompting readers to consider the long-term consequences of <a href="#paul-atreides">Paul's</a> actions.</li>
+</ul>
+
+                  
+                    <div id="What_are_some_debatable_controversial_scenes_or_moments_in_Dune"></div>
+                    <h3>What are some debatable, controversial scenes or moments in Dune?</h3>
+<ul>
+<li><strong>Jessica's Decision to Bear a Son</strong>: <a href="#lady-jessica">Jessica's</a> choice to defy the Bene Gesserit and bear a son is a controversial act that has far-reaching consequences, raising questions about free will and the nature of destiny.</li>
+<li><strong>Paul's Use of the Jihad</strong>: <a href="#paul-atreides">Paul's</a> decision to embrace the Fremen's religious fervor and use it as a tool for his own power is a morally ambiguous act, prompting debate about the ethics of leadership and the use of religion for political gain.</li>
+<li><strong>The Treatment of the Harkonnens</strong>: The brutal and dehumanizing portrayal of the Harkonnens raises questions about the nature of good and evil, and the extent to which violence can be justified in the pursuit of power.</li>
+</ul>
+
+                  
+                    <div id="Dune_Ending_Explained_How_It_Ends_What_It_Means"></div>
+                    <h3>Dune Ending Explained: How It Ends &amp; What It Means</h3>
+<ul>
+<li><strong>Paul's Ascension to Power</strong>: <a href="#paul-atreides">Paul's</a> victory over the Harkonnens and the Emperor establishes him as the new ruler of Arrakis, but it also sets the stage for a future of conflict and change.</li>
+<li><strong>The Looming Jihad</strong>: The ending foreshadows the jihad that <a href="#paul-atreides">Paul's</a> rise to power will unleash across the universe, highlighting the dangers of unchecked power and the unintended consequences of prophecy.</li>
+<li><strong>Ambiguity of the Future</strong>: The ending leaves the reader with a sense of unease and uncertainty, as the future of Arrakis and the universe remains open-ended, prompting reflection on the cyclical nature of history and the complexities of human destiny.</li>
+</ul>
+
+                  
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+          
+
+
+
+          
+          <div id="Reviews"></div>
+          <div id="reviews_wrap" >
+            
+            <h2 id="reviews_heading">Review Summary</h2>
+
+            <div class="chapter-wrap">
+
+              <div class="book-card">
+
+                
+                <div class="chapter-inlay">
+
+                  <div class="review">
+
+                    <div class="rating">
+
+                      <div class="rating-stars">
+                        
+                        
+                        
+                        
+
+                        
+                          <div class="rating-star"></div>
+                        
+                          <div class="rating-star"></div>
+                        
+                          <div class="rating-star"></div>
+                        
+                          <div class="rating-star"></div>
+                        
+                        
+                        
+                          <div class="rating-star-off"></div>
+                        
+
+                        <div class="rating-value">
+                          4.28 out of 5
+                        </div>
+                      </div>
+
+                      <div class="review-info">
+                        Average of <span>1.5M</span> ratings from <span>Goodreads</span> and <span>Amazon</span>.
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                </div>
+                
+
+                <div id="summary_reviews" class="chapter-summary chapter-summary-inlay">
+                  <p><strong>Dune</strong> is widely regarded as a groundbreaking science fiction masterpiece, praised for its complex world-building, political intrigue, and philosophical themes. While many readers find it captivating and thought-provoking, some struggle with its dense prose and slow pacing. The novel's exploration of religion, ecology, and power dynamics resonates with many, though its portrayal of certain characters and cultures has faced criticism. Despite mixed opinions on its readability, Dune's influence on the science fiction genre is undeniable, inspiring countless works and adaptations.</p>
+
+                </div>
+
+              </div>
+
+              <div class="book-card" id="your_rating_wrap" style="margin-top: 20px; padding: 28px 30px 23px 30px;">
+
+                <div class="rating-widget-label">Your rating:</div>
+
+                <div class="rating-widget-container" data-book-id="">
+                  <div class="rating-widget-stars">
+                    
+                    
+                    
+                    
+                    <div id="rating_widget_value" class="rating-widget-value" style="padding-left:0px; padding-right:12px; ">
+                      4.69
+                    </div>
+                    
+                      
+                        <div class="rating-widget-star rating-widget-star-full" data-value="1"></div>
+                      
+                    
+                      
+                        <div class="rating-widget-star rating-widget-star-full" data-value="2"></div>
+                      
+                    
+                      
+                        <div class="rating-widget-star rating-widget-star-full" data-value="3"></div>
+                      
+                    
+                      
+                        <div class="rating-widget-star rating-widget-star-full" data-value="4"></div>
+                      
+                    
+                      
+                        <div class="rating-widget-star rating-widget-star-half" data-value="5"></div>
+                      
+                    
+                    <div id="rating_widget_total" class="rating-widget-count">
+                      
+                      
+                        224 ratings
+                      
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+
+
+
+
+          
+          <div id="Series"></div>
+          <div id="series_wrap" >
+
+            <h2 id="series_heading"><i>Dune</i> Series</h2>
+
+            <div class="scrollable-list scrollable-list-left-col">
+              
+                <a href="/books/dune" class="scrollable-list-item scrollable-list-item-smaller">
+
+  
+  <picture>
+    
+    
+    <img class="scrollable-list-image" src="https://images.sobrief.com/social/cover_dune_360px_1747140233.jpg" alt="Dune Summary" loading="lazy" data-id="2483082" />
+  </picture>
+
+  <div class="scrollable-list-info">
+
+    
+    <div class="scrollable-list-series">#1</div>
+    
+    <div class="scrollable-list-title">Dune</div>
+    <div class="scrollable-list-author">Frank Herbert</div>
+
+    
+    <div class="scrollable-list-subtitle"></div>
+    
+
+    
+    <div class="rating-stars scrollable-list-rating">
+      
+      
+      
+      
+
+      
+      <div class="rating-star" style="margin-right:5px"></div>
+      
+
+      <div class="rating-value" style="padding-left:0px; padding-right:12px; padding-right:2px;">
+        4.28
+      </div>
+
+      
+
+      <div class="ratings-value ratings-value-index">
+        (463.3K)
+      </div>
+
+    </div>
+    
+
+    
+
+  </div>
+
+</a>
+
+
+
+              
+                <a href="/books/dune-messiah" class="scrollable-list-item scrollable-list-item-smaller">
+
+  
+  <picture>
+    
+    
+    <img class="scrollable-list-image" src="https://images.sobrief.com/social/cover_dune-messiah_360px_1747158890.jpg" alt="Dune Messiah Summary" loading="lazy" data-id="2485332" />
+  </picture>
+
+  <div class="scrollable-list-info">
+
+    
+    <div class="scrollable-list-series">#2</div>
+    
+    <div class="scrollable-list-title">Dune Messiah</div>
+    <div class="scrollable-list-author">Frank Herbert</div>
+
+    
+    <div class="scrollable-list-subtitle"></div>
+    
+
+    
+    <div class="rating-stars scrollable-list-rating">
+      
+      
+      
+      
+
+      
+      <div class="rating-star" style="margin-right:5px"></div>
+      
+
+      <div class="rating-value" style="padding-left:0px; padding-right:12px; padding-right:2px;">
+        3.89
+      </div>
+
+      
+
+      <div class="ratings-value ratings-value-index">
+        (336.9K)
+      </div>
+
+    </div>
+    
+
+    
+
+  </div>
+
+</a>
+
+
+
+              
+                <a href="/books/children-of-dune" class="scrollable-list-item scrollable-list-item-smaller">
+
+  
+  <picture>
+    
+    
+    <img class="scrollable-list-image" src="https://images.sobrief.com/social/cover_children-of-dune_360px_1747163847.jpg" alt="Children of Dune Summary" loading="lazy" data-id="2490084" />
+  </picture>
+
+  <div class="scrollable-list-info">
+
+    
+    <div class="scrollable-list-series">#3</div>
+    
+    <div class="scrollable-list-title">Children of Dune</div>
+    <div class="scrollable-list-author">Frank Herbert</div>
+
+    
+    <div class="scrollable-list-subtitle"></div>
+    
+
+    
+    <div class="rating-stars scrollable-list-rating">
+      
+      
+      
+      
+
+      
+      <div class="rating-star" style="margin-right:5px"></div>
+      
+
+      <div class="rating-value" style="padding-left:0px; padding-right:12px; padding-right:2px;">
+        3.96
+      </div>
+
+      
+
+      <div class="ratings-value ratings-value-index">
+        (212.5K)
+      </div>
+
+    </div>
+    
+
+    
+
+  </div>
+
+</a>
+
+
+
+              
+                <a href="/books/god-emperor-of-dune" class="scrollable-list-item scrollable-list-item-smaller">
+
+  
+  <picture>
+    
+    
+    <img class="scrollable-list-image" src="https://images.sobrief.com/social/cover_god-emperor-of-dune_360px_1747146773.jpg" alt="God Emperor of Dune Summary" loading="lazy" data-id="2504051" />
+  </picture>
+
+  <div class="scrollable-list-info">
+
+    
+    <div class="scrollable-list-series">#4</div>
+    
+    <div class="scrollable-list-title">God Emperor of Dune</div>
+    <div class="scrollable-list-author">Frank Herbert</div>
+
+    
+    <div class="scrollable-list-subtitle"></div>
+    
+
+    
+    <div class="rating-stars scrollable-list-rating">
+      
+      
+      
+      
+
+      
+      <div class="rating-star" style="margin-right:5px"></div>
+      
+
+      <div class="rating-value" style="padding-left:0px; padding-right:12px; padding-right:2px;">
+        3.88
+      </div>
+
+      
+
+      <div class="ratings-value ratings-value-index">
+        (125.2K)
+      </div>
+
+    </div>
+    
+
+    
+
+  </div>
+
+</a>
+
+
+
+              
+                <a href="/books/heretics-of-dune" class="scrollable-list-item scrollable-list-item-smaller">
+
+  
+  <picture>
+    
+    
+    <img class="scrollable-list-image" src="https://images.sobrief.com/social/cover_heretics-of-dune_360px_1747151435.jpg" alt="Heretics of Dune Summary" loading="lazy" data-id="2495151" />
+  </picture>
+
+  <div class="scrollable-list-info">
+
+    
+    <div class="scrollable-list-series">#5</div>
+    
+    <div class="scrollable-list-title">Heretics of Dune</div>
+    <div class="scrollable-list-author">Frank Herbert</div>
+
+    
+    <div class="scrollable-list-subtitle"></div>
+    
+
+    
+    <div class="rating-stars scrollable-list-rating">
+      
+      
+      
+      
+
+      
+      <div class="rating-star" style="margin-right:5px"></div>
+      
+
+      <div class="rating-value" style="padding-left:0px; padding-right:12px; padding-right:2px;">
+        3.86
+      </div>
+
+      
+
+      <div class="ratings-value ratings-value-index">
+        (89.3K)
+      </div>
+
+    </div>
+    
+
+    
+
+  </div>
+
+</a>
+
+
+
+              
+                <a href="/books/chapterhouse" class="scrollable-list-item scrollable-list-item-smaller">
+
+  
+  <picture>
+    
+    
+    <img class="scrollable-list-image" src="https://images.sobrief.com/social/cover_chapterhouse_360px_1747209320.jpg" alt="Chapterhouse Summary" loading="lazy" data-id="2495152" />
+  </picture>
+
+  <div class="scrollable-list-info">
+
+    
+    <div class="scrollable-list-series">#6</div>
+    
+    <div class="scrollable-list-title">Chapterhouse</div>
+    <div class="scrollable-list-author">Frank Herbert</div>
+
+    
+    <div class="scrollable-list-subtitle">Dune</div>
+    
+
+    
+    <div class="rating-stars scrollable-list-rating">
+      
+      
+      
+      
+
+      
+      <div class="rating-star" style="margin-right:5px"></div>
+      
+
+      <div class="rating-value" style="padding-left:0px; padding-right:12px; padding-right:2px;">
+        3.88
+      </div>
+
+      
+
+      <div class="ratings-value ratings-value-index">
+        (73.2K)
+      </div>
+
+    </div>
+    
+
+    
+
+  </div>
+
+</a>
+
+
+
+              
+            </div>
+
+          </div>
+          
+
+
+          
+          <div id="Similar_Books"></div>
+          <div id="similar_wrap" >
+
+            <h2 id="similar_heading">Similar Books</h2>
+
+            <div class="scrollable-list scrollable-list-left-col">
+              
+                <a href="/books/the-art-of-the-fellowship-of-the-ring" class="scrollable-list-item scrollable-list-item-smaller">
+
+  
+  <picture>
+    <source srcset="https://images.sobrief.com/social/cover_the-art-of-the-fellowship-of-the-ring_360px_1747591236.webp" type="image/webp">
+    <source srcset="https://images.sobrief.com/social/cover_the-art-of-the-fellowship-of-the-ring_360px_1747591236.jpg" type="image/jpeg">
+    <img class="scrollable-list-image" src="https://images.sobrief.com/social/cover_the-art-of-the-fellowship-of-the-ring_360px_1747591236.jpg" alt="The Art of The Fellowship of the Ring Summary" loading="lazy" data-id="2515336" />
+  </picture>
+
+  <div class="scrollable-list-info">
+
+    
+    <div class="scrollable-list-title">The Art of The Fellowship of the Ring</div>
+    <div class="scrollable-list-author">Gary Russell</div>
+
+    
+    <div class="scrollable-list-subtitle"></div>
+    
+
+    
+    <div class="rating-stars scrollable-list-rating">
+      
+      
+      
+      
+
+      
+      <div class="rating-star" style="margin-right:5px"></div>
+      
+
+      <div class="rating-value" style="padding-left:0px; padding-right:12px; padding-right:2px;">
+        4.61
+      </div>
+
+      
+
+      <div class="ratings-value ratings-value-index">
+        (193.8K)
+      </div>
+
+    </div>
+    
+
+    
+
+  </div>
+
+</a>
+
+
+
+              
+                <a href="/books/the-hitchhiker-s-guide-to-the-galaxy" class="scrollable-list-item scrollable-list-item-smaller">
+
+  
+  <picture>
+    <source srcset="https://images.sobrief.com/social/cover_the-hitchhiker-s-guide-to-the-galaxy_360px_1747145324.webp" type="image/webp">
+    <source srcset="https://images.sobrief.com/social/cover_the-hitchhiker-s-guide-to-the-galaxy_360px_1747145324.jpg" type="image/jpeg">
+    <img class="scrollable-list-image" src="https://images.sobrief.com/social/cover_the-hitchhiker-s-guide-to-the-galaxy_360px_1747145324.jpg" alt="The Hitchhiker’s Guide to the Galaxy Summary" loading="lazy" data-id="2486105" />
+  </picture>
+
+  <div class="scrollable-list-info">
+
+    
+    <div class="scrollable-list-title">The Hitchhiker’s Guide to the Galaxy</div>
+    <div class="scrollable-list-author">Douglas Adams</div>
+
+    
+    <div class="scrollable-list-subtitle"></div>
+    
+
+    
+    <div class="rating-stars scrollable-list-rating">
+      
+      
+      
+      
+
+      
+      <div class="rating-star" style="margin-right:5px"></div>
+      
+
+      <div class="rating-value" style="padding-left:0px; padding-right:12px; padding-right:2px;">
+        4.22
+      </div>
+
+      
+
+      <div class="ratings-value ratings-value-index">
+        (2.0M)
+      </div>
+
+    </div>
+    
+
+    
+      <div class="immersive-badge">
+        <img src="/images/icon-music.png" alt="Music" class="immersive-badge-icon">
+        <span>Immersive</span>
+      </div>
+    
+
+  </div>
+
+</a>
+
+
+
+              
+                <a href="/books/a-game-of-thrones" class="scrollable-list-item scrollable-list-item-smaller">
+
+  
+  <picture>
+    <source srcset="https://images.sobrief.com/social/cover_a-game-of-thrones_360px_1747153770.webp" type="image/webp">
+    <source srcset="https://images.sobrief.com/social/cover_a-game-of-thrones_360px_1747153770.jpg" type="image/jpeg">
+    <img class="scrollable-list-image" src="https://images.sobrief.com/social/cover_a-game-of-thrones_360px_1747153770.jpg" alt="A Game of Thrones Summary" loading="lazy" data-id="2485401" />
+  </picture>
+
+  <div class="scrollable-list-info">
+
+    
+    <div class="scrollable-list-title">A Game of Thrones</div>
+    <div class="scrollable-list-author">George R.R. Martin</div>
+
+    
+    <div class="scrollable-list-subtitle"></div>
+    
+
+    
+    <div class="rating-stars scrollable-list-rating">
+      
+      
+      
+      
+
+      
+      <div class="rating-star" style="margin-right:5px"></div>
+      
+
+      <div class="rating-value" style="padding-left:0px; padding-right:12px; padding-right:2px;">
+        4.45
+      </div>
+
+      
+
+      <div class="ratings-value ratings-value-index">
+        (2.6M)
+      </div>
+
+    </div>
+    
+
+    
+
+  </div>
+
+</a>
+
+
+
+              
+                <a href="/books/red-rising" class="scrollable-list-item scrollable-list-item-smaller">
+
+  
+  <picture>
+    <source srcset="https://images.sobrief.com/social/cover_red-rising_360px_1747144986.webp" type="image/webp">
+    <source srcset="https://images.sobrief.com/social/cover_red-rising_360px_1747144986.jpg" type="image/jpeg">
+    <img class="scrollable-list-image" src="https://images.sobrief.com/social/cover_red-rising_360px_1747144986.jpg" alt="Red Rising Summary" loading="lazy" data-id="2487153" />
+  </picture>
+
+  <div class="scrollable-list-info">
+
+    
+    <div class="scrollable-list-title">Red Rising</div>
+    <div class="scrollable-list-author">Pierce Brown</div>
+
+    
+    <div class="scrollable-list-subtitle"></div>
+    
+
+    
+    <div class="rating-stars scrollable-list-rating">
+      
+      
+      
+      
+
+      
+      <div class="rating-star" style="margin-right:5px"></div>
+      
+
+      <div class="rating-value" style="padding-left:0px; padding-right:12px; padding-right:2px;">
+        4.27
+      </div>
+
+      
+
+      <div class="ratings-value ratings-value-index">
+        (612.4K)
+      </div>
+
+    </div>
+    
+
+    
+
+  </div>
+
+</a>
+
+
+
+              
+                <a href="/books/the-name-of-the-wind" class="scrollable-list-item scrollable-list-item-smaller">
+
+  
+  <picture>
+    <source srcset="https://images.sobrief.com/social/cover_the-name-of-the-wind_360px_1747148224.webp" type="image/webp">
+    <source srcset="https://images.sobrief.com/social/cover_the-name-of-the-wind_360px_1747148224.jpg" type="image/jpeg">
+    <img class="scrollable-list-image" src="https://images.sobrief.com/social/cover_the-name-of-the-wind_360px_1747148224.jpg" alt="The Name of the Wind Summary" loading="lazy" data-id="2485469" />
+  </picture>
+
+  <div class="scrollable-list-info">
+
+    
+    <div class="scrollable-list-title">The Name of the Wind</div>
+    <div class="scrollable-list-author">Patrick Rothfuss</div>
+
+    
+    <div class="scrollable-list-subtitle"></div>
+    
+
+    
+    <div class="rating-stars scrollable-list-rating">
+      
+      
+      
+      
+
+      
+      <div class="rating-star" style="margin-right:5px"></div>
+      
+
+      <div class="rating-value" style="padding-left:0px; padding-right:12px; padding-right:2px;">
+        4.52
+      </div>
+
+      
+
+      <div class="ratings-value ratings-value-index">
+        (1.0M)
+      </div>
+
+    </div>
+    
+
+    
+      <div class="immersive-badge">
+        <img src="/images/icon-music.png" alt="Music" class="immersive-badge-icon">
+        <span>Immersive</span>
+      </div>
+    
+
+  </div>
+
+</a>
+
+
+
+              
+                <a href="/books/the-three-body-problem" class="scrollable-list-item scrollable-list-item-smaller">
+
+  
+  <picture>
+    <source srcset="https://images.sobrief.com/social/cover_the-three-body-problem_360px_1747144958.webp" type="image/webp">
+    <source srcset="https://images.sobrief.com/social/cover_the-three-body-problem_360px_1747144958.jpg" type="image/jpeg">
+    <img class="scrollable-list-image" src="https://images.sobrief.com/social/cover_the-three-body-problem_360px_1747144958.jpg" alt="The Three-Body Problem Summary" loading="lazy" data-id="2482886" />
+  </picture>
+
+  <div class="scrollable-list-info">
+
+    
+    <div class="scrollable-list-title">The Three-Body Problem</div>
+    <div class="scrollable-list-author">Liu Cixin</div>
+
+    
+    <div class="scrollable-list-subtitle"></div>
+    
+
+    
+    <div class="rating-stars scrollable-list-rating">
+      
+      
+      
+      
+
+      
+      <div class="rating-star" style="margin-right:5px"></div>
+      
+
+      <div class="rating-value" style="padding-left:0px; padding-right:12px; padding-right:2px;">
+        4.08
+      </div>
+
+      
+
+      <div class="ratings-value ratings-value-index">
+        (446.6K)
+      </div>
+
+    </div>
+    
+
+    
+      <div class="immersive-badge">
+        <img src="/images/icon-music.png" alt="Music" class="immersive-badge-icon">
+        <span>Immersive</span>
+      </div>
+    
+
+  </div>
+
+</a>
+
+
+
+              
+                <a href="/books/foundation" class="scrollable-list-item scrollable-list-item-smaller">
+
+  
+  <picture>
+    <source srcset="https://images.sobrief.com/social/cover_foundation_360px_1747170565.webp" type="image/webp">
+    <source srcset="https://images.sobrief.com/social/cover_foundation_360px_1747170565.jpg" type="image/jpeg">
+    <img class="scrollable-list-image" src="https://images.sobrief.com/social/cover_foundation_360px_1747170565.jpg" alt="Foundation Summary" loading="lazy" data-id="2490505" />
+  </picture>
+
+  <div class="scrollable-list-info">
+
+    
+    <div class="scrollable-list-title">Foundation</div>
+    <div class="scrollable-list-author">Isaac Asimov</div>
+
+    
+    <div class="scrollable-list-subtitle"></div>
+    
+
+    
+    <div class="rating-stars scrollable-list-rating">
+      
+      
+      
+      
+
+      
+      <div class="rating-star" style="margin-right:5px"></div>
+      
+
+      <div class="rating-value" style="padding-left:0px; padding-right:12px; padding-right:2px;">
+        4.17
+      </div>
+
+      
+
+      <div class="ratings-value ratings-value-index">
+        (574.9K)
+      </div>
+
+    </div>
+    
+
+    
+
+  </div>
+
+</a>
+
+
+
+              
+                <a href="/books/do-androids-dream-of-electric-sheep-2" class="scrollable-list-item scrollable-list-item-smaller">
+
+  
+  <picture>
+    <source srcset="https://images.sobrief.com/social/cover_do-androids-dream-of-electric-sheep-2_360px_1747170189.webp" type="image/webp">
+    <source srcset="https://images.sobrief.com/social/cover_do-androids-dream-of-electric-sheep-2_360px_1747170189.jpg" type="image/jpeg">
+    <img class="scrollable-list-image" src="https://images.sobrief.com/social/cover_do-androids-dream-of-electric-sheep-2_360px_1747170189.jpg" alt="Do Androids Dream of Electric Sheep? Summary" loading="lazy" data-id="2502399" />
+  </picture>
+
+  <div class="scrollable-list-info">
+
+    
+    <div class="scrollable-list-title">Do Androids Dream of Electric Sheep?</div>
+    <div class="scrollable-list-author">Philip K. Dick</div>
+
+    
+    <div class="scrollable-list-subtitle"></div>
+    
+
+    
+    <div class="rating-stars scrollable-list-rating">
+      
+      
+      
+      
+
+      
+      <div class="rating-star" style="margin-right:5px"></div>
+      
+
+      <div class="rating-value" style="padding-left:0px; padding-right:12px; padding-right:2px;">
+        4.09
+      </div>
+
+      
+
+      <div class="ratings-value ratings-value-index">
+        (488.6K)
+      </div>
+
+    </div>
+    
+
+    
+
+  </div>
+
+</a>
+
+
+
+              
+                <a href="/books/enders-game" class="scrollable-list-item scrollable-list-item-smaller">
+
+  
+  <picture>
+    <source srcset="https://images.sobrief.com/social/cover_enders-game_360px_1747168051.webp" type="image/webp">
+    <source srcset="https://images.sobrief.com/social/cover_enders-game_360px_1747168051.jpg" type="image/jpeg">
+    <img class="scrollable-list-image" src="https://images.sobrief.com/social/cover_enders-game_360px_1747168051.jpg" alt="Ender’s Game Summary" loading="lazy" data-id="16523" />
+  </picture>
+
+  <div class="scrollable-list-info">
+
+    
+    <div class="scrollable-list-title">Ender’s Game</div>
+    <div class="scrollable-list-author">Orson Scott Card</div>
+
+    
+    <div class="scrollable-list-subtitle"></div>
+    
+
+    
+    <div class="rating-stars scrollable-list-rating">
+      
+      
+      
+      
+
+      
+      <div class="rating-star" style="margin-right:5px"></div>
+      
+
+      <div class="rating-value" style="padding-left:0px; padding-right:12px; padding-right:2px;">
+        4.31
+      </div>
+
+      
+
+      <div class="ratings-value ratings-value-index">
+        (1.4M)
+      </div>
+
+    </div>
+    
+
+    
+
+  </div>
+
+</a>
+
+
+
+              
+                <a href="/books/the-hobbit" class="scrollable-list-item scrollable-list-item-smaller">
+
+  
+  <picture>
+    <source srcset="https://images.sobrief.com/social/cover_the-hobbit_360px_1747136385.webp" type="image/webp">
+    <source srcset="https://images.sobrief.com/social/cover_the-hobbit_360px_1747136385.jpg" type="image/jpeg">
+    <img class="scrollable-list-image" src="https://images.sobrief.com/social/cover_the-hobbit_360px_1747136385.jpg" alt="The Hobbit, or There and Back Again Summary" loading="lazy" data-id="2482851" />
+  </picture>
+
+  <div class="scrollable-list-info">
+
+    
+    <div class="scrollable-list-title">The Hobbit, or There and Back Again</div>
+    <div class="scrollable-list-author">J.R.R. Tolkien</div>
+
+    
+    <div class="scrollable-list-subtitle"></div>
+    
+
+    
+    <div class="rating-stars scrollable-list-rating">
+      
+      
+      
+      
+
+      
+      <div class="rating-star" style="margin-right:5px"></div>
+      
+
+      <div class="rating-value" style="padding-left:0px; padding-right:12px; padding-right:2px;">
+        4.29
+      </div>
+
+      
+
+      <div class="ratings-value ratings-value-index">
+        (4.3M)
+      </div>
+
+    </div>
+    
+
+    
+      <div class="immersive-badge">
+        <img src="/images/icon-music.png" alt="Music" class="immersive-badge-icon">
+        <span>Immersive</span>
+      </div>
+    
+
+  </div>
+
+</a>
+
+
+
+              
+            </div>
+
+          </div>
+          
+
+          
+          <div id="Author"></div>
+          <div id="author_wrap" >
+
+            <h2 id="author_heading">About the Author</h2>
+
+            <div class="chapter-wrap">
+
+              <div class="book-card">
+
+                <div id="summary_author" class="chapter-summary"><p><strong>Franklin Patrick Herbert Jr.</strong> was an American science fiction author best known for Dune and its sequels. Born in 1920, Herbert worked as a journalist, photographer, and ecological consultant before achieving literary success. The Dune saga, set in a distant future, explores themes of human evolution, ecology, and the interplay of religion, politics, and power. Herbert's work is celebrated for its complexity and depth, with Dune being the best-selling science fiction novel of all time. His influence on the genre is significant, and the Dune series is considered a classic of science fiction literature.</p>
+</div>
+
+              </div>
+
+            </div>
+
+            
+            <div id="author_books_wrap">
+              <div id="Other_Books_by_Author"></div>
+              <h2>Other books by <i>Frank Herbert</i></h2>
+
+              <div class="scrollable-list scrollable-list-left-col">
+                
+                  <a href="/books/dune-messiah" class="scrollable-list-item scrollable-list-item-smaller">
+
+  
+  <picture>
+    <source srcset="https://images.sobrief.com/social/cover_dune-messiah_360px_1747158890.webp" type="image/webp">
+    <source srcset="https://images.sobrief.com/social/cover_dune-messiah_360px_1747158890.jpg" type="image/jpeg">
+    <img class="scrollable-list-image" src="https://images.sobrief.com/social/cover_dune-messiah_360px_1747158890.jpg" alt="Dune Messiah Summary" loading="lazy" data-id="2485332" />
+  </picture>
+
+  <div class="scrollable-list-info">
+
+    
+    <div class="scrollable-list-title">Dune Messiah</div>
+    <div class="scrollable-list-author">Frank Herbert</div>
+
+    
+    <div class="scrollable-list-subtitle"></div>
+    
+
+    
+    <div class="rating-stars scrollable-list-rating">
+      
+      
+      
+      
+
+      
+      <div class="rating-star" style="margin-right:5px"></div>
+      
+
+      <div class="rating-value" style="padding-left:0px; padding-right:12px; padding-right:2px;">
+        3.89
+      </div>
+
+      
+
+      <div class="ratings-value ratings-value-index">
+        (370.0K)
+      </div>
+
+    </div>
+    
+
+    
+
+  </div>
+
+</a>
+
+
+
+                
+                  <a href="/books/children-of-dune" class="scrollable-list-item scrollable-list-item-smaller">
+
+  
+  <picture>
+    <source srcset="https://images.sobrief.com/social/cover_children-of-dune_360px_1747163847.webp" type="image/webp">
+    <source srcset="https://images.sobrief.com/social/cover_children-of-dune_360px_1747163847.jpg" type="image/jpeg">
+    <img class="scrollable-list-image" src="https://images.sobrief.com/social/cover_children-of-dune_360px_1747163847.jpg" alt="Children of Dune Summary" loading="lazy" data-id="2490084" />
+  </picture>
+
+  <div class="scrollable-list-info">
+
+    
+    <div class="scrollable-list-title">Children of Dune</div>
+    <div class="scrollable-list-author">Frank Herbert</div>
+
+    
+    <div class="scrollable-list-subtitle"></div>
+    
+
+    
+    <div class="rating-stars scrollable-list-rating">
+      
+      
+      
+      
+
+      
+      <div class="rating-star" style="margin-right:5px"></div>
+      
+
+      <div class="rating-value" style="padding-left:0px; padding-right:12px; padding-right:2px;">
+        3.96
+      </div>
+
+      
+
+      <div class="ratings-value ratings-value-index">
+        (231.1K)
+      </div>
+
+    </div>
+    
+
+    
+
+  </div>
+
+</a>
+
+
+
+                
+                  <a href="/books/god-emperor-of-dune" class="scrollable-list-item scrollable-list-item-smaller">
+
+  
+  <picture>
+    <source srcset="https://images.sobrief.com/social/cover_god-emperor-of-dune_360px_1747146773.webp" type="image/webp">
+    <source srcset="https://images.sobrief.com/social/cover_god-emperor-of-dune_360px_1747146773.jpg" type="image/jpeg">
+    <img class="scrollable-list-image" src="https://images.sobrief.com/social/cover_god-emperor-of-dune_360px_1747146773.jpg" alt="God Emperor of Dune Summary" loading="lazy" data-id="2504051" />
+  </picture>
+
+  <div class="scrollable-list-info">
+
+    
+    <div class="scrollable-list-title">God Emperor of Dune</div>
+    <div class="scrollable-list-author">Frank Herbert</div>
+
+    
+    <div class="scrollable-list-subtitle"></div>
+    
+
+    
+    <div class="rating-stars scrollable-list-rating">
+      
+      
+      
+      
+
+      
+      <div class="rating-star" style="margin-right:5px"></div>
+      
+
+      <div class="rating-value" style="padding-left:0px; padding-right:12px; padding-right:2px;">
+        3.88
+      </div>
+
+      
+
+      <div class="ratings-value ratings-value-index">
+        (136.0K)
+      </div>
+
+    </div>
+    
+
+    
+
+  </div>
+
+</a>
+
+
+
+                
+                  <a href="/books/heretics-of-dune" class="scrollable-list-item scrollable-list-item-smaller">
+
+  
+  <picture>
+    <source srcset="https://images.sobrief.com/social/cover_heretics-of-dune_360px_1747151435.webp" type="image/webp">
+    <source srcset="https://images.sobrief.com/social/cover_heretics-of-dune_360px_1747151435.jpg" type="image/jpeg">
+    <img class="scrollable-list-image" src="https://images.sobrief.com/social/cover_heretics-of-dune_360px_1747151435.jpg" alt="Heretics of Dune Summary" loading="lazy" data-id="2495151" />
+  </picture>
+
+  <div class="scrollable-list-info">
+
+    
+    <div class="scrollable-list-title">Heretics of Dune</div>
+    <div class="scrollable-list-author">Frank Herbert</div>
+
+    
+    <div class="scrollable-list-subtitle"></div>
+    
+
+    
+    <div class="rating-stars scrollable-list-rating">
+      
+      
+      
+      
+
+      
+      <div class="rating-star" style="margin-right:5px"></div>
+      
+
+      <div class="rating-value" style="padding-left:0px; padding-right:12px; padding-right:2px;">
+        3.86
+      </div>
+
+      
+
+      <div class="ratings-value ratings-value-index">
+        (95.8K)
+      </div>
+
+    </div>
+    
+
+    
+
+  </div>
+
+</a>
+
+
+
+                
+                  <a href="/books/chapterhouse" class="scrollable-list-item scrollable-list-item-smaller">
+
+  
+  <picture>
+    <source srcset="https://images.sobrief.com/social/cover_chapterhouse_360px_1747209320.webp" type="image/webp">
+    <source srcset="https://images.sobrief.com/social/cover_chapterhouse_360px_1747209320.jpg" type="image/jpeg">
+    <img class="scrollable-list-image" src="https://images.sobrief.com/social/cover_chapterhouse_360px_1747209320.jpg" alt="Chapterhouse Summary" loading="lazy" data-id="2495152" />
+  </picture>
+
+  <div class="scrollable-list-info">
+
+    
+    <div class="scrollable-list-title">Chapterhouse</div>
+    <div class="scrollable-list-author">Frank Herbert</div>
+
+    
+    <div class="scrollable-list-subtitle">Dune</div>
+    
+
+    
+    <div class="rating-stars scrollable-list-rating">
+      
+      
+      
+      
+
+      
+      <div class="rating-star" style="margin-right:5px"></div>
+      
+
+      <div class="rating-value" style="padding-left:0px; padding-right:12px; padding-right:2px;">
+        3.87
+      </div>
+
+      
+
+      <div class="ratings-value ratings-value-index">
+        (78.2K)
+      </div>
+
+    </div>
+    
+
+    
+
+  </div>
+
+</a>
+
+
+
+                
+              </div>
+            </div>
+            
+
+          </div>
+
+
+
+          
+          <div id="Download_PDF"></div>
+          <div id="pdf_wrap">
+
+            <h2 id="pdf_heading">Download PDF</h2>
+
+            <div class="chapter-wrap">
+
+              <div class="book-card">
+
+                <div class="chapter-summary">
+
+                  To save this <strong>Dune</strong> summary for later, download the free PDF. You can print it out, or read offline at your convenience.
+
+                  <div class="button-wrap" style="padding-bottom:0px">
+                    <div class="button button-download" style="margin-right:0px" rel="alternate nofollow" title="dune.pdf" onclick="downloadPDF('/books/dune.pdf')"><div></div>Download PDF</div>
+                    <div class="button-info">
+                      File size: <b>0.34 MB</b> &nbsp; &nbsp; Pages: <b>27</b>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+          
+
+          
+          <div id="Download_EPUB"></div>
+          <div id="epub_wrap">
+
+            <h2 id="epub_heading">Download EPUB</h2>
+
+            <div class="chapter-wrap">
+
+              <div class="book-card">
+
+                <div class="chapter-summary">
+
+                  To read this <strong>Dune</strong> summary on your e-reader device or app, download the free EPUB. The <code>.epub</code> digital book format is ideal for reading ebooks on phones, tablets, and e-readers.
+
+                  <div class="button-wrap" style="padding-bottom:0px">
+                    <div class="button button-download" style="margin-right:0px" rel="alternate nofollow" title="dune.epub" onclick="downloadEPUB('/books/dune.epub')"><div></div>Download EPUB</div>
+                    <div class="button-info">
+                      File size: <b>3.56 MB</b> &nbsp; &nbsp; Pages: <b>17</b>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+          
+
+          </div> <!-- End book content paywall wrapper -->
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  
+<div id="footer" class="footer">
+	<div class="wrap-inner">
+
+		<a href="/pricing" id="footer_pricing_link">Pricing</a> <span id="footer_pricing_bullet">&bull;</span> <a href="/terms">Terms<span> of Service</span></a> <span>&bull;</span> <a href="/privacy">Privacy<span> Policy</span></a> <span>&bull;</span> <a href="/refund-policy">7-Day<span> Refund Policy</span></a> <span>&bull;</span> <a href="/dmca">DMCA</a> <span>&bull;</span> <a href="/affiliate" id="footer_affiliate_link">Affiliate</a> <span id="footer_affiliate_bullet">&bull;</span><a href="https://x.com/automationism" target="_blank">Twitter</a> <span>&bull;</span> <a href="https://docs.sobrief.com/en/collections/10166492-faqs" target="_blank">FAQs</a><span>&bull;</span> <a href="https://www.trustpilot.com/review/sobrief.com" target="_blank">Leave a Review</a>
+
+		<div class="app-download-container app-download-container-footer">
+
+			<div class="app-store-button">
+			  <a href="https://apps.apple.com/us/app/sobrief-book-summaries/id6723865613" target="_blank" onclick="logEvent('download_ios_click')" style="margin-right:0px" aria-label="Download on the App Store"><img src="https://images.sobrief.com/public/app-store-button.png" loading="lazy" alt="Download on the App Store" /></a>
+			</div>
+
+			<div class="app-qr-code">
+			  <img src="https://images.sobrief.com/public/app-store-qr-code.png" loading="lazy" alt="QR Code" />
+			</div>
+
+		</div>
+
+	</div>
+</div>
+
+
+</div>
+
+<div id="book_toolbar" class="book-toolbar book-toolbar-visible">
+
+  <div id="book_toolbar_button_listen" onclick="toggleBookAudio(false, true)" class="book-toolbar-button-listen"><div><span></span></div><b>Listen<i>17 mins</i></b></div>
+
+  <div id="book_toolbar_button_share" class="book-toolbar-button book-toolbar-button-share" onclick="shareBook()"><span></span></div>
+  <div id="book_toolbar_button_bookmark" class="book-toolbar-button book-toolbar-button-bookmark" onclick="saveBookmark(2483082)"><span></span></div>
+  <div id="book_toolbar_button_toc" class="book-toolbar-button book-toolbar-button-toc" onclick="toggleContents(); return false;"><span></span></div>
+
+</div>
+
+<div id="native_player" class="native-player-wrap">
+
+  <div class="native-player">
+
+    <div id="player_small" class="native-player-small">
+
+      <div class="native-player-cover" style="background-image:url('https://images.sobrief.com/social/cover_dune_360px_1747140233.jpg')"></div>
+
+      <div class="native-player-info">
+        <div class="native-player-label">Now playing</div>
+        <div class="native-player-title">Dune</div>
+        <div class="native-player-progress2"><div></div></div>
+      </div>
+
+      <div class="native-player-small-buttons">
+        <div class="native-player-small-button-play" onclick="toggleBookAudio(false)"><span><i></i></span></div>
+        <div class="native-player-small-button-next" onclick="stopBookAudio(); nextBookAudio(true)"><span></span></div>
+      </div>
+
+    </div>
+
+    <div id="player_medium" class="native-player-medium">
+
+      <div class="native-player-handle"><span></span></div>
+
+      <div id="player_buttons" class="native-player-buttons">
+
+        <div class="native-player-button-settings" onclick="togglePlayerSettings()"><span></span></div>
+        <div class="native-player-button-previous" onclick="stopBookAudio(); prevBookAudio(true)"><span></span></div>
+        <div class="native-player-button-back" onclick="skipAudioBack()"><span></span></div>
+        <div class="native-player-button-play" onclick="toggleBookAudio(false)"><span><i></i></span></div>
+        <div class="native-player-button-forward" onclick="skipAudioForward()"><span></span></div>
+        <div class="native-player-button-next" onclick="stopBookAudio(); nextBookAudio(true)"><span></span></div>
+        <div class="native-player-button-contents" onclick="toggleQueue()"><span></span></div>
+
+      </div>
+
+      <div class="native-player-progress-wrap">
+        <div class="native-player-time-elapsed">0:00</div>
+        <div class="native-player-time-remaining">-0:00</div>
+
+        <div class="native-player-progress">
+          <div class="native-player-progress-bar">
+            <span></span>
+            <div class="native-player-progress-bar-chunks"></div>
+          </div>
+          <div class="native-player-progress-chunks"></div>
+        </div>
+
+        <div class="native-player-progress-tooltip-wrap">
+          <div class="native-player-progress-tooltip"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div id="player_large" class="native-player-large">
+
+      <div class="native-player-handle"><span></span></div>
+
+      <div class="native-player-content-OFF">
+
+        <div class="native-player-cover-wrap">
+          <img src="https://images.sobrief.com/social/cover_dune_360px_1747140233.jpg" />
+        </div>
+
+        <div class="native-player-large-info">
+          <div class="native-player-large-section">
+            <span class="native-player-large-section-text">Now playing</span>
+          </div>
+          <div class="native-player-large-title">Dune</div>
+        </div>
+
+        <div class="native-player-progress-wrap">
+          
+          <div class="native-player-progress">
+            <div class="native-player-progress-bar">
+              <span></span>
+              <div class="native-player-progress-bar-chunks"></div>
+            </div>
+            <div class="native-player-progress-chunks"></div>
+          </div>
+
+          <div class="native-player-time-wrap">
+            <div class="native-player-time-elapsed">0:00</div>
+            <div class="native-player-time-remaining">-0:00</div>
+          </div>
+
+          <div class="native-player-progress-tooltip-wrap">
+            <div class="native-player-progress-tooltip"></div>
+          </div>
+        </div>
+
+        <div class="native-player-buttons">
+
+          <div class="native-player-button-previous" onclick="stopBookAudio(); prevBookAudio(true)"><span></span></div>
+          <div class="native-player-button-back" onclick="skipAudioBack()"><span></span></div>
+          <div class="native-player-button-play" onclick="toggleBookAudio(false)"><span><i></i></span></div>
+          <div class="native-player-button-forward" onclick="skipAudioForward()"><span></span></div>
+          <div class="native-player-button-next" onclick="stopBookAudio(); nextBookAudio(true)"><span></span></div>
+
+        </div>
+
+        <div class="native-player-buttons-small">
+
+          <div class="native-player-buttons-small-left">
+            <div class="native-player-button-settings" onclick="togglePlayerSettings()"><span></span></div>
+            <div class="native-player-button-voice" data-settings-section="voice"><span></span></div>
+            <div class="native-player-button-speed" data-settings-section="speed"><span>1x</span></div>
+            <div class="native-player-button-music" data-settings-section="music" style="display:none"><span></span></div>
+          </div>
+
+          <div class="native-player-buttons-small-right">
+            <div class="native-player-button-bookmark" onclick="saveBookmark(2483082)"><span></span></div>
+            <div class="native-player-button-share" onclick="shareBook()"><span></span></div>
+            <div class="native-player-button-contents" onclick="toggleQueue()"><span></span></div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <div id="player_settings" class="native-player-settings-menu">
+      
+      <div id="player_settings_switcher" class="native-player-switcher-wrap">
+        <div class="native-player-switcher">
+          <div id="settings_switch_voice" class="native-player-switcher-item native-player-switcher-item-selected" onclick="showPlayerSettings('voice', this)">Voice</div>
+          <div id="settings_switch_speed" class="native-player-switcher-item" onclick="showPlayerSettings('speed', this)">Speed</div>
+          <div id="settings_switch_music" class="native-player-switcher-item" onclick="showPlayerSettings('music', this)" style="display:none">Music</div>
+        </div>
+      </div>
+
+      <div class="native-player-settings-voice">
+
+        <div class="native-player-voice native-player-voice-selected" data-voice="onyx" onclick="setPlayerVoice(this)"><span style="background-image:url('/images/avatar-dan.jpg');"></span>Dan</div>
+        <div style="display:none" class="native-player-voice" data-voice="alloy" onclick="setPlayerVoice(this)"><span style="background-image:url('/images/avatar-scarlett.jpg');"></span>Jennifer</div>
+        <div class="native-player-voice" data-voice="echo" onclick="setPlayerVoice(this)"><span style="background-image:url('/images/avatar-echo.jpg');"></span>Andrew</div>
+        <div style="display:none" class="native-player-voice" data-voice="fable" onclick="setPlayerVoice(this)"><span style="background-image:url('/images/avatar-amy.jpg');"></span>Sarah</div>
+        <div class="native-player-voice" data-voice="nova" onclick="setPlayerVoice(this)"><span style="background-image:url('/images/avatar-liv.jpg');"></span>Michelle</div>
+        <div class="native-player-voice" data-voice="shimmer" onclick="setPlayerVoice(this)"><span style="background-image:url('/images/avatar-scarlett.jpg');"></span>Lauren</div>
+
+      </div>
+
+      <div class="native-player-settings-speed">
+
+        <div class="native-player-speed-control">
+
+          <div class="native-player-speed-button native-player-speed-button-down" onclick="setPlayerSpeed(false)">&ndash;</div>
+          <div class="native-player-speed-value"><span>1.0</span><i>&times;</i></div>
+          <div class="native-player-speed-button native-player-speed-button-up" onclick="setPlayerSpeed(true)">+</div>
+  
+        </div>
+  
+        <div class="native-player-speed-info"><span>200</span> words per minute</div>
+
+      </div>
+
+      <div class="native-player-settings-music" style="display:none">
+
+        <div class="native-player-music-volume" data-music-volume="none" onclick="setPlayerMusicVolume(this)">Off</div>
+        <div class="native-player-music-volume" data-music-volume="low" onclick="setPlayerMusicVolume(this)">Low</div>
+        <div class="native-player-music-volume native-player-music-volume-selected" data-music-volume="medium" onclick="setPlayerMusicVolume(this)">Medium</div>
+        <div class="native-player-music-volume" data-music-volume="high" onclick="setPlayerMusicVolume(this)">High</div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <div id="queue" class="queue">
+    <div class="queue-inner">
+  
+      <div class="queue-header">
+        <div class="queue-title">Queue</div>
+        <div id="queue_close" class="queue-close"></div>
+      </div>
+  
+      <div id="queue_list" class="queue-list">
+  
+      </div>
+  
+    </div>
+  </div>
+
+</div>
+
+
+<div class="top-button" id="top_button" onclick="scrollToTop()"></div>
+
+<div id="menu_button_wrap" class="menu-button-wrap">
+  <div id="menu_button_menu" class="menu-button-menu">
+    <a href="" onclick="toggleContents(); return false;"><span></span>Contents</a>
+    <a id="menu_bookmark_item" href="" onclick="saveBookmark(2483082); return false;"><span></span>Bookmark</a>
+    <a href="" onclick="shareBook(); return false;"><span></span>Share</a>
+  </div>
+  <div class="menu-button" id="menu_button" onclick="toggleBottomMenu(this)"><div></div></div>
+</div>
+
+
+<div id="toolbar_web" class="native-toolbar web-toolbar">
+  <div class="native-toolbar-button native-toolbar-button-home" onclick="toolbarAction('home')">Home</div>
+  <div class="native-toolbar-button native-toolbar-button-search" onclick="toolbarAction('search')">Search</div>
+  <div class="native-toolbar-button native-toolbar-button-swipe" onclick="toolbarAction('swipe')">Swipe</div>
+  <div class="native-toolbar-button native-toolbar-button-library" onclick="toolbarAction('library')">Library</div>
+  <div class="native-toolbar-button native-toolbar-button-app" onclick="toolbarAction('app')">Get App</div>
+</div>
+
+
+
+
+<div id="dialog_sign_in" class="dialog-wrap">
+  <div class="dialog-inner dialog-inner-signin">
+
+    <div class="dialog-close" onclick="hideSignInDialog()"></div>
+
+    <div class="dialog-upgrade-wrap">
+
+      <a href="" class="logo" onclick="return false;"
+        style="top:-3px; margin-left:15px; cursor:default; pointer-events:none;"><span></span><b>SoBrief</b></a>
+
+      <div id="dialog_sign_in_text" class="dialog-text" style="padding-top:3px">
+
+        <div id="dialog_sign_in_message" class="dialog-info"></div>
+
+        <div id="dialog_sign_in_heading" style="padding-top:0px; padding-bottom:4px">Create a free account to unlock:</div>
+
+        <div id="dialog_sign_in_ticks" class="dialog-ticks"> 
+          <div class="dialog-tick"><b>Recommendations:</b> Personalized for you</div>
+          <div class="dialog-tick"><b>Requests:</b> Request new book summaries</div>
+          <div class="dialog-tick"><b>Bookmarks:</b> Save your favorite books</div>
+          <div class="dialog-tick"><b>History:</b> Revisit books later</div>
+          <div class="dialog-tick" style="padding-bottom:0px;"><b>Ratings:</b> Rate books & see your ratings</div>
+          <!-- <div class="dialog-tick" style="padding-bottom:3px; display:none"><b>Listening:</b> audio summaries<span>Listen to the first takeaway of every book for free, upgrade to Pro for unlimited listening.</span></div> -->
+        </div>
+
+      </div>
+
+    </div>
+
+    <ul id="sign_in_buttons_native" class="firebaseui-idp-list" style="display:none">
+
+      <li class="firebaseui-list-item">
+        <button
+          class="firebaseui-idp-button mdl-button mdl-js-button mdl-button--raised firebaseui-idp-google firebaseui-id-idp-button"
+          style="background-color:#ffffff" onclick="nativeSignIn()"><span class="firebaseui-idp-icon-wrapper"><img
+              class="firebaseui-idp-icon" alt=""
+              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" loading="lazy"></span><span
+            class="firebaseui-idp-text firebaseui-idp-text-long">Sign in with Google</span><span
+            class="firebaseui-idp-text firebaseui-idp-text-short">Google</span></button>
+      </li>
+
+      <li class="firebaseui-list-item">
+        <button
+          class="firebaseui-idp-button mdl-button mdl-js-button mdl-button--raised firebaseui-idp-password firebaseui-id-idp-button"
+          data-provider-id="password" style="background-color:#db4437" onclick="showEmailSignIn()"><span
+            class="firebaseui-idp-icon-wrapper"><img class="firebaseui-idp-icon" alt=""
+              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/mail.svg" loading="lazy"></span><span
+            class="firebaseui-idp-text firebaseui-idp-text-long">Sign in with email</span><span
+            class="firebaseui-idp-text firebaseui-idp-text-short">Email</span></button>
+      </li>
+
+      <li id="sign_in_button_apple" style="display:none" class="firebaseui-list-item">
+        <button
+        class="firebaseui-idp-button mdl-button mdl-js-button mdl-button--raised firebaseui-idp-password firebaseui-id-idp-button welcome-button-apple"
+        data-provider-id="password" onclick="showAppleSignIn()"><span
+            class="firebaseui-idp-icon-wrapper"><img class="firebaseui-idp-icon" alt=""
+            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/apple.png" loading="lazy"></span><span
+            class="firebaseui-idp-text firebaseui-idp-text-long">Sign in with Apple</span><span
+            class="firebaseui-idp-text firebaseui-idp-text-short">Apple</span></button>
+       </li>
+
+    </ul>
+
+
+    <div id="dialog_sign_in_loading" class="dialog-loading"><span></span></div>
+
+    <div id="firebaseui-auth-container"></div>
+
+    <div id="dialog_sign_in_readers" class="onboard-users-say onboard-users-say-inline">
+
+      <div class="rating-social-wrap-nowrap" style="padding-bottom:16px; transform: scale(0.88); position: relative; top:0px; padding-top:6px">
+        
+        <div class="rating-social-wrap">
+          
+          <div class="rating-social rating-social-laurel">
+        
+            <div class="rating-content" style="text-align:center">
+                <div class="rating-stars social-rating">
+        
+                    <div class="rating-star"></div><div class="rating-star"></div><div class="rating-star"></div><div class="rating-star"></div><div class="rating-star"></div>
+        
+                </div>
+                <div class="rating-info"><b>200,000+</b> readers</div>
+            </div>
+        
+          </div>
+        </div>
+        
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+
+<div id="dialog_upgrade_new" class="dialog-wrap dialog-wrap-no-scroll">
+
+  <div class="dialog-inner dialog-inner-upgrade-new">
+
+    <div class="dialog-header">
+
+      <div class="dialog-close dialog-close-header" onclick="hideUpgradeDialog()"></div>
+
+      <a href="" class="logo" onclick="return false;"
+        style="top:-12px; margin-left:0px; cursor:default; pointer-events:none; padding-bottom:15px;"><span></span><b>SoBrief</b><i>Pro</i></a>
+
+    </div>
+
+    <div class="dialog-content-scrollable">
+      <!-- <div class="bounce-arrow">&gt;</div> -->
+      <div class="dialog-upgrade-wrap">
+
+        <div id="dialog_upgrade_view_features">
+
+          <div class="timeline" style="background:transparent; margin:0px; padding:3px 15px 0px 15px">
+
+            <div id="upgrade_regular_content">
+              <div class="timeline-heading-dialog">
+                <span id="upgrade_user_name" style="display:none;"></span>Try Full Access for 7 Days
+              </div>
+              <div class="timeline-subheading">Listen, bookmark, and more
+              </div>
+             
+
+            </div>
+
+            <div id="upgrade_first_year_content" style="display:none;">
+              <div class="timeline-heading-dialog">
+                <span id="upgrade_user_name" style="display:none;"></span>🚨 Last Offer: Take 50% Off
+              </div>
+              <div class="timeline-subheading"><s>$44.99</s> $22.49 for 1 year <br> then $44.99/year</div>
+              <div class="countdown-timer">
+                <div class="timer-item">
+                  <span class="timer-hours">00</span>
+                  <span class="timer-label">Hours</span>
+                </div>
+                <div class="timer-item">
+                  <span class="timer-minutes">09</span>
+                  <span class="timer-label">Minutes</span>
+                </div>
+                <div class="timer-item">
+                  <span class="timer-seconds">59</span>
+                  <span class="timer-label">Seconds</span>
+                </div>
+              </div>
+              <div class="timeline-item timeline-item-progress">
+  <div class="timeline-content">
+    <div class="timeline-icon star">
+      <div class="pulsating-circle"></div>
+    </div>
+    <div class="timeline-text">
+      <div class="title">Today: First Payment of $22.49</div>
+      <div class="description">Your paid subscription begins immediately. 50% off your first year!</div>
+    </div>
+  </div>
+</div>
+<div class="timeline-item timeline-item-next">
+  <div class="timeline-content">
+    <div class="timeline-icon lock"></div>
+    <div class="timeline-text">
+      <div class="title">Instant Access: All Pro Features</div>
+      <div class="description">Listen to unlimited summaries, bookmark, and download immediately.</div>
+    </div>
+  </div>
+</div>
+<div class="timeline-item">
+  <div class="timeline-content">
+    <div class="timeline-icon star"></div>
+    <div class="timeline-text">
+      <div class="title">Year 2: Regular Pricing</div>
+      
+      <div class="description">On Aug 10, 2026, your subscription will renew at $44.99/year.</div>
+    </div>
+  </div>
+</div>
+
+            </div>
+
+            <div id="upgrade_first_year_25_off_content" style="display:none;">
+              <div class="timeline-heading-dialog">
+                <span id="upgrade_user_name" style="display:none;"></span>🎉 Limited Time: 25% Off
+              </div>
+              <div class="timeline-subheading"><s>$44.99</s> $33.74 for 1 year <br> then $44.99/year</div>
+              <div class="countdown-timer">
+                <div class="timer-item">
+                  <span class="timer-hours">00</span>
+                  <span class="timer-label">Hours</span>
+                </div>
+                <div class="timer-item">
+                  <span class="timer-minutes">09</span>
+                  <span class="timer-label">Minutes</span>
+                </div>
+                <div class="timer-item">
+                  <span class="timer-seconds">59</span>
+                  <span class="timer-label">Seconds</span>
+                </div>
+              </div>
+              <div class="timeline-item timeline-item-progress">
+  <div class="timeline-content">
+    <div class="timeline-icon star">
+      <div class="pulsating-circle"></div>
+    </div>
+    <div class="timeline-text">
+      <div class="title">Today: Start 3-Day Trial</div>
+      <div class="description">Your trial begins immediately. Full access to all Pro features!</div>
+    </div>
+  </div>
+</div>
+<div class="timeline-item timeline-item-next">
+  <div class="timeline-content">
+    <div class="timeline-icon lock"></div>
+    <div class="timeline-text">
+      <div class="title">Instant Access: All Pro Features</div>
+      <div class="description">Listen to unlimited summaries, bookmark, and download immediately.</div>
+    </div>
+  </div>
+</div>
+<div class="timeline-item">
+  <div class="timeline-content">
+    <div class="timeline-icon star"></div>
+    <div class="timeline-text">
+      <div class="title">Day 4: First Payment of $33.74</div>
+      
+      <div class="description">On Aug 13, 2025, you'll be charged $33.74 for your first year (25% off).</div>
+    </div>
+  </div>
+</div>
+<div class="timeline-item">
+  <div class="timeline-content">
+    <div class="timeline-icon star"></div>
+    <div class="timeline-text">
+      <div class="title">Year 2: Regular Pricing</div>
+      
+      <div class="description">On Aug 13, 2026, your subscription will renew at $44.99/year.</div>
+    </div>
+  </div>
+</div> 
+            </div>
+
+            <div id="upgrade_lifetime_20_off_content" style="display:none;">
+              <div class="timeline-heading-dialog">
+                <span id="upgrade_user_name" style="display:none;"></span>🎉 Best Value Ever
+              </div>
+              <div class="timeline-subheading">Get Pro for life for <br><s>$79.99</s> $59.99</div>
+              <div class="countdown-timer">
+                <div class="timer-item">
+                  <span class="timer-hours">00</span>
+                  <span class="timer-label">Hours</span>
+                </div>
+                <div class="timer-item">
+                  <span class="timer-minutes">09</span>
+                  <span class="timer-label">Minutes</span>
+                </div>
+                <div class="timer-item">
+                  <span class="timer-seconds">59</span>
+                  <span class="timer-label">Seconds</span>
+                </div>
+              </div>
+
+              <!-- <div class="timeline-item timeline-item-progress">
+  <div class="timeline-content">
+    <div class="timeline-icon star">
+      <div class="pulsating-circle"></div>
+    </div>
+    <div class="timeline-text">
+      <div class="title">Today: First Payment of $22.49</div>
+      <div class="description">Your paid subscription begins immediately. 50% off your first year!</div>
+    </div>
+  </div>
+</div>
+<div class="timeline-item timeline-item-next">
+  <div class="timeline-content">
+    <div class="timeline-icon lock"></div>
+    <div class="timeline-text">
+      <div class="title">Instant Access: All Pro Features</div>
+      <div class="description">Listen to unlimited summaries, bookmark, and download immediately.</div>
+    </div>
+  </div>
+</div>
+<div class="timeline-item">
+  <div class="timeline-content">
+    <div class="timeline-icon star"></div>
+    <div class="timeline-text">
+      <div class="title">Year 2: Regular Pricing</div>
+      
+      <div class="description">On Aug 10, 2026, your subscription will renew at $44.99/year.</div>
+    </div>
+  </div>
+</div>
+ -->
+              <div class="dialog-benefits">
+
+                <div class="dialog-benefit">
+                  <div class="dialog-benefit-title">Pay Once, Use Forever</div>
+                  <!-- <div class="dialog-benefit-info">No monthly fees, no subscriptions, no hidden costs.</div> -->
+                </div>
+
+                <div class="dialog-benefit">
+                  <div class="dialog-benefit-title">All Current & Future Pro Features</div>
+                  <!-- <div class="dialog-benefit-info">We'll add new features and books every week.</div> -->
+                </div>
+
+                <div class="dialog-benefit">
+                  <div class="dialog-benefit-title">Save Money Over Time</div>
+                  <!-- <div class="dialog-benefit-info">If you were to pay $44.99/year for 3 years, you'd pay $134.97. With this offer, you pay $59.99 once.</div> -->
+                </div>
+                <div class="dialog-benefit">
+                  <div class="dialog-benefit-title">Limited Time Offer</div>
+                  <!-- <div class="dialog-benefit-info">If you were to pay $44.99/year for 3 years, you'd pay $134.97. With this offer, you pay $59.99 once.</div> -->
+                </div>
+
+
+              </div>
+
+            </div>
+
+          </div>
+
+          <div class="dialog-text" style="padding-top:0px">
+
+            <div class="dialog-testimonials">
+
+              <div class="dialog-testimonial">
+
+                <div class="dialog-testimonial-stars"></div>
+                <div class="dialog-testimonial-review"></div>
+                <div class="dialog-testimonial-user"></div>
+
+              </div>
+
+            </div>
+
+            <div class="dialog-heading-small" style="display:none;">What's part of Pro?</div>
+
+            <div class="dialog-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="text-align:left; padding-left:0px; font-size: 20px; font-weight: 600;">Compare Features
+                    </th>
+                    <th>Free</th>
+                    <th class="dialog-table-pro-column dialog-table-pro-header">Pro</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="dialog-table-feature">
+                      <b>📖 Read</b> Summaries
+                      <div>Read unlimited summaries. Free users get 3 per month</div>
+                    </td>
+                    <td class="dialog-table-check"><span></span></td>
+                    <td class="dialog-table-pro-column dialog-table-check"><span></span></td>
+                  </tr>
+                  <tr>
+                    <td class="dialog-table-feature">
+                      <b>🎧 Listen</b> to Summaries
+                      <div>Listen to unlimited summaries in 40 languages</div>
+                    </td>
+                    <td class="dialog-table-dash">&mdash;</td>
+                    <td class="dialog-table-pro-column dialog-table-check"><span></span></td>
+                  </tr>
+                  <tr>
+                    <td class="dialog-table-feature">
+                      ❤️ Unlimited <b>Bookmarks</b>
+                      <div>Free users are limited to 4</div>
+                    </td>
+                    <td class="dialog-table-dash">&mdash;</td>
+                    <td class="dialog-table-pro-column dialog-table-check"><span></span></td>
+                  </tr>
+                  <tr>
+                    <td class="dialog-table-feature">
+                      📜 Unlimited <b>History</b>
+                      <div>Free users are limited to 4</div>
+                    </td>
+                    <td class="dialog-table-dash">&mdash;</td>
+                    <td class="dialog-table-pro-column dialog-table-check"><span></span></td>
+                  </tr>
+                  <tr>
+                    <td class="dialog-table-feature">
+                      📥 Unlimited <b>Downloads</b>
+                      <div>Free users are limited to 1</div>
+                    </td>
+                    <td class="dialog-table-dash">&mdash;</td>
+                    <td class="dialog-table-pro-column dialog-table-check dialog-table-pro-footer"><span></span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="dialog-heading-small" style="padding-top:15px">Risk-Free Timeline</div>
+
+            
+<div class="timeline-item timeline-item-progress">
+  <div class="timeline-content">
+    <div class="timeline-icon lock">
+      <div class="pulsating-circle"></div>
+    </div>
+    <div class="timeline-text">
+      <div class="title">Today: Get Instant Access</div>
+      <div class="description">Listen to full summaries of <b>73,530</b> books. That's <b>12,000+ hours</b> of audio!</div>
+    </div>
+  </div>
+</div>
+<div class="timeline-item timeline-item-next">
+  <div class="timeline-content">
+    <div class="timeline-icon bell"></div>
+    <div class="timeline-text">
+      <div class="title">Day 4: Trial Reminder</div>
+      <div class="description">We'll send you a notification that your trial is ending soon.</div>
+    </div>
+  </div>
+</div>
+<div class="timeline-item">
+  <div class="timeline-content">
+    <div class="timeline-icon star"></div>
+    <div class="timeline-text">
+      <div class="title">Day 7: Your subscription begins</div>
+      
+      <div class="description">You'll be charged on Aug 17,<br /> cancel anytime before.</div>
+    </div>
+  </div>
+</div>
+
+
+            <div class="dialog-heading-small" style="padding-top:15px">Consume 2.8x More Books</div>
+              <div class="progress-chart">
+                <svg width="340" height="280">
+                  <defs>
+                    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6"
+                      orient="auto">
+                      <path d="M 0 0 L 10 5 L 0 10 z" fill="#BBF7D0" />
+                    </marker>
+                    <marker id="arrow-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6"
+                      orient="auto">
+                      <path d="M 0 0 L 10 5 L 0 10 z" fill="#E5E7EB" />
+                    </marker>
+                  </defs>
+
+                  <g class="fade-in-3">
+                    <circle cx="60" cy="40" r="40" fill="#BBF7D0"></circle>
+
+                    <text x="60" y="33" text-anchor="middle" fill="var(--text-color-alt)"
+                      style="font-family: Inter, sans-serif; font-size: 18px; font-weight: 600;">2.8x</text>
+                    <text x="60" y="50" text-anchor="middle" fill="var(--text-color-alt)"
+                      style="font-family: Inter, sans-serif; font-size: 12px;">more books</text>
+                  </g>
+
+                  <path class="fade-in-2" d="M 30,190 Q 170,150 310,30" stroke="#BBF7D0" fill="none" stroke-width="2"
+                    marker-end="url(#arrow)">
+                  </path>
+                  <text class="fade-in-2" x="230" y="40" fill="var(--text-color)"
+                    style="font-family: Inter, sans-serif; font-size: 14px; font-weight: 500;">Listening</text>
+                  <line class="fade-in-1" x1="30" y1="190" x2="310" y2="130" stroke="#E5E7EB" stroke-width="2"
+                    marker-end="url(#arrow-gray)">
+                  </line>
+                  <text class="fade-in-1" x="250" y="160" fill="var(--text-color2)"
+                    style="font-family: Inter, sans-serif; font-size: 14px;">Reading</text>
+                </svg>
+              </div>
+            <div class="dialog-heading-small" style="padding-top:15px">Our users love us</div>
+
+
+            <div class="rating-social-wrap-nowrap" style="padding-top:5px">
+              
+<div class="rating-social-wrap">
+	<div class="rating-social">
+
+    <div class="rating-avatars">
+        <div></div><div></div><div></div><div></div><div></div>
+    </div>
+    <div class="rating-content">
+        <div class="rating-stars social-rating">
+
+            <div class="rating-star"></div><div class="rating-star"></div><div class="rating-star"></div><div class="rating-star"></div><div class="rating-star"></div>
+
+        </div>
+        <div class="rating-info"><b>200,000+</b> readers</div>
+    </div>
+
+  </div>
+</div>
+
+            </div>
+
+            <div class="dialog-quotes">
+              <div>"...I can 10x the number of books I can read..."</div>
+              <div>"...exceptionally accurate, engaging, and beautifully presented..."</div>
+              <div>"...better than any amazon review when I'm making a book-buying decision..."</div>
+            </div>
+
+
+            
+
+          </div>
+
+        </div>
+
+        <div id="dialog_upgrade_view_checkout" style="display:none;">
+
+          <div id="dialog_lifetime_message" class="dialog-lifetime-message">
+            <div class="dialog-lifetime-message-heading">A one-time payment to access SoBrief Pro forever.</div>
+            <div class="dialog-lifetime-message-note">
+
+
+              ✓ Already subscribed? We'll automatically cancel your current plan and refund unused time 
+
+            </div>
+          </div>
+
+          <div id="checkout" style="position:relative; top:-15px;">
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <div id="dialog_upgrade_panel" class="dialog-panel">
+
+      <div id="upgrade_regular_panel">
+        <div class="dialog-price-container">
+          <div id="dialog_upgrade_plan_yearly" class="dialog-price-box dialog-price-box-selected"
+            onclick="setUpgradePlan('yearly')">
+            <div class="dialog-price-badge">Save 62%</div>
+            <div class="dialog-price-label">Yearly</div>
+            <div class="dialog-price-amount">
+              <s>$119.88</s> $44.99/year
+            </div>
+            <div class="dialog-price-monthly">$3.75<span>/mo</span></div>
+          </div>
+
+          <div id="dialog_upgrade_plan_monthly" class="dialog-price-box" onclick="setUpgradePlan('monthly')">
+            <div class="dialog-price-label">Monthly</div>
+            <div class="dialog-price-monthly">$9.99<span>/mo</span></div>
+          </div>
+        </div>
+
+        <div id="payment_button_instant" style="margin-bottom:10px; display:none;"></div>
+        <div id="payment_button_card" class="dialog-button-full" onclick="showUpgradeCheckout()">Start a 7-Day Free Trial</div>
+
+        <div class="dialog-button-info">
+          7 days free, then <span class="upgrade-feature-price">$44.99</span><span
+            class="upgrade-feature-price-period">/year</span>. Cancel anytime.
+        </div>
+      </div>
+
+      <div id="upgrade_first_year_panel" style="display:none;">
+        <div class="dialog-price-container">
+          <div id="dialog_upgrade_plan_first_year" class="dialog-price-box dialog-price-box-selected">
+            <div class="dialog-price-badge">Best Deal</div>
+            <div class="dialog-price-label">Yearly</div>
+            <div class="dialog-price-amount">
+              <s>$44.99</s> $22.49/year
+            </div>
+            <div class="dialog-price-monthly">$0.06<span>/day</span></div>
+          </div>
+        </div>
+
+        <div id="payment_button_instant" style="margin-bottom:10px; display:none;"></div>
+        <div id="payment_button_card" class="dialog-button-full" onclick="showUpgradeCheckout()">Take 50% Off Now</div>
+
+        <div class="dialog-button-info">
+          <span class="upgrade-feature-price">$22.49</span><span
+            class="upgrade-feature-price-period">/year</span>, then $44.99/year. Cancel anytime.
+        </div>
+      </div>
+
+      <div id="upgrade_first_year_25_off_panel" style="display:none;">
+        <div class="dialog-price-container">
+          <div id="dialog_upgrade_plan_first_year_25_off" class="dialog-price-box dialog-price-box-selected">
+            <div class="dialog-price-badge">Special Offer</div>
+            <div class="dialog-price-label">Yearly</div>
+            <div class="dialog-price-amount">
+              <s>$44.99</s> $33.74/year
+            </div>
+            <div class="dialog-price-monthly">3-day trial + $0.09<span>/day</span></div>
+          </div>
+        </div>
+
+        <div id="payment_button_instant" style="margin-bottom:10px; display:none;"></div>
+        <div id="payment_button_card" class="dialog-button-full" onclick="showUpgradeCheckout()">Start 3-Day Free Trial</div>
+
+        <div class="dialog-button-info">
+          3 days free, then <span class="upgrade-feature-price">$33.74</span><span class="upgrade-feature-price-period">/year</span>, then $44.99/year. Cancel anytime.
+        </div>
+      </div>
+
+      <div id="upgrade_lifetime_20_off_panel" style="display:none;">
+        <div class="dialog-price-container">
+          <div id="dialog_upgrade_plan_lifetime_20_off" class="dialog-price-box dialog-price-box-selected">
+            <div class="dialog-price-badge">Best Value</div>
+            <div class="dialog-price-label">Lifetime</div>
+            <div class="dialog-price-amount">
+              <s>$79.99</s> $59.99 One-Time Payment
+            </div>
+            <!-- <div class="dialog-price-monthly">$2.25<span>/mo</span></div> -->
+          </div>
+        </div>
+
+        <div id="payment_button_instant" style="margin-bottom:10px; display:none;"></div>
+        <div id="payment_button_card" class="dialog-button-full" onclick="showUpgradeCheckout()">Pay $59.99 One-Time
+        </div>
+
+        <div class="dialog-button-info">
+          One-time payment. No subscriptions.
+        </div>
+      </div>
+
+
+    </div>
+
+  </div>
+</div>
+
+
+
+
+<div id="dialog_onboarding" class="dialog-wrap dialog-wrap-no-scroll dialog-transparent">
+
+  <div class="dialog-inner dialog-inner-upgrade-new dialog-inner-onboard">
+
+    <div class="dialog-close dialog-close-header" onclick="hideDialog()" style="top: 15px; right: 15px; background-size: 18px;"></div>
+
+    <iframe id="onboard_iframe" src="" class="onboard-iframe" title="Onboarding"></iframe>
+
+  </div>
+</div>
+
+
+
+<div id="dialog_book_scanner" class="dialog-book-scanner">
+  <div class="dialog-book-scanner-inner">
+
+    <div class="book-scanner-logo">
+      <div>
+        <img src="/images/logo-full-trans.png" loading="lazy" />
+      </div>
+    </div>
+  
+    <div class="book-scanner-close" onclick="hideBookScanner()"><div></div></div>
+    
+    <div class="book-scanner-title">Scanner</div>
+    
+    <div id="scanner-instructions" class="book-scanner-instructions"><div>Find a barcode to scan</div></div>
+
+    <div id="video-container" class="book-scanner-video-container">
+
+      <video id="scanner-video" class="book-scanner-video" playsinline autoplay></video>
+
+      <div id="scanner_video_canvas" class="book-scanner-video-canvas"></div>
+
+      <div id="scanner-overlay" class="book-scanner-overlay">
+        <div class="corner-top-left"></div>
+        <div class="corner-top-right"></div>
+        <div class="corner-bottom-left"></div>
+        <div class="corner-bottom-right"></div>
+      </div>
+
+    </div>
+
+    <div class="book-scanner-loading" id="loading">
+      <p></p>
+    </div>
+
+    <div id="scan-result" class="book-scanner-result">
+      <div class="book-scanner-result-inner">
+        <img src="" class="scan-result-cover" />
+        <div class="scan-result-title"></div>
+        <div class="scan-result-author"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<div id="dialog_settings" class="dialog-wrap">
+  <div class="dialog-inner dialog-inner-settings">
+
+    <div class="dialog-title">Settings</div>
+
+    <div class="dialog-close" onclick="triggerNativeAction('link_click'); hideSpecificDialog('settings')"></div>
+
+    <div class="dialog-upgrade-wrap">
+
+      <div id="settings_switcher_wrap" class="switcher-wrap" style="text-align:left;">
+        <div class="switcher switcher-small">
+          <div id="settings_switch_general" class="switch switch-selected" onclick="showSettingsSection('general')">General</div><div id="settings_switch_widget" class="switch" onclick="showSettingsSection('widget')">Widget</div>
+        </div>
+      </div>
+
+      <div class="dialog-text" style="padding-top:20px; padding-left:10px; padding-bottom:0px">
+
+        <div id="settings_general_wrap" class="settings-section settings-section-visible">
+
+          <div class="dialog-row">
+            <label for="setting_theme" class="dialog-label">Appearance</label>
+            <div class="dialog-setting">
+
+              <select id="setting_theme" class="dialog-dropdown" oninput="updateThemeSetting()">
+                <option value="system">System</option>
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+              </select>
+
+            </div>
+          </div>
+
+          <div id="delete_account_wrap" class="dialog-row" style="display:none; margin-top:70px;">
+
+            <div class="inline-button inline-button-small inline-button-delete" onclick="deleteAccount()">Delete Account
+            </div>
+
+          </div>
+
+        </div>
+
+        <div id="settings_widget_wrap" class="settings-section">
+
+          <div id="widget_settings_loading" style="font-size:16px; text-align:center; margin-top:20px;">
+            Loading...
+          </div>
+
+          <div id="widget_settings_message" style="display:none; text-align:center; margin-top:5px; margin-bottom:10px;">
+
+            <img src="/images/screenshot-native-home-screen.jpg" style="width:100%; max-width:300px; border-radius:10px; margin-bottom:10px;" loading="lazy" />
+
+            <div style="font-size:15px; line-height:20px; text-align:center; margin-top:15px;">Download our iOS app, add the widget, then come back here to configure it.</div>
+
+            <a class="inline-button inline-button-small" style="margin-top:20px;" href="https://apps.apple.com/us/app/sobrief-book-summaries/id6723865613" target="_blank">Download iOS App</a>
+          </div>
+
+          <div id="widget_settings_wrap" style="display:none">
+
+            <div class="dialog-row">
+              <div class="dialog-label">Topic</div>
+              <div class="dialog-setting">
+
+                <select id="user_setting_widget_topic" class="dialog-dropdown" onchange="saveUserSettings()">
+                  <option value="best-self-help-books">Self-Help</option>
+                  <option value="best-productivity-books">Productivity</option>
+                  <option value="best-technology-books">Technology</option>
+                  <option value="best-mental-health-books">Mental Health</option>
+                  <option value="best-buisness-books">Buisness</option>
+                  <option value="best-inspirational-books">Inspirational</option>
+                  <option value="best-relationships-books">Relationships</option>
+                  <option value="best-design-books">Design</option>
+                  <option value="best-food-books">Food</option>
+                  <option value="best-family-books">Family</option>
+                  <option value="best-psychology-books">Psychology</option>
+                  <option value="best-philosophy-books">Philosophy</option>
+                  <option value="best-leadership-books">Leadership</option>
+                  <option value="best-science-books">Science</option>
+                  <option value="best-history-books">History</option>
+                  <option value="best-finance-books">Finance</option>
+                  <option value="best-spirituality-books">Spirituality</option>
+                  <option value="best-biography-books">Biography</option>
+                  <option value="best-economics-books">Economics</option>
+                  <option value="best-politics-books">Politics</option>
+                  <option value="best-management-books">Management</option>
+                  <option value="best-health-books">Health</option>
+                  <option value="best-entrepreneurship-books">Entrepreneurship</option>
+                </select>
+
+              </div>
+            </div>
+
+            <div class="dialog-row">
+              <div class="dialog-label">Start Time</div>
+              <div class="dialog-setting">
+
+                <select id="user_setting_widget_start_time" class="dialog-dropdown" onchange="saveUserSettings()">
+                  
+                  <option value="0">12 am</option>
+                  <option value="1">1 am</option>
+                  <option value="2">2 am</option>
+                  <option value="3">3 am</option> 
+                  <option value="4">4 am</option> 
+                  <option value="5">5 am</option> 
+                  <option value="6">6 am</option>
+                  <option value="7">7 am</option>
+                  <option value="8">8 am</option>
+                  <option value="9">9 am</option>
+                  <option value="10">10 am</option>
+                  <option value="11">11 am</option>
+                  <option value="12">12 pm</option> 
+                  <option value="13">1 pm</option>
+                  <option value="14">2 pm</option> 
+                  <option value="15">3 pm</option> 
+                  <option value="16">4 pm</option> 
+                  <option value="17">5 pm</option>
+                  <option value="18">6 pm</option>
+                  <option value="19">7 pm</option>
+                  <option value="20">8 pm</option>
+                  <option value="21">9 pm</option>
+                  <option value="22">10 pm</option>
+                  <option value="23">11 pm</option> 
+                </select>
+
+              </div>
+            </div>
+
+            <p style="margin-top:50px; font-size:14px; line-height:20px; opacity:0.82"><b>Note:</b> It takes a few seconds after changing settings here for iOS widgets to update.</p>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- 
+<script>
+  document.querySelector('.dialog-content-scrollable').addEventListener('scroll', function() {
+    const arrow = this.querySelector('.bounce-arrow');
+    if (this.scrollTop > 20) { // Hide after scrolling 20px
+      arrow.style.display = 'none';
+    } else {
+      arrow.style.display = 'block';
+    }
+  });
+</script> -->
+
+
+
+    <!-- <div class="dialog" data-name="first-year-off">
+  <div class="dialog-content">
+    <div class="dialog-close">×</div>
+    <h2>Special Offer!</h2>
+    <p>Get your first year at 50% off</p>
+    <button class="upgrade-button">First Year 50% Off</button>
+  </div>
+</div>
+
+<div class="dialog" data-name="lifetime-20-off">
+  <div class="dialog-content">
+    <div class="dialog-close">×</div>
+    <h2>Special Offer!</h2>
+    <p>Get $20 off</p>
+    <button class="upgrade-button">Get $20 Off →</button>
+  </div>
+</div>
+
+ -->
+
+
+
+
+
+
+<!-- Debug comment: foot isLocalEnvironment = false -->
+
+<script data-cfasync="false">
+// Create priority queue system for scripts
+const scriptQueue = {
+  essential: [], // Core functionality needed immediately 
+  functional: [], // Enhances UX but not critical
+  marketing: []  // Analytics, tracking, etc.
+};
+
+// Helper function to add a script to the queue
+function queueScript(category, src, callback = null, isInline = false, inlineCode = '', scriptType = null) {
+  scriptQueue[category].push({
+    src: src,
+    callback: callback,
+    isInline: isInline,
+    inlineCode: inlineCode,
+    type: scriptType
+  });
+}
+
+// Helper to load a script properly
+function loadQueuedScript(scriptObj) {
+  if (scriptObj.isInline) {
+    // For inline scripts
+    const script = document.createElement('script');
+    script.textContent = scriptObj.inlineCode;
+    if (scriptObj.type) script.type = scriptObj.type;
+    script.setAttribute('data-cfasync', 'false'); // Bypass Cloudflare
+    document.head.appendChild(script);
+    if (scriptObj.callback) scriptObj.callback();
+    return;
+  }
+  
+  // For external scripts
+  const script = document.createElement('script');
+  script.src = scriptObj.src;
+  script.async = true;
+  script.setAttribute('data-cfasync', 'false'); // Bypass Cloudflare
+  if (scriptObj.type) script.type = scriptObj.type;
+  if (scriptObj.callback) {
+    script.onload = scriptObj.callback;
+  }
+  document.head.appendChild(script);
+}
+
+// Function to load a batch of scripts when browser is idle
+function loadScriptBatch(scripts, fallbackDelay = 100) {
+  if (scripts.length === 0) return;
+  
+  // Create a copy of the scripts array and clear the original to prevent reloading
+  const scriptsToLoad = [...scripts];
+  scripts.length = 0;
+  
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => {
+      scriptsToLoad.forEach(loadQueuedScript);
+    }, { timeout: 2000 });
+  } else {
+    setTimeout(() => {
+      scriptsToLoad.forEach(loadQueuedScript);
+    }, fallbackDelay);
+  }
+}
+
+// Load main scripts (jQuery, marked, and main.js)
+function loadMainScripts() {
+  // Load jQuery as essential script first
+  queueScript('essential', 'https://images.sobrief.com/public/scripts/jquery-3.5.1.min.js', function() {
+    // After jQuery loads, load marked as essential since main.js depends on it
+    queueScript('essential', 'https://images.sobrief.com/public/scripts/marked.min.js', function() {
+      // After marked loads, queue main.js as essential
+      queueScript('essential', 'https://images.sobrief.com/public/scripts/main_bundled_1754770529909.js', function() {
+        // Set up other scripts after main.js loads
+        setupMarketingScripts();
+      }, false, '', 'module');
+      
+      // Load essential scripts again to get main.js
+      loadScriptBatch(scriptQueue.essential);
+    });
+    
+    // Load essential scripts again to get marked
+    loadScriptBatch(scriptQueue.essential);
+  });
+  
+  // Load essential scripts immediately to start with jQuery
+  loadScriptBatch(scriptQueue.essential);
+}
+
+// Setup all marketing and functional scripts
+function setupMarketingScripts() {
+  // Add PostHog to functional queue for faster loading
+  queueScript('functional', '', () => {
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId setPersonProperties".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init('phc_OBwm9CCxFzaiEJ3cMO1e1bxngeSXD2r1GHd2V0bYMdp',{api_host:'https://php.sobrief.com', person_profiles: 'always', disable_session_recording: true});
+  }, true);
+  
+  // Add Quagga to functional queue
+  queueScript('functional', 'https://images.sobrief.com/public/scripts/quagga.min.js');
+  
+  // Add Intercom to marketing queue and load Firebase after Intercom is available
+  
+  queueScript('functional', '', () => {
+    console.log("Loading Intercom");
+    window.intercomSettings = {
+      api_base: "https://api-iam.intercom.io",
+      app_id: "qiymoi1o",
+      hide_default_launcher: true
+    };
+    
+    (function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('reattach_activator');ic('update',w.intercomSettings);}else{var d=document;var i=function(){i.c(arguments);};i.q=[];i.c=function(args){i.q.push(args);};w.Intercom=i;var l=function(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://widget.intercom.io/widget/qiymoi1o';var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);};l();}})();
+    console.log("Intercom loaded, will load Firebase shortly");
+    
+    // Load Firebase after Intercom has loaded with reduced timeout
+    setTimeout(function() {
+      loadFirebase();
+    }, 200); // Reduced from 500ms
+  }, true);
+  
+  
+  // Add GTM to functional queue for faster loading
+  queueScript('functional', '', () => {
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-M6R665R5');
+  }, true);
+  
+  // Add GTM Ads to marketing queue
+  queueScript('marketing', 'https://www.googletagmanager.com/gtag/js?id=AW-835161720', function() {
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'AW-835161720');
+  });
+  
+  // Add Reddit Pixel to marketing queue
+  queueScript('marketing', '', () => {
+    !function(w,d){if(!w.rdt){var p=w.rdt=function(){p.sendEvent?p.sendEvent.apply(p,arguments):p.callQueue.push(arguments)};p.callQueue=[];var t=d.createElement("script");t.src="https://www.redditstatic.com/ads/pixel.js",t.async=!0;var s=d.getElementsByTagName("script")[0];s.parentNode.insertBefore(t,s)}}(window,document);rdt('init','t2_tj0mkt7');rdt('track', 'PageVisit');
+  }, true);
+  
+  // Add Meta Pixel to marketing queue
+  queueScript('marketing', '', () => {
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '7071272849663998');
+    fbq('track', 'PageView');
+  }, true);
+  
+  // Add Twitter UWT to marketing queue
+  queueScript('marketing', '', () => {
+    !function(e,t,n,s,u,a){e.twq||(s=e.twq=function(){s.exe?s.exe.apply(s,arguments):s.queue.push(arguments);
+    },s.version='1.1',s.queue=[],u=t.createElement(n),u.async=!0,u.src='https://static.ads-twitter.com/uwt.js',
+    a=t.getElementsByTagName(n)[0],a.parentNode.insertBefore(u,a))}(window,document,'script');
+    twq('config','oere4');
+  }, true);
+  
+  // Add Rewardful to marketing queue
+  queueScript('marketing', '', function() {
+    // Create script with the proper attribute
+    const rewardfulScript = document.createElement('script');
+    rewardfulScript.src = 'https://r.wdfl.co/rw.js';
+    rewardfulScript.setAttribute('data-rewardful', '155fb3');
+    document.head.appendChild(rewardfulScript);
+    
+    // Initialize Rewardful
+    (function(w,r){w._rwq=r;w[r]=w[r]||function(){(w[r].q=w[r].q||[]).push(arguments)}})(window,'rewardful');
+  }, true);
+
+  // Begin loading functional scripts with a small delay
+  setTimeout(() => {
+    console.log("Loading functional scripts batch");
+    loadScriptBatch(scriptQueue.functional, 200);
+  }, 500);
+  
+  // Set up interaction-based loading for marketing scripts
+  initMarketingScriptsLoadingStrategy();
+}
+
+// The new improved initialization method using interaction detection
+function initMarketingScriptsLoadingStrategy() {
+  let hasInteracted = false;
+  let marketingLoaded = false;
+  
+  function userInteracted() {
+    if (hasInteracted || marketingLoaded) return;
+    hasInteracted = true;
+    
+    // Load marketing scripts after first interaction
+    loadScriptBatch(scriptQueue.marketing);
+    marketingLoaded = true;
+    
+    // Clean up event listeners
+    document.removeEventListener('scroll', userInteracted, {passive: true});
+    document.removeEventListener('mousemove', userInteracted, {passive: true});
+    document.removeEventListener('touchstart', userInteracted, {passive: true});
+    document.removeEventListener('click', userInteracted, {passive: true});
+  }
+  
+  // Add interaction listeners
+  document.addEventListener('scroll', userInteracted, {passive: true, once: true});
+  document.addEventListener('mousemove', userInteracted, {passive: true, once: true});
+  document.addEventListener('touchstart', userInteracted, {passive: true, once: true});
+  document.addEventListener('click', userInteracted, {passive: true, once: true});
+  
+  // Fallback - load marketing after 5 seconds regardless of interaction
+  setTimeout(function() {
+    if (!marketingLoaded) {
+      loadScriptBatch(scriptQueue.marketing);
+      marketingLoaded = true;
+    }
+  }, 5000);
+}
+
+// Delay main script loading very slightly for better initial render
+function loadMainScriptsAfterDelay() {
+  if (document.readyState === 'interactive' || document.readyState === 'complete') {
+    // Use requestIdleCallback if available for better timing
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(() => loadMainScripts(), { timeout: 1000 });
+    } else {
+      setTimeout(loadMainScripts, 500); // Original 500ms delay as fallback
+    }
+  } else {
+    // Wait for DOMContentLoaded for better initial paint
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(loadMainScripts, 100);
+    });
+  }
+}
+
+// Optimize Firebase loading function
+function loadFirebase() {
+  console.log("Starting Firebase loading process");
+  // Add retry counter to the function itself
+  loadFirebase.retryCount = (loadFirebase.retryCount || 0) + 1;
+  if (loadFirebase.retryCount > 3) {
+    console.error("Failed to load Firebase after multiple attempts");
+    return; // Prevent infinite retries
+  }
+
+  // Load firebase CSS after delay
+  const uiStylesheet = document.createElement('link');
+  uiStylesheet.type = "text/css";
+  uiStylesheet.rel = "stylesheet";
+  uiStylesheet.href = "https://www.gstatic.com/firebasejs/ui/6.1.0/firebase-ui-auth.css";
+  uiStylesheet.media = "print";
+  uiStylesheet.onload = function() { this.media = 'all'; };
+  document.head.appendChild(uiStylesheet);
+  console.log("Firebase CSS loaded");
+  
+  // Load JS files in sequence
+  const appScript = document.createElement('script');
+  appScript.src = "https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js";
+  
+  // Add error handling for app script
+  appScript.onerror = function() {
+    console.error("Failed to load Firebase app script, retrying...");
+    setTimeout(loadFirebase, 300); // Reduced retry delay
+  };
+  
+  appScript.onload = function() {
+    console.log("Firebase app script loaded");
+    const authScript = document.createElement('script');
+    authScript.src = "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js";
+    
+    // Add error handling for auth script
+    authScript.onerror = function() {
+      console.error("Failed to load Firebase auth script, retrying...");
+      setTimeout(loadFirebase, 300); // Reduced retry delay
+    };
+    
+    authScript.onload = function() {
+      console.log("Firebase auth script loaded");
+      const uiScript = document.createElement('script');
+      uiScript.src = "https://www.gstatic.com/firebasejs/ui/6.1.0/firebase-ui-auth.js";
+      
+      // Add error handling for UI script
+      uiScript.onerror = function() {
+        console.error("Failed to load Firebase UI script, retrying...");
+        setTimeout(loadFirebase, 300); // Reduced retry delay
+      };
+      
+      uiScript.onload = function() {
+        console.log("Firebase UI script loaded");
+        // Reduced delay to ensure everything is initialized
+        setTimeout(function() {
+          if (typeof firebase === 'undefined') {
+            console.error("Firebase not initialized properly, retrying...");
+            setTimeout(loadFirebase, 300); // Reduced retry delay
+            return;
+          }
+          console.log("Setting up Firebase");
+          checkAndSetupFirebase();
+        }, 10); // Reduced from 50ms
+      };
+      document.head.appendChild(uiScript);
+    };
+    document.head.appendChild(authScript);
+  };
+  document.head.appendChild(appScript);
+  
+  // Add a verification timeout to check if Firebase loaded successfully
+  setTimeout(function() {
+    if (typeof firebase === 'undefined' && loadFirebase.retryCount <= 3) {
+      console.error("Firebase failed to initialize, triggering retry");
+      loadFirebase();
+    }
+  }, 3000); // Reduced from 5000ms
+}
+
+// Robust Firebase setup checker
+function checkAndSetupFirebase() {
+  const maxAttempts = 100; // 10 seconds total (100 * 100ms)
+  let attempts = 0;
+  
+  function attemptSetup() {
+    attempts++;
+    
+    if (typeof window.setupFirebase === 'function') {
+      if (attempts > 1) {
+        console.log(`setupFirebase found after ${attempts} attempts`);
+      }
+      window.setupFirebase();
+      return;
+    }
+    
+    if (attempts >= maxAttempts) {
+      console.error('setupFirebase not available after 10 seconds - main2.js may have failed to load');
+      return;
+    }
+    
+    // Try again in 100ms
+    setTimeout(attemptSetup, 100);
+  }
+  
+  // Start checking immediately
+  attemptSetup();
+}
+
+// Start loading process
+loadMainScriptsAfterDelay();
+</script>
+
+
+<script>
+// native app?
+if (navigator.userAgent.indexOf('SoBrief/') !== -1) 
+{
+  // add native class
+  document.body.classList.add("native-app");
+
+  // onboarded? show body instantly
+  if (localStorage.getItem("onboard_finished") == "true") {
+    $("#body_wrap").show();
+  }
+}
+</script>
+
+
+
+<script id="page_script">
+var bookId = 2483082;
+var lang = 'en';
+var requestId = 54077;
+var fiction = true;
+
+function initPage()
+{
+  trackBookOpen(true);
+
+  
+
+    
+    loadBookPlaylist(false, false);
+    
+
+    updateMediaControls({
+      title: 'Dune',
+      artist: 'Frank Herbert',
+      album: 'SoBrief',
+      artwork: [
+        { src: 'https://images.sobrief.com/social/cover_dune_360px_1747140233.jpg' }
+      ]
+    });
+
+    
+
+    
+
+  
+}
+window.initPage = initPage;
+
+function handleFictionTranslation(languageCode, bookId, urlTitle) {
+  // console.log('fiction_translation_attempt', languageCode, bookId, urlTitle);
+  logEvent('fiction_translation_attempt', { book_id: bookId, language: languageCode, url_title: urlTitle });
+  showAlert(getTranslatedMessage(languageCode));
+}
+</script>
+
+</body>
+</html>
+

@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html ng-app="LegalCitationApp" lang="en">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Basic Legal Citation</title>
+    <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+    <!-- Bootstrap Core CSS -->
+    <link href="bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- MetisMenu CSS -->
+    <link href="bower_components/metisMenu/dist/metisMenu.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="dist/css/citation.css" rel="stylesheet">
+    <link href="dist/css/customize.css" rel="stylesheet">
+    <link href="dist/css/lii_skin.css" rel="stylesheet">
+    <!-- Custom Fonts -->
+    <link href="bower_components/font-awesome/css/font-awesome.min.css" rel="stylesheet"
+
+      type="text/css">
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]> <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script> <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script> <![endif]-->
+    <!--
+		<script src="http://code.jquery.com/jquery-1.11.3.min.js"></script> <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script> -->
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.5/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.5/angular-route.min.js"></script>
+    <script src="js/controllers.js"></script>
+    <script src="js/directives/directives.js"></script>
+    <script src="js/directives/highlight.js"></script>
+    <script src="js/services/services.js"></script>
+    <script src="js/services/autoComplete.js"></script>
+    <!--
+		<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css"> <script src="http://code.jquery.com/jquery-1.11.3.min.js"></script> <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script> -->
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script> 
+    
+<!-- Google tag (gtag.js) -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-PDVVHXRDE6"></script>
+	<script>
+		window.dataLayer = window.dataLayer || [];
+		function gtag() { dataLayer.push(arguments); }
+		gtag('js', new Date());
+
+		gtag('config', 'G-PDVVHXRDE6');
+	</script>    
+    <base href="/citation/">
+
+  </head>
+  <body class="Normal" ng-controller="mainController"> <a href="#page-wrapper"
+
+      class="sr-only">Skip navigation</a>
+    <div id="wrapper">
+      <!-- Navigation -->
+      <nav aria-label="Cornell University navigation" id="iblcTopNav" class="navbar navbar-default navbar-fixed-top">
+        <div id="cu-identity">
+          <div class="container-fluid"> <a href="https://www.cornell.edu" id="insignialink"
+
+              title="Cornell University"><img alt="Insignia" class="img-responsive"
+
+                src="https://www.law.cornell.edu/sites/all/themes/liizenboot/images/insignia.gif"></a><a
+
+              href="http://www.lawschool.cornell.edu/" id="clslink" title="Cornell Law School">Cornell
+              University Law School</a><a href="https://www.cornell.edu/search/"
+
+              id="cusearch" title="Search Cornell University">Search Cornell</a>
+          </div>
+        </div>
+        <!-- /cu-identity -->
+        <header id="liiheader" role="banner" class="container-fluid">
+          <nav aria-label="main navigation" id="liiallnav" class="navbar navbar-default">
+            <div id="liibanner" class="navbar-header"> <button type="button" class="navbar-toggle"
+
+                data-toggle="collapse" data-target="#liinav" href="#liinav"> <span
+
+                  class="sr-only">Toggle navigation</span> <span class="icon-bar"></span>
+                <span class="icon-bar"></span> <span class="icon-bar"></span> </button>
+              <div id="liilogodiv"> <a aria-label="lii logo" id="liilogo" class="navbar-brand"
+
+                  href="/"></a> </div>
+              <div class="navbar-right" id="liinavbarstuff">
+                <div id="liidonatewrap"> <a aria-hidden="true" id="liidonate" class="navbar-link lblueinv"
+
+                    href="/donate"><span class="glyphicon glyphicon-gift"></span><span
+
+                      class="gltxt">Support Us!</span></a> </div>
+                <!-- /#liidonatewrap -->
+                <div id="liisearchlinkwrap"> <a id="liisearchlink" href="#" class="navbar-link cured"
+
+                    aria-label="search"><span class="glyphicon glyphicon-search"
+
+                      aria-hidden="true"></span></a> </div>
+                <!-- /#liisearchlinkwrap -->
+                <div id="liisearch" href="#" role="search" class="input-group navbar-form">
+                  <form class="form-search content-search" action="https://www.law.cornell.edu/search/site"
+
+                    method="post" id="search-form" accept-charset="UTF-8" _lpchecked="1">
+                    <div>
+                      <div>
+                        <h2 class="element-invisible">Search form</h2>
+                        <div class="input-group"> <input title="Enter the terms you wish to search for."
+
+                            placeholder="Search" class="form-control form-text"
+
+                            id="edit-keys" name="keys" value="" size="15" maxlength="128"
+
+                            type="text"> <span class="input-group-btn"> <button
+
+                              aria-label="submit" type="submit" class="btn btn-primary">
+                              <span class="icon glyphicon glyphicon-search" aria-hidden="true"
+
+                                role="button"></span> </button> </span> </div>
+                        <!-- /input-group -->
+                        <div class="form-actions form-wrapper form-group" id="edit-actions">
+                          <button class="element-invisible btn btn-default form-submit"
+
+                            type="submit" id="edit-submit" name="op" value="Search">
+                            Search </button> </div>
+                        <!-- /edit-actions --> <input name="get" value="[]" type="hidden">
+                        <input name="form_build_id" value="form-AWkP8XNvPNHNgH0ROUiKw0Hm1uqsS0xNuANkHxx7fNE"
+
+                          type="hidden"> <input name="form_token" value="ulCP81E6WAIWqo9pIgpW-UtTcJN7I3RBsu5lbOiKKss"
+
+                          type="hidden"> <input name="form_id" value="search_block_form"
+
+                          type="hidden"> </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+              <div id="liinav" class="collapse navbar-collapse">
+                <ul id="liiheadernav" class="nav navbar-nav">
+                  <li class="menu-item dropdown dropdown-submenu"> <a href="/lii/about/about_lii"
+
+                      class="dropdown-toggle" data-toggle="dropdown">About LII</a>
+                    <ul class="dropdown-menu">
+                      <li> <a href="/lii/about/who_we_are">Who We Are</a> </li>
+                      <li> <a href="/lii/about/what_we_do">What We Do</a> </li>
+                      <li> <a href="/lii/about/who_pays_for_this">Who Pays For
+                          This</a> </li>
+                      <li> <a href="/lii/about/contact_us">Contact Us</a> </li>
+                    </ul>
+                  </li>
+                  <li class="menu-item dropdown dropdown-submenu"> <a href="/lii/get_the_law"
+
+                      class="dropdown-toggle" data-toggle="dropdown">Get the law</a>
+                    <ul class="dropdown-menu">
+                      <li> <a title="U.S. Constitution" href="/constitution">Constitution</a>
+                      </li>
+                      <li> <a title="Supreme Court" href="/supremecourt/text/home">Supreme
+                          Court</a> </li>
+                      <li> <a title="U.S. Code" href="/uscode/text">U.S. Code</a>
+                      </li>
+                      <li> <a title="C.F.R." href="/cfr/text">CFR</a> </li>
+                      <li class="menu-item dropdown dropdown-submenu"> <a title="Federal Rules"
+
+                          href="/rules" class="dropdown-toggle" data-toggle="dropdown">Federal
+                          Rules</a>
+                        <ul class="dropdown-menu">
+                          <li> <a href="/rules/frap">Federal Rules of Appellate
+                              Procedure</a> </li>
+                          <li> <a href="/rules/frcp">Federal Rules of Civil
+                              Procedure</a> </li>
+                          <li> <a href="/rules/frcrmp">Federal Rules of
+                              Criminal Procedure</a> </li>
+                          <li> <a href="/rules/fre">Federal Rules of Evidence</a>
+                          </li>
+                          <li> <a href="/rules/frbp">Federal Rules of
+                              Bankruptcy Procedure</a> </li>
+                        </ul>
+                      </li>
+                      <li> <a title="U.C.C." href="/ucc">U.C.C.</a> </li>
+                      <li class="menu-item dropdown dropdown-submenu"> <a title="Law by jurisdiction"
+
+                          href="#" class="dropdown-toggle" data-toggle="dropdown">Law
+                          by jurisdiction</a>
+                        <ul class="dropdown-menu">
+                          <li> <a href="/states">State law</a> </li>
+                          <li> <a href="/uniform">Uniform laws</a> </li>
+                          <li> <a href="/federal">Federal law</a> </li>
+                          <li> <a href="/world">World law</a> </li>
+                        </ul>
+                      </li>
+                    </ul>
+                  </li>
+                  <li> <a href="https://lawyers.law.cornell.edu/">Lawyer
+                      directory</a> </li>
+                  <li class="menu-item dropdown dropdown-submenu"> <a href="/wex"
+
+                      class="dropdown-toggle" data-toggle="dropdown">Legal
+                      encyclopedia</a>
+                    <ul class="dropdown-menu">
+                      <li> <a href="/wex/category/business_law">Business law</a>
+                      </li>
+                      <li> <a href="/wex/category/constitutional_law">Constitutional
+                          law</a> </li>
+                      <li> <a href="/wex/category/criminal_law_and_procedure">Criminal
+                          law</a> </li>
+                      <li> <a href="/wex/category/family_law">Family law</a> </li>
+                      <li> <a href="/wex/category/employment_law">Employment
+                          law</a> </li>
+                      <li> <a href="/wex/category/money_and_financial_problems">Money
+                          and Finances</a> </li>
+                      <li> <a href="/wex/wex_articles">All Wex Articles</a> </li>
+                    </ul>
+                  </li>
+                  <li class="menu-item dropdown dropdown-submenu"> <a href="/lii/help_out"
+
+                      class="dropdown-toggle" data-toggle="dropdown">Help out</a>
+                    <ul class="dropdown-menu">
+                      <li> <a href="/donate">Give</a> </li>
+                      <li> <a href="/lii/help_out/sponsor">Sponsor</a> </li>
+                      <li> <a href="/lii/help_out/advertise">Advertise</a> </li>
+                      <li> <a href="/lii/help_out/create">Create</a> </li>
+                      <li> <a href="/lii/help_out/promote">Promote</a> </li>
+                      <li> <a href="/lii/help_out/join_directory">Join Lawyer
+                          Directory</a> </li>
+                    </ul>
+                  </li>
+                </ul>
+                <ul id="liinavsoc" class="nav navbar-nav navbar-right">
+                  <li>
+                    <!-- Go to www.addthis.com/dashboard to customize your tools -->
+                    <br>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <!-- /liinavbarstuff --> </nav>
+        </header>
+        <div class="navbar-header"> <button id="iblctoggler" type="button" class="navbar-toggle"
+
+            data-toggle="collapse" data-target="#iblcsidenav"> <span class="sr-only">Toggle
+              navigation</span> &gt; </button> <a id="iblcname" class="navbar-brand"
+
+            href="https://www.law.cornell.edu/citation/">Introduction to Basic
+            Legal Citation</a> </div>
+        <!-- /.navbar-header -->
+        <ul class="nav navbar-top-links navbar-right">
+          <li> <a href="toc"><em class="fa fa-fw"></em>Table of contents</a> </li>
+          <li> <a href="topics"><em class="fa fa-fw"></em>Index</a> </li>
+          <li> <a href="help"><em class="fa fa-fw"></em>Help</a> </li>
+          <!-- <li><a href="#about"><em class="fa fa-fw"></em>About</a> 			</li> -->
+          <!-- /.dropdown -->
+          <li class="dropdown"> <a class="dropdown-toggle" data-toggle="dropdown">
+              <em class="fa fa-fw"></em>eBook<em class="fa fa-caret-down"></em>
+            </a>
+            <ul class="dropdown-menu">
+              <li> <a href="basic-legal-citation.pdf" target="_blank"><em class="fa fa-fw"></em>PDF</a>
+              </li>
+            </ul>
+            <!-- /.dropdown-user --> </li>
+          <!-- /.dropdown -->
+        </ul>
+        <!-- /.navbar-top-links -->
+        <div aria-label="sidebar navigation" class="navbar-default sidebar">
+          <div class="sidebar-nav navbar-collapse" id="iblcsidenav">
+            <ul class="nav" id="side-menu">
+              <li class="sidebar-search"> <inc-search ng-model="searchTerm" inc-item-value="category"
+
+                  inc-searcher="searchTag" inc-item-label="this.category" inc-selected-label="searchTerm.category">
+                </inc-search><br>
+              </li>
+              <li class="navbartoplinks-formobile"> <a href=""> <em class="fa fa-fw"></em>Navigation
+                  <span class="fa arrow"></span> </a>
+                <ul class="nav nav-second-level">
+                  <li> <a href="toc"><em class="fa fa-fw"></em>Contents</a> </li>
+                  <li> <a href="topics"><em class="fa fa-fw"></em>Index</a> </li>
+                  <li> <a href="help"><em class="fa fa-fw"></em>Help</a> </li>
+                  <!-- <li><a href="#about"><em class="fa fa-fw"></em>About</a> -->
+                  <li class="navbartoplinks-formobile"> <a href=""> <em class="fa fa-fw"></em>Resources
+                      <em class="fa fa-caret-down"></em> </a>
+                    <ul class="nav nav-second-level">
+                      <li> <a href="http://www.access-to-law.com/citation/videos/citing_judicial_opinions.html"
+
+                          target="_blank"><em class="fa fa-fw"></em>Citing
+                          Judicial Opinions ... in Brief</a> </li>
+                      <li> <a href="http://www.access-to-law.com/citation/videos/citing_const_statutes.html"
+
+                          target="_blank"><em class="fa fa-fw"></em>Citing
+                          Constitutional and Statutory Provisions ... in Brief</a>
+                      </li>
+                      <li> <a href="http://www.access-to-law.com/citation/videos/citing_agency_material.htmll"
+
+                          target="_blank"><em class="fa fa-fw"></em>Citing
+                          Agency Material ... in Brief</a> </li>
+                      <li> <a href="https://www.legalbluebook.com" target="_blank"><em
+
+                            class="fa fa-fw"></em>The Bluebook</a> </li>
+                      <li> <a href="http://www.alwd.org/publications/citation-manual/"
+
+                          target="_blank"><em class="fa fa-fw"></em>ALWD
+                          Citation Manual</a> </li>
+                    </ul>
+                    <!-- /.dropdown-user --> </li>
+                  <!-- /.dropdown -->
+                  <li class="navbartoplinks-formobile"> <a href=""> <em class="fa fa-fw"></em>eBook<em
+
+                        class="fa fa-caret-down"></em> </a>
+                    <ul class="nav nav-second-level">
+                      <li> <a href="basic_legal_citation.pdf"><em class="fa fa-fw"></em>PDF</a>
+                      </li>
+                    </ul>
+                    <!-- /.dropdown-user --> </li>
+                  <!-- /.dropdown -->
+                </ul>
+                <!-- /.navbar-top-links --> </li>
+              <li> <a href=""><em class="fa fa-fw"></em>WHAT AND WHY?<span class="fa arrow"></span></a>
+                <ul class="nav nav-second-level">
+                  <li> <a href="1-100">Introduction</a> </li>
+                  <li> <a href="1-200">Purposes of Legal Citation</a> </li>
+                  <li> <a href="1-300">Types of Citation Principles</a> </li>
+                  <li> <a href="1-400">Levels of Mastery</a> </li>
+                  <li> <a href="1-500">Citation in Transition</a> </li>
+                  <li> <a href="1-600">Who Sets Citation Norms</a> </li>
+                </ul>
+                <!-- /.nav-second-level --> </li>
+              <!-- <li> 				<a href="tables.html"><i class="fa fa-table fa-fw"></i> Tables</a> 				</li> -->
+              <li> <a href=""><em class="fa fa-fw"></em>HOW TO CITE ...<span class="fa arrow"></span></a>
+                <ul class="nav nav-second-level">
+                  <li> <a href="2-100">Electronic Resources</a> </li>
+                  <li> <a href="2-200">Judicial Opinions</a> </li>
+                  <li> <a href="2-300">Constitutions &amp; Statutes</a> </li>
+                  <li> <a href="2-400">Agency &amp; Exec. Material</a> </li>
+                  <li> <a href="2-500">Arbitrations</a> </li>
+                  <li> <a href="2-600">Court Rules</a> </li>
+                  <li> <a href="2-700">Books</a> </li>
+                  <li> <a href="2-800">Law Journal Writing</a> </li>
+                  <li> <a href="2-900">Case Documents</a> </li>
+                </ul>
+                <!-- /.nav-second-level --> </li>
+              <li> <a href=""><em class="fa fa-fw"></em>EXAMPLES – CITATIONS OF
+                  ...<span class="fa arrow"></span></a>
+                <ul class="nav nav-second-level">
+                  <li> <a href="3-100">Electronic Resources</a> </li>
+                  <li> <a href="3-200">Judicial Opinions</a> </li>
+                  <li> <a href="3-300">Constitutions &amp; Statutes</a> </li>
+                  <li> <a href="3-400">Agency &amp; Exec. Material</a> </li>
+                  <li> <a href="3-500">Arbitrations</a> </li>
+                  <li> <a href="3-600">Court Rules</a> </li>
+                  <li> <a href="3-700">Books</a> </li>
+                  <li> <a href="3-800">Law Journal Writing</a> </li>
+                </ul>
+                <!-- /.nav-second-level --> </li>
+              <li> <a href=""><em class="fa fa-fw"></em>ABBREVIATIONS &amp;
+                  OMISSIONS USED IN CITATIONS<span class="fa arrow"></span></a>
+                <ul class="nav nav-second-level">
+                  <li> <a href="4-100">Words in Case Names</a> </li>
+                  <li> <a href="4-200">Case Histories</a> </li>
+                  <li> <a href="4-300">Omissions in Case Names</a> </li>
+                  <li> <a href="4-400">Reporters &amp; Courts</a> </li>
+                  <li> <a href="4-500">States</a> </li>
+                  <li> <a href="4-600">Months</a> </li>
+                  <li> <a href="4-700">Journals</a> </li>
+                  <li> <a href="4-800">Spacing &amp; Periods</a> </li>
+                </ul>
+                <!-- /.nav-second-level --> </li>
+              <li> <a href=""><em class="fa fa-fw"></em>UNDERLINING &amp;
+                  ITALICS<span class="fa arrow"></span></a>
+                <ul class="nav nav-second-level">
+                  <li> <a href="5-000">All Rules</a> </li>
+                  <li> <a href="5-000#5-100">In Citations</a> </li>
+                  <li> <a href="5-000#5-200">In Text</a> </li>
+                  <li> <a href="5-000#5-300">Items Not Italicized</a> </li>
+                </ul>
+                <!-- /.nav-second-level --> </li>
+              <li> <a href=""><em class="fa fa-fw"></em>PLACING CITATIONS IN
+                  CONTEXT<span class="fa arrow"></span></a>
+                <ul class="nav nav-second-level">
+                  <li> <a href="6-100">Quoting</a> </li>
+                  <li> <a href="6-200">Citations &amp; Related Text</a> </li>
+                  <li> <a href="6-300">Signals</a> </li>
+                  <li> <a href="6-400">Order</a> </li>
+                  <li> <a href="6-500">Short Form Citations</a> </li>
+                  <li> <a href="6-700">Tables of Authorities</a> </li>
+                </ul>
+                <!-- /.nav-second-level --> </li>
+              <li> <a href=""><em class="fa fa-fw"></em>CROSS REFERENCE TABLES<span
+
+                    class="fa arrow"></span></a>
+                <ul class="nav nav-second-level">
+                  <li> <a href="7-100">Introduction</a> </li>
+                  <li> <a href="7-200">Changes in The Bluebook</a> </li>
+                  <li> <a href="7-300">Table: Bluebook </a> </li>
+                  <li> <a href="7-400">Table: ALWD Manual</a> </li>
+                  <li> <a href="7-500">Table: State-Specific Practices</a> </li>
+                </ul>
+                <!-- /.nav-second-level --> </li>
+            </ul>
+          </div>
+          <!-- /.sidebar-collapse --> </div>
+        <!-- /.navbar-static-side --> </nav>
+    </div>
+    <!-- /#wrapper -->
+    <div id="page-wrapper">
+      <!-- injected content -->
+      <div ng-controller="dynamicExamplesCtrl as examples" role="main">
+        <div ng-view=""></div>
+      </div>
+      <footer>
+        <div class="copyrightwrapper">
+          <p class="copyright"> All Rights Reserved | © 2020 by Peter W. Martin
+          </p>
+        </div>
+        <div id="liifooter" class="container-fluid">
+          <ul id="liifooternav" class="nav navbar-nav">
+            <li class="first"> <a href="/lii/about/accessibility" class="nav">Accessibility</a>
+            </li>
+            <li><a href="/lii/about/about_lii" class="nav">About LII</a> </li>
+            <li> <a href="/lii/about/contact_us" class="nav">Contact us</a> </li>
+            <li> <a href="/lii/help_out/sponsor">Advertise here</a> </li>
+            <li> <a href="/lii/help" class="nav" aria-label="LII general help">Help</a>
+            </li>
+            <li> <a href="/lii/terms/documentation" class="nav">Terms of use</a>
+            </li>
+            <li class="last"> <a href="/lii/terms/privacy_policy" class="nav">Privacy</a>
+            </li>
+          </ul>
+          <ul class="nav navbar-nav navbar-right">
+            <li> <a href="/"><img alt="LII home" src="https://www.law.cornell.edu/sites/all/themes/liizenboot/images/LII_logo_footer.gif"></a>
+            </li>
+          </ul>
+        </div>
+      </footer>
+    </div>
+    <!-- #page-wrapper -->
+    <!-- jQuery -->
+    <script src="bower_components/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap Core JavaScript -->
+    <script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <!-- Metis Menu Plugin JavaScript -->
+    <script src="bower_components/metisMenu/dist/metisMenu.min.js"></script>
+    <!-- Custom Theme JavaScript -->
+    <script src="dist/js/sb-admin-2.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js%0A%09%09"></script>
+    <script type="text/javascript"> $('.nav .nav-second-level li a').click(function() {
+
+			$(this).parent().parent().find('.active').css('color', '#337ab7');
+			$(this).parent().parent().find('.active').css('font-weight', 'normal');
+			$(this).parent().parent().find('.active').removeClass('active');
+			$(this).addClass('active');
+			$(this).addClass('active').css('font-weight', 'bold');
+			$(this).addClass('active').css('color', '#2C279C');
+			if ($(window).width() <= 768) {
+				$('button.navbar-toggle').trigger("click");
+			}
+
+		});
+ </script>
+    <!-- Go to www.addthis.com/dashboard to customize your tools -->
+    <script type="text/javascript"> var addthis_config = {
+			data_track_addressbar: false,
+			data_track_clickback: true,
+			publid: 'liiadverts',
+			ui_tabindex: 0,
+			ui_508_compliant: true
+		};
+		var addthis_share = {
+			url_transforms: {
+				shorten: {
+					twitter: 'bitly'
+				}
+			},
+			shorteners: {
+				bitly: {
+					login: 'liicornell',
+					apiKey: 'R_75b99d95e1c3033c4dbea23ce04bf5d3'
+				}
+			},
+			passthrough: {
+				twitter: {
+					via: 'LIICornell'
+				}
+			}
+		}; </script>
+    <script type="text/javascript" src="https://s7.addthis.com/js/300/addthis_widget.js#pubid=liiadverts"></script>
+  </body>
+</html>

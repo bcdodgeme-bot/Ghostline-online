@@ -2,7 +2,7 @@
 data/cleaned/*.gz
 !data/cleaned/ghostline_sources.jsonl.gz
 
-data/raw*/
+# data/raw*/
 sessions/
 
 # Ignore Python cache

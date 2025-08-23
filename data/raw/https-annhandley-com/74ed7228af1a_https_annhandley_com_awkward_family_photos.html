@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head > <script type="text/javascript">
+/* <![CDATA[ */
+var gform;gform||(document.addEventListener("gform_main_scripts_loaded",function(){gform.scriptsLoaded=!0}),document.addEventListener("gform/theme/scripts_loaded",function(){gform.themeScriptsLoaded=!0}),window.addEventListener("DOMContentLoaded",function(){gform.domLoaded=!0}),gform={domLoaded:!1,scriptsLoaded:!1,themeScriptsLoaded:!1,isFormEditor:()=>"function"==typeof InitializeEditor,callIfLoaded:function(o){return!(!gform.domLoaded||!gform.scriptsLoaded||!gform.themeScriptsLoaded&&!gform.isFormEditor()||(gform.isFormEditor()&&console.warn("The use of gform.initializeOnLoaded() is deprecated in the form editor context and will be removed in Gravity Forms 3.1."),o(),0))},initializeOnLoaded:function(o){gform.callIfLoaded(o)||(document.addEventListener("gform_main_scripts_loaded",()=>{gform.scriptsLoaded=!0,gform.callIfLoaded(o)}),document.addEventListener("gform/theme/scripts_loaded",()=>{gform.themeScriptsLoaded=!0,gform.callIfLoaded(o)}),window.addEventListener("DOMContentLoaded",()=>{gform.domLoaded=!0,gform.callIfLoaded(o)}))},hooks:{action:{},filter:{}},addAction:function(o,r,e,t){gform.addHook("action",o,r,e,t)},addFilter:function(o,r,e,t){gform.addHook("filter",o,r,e,t)},doAction:function(o){gform.doHook("action",o,arguments)},applyFilters:function(o){return gform.doHook("filter",o,arguments)},removeAction:function(o,r){gform.removeHook("action",o,r)},removeFilter:function(o,r,e){gform.removeHook("filter",o,r,e)},addHook:function(o,r,e,t,n){null==gform.hooks[o][r]&&(gform.hooks[o][r]=[]);var d=gform.hooks[o][r];null==n&&(n=r+"_"+d.length),gform.hooks[o][r].push({tag:n,callable:e,priority:t=null==t?10:t})},doHook:function(r,o,e){var t;if(e=Array.prototype.slice.call(e,1),null!=gform.hooks[r][o]&&((o=gform.hooks[r][o]).sort(function(o,r){return o.priority-r.priority}),o.forEach(function(o){"function"!=typeof(t=o.callable)&&(t=window[t]),"action"==r?t.apply(null,e):e[0]=t.apply(null,e)})),"filter"==r)return e[0]},removeHook:function(o,r,t,n){var e;null!=gform.hooks[o][r]&&(e=(e=gform.hooks[o][r]).filter(function(o,r,e){return!!(null!=n&&n!=o.tag||null!=t&&t!=o.priority)}),gform.hooks[o][r]=e)}});
+/* ]]> */
+</script>
+
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name='robots' content='index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1' />
+	<style>img:is([sizes="auto" i], [sizes^="auto," i]) { contain-intrinsic-size: 3000px 1500px }</style>
+	
+<!-- Google Tag Manager for WordPress by gtm4wp.com -->
+<script data-cfasync="false" data-pagespeed-no-defer>
+	var gtm4wp_datalayer_name = "dataLayer";
+	var dataLayer = dataLayer || [];
+</script>
+<!-- End Google Tag Manager for WordPress by gtm4wp.com -->
+	<!-- This site is optimized with the Yoast SEO plugin v25.6 - https://yoast.com/wordpress/plugins/seo/ -->
+	<title>Awkward Family Photos - Ann Handley</title>
+	<link rel="canonical" href="https://annhandley.com/awkward-family-photos/" />
+	<meta property="og:locale" content="en_US" />
+	<meta property="og:type" content="article" />
+	<meta property="og:title" content="Awkward Family Photos - Ann Handley" />
+	<meta property="og:description" content="As I sometimes reveal here, there is something universal about the awkwardness of family. About a week ago, two childhood friends launched a site to document as much. The results &#8212; in the vein of LOLCats and Stuff White People Like &#8212; are hilarious: The Choker: &#8220;This is what happens when your male role model [&hellip;]" />
+	<meta property="og:url" content="https://annhandley.com/awkward-family-photos/" />
+	<meta property="og:site_name" content="Ann Handley" />
+	<meta property="article:publisher" content="https://www.facebook.com/ann.handley" />
+	<meta property="article:published_time" content="2009-05-15T17:35:46+00:00" />
+	<meta property="og:image" content="https://thismommygig.org/wp-content/uploads/2009/05/choker.jpg" />
+	<meta name="author" content="Ann Handley" />
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:creator" content="@annhandley" />
+	<meta name="twitter:site" content="@annhandley" />
+	<meta name="twitter:label1" content="Written by" />
+	<meta name="twitter:data1" content="Ann Handley" />
+	<meta name="twitter:label2" content="Est. reading time" />
+	<meta name="twitter:data2" content="1 minute" />
+	<script type="application/ld+json" class="yoast-schema-graph">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://annhandley.com/awkward-family-photos/","url":"https://annhandley.com/awkward-family-photos/","name":"Awkward Family Photos - Ann Handley","isPartOf":{"@id":"https://annhandley.com/#website"},"primaryImageOfPage":{"@id":"https://annhandley.com/awkward-family-photos/#primaryimage"},"image":{"@id":"https://annhandley.com/awkward-family-photos/#primaryimage"},"thumbnailUrl":"http://thismommygig.org/wp-content/uploads/2009/05/choker.jpg","datePublished":"2009-05-15T17:35:46+00:00","author":{"@id":"https://annhandley.com/#/schema/person/82b31a4f88235bf8103dece480e1f551"},"breadcrumb":{"@id":"https://annhandley.com/awkward-family-photos/#breadcrumb"},"inLanguage":"en-US","potentialAction":[{"@type":"ReadAction","target":["https://annhandley.com/awkward-family-photos/"]}]},{"@type":"ImageObject","inLanguage":"en-US","@id":"https://annhandley.com/awkward-family-photos/#primaryimage","url":"http://thismommygig.org/wp-content/uploads/2009/05/choker.jpg","contentUrl":"http://thismommygig.org/wp-content/uploads/2009/05/choker.jpg"},{"@type":"BreadcrumbList","@id":"https://annhandley.com/awkward-family-photos/#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://annhandley.com/"},{"@type":"ListItem","position":2,"name":"Awkward Family Photos"}]},{"@type":"WebSite","@id":"https://annhandley.com/#website","url":"https://annhandley.com/","name":"Ann Handley","description":"Writer. Speaker. Marketer.","potentialAction":[{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"https://annhandley.com/?s={search_term_string}"},"query-input":{"@type":"PropertyValueSpecification","valueRequired":true,"valueName":"search_term_string"}}],"inLanguage":"en-US"},{"@type":"Person","@id":"https://annhandley.com/#/schema/person/82b31a4f88235bf8103dece480e1f551","name":"Ann Handley","image":{"@type":"ImageObject","inLanguage":"en-US","@id":"https://annhandley.com/#/schema/person/image/","url":"https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=96&d=mm&r=g","contentUrl":"https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=96&d=mm&r=g","caption":"Ann Handley"},"url":"https://annhandley.com/author/ann/"}]}</script>
+	<!-- / Yoast SEO plugin. -->
+
+
+<link rel='dns-prefetch' href='//use.typekit.net' />
+<link rel='dns-prefetch' href='//fonts.googleapis.com' />
+<link rel='dns-prefetch' href='//code.ionicframework.com' />
+<link rel="alternate" type="application/rss+xml" title="Ann Handley &raquo; Feed" href="https://annhandley.com/feed/" />
+<link rel="alternate" type="application/rss+xml" title="Ann Handley &raquo; Comments Feed" href="https://annhandley.com/comments/feed/" />
+<link rel="alternate" type="application/rss+xml" title="Ann Handley &raquo; Awkward Family Photos Comments Feed" href="https://annhandley.com/awkward-family-photos/feed/" />
+<link rel='stylesheet' id='ann-handley-css' href='https://annhandley.com/ah/wp-content/themes/annhandley/style.css' type='text/css' media='all' />
+<link rel='stylesheet' id='annhandley-fonts-css' href='https://fonts.googleapis.com/css?family=Open+Sans%3A400%2C400i%2C700&#038;ver=1.0.0' type='text/css' media='all' />
+<link rel='stylesheet' id='annhandley-ionicons-css' href='//code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css?ver=2.0.1' type='text/css' media='all' />
+<link rel='stylesheet' id='wp-block-library-css' href='https://annhandley.com/ah/wp-includes/css/dist/block-library/style.min.css' type='text/css' media='all' />
+<style id='classic-theme-styles-inline-css' type='text/css'>
+/*! This file is auto-generated */
+.wp-block-button__link{color:#fff;background-color:#32373c;border-radius:9999px;box-shadow:none;text-decoration:none;padding:calc(.667em + 2px) calc(1.333em + 2px);font-size:1.125em}.wp-block-file__button{background:#32373c;color:#fff;text-decoration:none}
+</style>
+<style id='global-styles-inline-css' type='text/css'>
+:root{--wp--preset--aspect-ratio--square: 1;--wp--preset--aspect-ratio--4-3: 4/3;--wp--preset--aspect-ratio--3-4: 3/4;--wp--preset--aspect-ratio--3-2: 3/2;--wp--preset--aspect-ratio--2-3: 2/3;--wp--preset--aspect-ratio--16-9: 16/9;--wp--preset--aspect-ratio--9-16: 9/16;--wp--preset--color--black: #000000;--wp--preset--color--cyan-bluish-gray: #abb8c3;--wp--preset--color--white: #ffffff;--wp--preset--color--pale-pink: #f78da7;--wp--preset--color--vivid-red: #cf2e2e;--wp--preset--color--luminous-vivid-orange: #ff6900;--wp--preset--color--luminous-vivid-amber: #fcb900;--wp--preset--color--light-green-cyan: #7bdcb5;--wp--preset--color--vivid-green-cyan: #00d084;--wp--preset--color--pale-cyan-blue: #8ed1fc;--wp--preset--color--vivid-cyan-blue: #0693e3;--wp--preset--color--vivid-purple: #9b51e0;--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple: linear-gradient(135deg,rgba(6,147,227,1) 0%,rgb(155,81,224) 100%);--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan: linear-gradient(135deg,rgb(122,220,180) 0%,rgb(0,208,130) 100%);--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange: linear-gradient(135deg,rgba(252,185,0,1) 0%,rgba(255,105,0,1) 100%);--wp--preset--gradient--luminous-vivid-orange-to-vivid-red: linear-gradient(135deg,rgba(255,105,0,1) 0%,rgb(207,46,46) 100%);--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray: linear-gradient(135deg,rgb(238,238,238) 0%,rgb(169,184,195) 100%);--wp--preset--gradient--cool-to-warm-spectrum: linear-gradient(135deg,rgb(74,234,220) 0%,rgb(151,120,209) 20%,rgb(207,42,186) 40%,rgb(238,44,130) 60%,rgb(251,105,98) 80%,rgb(254,248,76) 100%);--wp--preset--gradient--blush-light-purple: linear-gradient(135deg,rgb(255,206,236) 0%,rgb(152,150,240) 100%);--wp--preset--gradient--blush-bordeaux: linear-gradient(135deg,rgb(254,205,165) 0%,rgb(254,45,45) 50%,rgb(107,0,62) 100%);--wp--preset--gradient--luminous-dusk: linear-gradient(135deg,rgb(255,203,112) 0%,rgb(199,81,192) 50%,rgb(65,88,208) 100%);--wp--preset--gradient--pale-ocean: linear-gradient(135deg,rgb(255,245,203) 0%,rgb(182,227,212) 50%,rgb(51,167,181) 100%);--wp--preset--gradient--electric-grass: linear-gradient(135deg,rgb(202,248,128) 0%,rgb(113,206,126) 100%);--wp--preset--gradient--midnight: linear-gradient(135deg,rgb(2,3,129) 0%,rgb(40,116,252) 100%);--wp--preset--font-size--small: 13px;--wp--preset--font-size--medium: 20px;--wp--preset--font-size--large: 36px;--wp--preset--font-size--x-large: 42px;--wp--preset--spacing--20: 0.44rem;--wp--preset--spacing--30: 0.67rem;--wp--preset--spacing--40: 1rem;--wp--preset--spacing--50: 1.5rem;--wp--preset--spacing--60: 2.25rem;--wp--preset--spacing--70: 3.38rem;--wp--preset--spacing--80: 5.06rem;--wp--preset--shadow--natural: 6px 6px 9px rgba(0, 0, 0, 0.2);--wp--preset--shadow--deep: 12px 12px 50px rgba(0, 0, 0, 0.4);--wp--preset--shadow--sharp: 6px 6px 0px rgba(0, 0, 0, 0.2);--wp--preset--shadow--outlined: 6px 6px 0px -3px rgba(255, 255, 255, 1), 6px 6px rgba(0, 0, 0, 1);--wp--preset--shadow--crisp: 6px 6px 0px rgba(0, 0, 0, 1);}:where(.is-layout-flex){gap: 0.5em;}:where(.is-layout-grid){gap: 0.5em;}body .is-layout-flex{display: flex;}.is-layout-flex{flex-wrap: wrap;align-items: center;}.is-layout-flex > :is(*, div){margin: 0;}body .is-layout-grid{display: grid;}.is-layout-grid > :is(*, div){margin: 0;}:where(.wp-block-columns.is-layout-flex){gap: 2em;}:where(.wp-block-columns.is-layout-grid){gap: 2em;}:where(.wp-block-post-template.is-layout-flex){gap: 1.25em;}:where(.wp-block-post-template.is-layout-grid){gap: 1.25em;}.has-black-color{color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-color{color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-color{color: var(--wp--preset--color--white) !important;}.has-pale-pink-color{color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-color{color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-color{color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-color{color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-color{color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-color{color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-color{color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-color{color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-color{color: var(--wp--preset--color--vivid-purple) !important;}.has-black-background-color{background-color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-background-color{background-color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-background-color{background-color: var(--wp--preset--color--white) !important;}.has-pale-pink-background-color{background-color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-background-color{background-color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-background-color{background-color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-background-color{background-color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-background-color{background-color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-background-color{background-color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-background-color{background-color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-background-color{background-color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-background-color{background-color: var(--wp--preset--color--vivid-purple) !important;}.has-black-border-color{border-color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-border-color{border-color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-border-color{border-color: var(--wp--preset--color--white) !important;}.has-pale-pink-border-color{border-color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-border-color{border-color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-border-color{border-color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-border-color{border-color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-border-color{border-color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-border-color{border-color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-border-color{border-color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-border-color{border-color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-border-color{border-color: var(--wp--preset--color--vivid-purple) !important;}.has-vivid-cyan-blue-to-vivid-purple-gradient-background{background: var(--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple) !important;}.has-light-green-cyan-to-vivid-green-cyan-gradient-background{background: var(--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan) !important;}.has-luminous-vivid-amber-to-luminous-vivid-orange-gradient-background{background: var(--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange) !important;}.has-luminous-vivid-orange-to-vivid-red-gradient-background{background: var(--wp--preset--gradient--luminous-vivid-orange-to-vivid-red) !important;}.has-very-light-gray-to-cyan-bluish-gray-gradient-background{background: var(--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray) !important;}.has-cool-to-warm-spectrum-gradient-background{background: var(--wp--preset--gradient--cool-to-warm-spectrum) !important;}.has-blush-light-purple-gradient-background{background: var(--wp--preset--gradient--blush-light-purple) !important;}.has-blush-bordeaux-gradient-background{background: var(--wp--preset--gradient--blush-bordeaux) !important;}.has-luminous-dusk-gradient-background{background: var(--wp--preset--gradient--luminous-dusk) !important;}.has-pale-ocean-gradient-background{background: var(--wp--preset--gradient--pale-ocean) !important;}.has-electric-grass-gradient-background{background: var(--wp--preset--gradient--electric-grass) !important;}.has-midnight-gradient-background{background: var(--wp--preset--gradient--midnight) !important;}.has-small-font-size{font-size: var(--wp--preset--font-size--small) !important;}.has-medium-font-size{font-size: var(--wp--preset--font-size--medium) !important;}.has-large-font-size{font-size: var(--wp--preset--font-size--large) !important;}.has-x-large-font-size{font-size: var(--wp--preset--font-size--x-large) !important;}
+:where(.wp-block-post-template.is-layout-flex){gap: 1.25em;}:where(.wp-block-post-template.is-layout-grid){gap: 1.25em;}
+:where(.wp-block-columns.is-layout-flex){gap: 2em;}:where(.wp-block-columns.is-layout-grid){gap: 2em;}
+:root :where(.wp-block-pullquote){font-size: 1.5em;line-height: 1.6;}
+</style>
+<link rel='stylesheet' id='simple-social-icons-font-css' href='https://annhandley.com/ah/wp-content/plugins/simple-social-icons/css/style.css' type='text/css' media='all' />
+<link rel='stylesheet' id='iworks_upprev_frontend-css' href='https://annhandley.com/ah/wp-content/plugins/upprev/assets/styles/frontend.min.css' type='text/css' media='all' />
+<script type="text/javascript" src="https://use.typekit.net/zln5nzk.js?ver=1.0.0" id="annhandley-typekit-js"></script>
+<script type="text/javascript" id="annhandley-typekit-js-after">
+/* <![CDATA[ */
+try{Typekit.load({ async: false });}catch(e){}
+/* ]]> */
+</script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-includes/js/jquery/jquery.min.js" id="jquery-core-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-includes/js/jquery/jquery-migrate.min.js" id="jquery-migrate-js"></script>
+<script type="text/javascript" id="iworks_upprev_frontend-js-extra">
+/* <![CDATA[ */
+var iworks_upprev = {"animation":"flyout","close_button_show":"1","color_set":null,"compare":"simple","configuration":"simple","css_border_width":"2px 0 0 0","css_bottom":"5","css_side":"5","css_width":"360","excerpt_length":"20","excerpt_show":"1","ga_opt_noninteraction":"1","ga_track_clicks":"1","ga_track_views":"1","header_show":"1","header_text":null,"ignore_sticky_posts":"1","number_of_posts":"1","offset_element":"#comments","offset_percent":"75","reopen_button_show":"1","show_thumb":"1","taxonomy_limit":"0","thumb_height":null,"thumb_width":"48","url_new_window":"0","url_prefix":"","url_suffix":null,"position":{"raw":"right","top":0,"left":0,"center":0,"middle":0,"all":"right"},"title":"Awkward Family Photos","p":"52","nonce":"85e9bbd959","ajaxurl":"https:\/\/annhandley.com\/ah\/wp-admin\/admin-ajax.php"};
+/* ]]> */
+</script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/plugins/upprev/assets/scripts/upprev.min.js" id="iworks_upprev_frontend-js"></script>
+<link rel="https://api.w.org/" href="https://annhandley.com/wp-json/" /><link rel="alternate" title="JSON" type="application/json" href="https://annhandley.com/wp-json/wp/v2/posts/52" /><link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://annhandley.com/ah/xmlrpc.php?rsd" />
+
+<link rel='shortlink' href='https://annhandley.com/?p=52' />
+<link rel="alternate" title="oEmbed (JSON)" type="application/json+oembed" href="https://annhandley.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fannhandley.com%2Fawkward-family-photos%2F" />
+<link rel="alternate" title="oEmbed (XML)" type="text/xml+oembed" href="https://annhandley.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fannhandley.com%2Fawkward-family-photos%2F&#038;format=xml" />
+
+<!-- Google Tag Manager for WordPress by gtm4wp.com -->
+<!-- GTM Container placement set to automatic -->
+<script data-cfasync="false" data-pagespeed-no-defer>
+	var dataLayer_content = {"pagePostType":"post","pagePostType2":"single-post","pageCategory":["family-history","humor","pop-culture"],"pageAttributes":["awkward-family-photos","family","family-history","humor","photos"],"pagePostAuthor":"Ann Handley"};
+	dataLayer.push( dataLayer_content );
+</script>
+<script data-cfasync="false" data-pagespeed-no-defer>
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-5WLC99C');
+</script>
+<!-- End Google Tag Manager for WordPress by gtm4wp.com --><link rel="icon" href="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicon.ico" />
+<link rel="pingback" href="https://annhandley.com/ah/xmlrpc.php" />
+<meta name="google-site-verification" content="QVmkHGydRdaIj0hPv2vjUJ3TleeljPNxd-Op0pFuK04" />
+<meta name="google-site-verification" content="2n8YhFOr_bBIRhOTA8V4kOcx9FPE89D_Ayun0frf7do" />
+<link rel="apple-touch-icon" sizes="180x180" href="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicons/favicon-32x32.png">
+<link rel="manifest" href="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicons/manifest.json">
+<link rel="mask-icon" href="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicons/safari-pinned-tab.svg" color="#e077cc">
+<meta name="msapplication-config" content="https://annhandley.com/ah/wp-content/themes/annhandley/images/favicons/browserconfig.xml">
+<meta name="apple-mobile-web-app-title" content="Ann Handley">
+<meta name="application-name" content="Ann Handley">
+<meta name="theme-color" content="#ffffff">		<style type="text/css" id="wp-custom-css">
+			.page .at4-share {display:none !important}
+
+.navnews a {border: 2px solid #b551a9 !important}		</style>
+		<style type="text/css">
+ </style>
+</head>
+<body class="wp-singular post-template-default single single-post postid-52 single-format-standard wp-theme-genesis wp-child-theme-annhandley fl-builder-2-9-2-1 fl-no-js header-full-width full-width-content genesis-breadcrumbs-hidden genesis-footer-widgets-visible">
+<!-- GTM Container placement set to automatic -->
+<!-- Google Tag Manager (noscript) -->
+				<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5WLC99C" height="0" width="0" style="display:none;visibility:hidden" aria-hidden="true"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+<!-- GTM Container placement set to automatic -->
+<!-- Google Tag Manager (noscript) --><div class="site-container"><ul class="genesis-skip-link"><li><a href="#genesis-nav-primary" class="screen-reader-shortcut"> Skip to primary navigation</a></li><li><a href="#genesis-content" class="screen-reader-shortcut"> Skip to main content</a></li><li><a href="#genesis-footer-widgets" class="screen-reader-shortcut"> Skip to footer</a></li></ul><header class="site-header"><div class="wrap"><div class="title-area"><p class="site-title"><a href="https://annhandley.com/">Ann Handley</a></p><p class="site-description">Writer. Speaker. Marketer.</p></div><nav class="nav-primary" aria-label="Main" id="genesis-nav-primary"><div class="wrap"><ul id="menu-main-menu" class="menu genesis-nav-menu menu-primary js-superfish"><li id="menu-item-2737" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2737"><a href="https://annhandley.com/about/"><span >About</span></a></li>
+<li id="menu-item-2743" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2743"><a href="https://annhandley.com/speaking/"><span >Speaking</span></a></li>
+<li id="menu-item-2747" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2747"><a href="https://annhandley.com/books/"><span >Books</span></a></li>
+<li id="menu-item-2742" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2742"><a href="https://annhandley.com/blog/"><span >Blog</span></a></li>
+<li id="menu-item-3676" class="homelink menu-item menu-item-type-custom menu-item-object-custom menu-item-home menu-item-3676"><a href="https://annhandley.com/#workwithannhome"><span >WORK WITH ANN</span></a></li>
+<li id="menu-item-4700" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-4700"><a href="https://annhandley.com/testimonials/"><span >Testimonials</span></a></li>
+<li id="menu-item-2738" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2738"><a href="https://annhandley.com/contact/"><span >Contact</span></a></li>
+<li id="menu-item-4378" class="navnews menu-item menu-item-type-post_type menu-item-object-page menu-item-4378"><a href="https://annhandley.com/newsletter/"><span >GET ANNARCHY</span></a></li>
+</ul></div></nav></div></header><div class="site-inner"><div class="wrap"><div class="content-sidebar-wrap"><main class="content" id="genesis-content"><article class="post-52 post type-post status-publish format-standard category-family-history category-humor category-pop-culture tag-awkward-family-photos tag-family tag-family-history tag-humor tag-photos entry" aria-label="Awkward Family Photos"><header class="entry-header"><h1 class="entry-title">Awkward Family Photos</h1>
+</header><div class="entry-content"><p>As I sometimes reveal here, there is something universal about the awkwardness of family.</p>
+<p>About a week ago, two childhood friends launched a site to document as much. The results &#8212; in the vein of <a href="http://lolcats.com/" target="_blank">LOLCats</a> and <a href="http://stuffwhitepeoplelike.com/" target="_blank">Stuff White People Like</a> &#8212; are hilarious:</p>
+<p><a href="http://awkwardfamilyphotos.com/2009/05/12/the-choker/" target="_blank"><strong>The Choker</strong></a>: &#8220;This is what happens when your male role model is both a priest and a gym teacher.&#8221;</p>
+<p><a href="http://thismommygig.org/wp-content/uploads/2009/05/choker.jpg"><img fetchpriority="high" decoding="async" class="aligncenter size-full wp-image-1530" title="choker" src="https://thismommygig.org/wp-content/uploads/2009/05/choker.jpg" alt="choker" width="504" height="426" /></a></p>
+<p>&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;-</p>
+<p><strong><a href="http://awkwardfamilyphotos.com/2009/05/11/my-two-dads/" target="_blank">My Two Dads</a></strong>: &#8220;You may use your calculator for this equation.&#8221;<br />
+(Favorite comment: <em>&#8220;I am very confused by this. Is the guy in the front right like a neighborhood computer guy who helps them out sometimes?&#8221;</em>)</p>
+<p><a href="http://thismommygig.org/wp-content/uploads/2009/05/dads.jpg"><img decoding="async" class="aligncenter size-full wp-image-1531" title="dads" src="https://thismommygig.org/wp-content/uploads/2009/05/dads.jpg" alt="dads" width="504" height="422" /></a></p>
+<p>&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8211;<span id="more-52"></span></p>
+<p><a href="http://awkwardfamilyphotos.com/2009/04/23/family-tree/" target="_blank"><strong>Family Tree</strong></a>: &#8220;Even the tree felt this one was awkward.&#8221;</p>
+<p><a href="http://thismommygig.org/wp-content/uploads/2009/05/tree.jpg"><img decoding="async" class="aligncenter size-full wp-image-1532" title="tree" src="https://thismommygig.org/wp-content/uploads/2009/05/tree.jpg" alt="tree" width="515" height="426" /></a></p>
+<p>&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;</p>
+<p>Check out the full, awkward <a href="http://awkwardfamilyphotos.com" target="_blank">archive here</a>.</p>
+<p>But a word of caution: Some of these will give you <a href="http://awkwardfamilyphotos.com/2009/05/10/the-van-helsings/" target="_blank">nightmares</a>. Or at least the.. uh&#8230; <a href="http://awkwardfamilyphotos.com/2009/05/06/the-wonder-years/" target="_blank">willies</a>.</p>
+<p><em>Thanks to Megan Cordero for flagging this site.</em></p>
+<div id="upprev-trigger"></div><!--<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+			xmlns:dc="http://purl.org/dc/elements/1.1/"
+			xmlns:trackback="http://madskills.com/public/xml/rss/module/trackback/">
+		<rdf:Description rdf:about="https://annhandley.com/awkward-family-photos/"
+    dc:identifier="https://annhandley.com/awkward-family-photos/"
+    dc:title="Awkward Family Photos"
+    trackback:ping="https://annhandley.com/awkward-family-photos/trackback/" />
+</rdf:RDF>-->
+</div><footer class="entry-footer"><p class="entry-meta"><span class="entry-categories">Filed Under: <a href="https://annhandley.com/category/family-2/family-history/" rel="category tag">Family History</a>, <a href="https://annhandley.com/category/annecdote/humor/" rel="category tag">Humor</a>, <a href="https://annhandley.com/category/politics-society/pop-culture/" rel="category tag">Pop Culture</a></span> <span class="entry-tags">Tagged With: <a href="https://annhandley.com/tag/awkward-family-photos/" rel="tag">awkward family photos</a>, <a href="https://annhandley.com/tag/family/" rel="tag">family</a>, <a href="https://annhandley.com/tag/family-history/" rel="tag">Family History</a>, <a href="https://annhandley.com/tag/humor/" rel="tag">Humor</a>, <a href="https://annhandley.com/tag/photos/" rel="tag">photos</a></span></p></footer></article><div class="after-entry widget-area"><section id="text-5" class="widget widget_text"><div class="widget-wrap">			<div class="textwidget"><h3>SUBSCRIBE TO ANN&#8217;S NEWSLETTER,<br />
+<span style="color: #d07ec8;">TOTAL ANNARCHY:</span></h3>
+<h6>Get the letter 21,000+ people love to get. New writing, useful ideas, high-spirited shenanigans. Straight to your inbox. Every 2 weeks.</h6>
+<div class="AW-Form-1223224391"></div>
+<p><script type="text/javascript">(function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//forms.aweber.com/form/91/1223224391.js";
+    fjs.parentNode.insertBefore(js, fjs);
+    }(document, "script", "aweber-wjs-sje8260z2"));
+</script></p>
+</div>
+		</div></section>
+</div><div class="adjacent-entry-pagination pagination"><div class="pagination-previous alignleft"><a href="https://annhandley.com/excerpt-things-that-scare-me/" rel="prev"><span class="screen-reader-text">Previous Post: </span><span class="adjacent-post-link">&#xAB; Excerpt: Things That Scare Me</span></a></div><div class="pagination-next alignright"><a href="https://annhandley.com/at-a-loss-for-words/" rel="next"><span class="screen-reader-text">Next Post: </span><span class="adjacent-post-link">At a Loss for Words &#xBB;</span></a></div></div><h2 class="screen-reader-text">Reader Interactions</h2><div class="entry-comments" id="comments"><h3>Comments</h3><ol class="comment-list">
+	<li class="comment even thread-even depth-1" id="comment-3210">
+	<article id="article-comment-3210">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/055de475a8cb4e94ab9467626a838f972811a544decb6a39ffcaddd7e692b09c?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/055de475a8cb4e94ab9467626a838f972811a544decb6a39ffcaddd7e692b09c?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://btrandolph.com/" class="comment-author-link" rel="external nofollow">Todd Randolph</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3210">May 15, 2009 at 6:08 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>the tree shot made me jealous. I can never get my shirts that gleaming white.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3210" data-commentid="3210" data-postid="52" data-belowelement="article-comment-3210" data-respondelement="respond" data-replyto="Reply to Todd Randolph" aria-label="Reply to Todd Randolph">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-3190">
+	<article id="article-comment-3190">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/055de475a8cb4e94ab9467626a838f972811a544decb6a39ffcaddd7e692b09c?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/055de475a8cb4e94ab9467626a838f972811a544decb6a39ffcaddd7e692b09c?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://btrandolph.com" class="comment-author-link" rel="external nofollow">Todd Randolph</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3190">May 15, 2009 at 10:08 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>the tree shot made me jealous. I can never get my shirts that gleaming white.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3190" data-commentid="3190" data-postid="52" data-belowelement="article-comment-3190" data-respondelement="respond" data-replyto="Reply to Todd Randolph" aria-label="Reply to Todd Randolph">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-3211">
+	<article id="article-comment-3211">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/47c2ce53a0712f82779bfe9370443114719a368de43351d94cd57772a092d231?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/47c2ce53a0712f82779bfe9370443114719a368de43351d94cd57772a092d231?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Christian Gulliksen</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3211">May 15, 2009 at 6:24 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Anyone else think the girl in &#8220;The Choker&#8221; looks like the Molly Ringwald character who can&#8217;t believe she&#8217;s stuck in this family?</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3211" data-commentid="3211" data-postid="52" data-belowelement="article-comment-3211" data-respondelement="respond" data-replyto="Reply to Christian Gulliksen" aria-label="Reply to Christian Gulliksen">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-3191">
+	<article id="article-comment-3191">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/47c2ce53a0712f82779bfe9370443114719a368de43351d94cd57772a092d231?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/47c2ce53a0712f82779bfe9370443114719a368de43351d94cd57772a092d231?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Christian Gulliksen</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3191">May 15, 2009 at 10:24 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Anyone else think the girl in &#8220;The Choker&#8221; looks like the Molly Ringwald character who can&#8217;t believe she&#8217;s stuck in this family?</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3191" data-commentid="3191" data-postid="52" data-belowelement="article-comment-3191" data-respondelement="respond" data-replyto="Reply to Christian Gulliksen" aria-label="Reply to Christian Gulliksen">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-3212">
+	<article id="article-comment-3212">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/b8b0a8285d7c0dcce4a8bd9d96efc942ce28f17a9ebf83d52f7a367e19db3a3b?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/b8b0a8285d7c0dcce4a8bd9d96efc942ce28f17a9ebf83d52f7a367e19db3a3b?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.specialty-art.com/" class="comment-author-link" rel="external nofollow">Rick</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3212">May 15, 2009 at 7:33 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Great photos. Only problems I see is that I am very likely to do something like these.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3212" data-commentid="3212" data-postid="52" data-belowelement="article-comment-3212" data-respondelement="respond" data-replyto="Reply to Rick" aria-label="Reply to Rick">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-3192">
+	<article id="article-comment-3192">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/b8b0a8285d7c0dcce4a8bd9d96efc942ce28f17a9ebf83d52f7a367e19db3a3b?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/b8b0a8285d7c0dcce4a8bd9d96efc942ce28f17a9ebf83d52f7a367e19db3a3b?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.specialty-art.com" class="comment-author-link" rel="external nofollow">Rick</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3192">May 15, 2009 at 11:33 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Great photos. Only problems I see is that I am very likely to do something like these.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3192" data-commentid="3192" data-postid="52" data-belowelement="article-comment-3192" data-respondelement="respond" data-replyto="Reply to Rick" aria-label="Reply to Rick">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-3213">
+	<article id="article-comment-3213">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.annhandley.com/" class="comment-author-link" rel="external nofollow">Ann Handley</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3213">May 15, 2009 at 10:21 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>@Todd : LOL</p>
+<p>@christian: Yes! And like the comments said, she was smokin&#8217; hot 25 years ago! (Hard to believe, but there you go.)</p>
+<p>@rick Absolutely.. we all have these lurking in a box somewhere&#8230;</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3213" data-commentid="3213" data-postid="52" data-belowelement="article-comment-3213" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment byuser comment-author-ann bypostauthor odd alt thread-odd thread-alt depth-1" id="comment-3193">
+	<article id="article-comment-3193">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.annhandley.com" class="comment-author-link" rel="external nofollow">Ann Handley</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3193">May 15, 2009 at 2:21 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>@Todd : LOL</p>
+<p>@christian: Yes! And like the comments said, she was smokin&#8217; hot 25 years ago! (Hard to believe, but there you go.)</p>
+<p>@rick Absolutely.. we all have these lurking in a box somewhere&#8230;</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3193" data-commentid="3193" data-postid="52" data-belowelement="article-comment-3193" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-3214">
+	<article id="article-comment-3214">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/e2623d86c87790248f7b1470af05679ee912c81be75be367e24da0f7f2f4490e?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/e2623d86c87790248f7b1470af05679ee912c81be75be367e24da0f7f2f4490e?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Anonymous</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3214">May 16, 2009 at 12:58 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Oh, Ann, these are hilarious; no doubt fodder for a bestselling Xmas gift book&#8230;for the family member who has everything. Kudos to your friends for brilliant concept and sure-to-be monetized execution.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3214" data-commentid="3214" data-postid="52" data-belowelement="article-comment-3214" data-respondelement="respond" data-replyto="Reply to Anonymous" aria-label="Reply to Anonymous">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-3194">
+	<article id="article-comment-3194">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/e2623d86c87790248f7b1470af05679ee912c81be75be367e24da0f7f2f4490e?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/e2623d86c87790248f7b1470af05679ee912c81be75be367e24da0f7f2f4490e?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://adbroad.blogspot.com" class="comment-author-link" rel="external nofollow">Helen Klein Ross aka AdBroad</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3194">May 15, 2009 at 4:58 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Oh, Ann, these are hilarious; no doubt fodder for a bestselling Xmas gift book&#8230;for the family member who has everything. Kudos to your friends for brilliant concept and sure-to-be monetized execution.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3194" data-commentid="3194" data-postid="52" data-belowelement="article-comment-3194" data-respondelement="respond" data-replyto="Reply to Helen Klein Ross aka AdBroad" aria-label="Reply to Helen Klein Ross aka AdBroad">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-3215">
+	<article id="article-comment-3215">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/9e412114e99168b3e0a662e87ef405e979db727ef60e7662efaa56d17fb4c899?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/9e412114e99168b3e0a662e87ef405e979db727ef60e7662efaa56d17fb4c899?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.toadstoolblog.com/" class="comment-author-link" rel="external nofollow">Alan Wolk</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3215">May 16, 2009 at 1:58 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>I had seen this earlier in the week and intended to spend about 90 seconds perusing it. 45 minutes later&#8230; OPP (other people&#8217;s photos) fascinate us.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3215" data-commentid="3215" data-postid="52" data-belowelement="article-comment-3215" data-respondelement="respond" data-replyto="Reply to Alan Wolk" aria-label="Reply to Alan Wolk">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-3195">
+	<article id="article-comment-3195">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/9e412114e99168b3e0a662e87ef405e979db727ef60e7662efaa56d17fb4c899?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/9e412114e99168b3e0a662e87ef405e979db727ef60e7662efaa56d17fb4c899?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.toadstoolblog.com" class="comment-author-link" rel="external nofollow">Alan Wolk</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3195">May 15, 2009 at 5:58 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>I had seen this earlier in the week and intended to spend about 90 seconds perusing it. 45 minutes later&#8230; OPP (other people&#8217;s photos) fascinate us.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3195" data-commentid="3195" data-postid="52" data-belowelement="article-comment-3195" data-respondelement="respond" data-replyto="Reply to Alan Wolk" aria-label="Reply to Alan Wolk">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-3216">
+	<article id="article-comment-3216">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/ea84fe5b4b89aa7a10a6554cc8650fc4673fcb6a08207130a43a28aa477e1ceb?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/ea84fe5b4b89aa7a10a6554cc8650fc4673fcb6a08207130a43a28aa477e1ceb?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.kainoto.com/marketing-agency/Kainoto.aspx" class="comment-author-link" rel="external nofollow">Dusan Vrban</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3216">May 16, 2009 at 5:55 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>I love the title on two dads. :-) But above all, there&#8217;s always the combination of photo and title/comments that makes it special&#8230;</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3216" data-commentid="3216" data-postid="52" data-belowelement="article-comment-3216" data-respondelement="respond" data-replyto="Reply to Dusan Vrban" aria-label="Reply to Dusan Vrban">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-3196">
+	<article id="article-comment-3196">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/ea84fe5b4b89aa7a10a6554cc8650fc4673fcb6a08207130a43a28aa477e1ceb?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/ea84fe5b4b89aa7a10a6554cc8650fc4673fcb6a08207130a43a28aa477e1ceb?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.kainoto.com/marketing-agency/Kainoto.aspx" class="comment-author-link" rel="external nofollow">Dusan Vrban</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3196">May 15, 2009 at 9:55 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>I love the title on two dads. :-) But above all, there&#8217;s always the combination of photo and title/comments that makes it special&#8230;</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3196" data-commentid="3196" data-postid="52" data-belowelement="article-comment-3196" data-respondelement="respond" data-replyto="Reply to Dusan Vrban" aria-label="Reply to Dusan Vrban">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-3217">
+	<article id="article-comment-3217">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/d3610e10454a77dca7763a57cb18100e1495703f359c4c2918f663920abddff9?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/d3610e10454a77dca7763a57cb18100e1495703f359c4c2918f663920abddff9?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.writingroads.com/blog" class="comment-author-link" rel="external nofollow">Julie Roads</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3217">May 16, 2009 at 11:47 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>I want this to be my next job &#8211; both the finding of the photos and the writing of the captions. By the way &#8211; where did you find that fantastic &#8216;retweet&#8217; plugin! Love it.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3217" data-commentid="3217" data-postid="52" data-belowelement="article-comment-3217" data-respondelement="respond" data-replyto="Reply to Julie Roads" aria-label="Reply to Julie Roads">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-3197">
+	<article id="article-comment-3197">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/d3610e10454a77dca7763a57cb18100e1495703f359c4c2918f663920abddff9?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/d3610e10454a77dca7763a57cb18100e1495703f359c4c2918f663920abddff9?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.writingroads.com/blog" class="comment-author-link" rel="external nofollow">Julie Roads</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3197">May 16, 2009 at 3:47 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>I want this to be my next job &#8211; both the finding of the photos and the writing of the captions. By the way &#8211; where did you find that fantastic &#8216;retweet&#8217; plugin! Love it.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3197" data-commentid="3197" data-postid="52" data-belowelement="article-comment-3197" data-respondelement="respond" data-replyto="Reply to Julie Roads" aria-label="Reply to Julie Roads">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-3218">
+	<article id="article-comment-3218">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/388057be105d2a9e632920c73d789c2c4126436d74de6f859b84c97d85b1bedc?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/388057be105d2a9e632920c73d789c2c4126436d74de6f859b84c97d85b1bedc?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Anonymous</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3218">May 16, 2009 at 8:12 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>@Christian, &#8230;the girl in “The Choker” *does* look just like Molly Ringwald, from Pretty in Pink.</p>
+<p>These were all great. Some of the ones on the site are even better&#8230;</p>
+<p>I just joined the Fan Club on Facebook&#8211;what a fun site.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3218" data-commentid="3218" data-postid="52" data-belowelement="article-comment-3218" data-respondelement="respond" data-replyto="Reply to Anonymous" aria-label="Reply to Anonymous">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-3198">
+	<article id="article-comment-3198">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/388057be105d2a9e632920c73d789c2c4126436d74de6f859b84c97d85b1bedc?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/388057be105d2a9e632920c73d789c2c4126436d74de6f859b84c97d85b1bedc?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://pegmulligan.com/" class="comment-author-link" rel="external nofollow">Peg Mulligan</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3198">May 16, 2009 at 12:12 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>@Christian, &#8230;the girl in “The Choker” *does* look just like Molly Ringwald, from Pretty in Pink.</p>
+<p>These were all great. Some of the ones on the site are even better&#8230;</p>
+<p>I just joined the Fan Club on Facebook&#8211;what a fun site.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3198" data-commentid="3198" data-postid="52" data-belowelement="article-comment-3198" data-respondelement="respond" data-replyto="Reply to Peg Mulligan" aria-label="Reply to Peg Mulligan">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-3219">
+	<article id="article-comment-3219">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.annhandley.com/" class="comment-author-link" rel="external nofollow">Ann Handley</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3219">May 18, 2009 at 1:36 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>@julie Check out Tweetmeme.com &#8212; simple plug in for WordPress or other blogging platforms.</p>
+<p>@peg Thanks for the heads up on the Facebook page! Everyone, check it out:<br />
+<a href="http://www.facebook.com/pages/AwkwardFamilyPhotoscom/103280435790?v=wall&#038;viewas;=580240608" rel="nofollow ugc">http://www.facebook.com/pages/AwkwardFamilyPhotoscom/103280435790?v=wall&#038;viewas;=580240608</a></p>
+<p>(I gotta say, though.. that tiger photo on the site totally depressed me, as I said in the comments.)</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3219" data-commentid="3219" data-postid="52" data-belowelement="article-comment-3219" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment byuser comment-author-ann bypostauthor odd alt thread-odd thread-alt depth-1" id="comment-3199">
+	<article id="article-comment-3199">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/c6f33ff9201dbd8e522d7b060810803d7ac0525be4d01ad45f5ebf02fe184e24?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="https://www.annhandley.com" class="comment-author-link" rel="external nofollow">Ann Handley</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3199">May 17, 2009 at 5:36 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>@julie Check out Tweetmeme.com &#8212; simple plug in for WordPress or other blogging platforms.</p>
+<p>@peg Thanks for the heads up on the Facebook page! Everyone, check it out:<br />
+<a href="http://www.facebook.com/pages/AwkwardFamilyPhotoscom/103280435790?v=wall&#038;viewas=580240608" rel="nofollow ugc">http://www.facebook.com/pages/AwkwardFamilyPhotoscom/103280435790?v=wall&#038;viewas=580240608</a></p>
+<p>(I gotta say, though.. that tiger photo on the site totally depressed me, as I said in the comments.)</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3199" data-commentid="3199" data-postid="52" data-belowelement="article-comment-3199" data-respondelement="respond" data-replyto="Reply to Ann Handley" aria-label="Reply to Ann Handley">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-3220">
+	<article id="article-comment-3220">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/59d2b55c5a2aab2d891cdb1f62c9b310818bb20c509e3ae53fe47c7439d4cf55?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/59d2b55c5a2aab2d891cdb1f62c9b310818bb20c509e3ae53fe47c7439d4cf55?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://awakeanddreaming.org/" class="comment-author-link" rel="external nofollow">Roshan</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3220">May 19, 2009 at 4:59 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Hilarious. I would kill myself if my family wanted to pose in such pics.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3220" data-commentid="3220" data-postid="52" data-belowelement="article-comment-3220" data-respondelement="respond" data-replyto="Reply to Roshan" aria-label="Reply to Roshan">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-3201">
+	<article id="article-comment-3201">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/59d2b55c5a2aab2d891cdb1f62c9b310818bb20c509e3ae53fe47c7439d4cf55?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/59d2b55c5a2aab2d891cdb1f62c9b310818bb20c509e3ae53fe47c7439d4cf55?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://awakeanddreaming.org" class="comment-author-link" rel="external nofollow">Roshan</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3201">May 19, 2009 at 8:59 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Hilarious. I would kill myself if my family wanted to pose in such pics.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3201" data-commentid="3201" data-postid="52" data-belowelement="article-comment-3201" data-respondelement="respond" data-replyto="Reply to Roshan" aria-label="Reply to Roshan">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-3221">
+	<article id="article-comment-3221">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/d379495efdc6c49adf167e23027a80ee11aceaa871822cb33acbad926677abf8?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/d379495efdc6c49adf167e23027a80ee11aceaa871822cb33acbad926677abf8?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Bdot</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3221">May 22, 2009 at 3:19 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Ann,<br />
+I checked out the site. Only one thing I can say is<br />
+I&#8217;m glad to see there isn&#8217;t a family gathered around the family bush.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3221" data-commentid="3221" data-postid="52" data-belowelement="article-comment-3221" data-respondelement="respond" data-replyto="Reply to Bdot" aria-label="Reply to Bdot">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-3202">
+	<article id="article-comment-3202">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/d379495efdc6c49adf167e23027a80ee11aceaa871822cb33acbad926677abf8?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/d379495efdc6c49adf167e23027a80ee11aceaa871822cb33acbad926677abf8?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Bdot</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3202">May 22, 2009 at 7:19 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Ann,<br />
+I checked out the site. Only one thing I can say is<br />
+I&#8217;m glad to see there isn&#8217;t a family gathered around the family bush.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3202" data-commentid="3202" data-postid="52" data-belowelement="article-comment-3202" data-respondelement="respond" data-replyto="Reply to Bdot" aria-label="Reply to Bdot">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-3222">
+	<article id="article-comment-3222">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/a36eeb94c529ac1a6de3edb585318406b20c944dc619750352283288a7a46666?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/a36eeb94c529ac1a6de3edb585318406b20c944dc619750352283288a7a46666?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.servantofchaos.com/" class="comment-author-link" rel="external nofollow">Gavin Heaton</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3222">June 3, 2009 at 10:18 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>It was with some trepidation that I went to that site last week. I just didn&#8217;t know if some stray photo had slipped through my grasp. Luckily there are no Heaton family snaps to be seen &#8211; at least none that I will admit to!</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3222" data-commentid="3222" data-postid="52" data-belowelement="article-comment-3222" data-respondelement="respond" data-replyto="Reply to Gavin Heaton" aria-label="Reply to Gavin Heaton">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-3203">
+	<article id="article-comment-3203">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/a36eeb94c529ac1a6de3edb585318406b20c944dc619750352283288a7a46666?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/a36eeb94c529ac1a6de3edb585318406b20c944dc619750352283288a7a46666?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.servantofchaos.com" class="comment-author-link" rel="external nofollow">Gavin Heaton</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3203">June 3, 2009 at 2:18 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>It was with some trepidation that I went to that site last week. I just didn&#8217;t know if some stray photo had slipped through my grasp. Luckily there are no Heaton family snaps to be seen &#8211; at least none that I will admit to!</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3203" data-commentid="3203" data-postid="52" data-belowelement="article-comment-3203" data-respondelement="respond" data-replyto="Reply to Gavin Heaton" aria-label="Reply to Gavin Heaton">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-3223">
+	<article id="article-comment-3223">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/18fea43825b1edaf5a616111b6719bf8371ac333a4a465b731423a8f56b49732?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/18fea43825b1edaf5a616111b6719bf8371ac333a4a465b731423a8f56b49732?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://twitter.com/SOSolutions/statuses/2017568825" class="comment-author-link" rel="external nofollow">SOSolutions (Kristina)</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3223">June 3, 2009 at 3:40 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p><strong>Twitter Comment</strong><br />
+<a href="http://twitter.com/SOSolutions" title="Twitter Comment" rel="nofollow"></p>
+<p></a><br />
+RT @jkvirtualoffice: These are pretty damn funny- Awkward family photos &#8211; [link to post] (SO FUNNY) &#8211; Posted using Chat Catcher </p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3223" data-commentid="3223" data-postid="52" data-belowelement="article-comment-3223" data-respondelement="respond" data-replyto="Reply to SOSolutions (Kristina)" aria-label="Reply to SOSolutions (Kristina)">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-3204">
+	<article id="article-comment-3204">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo avatar-default' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://twitter.com/SOSolutions/statuses/2017568825" class="comment-author-link" rel="external nofollow">SOSolutions (Kristina)</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3204">June 3, 2009 at 7:40 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p><strong>Twitter Comment</strong><br />
+<a href="http://twitter.com/SOSolutions" title="Twitter Comment" rel="nofollow"></p>
+<div title="SOSolutions (Kristina)" style="float:left;margin-right:10px;padding:0;width:60px;height:60px;background:url(WP_PLUGIN_URL/chatcatcher/picbg.jpg) no-repeat top;cursor:hand;">
+</div>
+<div title="SOSolutions (Kristina)" style="float:left;margin-left:-70px;margin-right:10px;padding:0;width:60px;height:60px;background:url(https://purl.org/net/spiurl/SOSolutions) no-repeat top;cursor:hand;">
+</div>
+<p></a><br />
+RT @jkvirtualoffice: These are pretty damn funny- Awkward family photos &#8211; [link to post] (SO FUNNY)</p>
+<p> &#8211; Posted using Chat Catcher </p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3204" data-commentid="3204" data-postid="52" data-belowelement="article-comment-3204" data-respondelement="respond" data-replyto="Reply to SOSolutions (Kristina)" aria-label="Reply to SOSolutions (Kristina)">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-3224">
+	<article id="article-comment-3224">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/79a737e8ef84126d642c0fe4c9d4afdaef3d8111a17854e910ecde99168a7234?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/79a737e8ef84126d642c0fe4c9d4afdaef3d8111a17854e910ecde99168a7234?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://twitter.com/jkvirtualoffice/statuses/2017551143" class="comment-author-link" rel="external nofollow">jkvirtualoffice (Kimberly LeRi</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3224">June 3, 2009 at 3:41 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p><strong>Twitter Comment</strong><br />
+<a href="http://twitter.com/jkvirtualoffice" title="Twitter Comment" rel="nofollow"></p>
+<p></a><br />
+These are pretty damn funny- Awkward family photos &#8211; [link to post] &#8211; Posted using Chat Catcher </p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3224" data-commentid="3224" data-postid="52" data-belowelement="article-comment-3224" data-respondelement="respond" data-replyto="Reply to jkvirtualoffice (Kimberly LeRi" aria-label="Reply to jkvirtualoffice (Kimberly LeRi">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-3205">
+	<article id="article-comment-3205">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo avatar-default' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://twitter.com/jkvirtualoffice/statuses/2017551143" class="comment-author-link" rel="external nofollow">jkvirtualoffice (Kimberly LeRiche)</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3205">June 3, 2009 at 7:41 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p><strong>Twitter Comment</strong><br />
+<a href="http://twitter.com/jkvirtualoffice" title="Twitter Comment" rel="nofollow"></p>
+<div title="jkvirtualoffice (Kimberly LeRiche)" style="float:left;margin-right:10px;padding:0;width:60px;height:60px;background:url(WP_PLUGIN_URL/chatcatcher/picbg.jpg) no-repeat top;cursor:hand;">
+</div>
+<div title="jkvirtualoffice (Kimberly LeRiche)" style="float:left;margin-left:-70px;margin-right:10px;padding:0;width:60px;height:60px;background:url(https://purl.org/net/spiurl/jkvirtualoffice) no-repeat top;cursor:hand;">
+</div>
+<p></a><br />
+These are pretty damn funny- Awkward family photos &#8211; [link to post]</p>
+<p> &#8211; Posted using Chat Catcher </p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3205" data-commentid="3205" data-postid="52" data-belowelement="article-comment-3205" data-respondelement="respond" data-replyto="Reply to jkvirtualoffice (Kimberly LeRiche)" aria-label="Reply to jkvirtualoffice (Kimberly LeRiche)">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-3206">
+	<article id="article-comment-3206">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/9366452cf2f75d50b37deb3e9effd0c0d6ce1bc3efaa44447b3271b7526b4d4a?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/9366452cf2f75d50b37deb3e9effd0c0d6ce1bc3efaa44447b3271b7526b4d4a?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Amy</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3206">November 6, 2009 at 9:15 am</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Oh my!!  The pictures are hilarious. Nice topic.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3206" data-commentid="3206" data-postid="52" data-belowelement="article-comment-3206" data-respondelement="respond" data-replyto="Reply to Amy" aria-label="Reply to Amy">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-3207">
+	<article id="article-comment-3207">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/8faa64dd765222a4e52d227a89811eb43cd438718e301d13b79f4c3a4d1644d3?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/8faa64dd765222a4e52d227a89811eb43cd438718e301d13b79f4c3a4d1644d3?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.dentistrybyerin.com/" class="comment-author-link" rel="external nofollow">dentist lexington ky</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3207">April 3, 2010 at 8:15 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>The choking picture really made me laugh. I thought that guy was gonna choke that woman to death. Nice funny pictures of family there.</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3207" data-commentid="3207" data-postid="52" data-belowelement="article-comment-3207" data-respondelement="respond" data-replyto="Reply to dentist lexington ky" aria-label="Reply to dentist lexington ky">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment even thread-even depth-1" id="comment-3208">
+	<article id="article-comment-3208">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/f1ddbd796c2300b06000c05a1844c23dd2ee747342939f12f6658d204379fd42?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/f1ddbd796c2300b06000c05a1844c23dd2ee747342939f12f6658d204379fd42?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name"><a href="http://www.mbt-outlet-store.com" class="comment-author-link" rel="external nofollow">mbt outlet</a></span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3208">June 10, 2010 at 10:28 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Well , the view of the passage is totally correct ,your details is really  reasonable and  you guy give us  valuable  informative post, I totally agree the standpoint of upstairs. I often surfing on this forum when I m free and I find there are so much good information we can learn in this forum!<br /><a href="http://www.sin-game.com" rel="nofollow">http://www.sin-game.com</a></p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3208" data-commentid="3208" data-postid="52" data-belowelement="article-comment-3208" data-respondelement="respond" data-replyto="Reply to mbt outlet" aria-label="Reply to mbt outlet">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-3209">
+	<article id="article-comment-3209">
+
+		
+		<header class="comment-header">
+			<p class="comment-author">
+				<img alt='' src='https://secure.gravatar.com/avatar/ce9e26e368b4becc01a8ba589591476d82667e1552f2283eda9d9df0b66ce3f9?s=60&#038;d=mm&#038;r=g' srcset='https://secure.gravatar.com/avatar/ce9e26e368b4becc01a8ba589591476d82667e1552f2283eda9d9df0b66ce3f9?s=120&#038;d=mm&#038;r=g 2x' class='avatar avatar-60 photo' height='60' width='60' loading='lazy' decoding='async'/><span class="comment-author-name">Disqus</span> <span class="says">says</span>			</p>
+
+			<p class="comment-meta"><time class="comment-time"><a class="comment-time-link" href="https://annhandley.com/awkward-family-photos/#comment-3209">June 23, 2010 at 6:51 pm</a></time></p>		</header>
+
+		<div class="comment-content">
+			
+			<p>Lotuses are 5 species of water lilies, three in the genus Nymphaea and two in Nelumbo <br /><a href="http://www.louisvuittonlouisvuitton.com/Class/Smallproducts_Tahitiennes_1.html" rel="nofollow">fake handbags</a>; <br />both genera are members of the water-lily family<br /><a href="http://www.louisvuittonlouisvuitton.com/Class/Smallproducts_Tahitiennes_1.html" rel="nofollow">fake handbag</a>,<br />Nymphaea lotus, the Egyptian white lotus, is believed to be the original sacred lotus of ancient Egypt <br /><a href="http://www.louisvuittonlouisvuitton.com/Class/Smallproducts_Mahina_1.html" rel="nofollow">discount handbags</a>.<br />It and the Egyptian blue lotus, N. caerulea, were often pictured in ancient Egyptian art <br /><a href="http://www.louisvuittonlouisvuitton.com/Class/Smallproducts_Mahina_1.html" rel="nofollow">discount handbag</a>.<br />The common Egyptian <a href="http://www.louisvuittonlouisvuitton.com/Class/Smallproducts_wallet_1.html" rel="nofollow">replica purses</a> &#8220;lotus&#8221; is actually correctly called a water </p>
+<p>lily: the white lotus opens at dusk, the blue water lilly opens in the morning. jl</p>
+		</div>
+
+		<div class="comment-reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3209" data-commentid="3209" data-postid="52" data-belowelement="article-comment-3209" data-respondelement="respond" data-replyto="Reply to Disqus" aria-label="Reply to Disqus">Reply</a></div>
+		
+	</article>
+	</li><!-- #comment-## -->
+</ol></div><div class="entry-pings"><h3>Trackbacks</h3><ol class="ping-list">		<li id="comment-3200" class="pingback even thread-even depth-1">
+			<article id="div-comment-3200" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="http://thismommygig.org/2009/05/18/awkward-family-photos/" class="url" rel="ugc external nofollow">Awkward Family Photos &laquo; This Mommy Gig</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/awkward-family-photos/#comment-3200"><time datetime="2009-05-18T04:31:18-04:00">May 18, 2009 at 4:31 am</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p>[&#8230;] Cross-posted on Annarchy. [&#8230;]</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3200" data-commentid="3200" data-postid="52" data-belowelement="div-comment-3200" data-respondelement="respond" data-replyto="Reply to Awkward Family Photos &laquo; This Mommy Gig" aria-label="Reply to Awkward Family Photos &laquo; This Mommy Gig">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+		<li id="comment-3225" class="trackback odd alt thread-odd thread-alt depth-1">
+			<article id="div-comment-3225" class="comment-body">
+				<footer class="comment-meta">
+					<div class="comment-author vcard">
+												<b class="fn"><a href="http://h-c-g.biz/" class="url" rel="ugc external nofollow">h-c-g</a></b> <span class="says">says:</span>					</div><!-- .comment-author -->
+
+					<div class="comment-metadata">
+						<a href="https://annhandley.com/awkward-family-photos/#comment-3225"><time datetime="2011-07-02T19:35:52-04:00">July 2, 2011 at 7:35 pm</time></a>					</div><!-- .comment-metadata -->
+
+									</footer><!-- .comment-meta -->
+
+				<div class="comment-content">
+					<p><strong>h-c-g&#8230;</strong></p>
+<p>Such wonderfull post on here today&#8230;.</p>
+				</div><!-- .comment-content -->
+
+				<div class="reply"><a rel="nofollow" class="comment-reply-link" href="#comment-3225" data-commentid="3225" data-postid="52" data-belowelement="div-comment-3225" data-respondelement="respond" data-replyto="Reply to h-c-g" aria-label="Reply to h-c-g">Reply</a></div>			</article><!-- .comment-body -->
+		</li><!-- #comment-## -->
+</ol></div>	<div id="respond" class="comment-respond">
+		<h3 id="reply-title" class="comment-reply-title">Leave a Reply <small><a rel="nofollow" id="cancel-comment-reply-link" href="/awkward-family-photos/#respond" style="display:none;">Cancel reply</a></small></h3><form action="https://annhandley.com/ah/wp-comments-post.php" method="post" id="commentform" class="comment-form"><p class="comment-notes"><span id="email-notes">Your email address will not be published.</span> <span class="required-field-message">Required fields are marked <span class="required">*</span></span></p><p class="comment-form-comment"><label for="comment">Comment <span class="required">*</span></label> <textarea id="comment" name="comment" cols="45" rows="8" maxlength="65525" required></textarea></p><p class="comment-form-author"><label for="author">Name <span class="required">*</span></label> <input id="author" name="author" type="text" value="" size="30" maxlength="245" autocomplete="name" required /></p>
+<p class="comment-form-email"><label for="email">Email <span class="required">*</span></label> <input id="email" name="email" type="email" value="" size="30" maxlength="100" aria-describedby="email-notes" autocomplete="email" required /></p>
+<p class="comment-form-url"><label for="url">Website</label> <input id="url" name="url" type="url" value="" size="30" maxlength="200" autocomplete="url" /></p>
+<p class="form-submit"><input name="submit" type="submit" id="submit" class="submit" value="Post Comment" /> <input type='hidden' name='comment_post_ID' value='52' id='comment_post_ID' />
+<input type='hidden' name='comment_parent' id='comment_parent' value='0' />
+</p><p style="display: none;"><input type="hidden" id="akismet_comment_nonce" name="akismet_comment_nonce" value="7314bf1856" /></p><p style="display: none !important;" class="akismet-fields-container" data-prefix="ak_"><label>&#916;<textarea name="ak_hp_textarea" cols="45" rows="8" maxlength="100"></textarea></label><input type="hidden" id="ak_js_1" name="ak_js" value="52"/><script>document.getElementById( "ak_js_1" ).setAttribute( "value", ( new Date() ).getTime() );</script></p></form>	</div><!-- #respond -->
+	</main></div></div></div><div class="footer-optin"><div class="wrap"><section id="custom_html-3" class="widget_text widget widget_custom_html"><div class="widget_text widget-wrap"><div class="textwidget custom-html-widget"><h3><span style="color:#fff">Subscribe to Total </span><span style="color:#e077cc">ANNARCHY</span></h3>
+<h6>Get new writing, useful ideas, fresh links, and high-spirited shenanigans delivered to your inbox every two weeks.
+
+	</h6>
+
+	<a class="button" href="https://annhandley.com/newsletter/">SUBSCRIBE</a>
+
+<!--
+	<form class="mainopt" action="https://www.aweber.com/scripts/addlead.pl" method="post"><input type="hidden" name="meta_web_form_id" value="1483784026" /><input id="awf_tag-103757396" type="hidden" name="tag_103757396" value="footer_opt" /><input type="hidden" name="listname" value="totalannarchy" /><input type="hidden" name="meta_message" value="1" /><input type="hidden" name="redirect" value="https://annhandley.com/thank-you" id="redirect_bd89b556cf6bc1b80faed4ec90669c3a" /><input name="meta_redirect_onlist" type="hidden" value="https://annhandley.com/thank-you" /><input type="hidden" name="meta_adtracking" value="2019_New_AH_Form" /><input name="meta_message" type="hidden" value="1" /><input name="meta_required" type="hidden" value="email" /><input name="meta_forward_vars" type="hidden" value="0" /><input name="name" type="text" placeholder="FIRST NAME" /><input name="email" type="text" value="" placeholder="EMAIL ADDRESS" /><input name="submit" type="submit" value="SUBMIT" /></form>--> 
+
+
+	
+	</div></div></section>
+</div></div><footer class="site-footer"><p></p><div class="footer-widgets" id="genesis-footer-widgets"><h2 class="genesis-sidebar-title screen-reader-text">Footer</h2><div class="wrap"><div class="widget-area footer-widgets-1 footer-widget-area"><section id="text-3" class="widget widget_text"><div class="widget-wrap"><h3 class="widgettitle widget-title">COPYRIGHT 2025 ANN HANDLEY</h3>
+			<div class="textwidget"><p><span class="credits"><a href="https://minimadesigns.com/" target="_new" >SITE BY MINIMA DESIGNS</a></span></p>
+</div>
+		</div></section>
+<section id="simple-social-icons-2" class="widget simple-social-icons"><div class="widget-wrap"><ul class="alignleft"><li class="ssi-facebook"><a href="https://www.facebook.com/ann.handley/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-facebook" aria-labelledby="social-facebook-2"><title id="social-facebook-2">Facebook</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-facebook"></use></svg></a></li><li class="ssi-instagram"><a href="https://www.instagram.com/annhandley/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-instagram" aria-labelledby="social-instagram-2"><title id="social-instagram-2">Instagram</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-instagram"></use></svg></a></li><li class="ssi-linkedin"><a href="http://www.linkedin.com/in/annhandley/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-linkedin" aria-labelledby="social-linkedin-2"><title id="social-linkedin-2">LinkedIn</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-linkedin"></use></svg></a></li><li class="ssi-pinterest"><a href="http://pinterest.com/annhandley/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-pinterest" aria-labelledby="social-pinterest-2"><title id="social-pinterest-2">Pinterest</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-pinterest"></use></svg></a></li><li class="ssi-rss"><a href="http://feeds2.feedburner.com/ANNARCHY/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-rss" aria-labelledby="social-rss-2"><title id="social-rss-2">RSS</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-rss"></use></svg></a></li><li class="ssi-twitter"><a href="https://twitter.com/annhandley/" target="_blank" rel="noopener noreferrer"><svg role="img" class="social-twitter" aria-labelledby="social-twitter-2"><title id="social-twitter-2">Twitter</title><use xlink:href="https://annhandley.com/ah/wp-content/plugins/simple-social-icons/symbol-defs.svg#social-twitter"></use></svg></a></li></ul></div></section>
+</div><div class="widget-area footer-widgets-2 footer-widget-area"><section id="nav_menu-2" class="widget widget_nav_menu"><div class="widget-wrap"><h3 class="widgettitle widget-title">About</h3>
+<div class="menu-about-container"><ul id="menu-about" class="menu"><li id="menu-item-2779" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2779"><a href="https://annhandley.com/about/">Bio</a></li>
+<li id="menu-item-2778" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2778"><a href="https://annhandley.com/in-the-media/">In the Media</a></li>
+<li id="menu-item-3766" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-3766"><a href="https://annhandley.com/newsletter/">Newsletter</a></li>
+</ul></div></div></section>
+</div><div class="widget-area footer-widgets-3 footer-widget-area"><section id="nav_menu-3" class="widget widget_nav_menu"><div class="widget-wrap"><h3 class="widgettitle widget-title">Speaking</h3>
+<div class="menu-speaking-container"><ul id="menu-speaking" class="menu"><li id="menu-item-2970" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2970"><a href="https://annhandley.com/speaking/">Speaking</a></li>
+<li id="menu-item-2925" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-2925"><a href="https://annhandley.com/meeting-planners/">For Meeting Planners</a></li>
+</ul></div></div></section>
+</div><div class="widget-area footer-widgets-4 footer-widget-area"><section id="nav_menu-4" class="widget widget_nav_menu"><div class="widget-wrap"><h3 class="widgettitle widget-title">The Books</h3>
+<div class="menu-the-books-container"><ul id="menu-the-books" class="menu"><li id="menu-item-2782" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-2782"><a target="_blank" href="http://bit.ly/EverybodyWrites">Everybody Writes</a></li>
+<li id="menu-item-2783" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-2783"><a target="_blank" href="https://www.amazon.com/gp/product/1118232607/ref=as_li_ss_tl?ie=UTF8&#038;camp=1789&#038;creative=390957&#038;creativeASIN=1118232607&#038;linkCode=as2&#038;tag=annarchy-20">Content Rules</a></li>
+</ul></div></div></section>
+</div></div></div></footer></div><script type="speculationrules">
+{"prefetch":[{"source":"document","where":{"and":[{"href_matches":"\/*"},{"not":{"href_matches":["\/ah\/wp-*.php","\/ah\/wp-admin\/*","\/ah\/wp-content\/uploads\/*","\/ah\/wp-content\/*","\/ah\/wp-content\/plugins\/*","\/ah\/wp-content\/themes\/annhandley\/*","\/ah\/wp-content\/themes\/genesis\/*","\/*\\?(.+)"]}},{"not":{"selector_matches":"a[rel~=\"nofollow\"]"}},{"not":{"selector_matches":".no-prefetch, .no-prefetch a"}}]},"eagerness":"conservative"}]}
+</script>
+<script type="text/javascript" src="//analytics.aweber.com/js/awt_analytics.js?id=8LvK"></script><style type="text/css" media="screen">#simple-social-icons-2 ul li a, #simple-social-icons-2 ul li a:hover, #simple-social-icons-2 ul li a:focus { background-color: #ffffff !important; border-radius: 0px; color: #000000 !important; border: 0px #ffffff solid !important; font-size: 20px; padding: 10px; }  #simple-social-icons-2 ul li a:hover, #simple-social-icons-2 ul li a:focus { background-color: #ffffff !important; border-color: #ffffff !important; color: #000000 !important; }  #simple-social-icons-2 ul li a:focus { outline: 1px dotted #ffffff !important; }</style><script type="text/javascript" src="https://annhandley.com/ah/wp-content/plugins/duracelltomi-google-tag-manager/dist/js/gtm4wp-form-move-tracker.js" id="gtm4wp-form-move-tracker-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-includes/js/comment-reply.min.js" id="comment-reply-js" async="async" data-wp-strategy="async"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-includes/js/hoverIntent.min.js" id="hoverIntent-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/genesis/lib/js/menu/superfish.min.js" id="superfish-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/genesis/lib/js/menu/superfish.args.min.js" id="superfish-args-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/genesis/lib/js/skip-links.min.js" id="skip-links-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/annhandley/js/global.js" id="annhandley-global-js"></script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/annhandley/js/match-height.js" id="annhandley-match-height-js"></script>
+<script type="text/javascript" id="annhandley-responsive-menu-js-extra">
+/* <![CDATA[ */
+var InfinityL10n = {"mainMenu":"Menu","subMenu":"Menu"};
+/* ]]> */
+</script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/themes/annhandley/js/responsive-menu.js" id="annhandley-responsive-menu-js"></script>
+<script defer type="text/javascript" src="https://annhandley.com/ah/wp-content/plugins/akismet/_inc/akismet-frontend.js" id="akismet-frontend-js"></script>
+<script type="text/javascript" id="aweber-wpn-script-handle-js-extra">
+/* <![CDATA[ */
+var aweber_wpn_vars = {"plugin_base_path":"https:\/\/annhandley.com\/ah\/wp-content\/plugins\/aweber-web-form-widget\/php\/","register_aweber_service_worker":""};
+/* ]]> */
+</script>
+<script type="text/javascript" src="https://annhandley.com/ah/wp-content/plugins/aweber-web-form-widget/php/../src/js/aweber-wpn-script.js" id="aweber-wpn-script-handle-js"></script>
+</body></html>
