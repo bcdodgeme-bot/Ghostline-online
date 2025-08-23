@@ -1,4 +1,4 @@
-# utils/rag_basic.py - Memory-optimized batched RAG system with multi-part file support
+# utils/rag_basic.py - Memory-optimized batched RAG system with chunk file support
 import json
 import os
 import pickle
@@ -52,45 +52,53 @@ class BatchedRAG:
         self.load_existing_data()
     
     def combine_brain_parts(self, base_path: str) -> str:
-        """Combine brain_part_* files into a temporary single file"""
-        print("Combining brain part files...")
+        """Combine brain_chunk_* files into a temporary single file"""
+        print("Combining brain chunk files...")
         
-        # Look for brain_part_* files in root directory
-        brain_parts = sorted(glob.glob("brain_part_*"))
+        # Look for brain_chunk_* files in root directory
+        brain_chunks = sorted(glob.glob("brain_chunk_*"))
         
-        if not brain_parts:
-            # Fall back to original file if no parts found
+        if not brain_chunks:
+            # Fall back to original file if no chunks found
             if os.path.exists(base_path):
                 return base_path
             else:
-                raise FileNotFoundError(f"No brain files found: neither {base_path} nor brain_part_* files exist")
+                raise FileNotFoundError(f"No brain files found: neither {base_path} nor brain_chunk_* files exist")
         
-        print(f"Found {len(brain_parts)} brain part files: {brain_parts}")
+        print(f"Found {len(brain_chunks)} brain chunk files: {brain_chunks}")
         
         # Create temporary combined file
         temp_file = tempfile.NamedTemporaryFile(mode='wb', suffix='.jsonl.gz', delete=False)
         temp_path = temp_file.name
+        temp_file.close()  # Close handle so we can write to it
         
         try:
-            with gzip.open(temp_path, 'wt', encoding='utf-8') as combined_file:
-                total_lines = 0
+            # Combine chunks in binary mode (they're raw pieces of the gzipped file)
+            with open(temp_path, 'wb') as combined_file:
+                total_bytes = 0
                 
-                for part_file in brain_parts:
-                    print(f"Processing {part_file}...")
+                for chunk_file in brain_chunks:
+                    print(f"Processing {chunk_file}...")
                     
-                    # Read each part file as gzipped data
-                    with gzip.open(part_file, 'rt', encoding='utf-8') as f:
-                        lines_in_part = 0
-                        for line in f:
-                            line = line.strip()
-                            if line:
-                                combined_file.write(line + '\n')
-                                lines_in_part += 1
-                                total_lines += 1
-                        
-                        print(f"  Added {lines_in_part} lines from {part_file}")
+                    with open(chunk_file, 'rb') as f:
+                        chunk_data = f.read()
+                        combined_file.write(chunk_data)
+                        total_bytes += len(chunk_data)
+                        print(f"  Added {len(chunk_data)} bytes from {chunk_file}")
                 
-                print(f"Combined {len(brain_parts)} files into {total_lines} total lines")
+                print(f"Combined {len(brain_chunks)} files into {total_bytes} total bytes")
+            
+            # Verify the combined file is valid gzip
+            try:
+                with gzip.open(temp_path, 'rt', encoding='utf-8') as test_file:
+                    # Try to read first line to verify it's valid
+                    first_line = test_file.readline()
+                    if first_line:
+                        print("Combined file verified as valid gzip")
+                    else:
+                        raise ValueError("Combined file appears empty")
+            except Exception as e:
+                raise ValueError(f"Combined file is not valid gzip: {e}")
         
         except Exception as e:
             # Clean up temp file on error
