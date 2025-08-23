@@ -1,4 +1,4 @@
-# utils/rag_basic.py - Memory-optimized batched RAG system
+# utils/rag_basic.py - Memory-optimized batched RAG system with multi-part file support
 import json
 import os
 import pickle
@@ -7,6 +7,8 @@ from typing import List, Dict, Tuple
 from datetime import datetime
 import math
 import gc
+import glob
+import tempfile
 
 try:
     import numpy as np
@@ -48,6 +50,55 @@ class BatchedRAG:
         
         # Load existing data
         self.load_existing_data()
+    
+    def combine_brain_parts(self, base_path: str) -> str:
+        """Combine brain_part_* files into a temporary single file"""
+        print("Combining brain part files...")
+        
+        # Look for brain_part_* files in root directory
+        brain_parts = sorted(glob.glob("brain_part_*"))
+        
+        if not brain_parts:
+            # Fall back to original file if no parts found
+            if os.path.exists(base_path):
+                return base_path
+            else:
+                raise FileNotFoundError(f"No brain files found: neither {base_path} nor brain_part_* files exist")
+        
+        print(f"Found {len(brain_parts)} brain part files: {brain_parts}")
+        
+        # Create temporary combined file
+        temp_file = tempfile.NamedTemporaryFile(mode='wb', suffix='.jsonl.gz', delete=False)
+        temp_path = temp_file.name
+        
+        try:
+            with gzip.open(temp_path, 'wt', encoding='utf-8') as combined_file:
+                total_lines = 0
+                
+                for part_file in brain_parts:
+                    print(f"Processing {part_file}...")
+                    
+                    # Read each part file as gzipped data
+                    with gzip.open(part_file, 'rt', encoding='utf-8') as f:
+                        lines_in_part = 0
+                        for line in f:
+                            line = line.strip()
+                            if line:
+                                combined_file.write(line + '\n')
+                                lines_in_part += 1
+                                total_lines += 1
+                        
+                        print(f"  Added {lines_in_part} lines from {part_file}")
+                
+                print(f"Combined {len(brain_parts)} files into {total_lines} total lines")
+        
+        except Exception as e:
+            # Clean up temp file on error
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+            raise e
+        
+        return temp_path
     
     def load_batch_progress(self) -> Dict:
         """Load batch processing progress"""
@@ -337,59 +388,77 @@ class BatchedRAG:
         """Build the RAG index using memory-optimized batch processing"""
         print("Starting memory-optimized batched RAG index building...")
         
-        # Count total lines if not already done
-        if self.batch_progress["total_batches"] == 0:
-            total_lines = self.count_total_lines(jsonl_gz_file_path)
-            total_batches = math.ceil(total_lines / self.batch_size)
+        # Handle multi-part brain files
+        temp_file_path = None
+        try:
+            # Check if we need to combine brain parts
+            if not os.path.exists(jsonl_gz_file_path):
+                temp_file_path = self.combine_brain_parts(jsonl_gz_file_path)
+                jsonl_gz_file_path = temp_file_path
+                print(f"Using combined brain file: {jsonl_gz_file_path}")
             
-            self.batch_progress["total_batches"] = total_batches
-            self.save_batch_progress()
-            
-            print(f"Will process {total_lines} lines in {total_batches} batches of {self.batch_size}")
-        
-        # Process remaining batches
-        start_batch = self.batch_progress["completed_batches"]
-        total_batches = self.batch_progress["total_batches"]
-        
-        for batch_num in range(start_batch, total_batches):
-            print(f"\n=== Processing Batch {batch_num + 1}/{total_batches} ===")
-            
-            try:
-                # Process batch lines into chunks
-                batch_chunks = self.process_batch_lines(jsonl_gz_file_path, batch_num)
+            # Count total lines if not already done
+            if self.batch_progress["total_batches"] == 0:
+                total_lines = self.count_total_lines(jsonl_gz_file_path)
+                total_batches = math.ceil(total_lines / self.batch_size)
                 
-                if not batch_chunks:
-                    print(f"No chunks created for batch {batch_num + 1}, skipping...")
-                    self.batch_progress["completed_batches"] = batch_num + 1
-                    self.save_batch_progress()
-                    continue
-                
-                # Save chunks to disk
-                self.save_batch_data(batch_num, batch_chunks)
-                
-                # Create embeddings with streaming saves
-                embeddings_created = self.process_batch_embeddings(batch_chunks, batch_num)
-                
-                # Update progress
-                self.batch_progress["completed_batches"] = batch_num + 1
-                self.batch_progress["total_chunks_processed"] += len(batch_chunks)
-                self.batch_progress["total_embeddings_created"] += embeddings_created
+                self.batch_progress["total_batches"] = total_batches
                 self.save_batch_progress()
                 
-                print(f"Completed batch {batch_num + 1}/{total_batches}")
+                print(f"Will process {total_lines} lines in {total_batches} batches of {self.batch_size}")
+            
+            # Process remaining batches
+            start_batch = self.batch_progress["completed_batches"]
+            total_batches = self.batch_progress["total_batches"]
+            
+            for batch_num in range(start_batch, total_batches):
+                print(f"\n=== Processing Batch {batch_num + 1}/{total_batches} ===")
                 
-                # Clear memory for next batch
-                del batch_chunks
-                gc.collect()
-                
-            except Exception as e:
-                print(f"Error processing batch {batch_num + 1}: {e}")
-                break
-        
-        # Load all completed batches into memory
-        self.load_all_batches()
-        
-        print("Memory-optimized batched index building complete!")
+                try:
+                    # Process batch lines into chunks
+                    batch_chunks = self.process_batch_lines(jsonl_gz_file_path, batch_num)
+                    
+                    if not batch_chunks:
+                        print(f"No chunks created for batch {batch_num + 1}, skipping...")
+                        self.batch_progress["completed_batches"] = batch_num + 1
+                        self.save_batch_progress()
+                        continue
+                    
+                    # Save chunks to disk
+                    self.save_batch_data(batch_num, batch_chunks)
+                    
+                    # Create embeddings with streaming saves
+                    embeddings_created = self.process_batch_embeddings(batch_chunks, batch_num)
+                    
+                    # Update progress
+                    self.batch_progress["completed_batches"] = batch_num + 1
+                    self.batch_progress["total_chunks_processed"] += len(batch_chunks)
+                    self.batch_progress["total_embeddings_created"] += embeddings_created
+                    self.save_batch_progress()
+                    
+                    print(f"Completed batch {batch_num + 1}/{total_batches}")
+                    
+                    # Clear memory for next batch
+                    del batch_chunks
+                    gc.collect()
+                    
+                except Exception as e:
+                    print(f"Error processing batch {batch_num + 1}: {e}")
+                    break
+            
+            # Load all completed batches into memory
+            self.load_all_batches()
+            
+            print("Memory-optimized batched index building complete!")
+            
+        finally:
+            # Clean up temporary combined file
+            if temp_file_path and os.path.exists(temp_file_path):
+                try:
+                    os.unlink(temp_file_path)
+                    print("Cleaned up temporary combined file")
+                except Exception as e:
+                    print(f"Warning: Could not clean up temp file {temp_file_path}: {e}")
     
     def load_existing_data(self):
         """Load existing data if available"""
