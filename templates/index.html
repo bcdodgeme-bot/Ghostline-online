@@ -711,10 +711,10 @@
             <div class="controls-row">
               <div class="upload-section">
                 <label class="input-label">Upload & Analyze</label>
-                <form action="/upload" method="post" enctype="multipart/form-data" style="display: flex; gap: 8px; width: 100%;" onsubmit="return validateUpload(this)">
-                  <input type="file" name="file" class="file-input" style="flex: 1;" required>
-                  <button type="submit" class="secondary-btn">Analyze</button>
-                </form>
+             <form action="/upload" method="post" enctype="multipart/form-data" style="display: flex; gap: 8px; width: 100%;">
+  <input type="file" name="file" class="file-input" style="flex: 1;" required accept="image/*,.pdf,.docx">
+  <button type="submit" class="secondary-btn">Analyze</button>
+</form>
               </div>
               
               <a href="/export/{{ current_project or 'Personal Operating Manual' }}" class="secondary-btn">
@@ -732,14 +732,7 @@
 
   <script>
     // Upload form validation - separate from main chat
-    function validateUpload(form) {
-      const fileInput = form.querySelector('input[type="file"]');
-      if (!fileInput.files.length) {
-        alert('Please select a file to analyze');
-        return false;
-      }
-      return true;
-    }
+ 
 
     // Auto-resize textarea
     function autoResize(textarea) {
