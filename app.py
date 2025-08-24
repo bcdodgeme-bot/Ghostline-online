@@ -10,6 +10,9 @@ from utils.gmail_client import (
 import os, json, io
 import threading
 import time
+import zipfile
+import tempfile
+import datetime
 
 # OCR/File Parsing
 from PIL import Image
@@ -61,6 +64,23 @@ def markdown_filter(text):
 
 # Register markdown filter
 app.jinja_env.filters['markdown'] = markdown_filter
+
+def _save_daily_log(sync_type: str, content: str):
+    """Save daily sync results to log file"""
+    try:
+        os.makedirs("daily_logs", exist_ok=True)
+        today = datetime.datetime.now().strftime("%Y-%m-%d")
+        log_path = f"daily_logs/{today}.md"
+        
+        timestamp = datetime.datetime.now().strftime("%I:%M %p")
+        
+        with open(log_path, 'a', encoding='utf-8') as f:
+            f.write(f"\n## {sync_type.title()} Sync - {timestamp}\n\n")
+            f.write(content)
+            f.write("\n\n---\n")
+            
+    except Exception as e:
+        app.logger.error(f"Failed to save daily log: {e}")
 
 def build_brain_background():
     """Build the RAG system using batched processing"""
@@ -143,7 +163,7 @@ def index():
                 msgs = list_overnight(max_results=25, unread_only=True)
                 lines = [f"- {m['date']} — {m['from']} — {m['subject']}" for m in msgs]
                 summary_prompt = (
-                    "Summarize these overnight emails into 5—8 concise bullets. "
+                    "Summarize these overnight emails into 5–8 concise bullets. "
                     "Group related threads, call out anything urgent, and suggest 3 next actions:\n\n"
                     + "\n".join(lines)
                 )
@@ -280,6 +300,104 @@ def index():
             _append_session(project, user_input, response_data)
             return _render(project, response_data)
 
+        # ---- Command: Good Morning ----
+        if user_input.lower().strip() in ["good morning", "morning", "gm"]:
+            try:
+                # Get overnight emails and today's calendar
+                msgs = list_overnight(max_results=25, unread_only=True)
+                events = list_today_events(max_results=20)
+                next_meeting = get_next_meeting(hours_ahead=24)
+                
+                # Format briefing
+                email_lines = [f"• {m['date']} — {m['from']} — {m['subject']}" for m in msgs[:10]]
+                calendar_summary = format_calendar_summary(events, "Today's Schedule")
+                
+                morning_briefing = f"""Good morning! Here's your daily briefing:
+
+**OVERNIGHT EMAILS ({len(msgs)} total)**
+{chr(10).join(email_lines) if email_lines else "No new emails"}
+
+**TODAY'S CALENDAR**
+{calendar_summary}
+
+**NEXT MEETING**
+{f"{next_meeting['summary']} at {next_meeting['start_formatted']}" if next_meeting else "No meetings scheduled"}
+
+**PRIORITIES FOR TODAY**
+• Review urgent emails
+• Prepare for upcoming meetings
+• Check calendar for conflicts"""
+
+                # Save to daily log
+                _save_daily_log("morning", morning_briefing)
+                
+                # Generate AI response
+                retrieval_ctx = retrieve(morning_briefing, k=5) if is_ready() else []
+                response_data = generate_response(
+                    f"Summarize this morning briefing and suggest 3 key priorities:\n\n{morning_briefing}",
+                    use_voices, random_toggle, project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+                )
+                
+            except Exception as e:
+                response_data = {"SyntaxPrime": f"Morning briefing failed: {e}"}
+
+            _append_session(project, user_input, response_data)
+            return _render(project, response_data)
+
+        # ---- Command: Good Evening ----
+        if user_input.lower().strip() in ["good evening", "evening", "ge", "wrap up", "day summary"]:
+            try:
+                # Get today's sent emails and completed meetings
+                today_events = list_today_events(max_results=20)
+                tomorrow_events = list_tomorrow_events(max_results=15)
+                
+                # Filter completed events
+                now = datetime.datetime.now()
+                completed_events = []
+                upcoming_events = []
+                
+                for event in today_events:
+                    # Simple time comparison - events that started before now are "completed"
+                    if 'T' in event['start']:
+                        event_time = datetime.datetime.fromisoformat(event['start'].replace('Z', '+00:00'))
+                        if event_time < now:
+                            completed_events.append(event)
+                        else:
+                            upcoming_events.append(event)
+                
+                evening_summary = f"""Good evening! Here's your day wrap-up:
+
+**TODAY'S COMPLETED MEETINGS ({len(completed_events)})**
+{chr(10).join([f"• {e['start_formatted']} — {e['summary']}" for e in completed_events[:5]]) if completed_events else "No meetings completed"}
+
+**STILL UPCOMING TODAY**
+{chr(10).join([f"• {e['start_formatted']} — {e['summary']}" for e in upcoming_events]) if upcoming_events else "No more meetings today"}
+
+**TOMORROW'S PREP NEEDED**
+{format_calendar_summary(tomorrow_events[:5], "")}
+
+**END OF DAY CHECKLIST**
+• Review and respond to urgent emails
+• Prepare materials for tomorrow's meetings  
+• Set priorities for tomorrow
+• Clear desk and close open tasks"""
+
+                # Save to daily log
+                _save_daily_log("evening", evening_summary)
+                
+                # Generate AI response
+                retrieval_ctx = retrieve(evening_summary, k=5) if is_ready() else []
+                response_data = generate_response(
+                    f"Summarize this evening wrap-up and suggest 3 things to prepare for tomorrow:\n\n{evening_summary}",
+                    use_voices, random_toggle, project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+                )
+                
+            except Exception as e:
+                response_data = {"SyntaxPrime": f"Evening summary failed: {e}"}
+
+            _append_session(project, user_input, response_data)
+            return _render(project, response_data)
+
         # ---- Command: scrape <url> ----
         if user_input.lower().startswith("scrape "):
             url = user_input.split(" ", 1)[1].strip()
@@ -327,6 +445,66 @@ def _render(project: str, response_data: dict):
         conversation=conversation,
         current_project=project
     )
+
+
+# --- BACKUP ALL PROJECTS ---
+@app.route('/backup_all')
+def backup_all():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    try:
+        # Create temporary file for the zip
+        temp_zip = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
+        temp_zip.close()
+        
+        with zipfile.ZipFile(temp_zip.name, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            backup_count = 0
+            
+            # Add all session files
+            if os.path.exists('sessions'):
+                for filename in os.listdir('sessions'):
+                    if filename.endswith('.json'):
+                        file_path = os.path.join('sessions', filename)
+                        zipf.write(file_path, f"sessions/{filename}")
+                        backup_count += 1
+            
+            # Add daily logs if they exist
+            if os.path.exists('daily_logs'):
+                for filename in os.listdir('daily_logs'):
+                    if filename.endswith('.md'):
+                        file_path = os.path.join('daily_logs', filename)
+                        zipf.write(file_path, f"daily_logs/{filename}")
+            
+            # Create backup manifest
+            manifest = f"""# Ghostline Backup Manifest
+Created: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Session files backed up: {backup_count}
+Projects: {', '.join(PROJECTS)}
+
+## Contents:
+- /sessions/ - All conversation history
+- /daily_logs/ - Daily sync summaries (if any)
+
+## Restore Instructions:
+1. Extract this ZIP file
+2. Copy session files to your sessions/ directory
+3. Copy daily_logs to your daily_logs/ directory
+"""
+            zipf.writestr("backup_manifest.md", manifest)
+        
+        # Send the zip file
+        backup_name = f"ghostline_backup_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+        
+        return send_file(
+            temp_zip.name,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name=backup_name
+        )
+        
+    except Exception as e:
+        return f"Backup failed: {e}", 500
 
 
 # --- BRAIN BUILDING ENDPOINTS ---
@@ -644,7 +822,7 @@ def brain_control():
                             etaDiv.textContent = '';
                             
                         } else {
-                            statusText = '<span style="color: #fbbf24;">○ Brain Not Built</span><br>Ready for building';
+                            statusText = '<span style="color: #fbbf24;">◯ Brain Not Built</span><br>Ready for building';
                             buildBtn.disabled = false;
                             buildBtn.textContent = 'Build Brain (from file)';
                             serverBuildBtn.disabled = false;
@@ -697,7 +875,38 @@ def brain_control():
     </html>
     """
 
-# --- DEBUG FILES ---
+
+# --- DEBUG ROUTES ---
+@app.route('/debug/sessions')
+def debug_sessions():
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    try:
+        if not os.path.exists('sessions'):
+            return "<pre>sessions/ directory does not exist</pre>"
+        
+        files = os.listdir('sessions')
+        result = [f"=== Sessions Directory Debug ===\n"]
+        result.append(f"Directory exists: Yes")
+        result.append(f"Files found: {len(files)}\n")
+        
+        for filename in files:
+            filepath = f"sessions/{filename}"
+            size = os.path.getsize(filepath)
+            result.append(f"File: {filename} ({size} bytes)")
+            
+            # Show first few lines of each file
+            with open(filepath, 'r', encoding='utf-8') as f:
+                lines = f.readlines()[:3]  # First 3 lines
+                for i, line in enumerate(lines, 1):
+                    result.append(f"  Line {i}: {line.strip()[:100]}...")
+        
+        return "<pre>" + "\n".join(result) + "</pre>"
+        
+    except Exception as e:
+        return f"<pre>Error checking sessions: {e}</pre>"
+
 @app.route('/debug/files')
 def debug_files():
     if not session.get('logged_in'):
@@ -734,6 +943,7 @@ def debug_files():
         
     except Exception as e:
         return f"Error checking files: {e}"
+
 
 # --- STREAMING (plain text) ---
 @app.route('/stream', methods=['POST'])

@@ -601,7 +601,7 @@
       <img src="/static/syntax-buffering.png" alt="Syntax Prime" class="logo">
       <div class="brand">
         <h1>Ghostline</h1>
-        <p class="tagline">Creative Intelligence System v0.1.8</p>
+        <p class="tagline">Creative Intelligence System</p>
       </div>
     </div>
     
@@ -641,7 +641,7 @@
         <div class="message bot">
           <div class="message-bubble bot">
             <div class="message-header">Syntax Prime</div>
-            <div class="message-content">Welcome to Ghostline v0.1.8! I'm now powered by your complete ChatGPT history. Try asking me about recipes, your wife, or anything from our previous conversations.</div>
+            <div class="message-content">👻 Welcome back to Ghostline — now with 38% more sarcasm and full memory sync. I remember your coffee order, your chaos, and that one time you tried to code at 2am. Ask me anything—recipes, regrets, or revenge plots. Syntax Prime is online.</div>
           </div>
         </div>
       {% endif %}
@@ -718,9 +718,12 @@
                 </form>
               </div>
               
-              <a href="/export/{{ current_project or 'Personal Operating Manual' }}" class="secondary-btn">
-                📤 Export Session
-              </a>
+             <a href="/export/{{ current_project or 'Personal Operating Manual' }}" class="secondary-btn">
+  📤 Export Session
+</a>
+<a href="/backup_all" class="secondary-btn">
+  📦 Backup All Projects
+</a>
             </div>
           </div>
         </details>
