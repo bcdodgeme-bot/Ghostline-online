@@ -20,6 +20,10 @@ TOKEN_PATH = os.path.join(SECRETS_DIR, "gmail_token.json")
 def _ensure_secrets_dir():
     os.makedirs(SECRETS_DIR, exist_ok=True)
 
+def _is_server_environment():
+    """Check if we're running in a server environment (no display)"""
+    return os.getenv('DISPLAY') is None and not os.path.exists('/dev/stdout')
+
 def get_gmail_service():
     """Get Gmail API service"""
     _ensure_secrets_dir()
@@ -30,9 +34,14 @@ def get_gmail_service():
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            # Local flow launches a browser ON YOUR MACHINE only
+            # Use appropriate flow based on environment
             flow = InstalledAppFlow.from_client_secrets_file(CREDS_PATH, SCOPES)
-            creds = flow.run_local_server(port=0)
+            if _is_server_environment():
+                # Server environment - don't try to open browser
+                raise RuntimeError("Gmail token missing. Please generate gmail_token.json locally first.")
+            else:
+                # Local environment - open browser
+                creds = flow.run_local_server(port=0)
         with open(TOKEN_PATH, "w") as token:
             token.write(creds.to_json())
     return build("gmail", "v1", credentials=creds)
@@ -48,7 +57,12 @@ def get_calendar_service():
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(CREDS_PATH, SCOPES)
-            creds = flow.run_local_server(port=0)
+            if _is_server_environment():
+                # Server environment - don't try to open browser
+                raise RuntimeError("Gmail token missing. Please generate gmail_token.json locally first.")
+            else:
+                # Local environment - open browser
+                creds = flow.run_local_server(port=0)
         with open(TOKEN_PATH, "w") as token:
             token.write(creds.to_json())
     return build("calendar", "v3", credentials=creds)
