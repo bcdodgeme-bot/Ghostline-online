@@ -712,10 +712,10 @@
             <div class="controls-row">
               <div class="upload-section">
                 <label class="input-label">Upload & Analyze</label>
-                <form action="/upload" method="post" enctype="multipart/form-data" style="display: flex; gap: 8px; width: 100%;">
-                  <input type="file" name="file" class="file-input" style="flex: 1;">
-                  <button type="submit" class="secondary-btn">Analyze</button>
-                </form>
+               <form action="/upload" method="post" enctype="multipart/form-data" style="display: flex; gap: 8px; width: 100%;">
+  <input type="file" name="file" class="file-input" style="flex: 1;" required>
+  <button type="submit" class="secondary-btn">Analyze</button>
+</form>
               </div>
               
              <a href="/export/{{ current_project or 'Personal Operating Manual' }}" class="secondary-btn">
