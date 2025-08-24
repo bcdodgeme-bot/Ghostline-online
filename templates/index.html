@@ -641,7 +641,7 @@
         <div class="message bot">
           <div class="message-bubble bot">
             <div class="message-header">Syntax Prime</div>
-            <div class="message-content">👻 Welcome back to Ghostline — now with 38% more sarcasm and full memory sync. I remember your coffee order, your chaos, and that one time you tried to code at 2am. Ask me anything—recipes, regrets, or revenge plots. Syntax Prime is online.</div>
+            <div class="message-content">💻 Welcome back to Ghostline — now with 38% more sarcasm and full memory sync. I remember your coffee order, your chaos, and that one time you tried to code at 2am. Ask me anything—recipes, regrets, or revenge plots. Syntax Prime is online.</div>
           </div>
         </div>
       {% endif %}
@@ -668,11 +668,10 @@
                 class="prompt-input" 
                 id="promptInput"
                 placeholder="Ask me anything... (Enter to send, Shift+Enter for new line)"
-                required
                 rows="1"
               ></textarea>
               <button type="submit" class="send-button">
-                ↑
+                →
               </button>
             </div>
           </div>
@@ -712,18 +711,18 @@
             <div class="controls-row">
               <div class="upload-section">
                 <label class="input-label">Upload & Analyze</label>
-               <form action="/upload" method="post" enctype="multipart/form-data" style="display: flex; gap: 8px; width: 100%;">
-  <input type="file" name="file" class="file-input" style="flex: 1;" required>
-  <button type="submit" class="secondary-btn">Analyze</button>
-</form>
+                <form action="/upload" method="post" enctype="multipart/form-data" style="display: flex; gap: 8px; width: 100%;" onsubmit="return validateUpload(this)">
+                  <input type="file" name="file" class="file-input" style="flex: 1;" required>
+                  <button type="submit" class="secondary-btn">Analyze</button>
+                </form>
               </div>
               
-             <a href="/export/{{ current_project or 'Personal Operating Manual' }}" class="secondary-btn">
-  📤 Export Session
-</a>
-<a href="/backup_all" class="secondary-btn">
-  📦 Backup All Projects
-</a>
+              <a href="/export/{{ current_project or 'Personal Operating Manual' }}" class="secondary-btn">
+                📤 Export Session
+              </a>
+              <a href="/backup_all" class="secondary-btn">
+                📦 Backup All Projects
+              </a>
             </div>
           </div>
         </details>
@@ -732,6 +731,16 @@
   </div>
 
   <script>
+    // Upload form validation - separate from main chat
+    function validateUpload(form) {
+      const fileInput = form.querySelector('input[type="file"]');
+      if (!fileInput.files.length) {
+        alert('Please select a file to analyze');
+        return false;
+      }
+      return true;
+    }
+
     // Auto-resize textarea
     function autoResize(textarea) {
       textarea.style.height = 'auto';
@@ -824,6 +833,11 @@
     // Handle form submission
     if (mainForm) {
       mainForm.addEventListener('submit', (e) => {
+        // Only validate if there's actual input to prevent empty submissions
+        if (!promptInput.value.trim()) {
+          e.preventDefault();
+          return false;
+        }
         copyVoiceSelections();
         showTypingIndicator();
       });
