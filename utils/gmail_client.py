@@ -21,8 +21,8 @@ def _ensure_secrets_dir():
     os.makedirs(SECRETS_DIR, exist_ok=True)
 
 def _is_server_environment():
-    """Check if we're running in a server environment (no display)"""
-    return os.getenv('DISPLAY') is None and not os.path.exists('/dev/stdout')
+    """Always treat Railway as server environment to prevent browser launches"""
+    return True
 
 def get_gmail_service():
     """Get Gmail API service"""
@@ -34,14 +34,8 @@ def get_gmail_service():
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            # Use appropriate flow based on environment
-            flow = InstalledAppFlow.from_client_secrets_file(CREDS_PATH, SCOPES)
-            if _is_server_environment():
-                # Server environment - don't try to open browser
-                raise RuntimeError("Gmail token missing. Please generate gmail_token.json locally first.")
-            else:
-                # Local environment - open browser
-                creds = flow.run_local_server(port=0)
+            # Always treat as server environment on Railway
+            raise RuntimeError("Gmail token missing. Please generate gmail_token.json locally and commit it to your repository.")
         with open(TOKEN_PATH, "w") as token:
             token.write(creds.to_json())
     return build("gmail", "v1", credentials=creds)
@@ -56,13 +50,8 @@ def get_calendar_service():
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(CREDS_PATH, SCOPES)
-            if _is_server_environment():
-                # Server environment - don't try to open browser
-                raise RuntimeError("Gmail token missing. Please generate gmail_token.json locally first.")
-            else:
-                # Local environment - open browser
-                creds = flow.run_local_server(port=0)
+            # Always treat as server environment on Railway
+            raise RuntimeError("Gmail token missing. Please generate gmail_token.json locally and commit it to your repository.")
         with open(TOKEN_PATH, "w") as token:
             token.write(creds.to_json())
     return build("calendar", "v3", credentials=creds)
