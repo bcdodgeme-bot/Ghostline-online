@@ -7,29 +7,34 @@ from utils.gmail_client import (
     list_today_events, list_tomorrow_events, search_calendar,
     get_next_meeting, format_calendar_summary
 )
-import os, json, io
-import threading
-import time
-import zipfile
-import tempfile
-import datetime
+import os, json, io, zipfile, tempfile, datetime
 from zoneinfo import ZoneInfo  # tz-aware times
 
+# ---------- Safe markdown filter ----------
 try:
-    import markdown
-    from markupsafe import Markup
+    import markdown as _mdpkg
+    from markupsafe import Markup as _Markup
 except Exception:
-    pass
+    _mdpkg = None
+    _Markup = lambda x: x  # passthrough if markdown unavailable
 
+def markdown_filter(text: str):
+    if not text:
+        return ""
+    if _mdpkg:
+        md = _mdpkg.Markdown(extensions=['nl2br', 'fenced_code'])
+        return _Markup(md.convert(text))
+    return text
+
+# ---------- App setup ----------
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'ghostline-default-key')
+app.jinja_env.filters['markdown'] = markdown_filter
 
-# ✅ remove friction: no login gate by default
-# If you want a password later, set GHOSTLINE_PASSWORD and re-enable the tiny check below.
-PASSWORD = os.getenv('GHOSTLINE_PASSWORD')  # None means disabled
+# No login gate by default; set GHOSTLINE_PASSWORD to enable it.
+PASSWORD = os.getenv('GHOSTLINE_PASSWORD')
 
 CHAT_MODEL = os.getenv("CHAT_MODEL", os.getenv("OPENROUTER_MODEL", "openrouter/auto"))
-
 os.makedirs("sessions", exist_ok=True)
 
 # Local timezone for Gmail/Calendar and summaries (overridable)
@@ -44,13 +49,14 @@ PROJECTS = [
     'Health'
 ]
 
+# ---------- Persistence ----------
 def _append_session(project, user, data):
     try:
         fname = os.path.join("sessions", f"{project}.jsonl")
         with open(fname, "a", encoding="utf-8") as f:
             f.write(json.dumps({"user": user, "data": data}) + "\n")
-    except Exception:
-        pass
+    except Exception as e:
+        print("append_session error:", e)
 
 def _load_session(project):
     fname = os.path.join("sessions", f"{project}.jsonl")
@@ -65,16 +71,7 @@ def _load_session(project):
                 continue
     return out
 
-def markdown_filter(text):
-    if not text:
-        return ""
-    md = markdown.Markdown(extensions=['nl2br', 'fenced_code'])
-    return Markup(md.convert(text))
-
-app.jinja_env.filters['markdown'] = markdown_filter
-
-# ---------- Calendar/Gmail helpers (tz-aware) ----------
-
+# ---------- Calendar/Gmail helpers ----------
 def _event_iso_to_local(iso_str: str):
     """Convert RFC3339/ISO timestamps from Google to LOCAL_TZ-aware datetime."""
     try:
@@ -94,8 +91,8 @@ def _save_daily_log(sync_type: str, content: str):
         fn = os.path.join("daily_logs", f"{day}_{sync_type}.md")
         with open(fn, "w", encoding="utf-8") as f:
             f.write(content)
-    except Exception:
-        pass
+    except Exception as e:
+        print("save_daily_log error:", e)
 
 def _render(project, response_data):
     try:
@@ -116,35 +113,38 @@ def _render(project, response_data):
         return render_template(
             "index.html",
             conversation=[],
-            response={"error": f"Render failed: {e}"},
+            response={"responses": {"SyntaxPrime": f"Render failed: {e}"}},
             projects=PROJECTS,
             current_project=project
         )
 
+# ---------- Routes ----------
 @app.route("/", methods=["GET", "POST"])
 def home():
     project = request.form.get("project") or request.args.get("project") or "Personal Operating Manual"
-
-    # ✅ make sure session is ready (no login needed)
-    session.setdefault('authed', True)
+    session.setdefault('authed', True)  # no-login default
 
     if request.method == "POST":
         user_input = (request.form.get("user_input") or "").strip()
 
-        # (Optional tiny login if you set a PASSWORD)
+        # Optional tiny login if PASSWORD is set
         if PASSWORD and user_input.lower().startswith("login:"):
             pwd = user_input.split("login:", 1)[-1].strip()
             if pwd == PASSWORD:
                 session['authed'] = True
                 return redirect(url_for('home', project=project))
-            return _render(project, {"error": "Invalid password"})
+            resp = {"responses": {"SyntaxPrime": "Invalid password."}}
+            _append_session(project, user_input, resp)
+            return _render(project, resp)
 
-        # Block only if you explicitly turned password on and not authed
         if PASSWORD and not session.get('authed'):
-            return _render(project, {"error": "Please log in to use Ghostline."})
+            resp = {"responses": {"SyntaxPrime": "Please log in to use Ghostline."}}
+            _append_session(project, user_input, resp)
+            return _render(project, resp)
 
-        # Commands
         low = user_input.lower()
+
+        # ----- Good Morning -----
         if low in ["good morning", "morning", "gm"]:
             try:
                 overnight = list_overnight(include_unread=False, include_primary=False)
@@ -156,16 +156,16 @@ def home():
                     f"{format_calendar_summary(today_events[:5], 'Top of day:')}"
                 )
                 _save_daily_log("morning", summary)
-
                 retrieval_ctx = retrieve("morning briefing summary")
                 combined = f"{summary}\n\n{retrieval_ctx or ''}"
-                responses = generate_response(combined, model=CHAT_MODEL)
-                response_data = {"responses": responses}
+                bot = generate_response(combined, model=CHAT_MODEL)
+                resp = {"responses": bot if isinstance(bot, dict) else {"SyntaxPrime": str(bot)}}
             except Exception as e:
-                response_data = {"error": f"Morning briefing failed: {e}"}
-            _append_session(project, user_input, response_data)
-            return _render(project, response_data)
+                resp = {"responses": {"SyntaxPrime": f"Morning briefing failed: {e}"}}
+            _append_session(project, user_input, resp)
+            return _render(project, resp)
 
+        # ----- Good Evening / Wrap up -----
         if low in ["good evening", "evening", "ge", "wrap up", "day summary"]:
             try:
                 today_events = list_today_events(max_results=20)
@@ -198,32 +198,31 @@ def home():
 • Set priorities for tomorrow
 • Clear desk and close open tasks"""
                 _save_daily_log("evening", evening_summary)
-
                 retrieval_ctx = retrieve("evening wrap up")
                 combined = f"{evening_summary}\n\n{retrieval_ctx or ''}"
-                responses = generate_response(combined, model=CHAT_MODEL)
-                response_data = {"responses": responses}
+                bot = generate_response(combined, model=CHAT_MODEL)
+                resp = {"responses": bot if isinstance(bot, dict) else {"SyntaxPrime": str(bot)}}
             except Exception as e:
-                response_data = {"error": f"Evening wrap-up failed: {e}"}
-            _append_session(project, user_input, response_data)
-            return _render(project, response_data)
+                resp = {"responses": {"SyntaxPrime": f"Evening wrap-up failed: {e}"}}
+            _append_session(project, user_input, resp)
+            return _render(project, resp)
 
-        # Default chat flow
+        # ----- Default chat flow -----
         try:
             retrieval_ctx = retrieve(user_input) if user_input else ""
             prompt = f"{user_input}\n\n{retrieval_ctx or ''}"
-            responses = generate_response(prompt, model=CHAT_MODEL)
-            response_data = {"responses": responses}
+            bot = generate_response(prompt, model=CHAT_MODEL)
+            resp = {"responses": bot if isinstance(bot, dict) else {"SyntaxPrime": str(bot)}}
         except Exception as e:
-            response_data = {"error": f"Chat failed: {e}"}
+            resp = {"responses": {"SyntaxPrime": f"Chat failed: {e}"}}
 
-        _append_session(project, user_input, response_data)
-        return _render(project, response_data)
+        _append_session(project, user_input, resp)
+        return _render(project, resp)
 
     # GET
     return _render(project, {})
 
-# ---------- Upload / OCR (kept functional; CALL YOUR EXISTING HANDLER) ----------
+# ---------- Upload / OCR (your handler can replace the placeholder) ----------
 @app.route("/upload", methods=["GET", "POST"])
 def upload():
     try:
@@ -232,13 +231,10 @@ def upload():
             if not f:
                 return "No file uploaded", 400
 
-            # >>> IMPORTANT <<<
-            # Replace the following 3 lines with your real OCR/parse pipeline if you have one,
-            # e.g., text = run_ocr(f) or forward to your processor. Keeping placeholder returns text.
-            data = f.read()  # bytes; pass to your OCR if needed
+            # >>> Plug your real OCR pipeline here <<<
+            data = f.read()
             size_kb = round(len(data) / 1024, 1)
             return f"Upload received ({size_kb} KB). Your OCR handler can run here."
-
         return "Use POST with multipart/form-data"
     except Exception as e:
         return f"Upload failed: {e}", 500
@@ -292,4 +288,3 @@ def logout():
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "5000"))
     app.run(host="0.0.0.0", port=port, debug=os.getenv("DEBUG", "0") == "1")
-
