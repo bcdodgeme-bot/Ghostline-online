@@ -750,6 +750,7 @@ def brain_control():
             
             <div class="status-box">
                 <h3>Build Options</h3>
+                <p><strong>Build Brain (from file):</strong> Uses existing brain file with batched processing.</p>
                 <p><strong>Build Brain (from sources):</strong> Creates fresh brain from raw HTML/TXT/JSON files on server.</p>
                 <p><strong>Memory Safe:</strong> Both approaches work with Railway's 32GB RAM.</p>
                 <p><strong>Auto-Resume:</strong> Batched processing continues from last completed batch.</p>
@@ -1106,66 +1107,17 @@ def upload_file():
         return '''
         <!DOCTYPE html>
         <html>
-        <head>
-            <title>Upload & Analyze</title>
-            <style>
-                body { 
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    background: #0f0f0f; 
-                    color: white; 
-                    padding: 20px; 
-                    max-width: 600px; 
-                    margin: 0 auto;
-                }
-                .upload-form { 
-                    background: #1a1a1a; 
-                    padding: 30px; 
-                    border-radius: 8px; 
-                    border: 1px solid #333; 
-                }
-                input[type="file"] { 
-                    background: #2a2a2a; 
-                    color: white; 
-                    border: 1px solid #444; 
-                    padding: 10px; 
-                    border-radius: 5px; 
-                    width: 100%; 
-                    margin: 15px 0; 
-                }
-                button { 
-                    background: #6366f1; 
-                    color: white; 
-                    border: none; 
-                    padding: 12px 24px; 
-                    border-radius: 5px; 
-                    cursor: pointer; 
-                    font-size: 16px;
-                }
-                button:hover { background: #5855eb; }
-                .back-link { 
-                    color: #6366f1; 
-                    text-decoration: none; 
-                    display: inline-block; 
-                    margin-top: 20px; 
-                }
-            </style>
-        </head>
-        <body>
-            <div class="upload-form">
-                <h2>Upload & Analyze File</h2>
-                <p>Supports: PNG, JPG, JPEG, PDF, DOCX files</p>
-                <form method="POST" enctype="multipart/form-data">
-                    <input type="file" name="file" required accept="image/*,.pdf,.docx">
-                    <br>
-                    <button type="submit">Analyze File</button>
-                </form>
-                <a href="/" class="back-link">← Back to Ghostline</a>
-            </div>
+        <head><title>Upload & Analyze</title></head>
+        <body style="font-family: Arial; padding: 20px; background: #0f0f0f; color: white;">
+            <h2>Upload & Analyze File</h2>
+            <form method="POST" enctype="multipart/form-data">
+                <input type="file" name="file" required accept="image/*,.pdf,.docx" style="margin: 10px 0;">
+                <br>
+                <button type="submit" style="background: #6366f1; color: white; border: none; padding: 10px 20px; border-radius: 5px;">Analyze</button>
+            </form>
         </body>
         </html>
         '''
-    
-    # POST handling - your existing upload code
     try:
         file = request.files.get('file')
         if not file or not file.filename:
@@ -1218,56 +1170,12 @@ def upload_file():
 
         if len(text) > 10000:
             text = text[:10000] + "\n\n[...truncated...]"
-        
-        return f'''
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Analysis Results</title>
-            <style>
-                body {{ 
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    background: #0f0f0f; 
-                    color: white; 
-                    padding: 20px; 
-                    max-width: 800px; 
-                    margin: 0 auto;
-                }}
-                .results {{ 
-                    background: #1a1a1a; 
-                    padding: 20px; 
-                    border-radius: 8px; 
-                    border: 1px solid #333; 
-                }}
-                pre {{ 
-                    background: #2a2a2a; 
-                    padding: 15px; 
-                    border-radius: 5px; 
-                    white-space: pre-wrap; 
-                    word-wrap: break-word; 
-                }}
-                .back-link {{ 
-                    color: #6366f1; 
-                    text-decoration: none; 
-                    display: inline-block; 
-                    margin-top: 20px; 
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="results">
-                <h2>Analysis Results for: {file.filename}</h2>
-                <pre>{text}</pre>
-                <a href="/upload" class="back-link">← Upload Another File</a>
-                <a href="/" class="back-link" style="margin-left: 20px;">← Back to Ghostline</a>
-            </div>
-        </body>
-        </html>
-        '''
+            
+        return f"<pre>{text}</pre>"
         
     except Exception as e:
         return f"Upload Error: {str(e)}", 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)from file):</strong> Uses existing brain file with batched processing.</p>
+    app.run(host='0.0.0.0', port=port, debug=False)
