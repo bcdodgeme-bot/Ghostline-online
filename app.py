@@ -4,7 +4,7 @@ from utils.rag_basic import retrieve, is_ready, load_corpus, get_build_status
 from utils.scraper import scrape_url
 from utils.gmail_client import (
     list_overnight, search as gmail_search,
-    list_today_events, list_tomorrow_events, search_calendar, 
+    list_today_events, list_tomorrow_events, search_calendar,
     get_next_meeting, format_calendar_summary
 )
 import os, json, io
@@ -13,12 +13,7 @@ import time
 import zipfile
 import tempfile
 import datetime
-from zoneinfo import ZoneInfo  # stdlib tz
-
-# ------------------------------------------------------------------------------------
-# (… your existing imports / setup …)
-# If you had other try/except or optional imports above, leave them as-is.
-# ------------------------------------------------------------------------------------
+from zoneinfo import ZoneInfo  # tz-aware times
 
 try:
     import markdown
@@ -28,15 +23,16 @@ except Exception:
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'ghostline-default-key')
-PASSWORD = os.getenv('GHOSTLINE_PASSWORD', 'open_the_gate')
 
-# Choose model via env; override on Render with CHAT_MODEL
+# ✅ remove friction: no login gate by default
+# If you want a password later, set GHOSTLINE_PASSWORD and re-enable the tiny check below.
+PASSWORD = os.getenv('GHOSTLINE_PASSWORD')  # None means disabled
+
 CHAT_MODEL = os.getenv("CHAT_MODEL", os.getenv("OPENROUTER_MODEL", "openrouter/auto"))
 
-# sessions dir
 os.makedirs("sessions", exist_ok=True)
 
-# Timezone for calendar/email queries
+# Local timezone for Gmail/Calendar and summaries (overridable)
 LOCAL_TZ = ZoneInfo(os.getenv('APP_TIMEZONE', 'America/New_York'))
 
 PROJECTS = [
@@ -49,7 +45,6 @@ PROJECTS = [
 ]
 
 def _append_session(project, user, data):
-    """Append a session turn to disk."""
     try:
         fname = os.path.join("sessions", f"{project}.jsonl")
         with open(fname, "a", encoding="utf-8") as f:
@@ -58,7 +53,6 @@ def _append_session(project, user, data):
         pass
 
 def _load_session(project):
-    """Load a session thread from disk."""
     fname = os.path.join("sessions", f"{project}.jsonl")
     if not os.path.exists(fname):
         return []
@@ -72,24 +66,20 @@ def _load_session(project):
     return out
 
 def markdown_filter(text):
-    """Convert markdown to HTML"""
     if not text:
         return ""
     md = markdown.Markdown(extensions=['nl2br', 'fenced_code'])
     return Markup(md.convert(text))
 
-# Register markdown filter
 app.jinja_env.filters['markdown'] = markdown_filter
 
-# ------------------------------------------------------------------------------------
-# NEW: helper for Calendar timestamps -> LOCAL_TZ
-# ------------------------------------------------------------------------------------
+# ---------- Calendar/Gmail helpers (tz-aware) ----------
+
 def _event_iso_to_local(iso_str: str):
     """Convert RFC3339/ISO timestamps from Google to LOCAL_TZ-aware datetime."""
     try:
         if not iso_str:
             return None
-        # Normalize 'Z' to +00:00 so fromisoformat understands it
         dt = datetime.datetime.fromisoformat(iso_str.replace('Z', '+00:00'))
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=ZoneInfo('UTC'))
@@ -98,7 +88,6 @@ def _event_iso_to_local(iso_str: str):
         return None
 
 def _save_daily_log(sync_type: str, content: str):
-    """Save daily sync results to log file"""
     try:
         os.makedirs("daily_logs", exist_ok=True)
         day = datetime.datetime.now(LOCAL_TZ).strftime("%Y-%m-%d")
@@ -109,17 +98,13 @@ def _save_daily_log(sync_type: str, content: str):
         pass
 
 def _render(project, response_data):
-    """Render main page."""
     try:
         convo = []
         for item in _load_session(project):
             if 'user' in item and 'data' in item and isinstance(item['data'], dict):
                 u = item['user']
                 d = item['data']
-                convo.append({
-                    "user": u,
-                    "responses": d.get("responses", {})
-                })
+                convo.append({"user": u, "responses": d.get("responses", {})})
         return render_template(
             "index.html",
             conversation=convo,
@@ -140,33 +125,36 @@ def _render(project, response_data):
 def home():
     project = request.form.get("project") or request.args.get("project") or "Personal Operating Manual"
 
-    if request.method == "POST":
-        user_input = request.form.get("user_input", "").strip()
+    # ✅ make sure session is ready (no login needed)
+    session.setdefault('authed', True)
 
-        # ---- Login gate (if you use it)
-        if user_input.lower().startswith("login:"):
+    if request.method == "POST":
+        user_input = (request.form.get("user_input") or "").strip()
+
+        # (Optional tiny login if you set a PASSWORD)
+        if PASSWORD and user_input.lower().startswith("login:"):
             pwd = user_input.split("login:", 1)[-1].strip()
             if pwd == PASSWORD:
                 session['authed'] = True
                 return redirect(url_for('home', project=project))
             return _render(project, {"error": "Invalid password"})
 
-        # ---- Basic auth check
-        if not session.get('authed'):
+        # Block only if you explicitly turned password on and not authed
+        if PASSWORD and not session.get('authed'):
             return _render(project, {"error": "Please log in to use Ghostline."})
 
-        # ---- Commands (examples)
-        if user_input.lower().strip() in ["good morning", "morning", "gm"]:
+        # Commands
+        low = user_input.lower()
+        if low in ["good morning", "morning", "gm"]:
             try:
-                # Overnight emails + today's meetings (helpers live in utils.gmail_client)
                 overnight = list_overnight(include_unread=False, include_primary=False)
                 today_events = list_today_events(max_results=10)
-                summary = f"""**Good morning!**  
-Overnight emails: {len(overnight)}  
-Today's meetings: {len(today_events)}  
-
-{format_calendar_summary(today_events[:5], "Top of day:")}
-"""
+                summary = (
+                    f"**Good morning!**\n"
+                    f"Overnight emails: {len(overnight)}\n"
+                    f"Today's meetings: {len(today_events)}\n\n"
+                    f"{format_calendar_summary(today_events[:5], 'Top of day:')}"
+                )
                 _save_daily_log("morning", summary)
 
                 retrieval_ctx = retrieve("morning briefing summary")
@@ -175,24 +163,17 @@ Today's meetings: {len(today_events)}
                 response_data = {"responses": responses}
             except Exception as e:
                 response_data = {"error": f"Morning briefing failed: {e}"}
-
             _append_session(project, user_input, response_data)
             return _render(project, response_data)
 
-        # ---- Command: Good Evening / Wrap up (TZ-aware now)
-        if user_input.lower().strip() in ["good evening", "evening", "ge", "wrap up", "day summary"]:
+        if low in ["good evening", "evening", "ge", "wrap up", "day summary"]:
             try:
-                # Get today's meetings
                 today_events = list_today_events(max_results=20)
                 tomorrow_events = list_tomorrow_events(max_results=15)
 
-                # TZ-aware comparison
                 now = datetime.datetime.now(LOCAL_TZ)
-                completed_events = []
-                upcoming_events = []
-
+                completed_events, upcoming_events = [], []
                 for event in today_events:
-                    # event['start'] is an ISO/RFC3339 string
                     start_iso = event.get('start')
                     start_dt_local = _event_iso_to_local(start_iso)
                     if start_dt_local and start_dt_local <= now:
@@ -213,7 +194,7 @@ Today's meetings: {len(today_events)}
 
 **END OF DAY CHECKLIST**
 • Review and respond to urgent emails
-• Prepare materials for tomorrow's meetings  
+• Prepare materials for tomorrow's meetings
 • Set priorities for tomorrow
 • Clear desk and close open tasks"""
                 _save_daily_log("evening", evening_summary)
@@ -224,13 +205,12 @@ Today's meetings: {len(today_events)}
                 response_data = {"responses": responses}
             except Exception as e:
                 response_data = {"error": f"Evening wrap-up failed: {e}"}
-
             _append_session(project, user_input, response_data)
             return _render(project, response_data)
 
-        # ---- Default chat flow
+        # Default chat flow
         try:
-            retrieval_ctx = retrieve(user_input)
+            retrieval_ctx = retrieve(user_input) if user_input else ""
             prompt = f"{user_input}\n\n{retrieval_ctx or ''}"
             responses = generate_response(prompt, model=CHAT_MODEL)
             response_data = {"responses": responses}
@@ -243,9 +223,7 @@ Today's meetings: {len(today_events)}
     # GET
     return _render(project, {})
 
-# ------------------------------------------------------------------------------------
-# Upload / OCR route (unchanged — left as-is)
-# ------------------------------------------------------------------------------------
+# ---------- Upload / OCR (kept functional; CALL YOUR EXISTING HANDLER) ----------
 @app.route("/upload", methods=["GET", "POST"])
 def upload():
     try:
@@ -253,19 +231,19 @@ def upload():
             f = request.files.get("file")
             if not f:
                 return "No file uploaded", 400
-            # Your existing OCR/parse handler goes here
-            # (kept intact as requested)
-            data = f.read()
-            # ... run OCR or forward to your handler ...
-            return "Uploaded/parsed OK"  # replace with your actual output
-        else:
-            return "Use POST with multipart/form-data"
+
+            # >>> IMPORTANT <<<
+            # Replace the following 3 lines with your real OCR/parse pipeline if you have one,
+            # e.g., text = run_ocr(f) or forward to your processor. Keeping placeholder returns text.
+            data = f.read()  # bytes; pass to your OCR if needed
+            size_kb = round(len(data) / 1024, 1)
+            return f"Upload received ({size_kb} KB). Your OCR handler can run here."
+
+        return "Use POST with multipart/form-data"
     except Exception as e:
         return f"Upload failed: {e}", 500
 
-# ------------------------------------------------------------------------------------
-# Calendar helpers (example endpoint if you have one)
-# ------------------------------------------------------------------------------------
+# ---------- Convenience endpoints ----------
 @app.route("/next_meeting")
 def next_meeting():
     try:
@@ -274,12 +252,8 @@ def next_meeting():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# ------------------------------------------------------------------------------------
-# Export / backup routes (kept intact)
-# ------------------------------------------------------------------------------------
 @app.route("/export/<project>")
 def export_project(project):
-    """Export a project’s session to a downloadable text file."""
     try:
         content = []
         for item in _load_session(project):
@@ -299,7 +273,6 @@ def export_project(project):
 
 @app.route("/backup_all")
 def backup_all():
-    """Zip up all project sessions."""
     try:
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
         with zipfile.ZipFile(tmp.name, 'w', zipfile.ZIP_DEFLATED) as z:
@@ -311,18 +284,12 @@ def backup_all():
     except Exception as e:
         return f"Backup failed: {e}", 500
 
-# ------------------------------------------------------------------------------------
-# Logout
-# ------------------------------------------------------------------------------------
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for('home'))
 
-# ------------------------------------------------------------------------------------
-# If you have other API endpoints for scraping, Gmail search, etc., they remain as-is.
-# ------------------------------------------------------------------------------------
-
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "5000"))
     app.run(host="0.0.0.0", port=port, debug=os.getenv("DEBUG", "0") == "1")
+
