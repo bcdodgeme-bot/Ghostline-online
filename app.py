@@ -127,6 +127,10 @@ def home():
     if request.method == "POST":
         user_input = (request.form.get("user_input") or "").strip()
 
+        # voices + random toggle from the form (defaults safe)
+        use_voices = request.form.getlist("voices") or ["SyntaxPrime"]
+        random_toggle = ("random" in request.form) or (request.form.get("random") == "on")
+
         # Optional tiny login if PASSWORD is set
         if PASSWORD and user_input.lower().startswith("login:"):
             pwd = user_input.split("login:", 1)[-1].strip()
@@ -158,7 +162,14 @@ def home():
                 _save_daily_log("morning", summary)
                 retrieval_ctx = retrieve("morning briefing summary")
                 combined = f"{summary}\n\n{retrieval_ctx or ''}"
-                bot = generate_response(combined, model=CHAT_MODEL)
+                bot = generate_response(
+                    prompt=combined,
+                    voices=use_voices,
+                    random_toggle=random_toggle,
+                    project=project,
+                    model=CHAT_MODEL,
+                    retrieval_context=retrieval_ctx
+                )
                 resp = {"responses": bot if isinstance(bot, dict) else {"SyntaxPrime": str(bot)}}
             except Exception as e:
                 resp = {"responses": {"SyntaxPrime": f"Morning briefing failed: {e}"}}
@@ -200,7 +211,14 @@ def home():
                 _save_daily_log("evening", evening_summary)
                 retrieval_ctx = retrieve("evening wrap up")
                 combined = f"{evening_summary}\n\n{retrieval_ctx or ''}"
-                bot = generate_response(combined, model=CHAT_MODEL)
+                bot = generate_response(
+                    prompt=combined,
+                    voices=use_voices,
+                    random_toggle=random_toggle,
+                    project=project,
+                    model=CHAT_MODEL,
+                    retrieval_context=retrieval_ctx
+                )
                 resp = {"responses": bot if isinstance(bot, dict) else {"SyntaxPrime": str(bot)}}
             except Exception as e:
                 resp = {"responses": {"SyntaxPrime": f"Evening wrap-up failed: {e}"}}
@@ -211,7 +229,14 @@ def home():
         try:
             retrieval_ctx = retrieve(user_input) if user_input else ""
             prompt = f"{user_input}\n\n{retrieval_ctx or ''}"
-            bot = generate_response(prompt, model=CHAT_MODEL)
+            bot = generate_response(
+                prompt=prompt,
+                voices=use_voices,
+                random_toggle=random_toggle,
+                project=project,
+                model=CHAT_MODEL,
+                retrieval_context=retrieval_ctx
+            )
             resp = {"responses": bot if isinstance(bot, dict) else {"SyntaxPrime": str(bot)}}
         except Exception as e:
             resp = {"responses": {"SyntaxPrime": f"Chat failed: {e}"}}
@@ -288,3 +313,4 @@ def logout():
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "5000"))
     app.run(host="0.0.0.0", port=port, debug=os.getenv("DEBUG", "0") == "1")
+
