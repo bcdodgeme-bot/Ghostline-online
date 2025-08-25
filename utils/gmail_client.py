@@ -1,313 +1,193 @@
-# utils/gmail_client.py
+# gmail_client.py
+# Read-only Gmail helper with timezone-aware "overnight" query.
+# Safe to drop in. Does NOT touch any brain modules.
+
 from __future__ import annotations
-import os, datetime, base64, email
-from typing import List, Dict, Any, Optional
+
+import os
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import Dict, Iterable, List, Optional
+from zoneinfo import ZoneInfo  # stdlib (no pytz dependency)
+
+from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
-# Updated scopes to include both Gmail and Calendar
-SCOPES = [
-    "https://www.googleapis.com/auth/gmail.readonly",
-    "https://www.googleapis.com/auth/calendar.readonly"
-]
+# ---- Scopes ----
+SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 
-SECRETS_DIR = "secrets"
-CREDS_PATH = os.path.join(SECRETS_DIR, "gmail_credentials.json")
-TOKEN_PATH = os.path.join(SECRETS_DIR, "gmail_token.json")
+# ---- Config (env var–friendly) ----
+DEFAULT_TZ = os.getenv("APP_TIMEZONE", "America/New_York")  # change if you want
+TOKEN_PATH = os.getenv("GOOGLE_TOKEN_PATH", "token.json")
+CREDENTIALS_PATH = os.getenv("GOOGLE_CREDENTIALS_PATH", "credentials.json")
 
-def _ensure_secrets_dir():
-    os.makedirs(SECRETS_DIR, exist_ok=True)
 
-def _is_server_environment():
-    """Always treat Railway as server environment to prevent browser launches"""
-    return True
+@dataclass
+class GmailMessage:
+    id: str
+    thread_id: str
 
-def get_gmail_service():
-    """Get Gmail API service"""
-    _ensure_secrets_dir()
-    creds = None
-    if os.path.exists(TOKEN_PATH):
-        creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            # Always treat as server environment on Railway
-            raise RuntimeError("Gmail token missing. Please generate gmail_token.json locally and commit it to your repository.")
-        with open(TOKEN_PATH, "w") as token:
-            token.write(creds.to_json())
-    return build("gmail", "v1", credentials=creds)
 
-def get_calendar_service():
-    """Get Calendar API service"""
-    _ensure_secrets_dir()
-    creds = None
-    if os.path.exists(TOKEN_PATH):
-        creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            # Always treat as server environment on Railway
-            raise RuntimeError("Gmail token missing. Please generate gmail_token.json locally and commit it to your repository.")
-        with open(TOKEN_PATH, "w") as token:
-            token.write(creds.to_json())
-    return build("calendar", "v3", credentials=creds)
+class GmailClient:
+    """
+    Minimal Gmail helper:
+      - manages OAuth token
+      - lists messages matching a query
+      - provides 'overnight' convenience using local midnight in your timezone
+    """
 
-# Keep the original get_service() for backward compatibility
-def get_service():
-    """Legacy function - returns Gmail service"""
-    return get_gmail_service()
+    def __init__(
+        self,
+        credentials_path: str = CREDENTIALS_PATH,
+        token_path: str = TOKEN_PATH,
+        scopes: List[str] = SCOPES,
+        timezone: str = DEFAULT_TZ,
+    ):
+        self.credentials_path = credentials_path
+        self.token_path = token_path
+        self.scopes = scopes
+        self.tz = ZoneInfo(timezone)
+        self.service = self._ensure_service()
 
-def _headers_to_dict(payload_headers):
-    d = {}
-    for h in payload_headers or []:
-        d[h.get("name", "").lower()] = h.get("value", "")
-    return d
+    # ---------- Public API ----------
 
-# =============================================================================
-# GMAIL FUNCTIONS (existing functionality)
-# =============================================================================
+    def list_messages(self, query: str, user_id: str = "me", max_pages: int = 10) -> List[GmailMessage]:
+        """
+        List messages for an arbitrary Gmail search query.
+        Handles pagination.
+        """
+        try:
+            messages: List[GmailMessage] = []
+            page_token: Optional[str] = None
+            pages = 0
 
-def list_messages(query: str, max_results: int = 20) -> List[Dict[str, Any]]:
-    svc = get_gmail_service()
-    resp = svc.users().messages().list(userId="me", q=query, maxResults=max_results).execute()
-    ids = [m["id"] for m in resp.get("messages", [])]
-    out = []
-    for mid in ids:
-        msg = svc.users().messages().get(userId="me", id=mid, format="metadata",
-                                         metadataHeaders=["From","Subject","Date"]).execute()
-        hdrs = _headers_to_dict(msg.get("payload", {}).get("headers", []))
-        out.append({
-            "id": mid,
-            "from": hdrs.get("from",""),
-            "subject": hdrs.get("subject","(no subject)"),
-            "date": hdrs.get("date",""),
-            "threadId": msg.get("threadId","")
-        })
-    return out
+            while True:
+                call = (
+                    self.service.users()
+                    .messages()
+                    .list(userId=user_id, q=query, pageToken=page_token, maxResults=100)
+                )
+                resp = call.execute()
+                for m in resp.get("messages", []):
+                    messages.append(GmailMessage(id=m["id"], thread_id=m["threadId"]))
 
-def midnight_query(unread_only: bool = True) -> str:
-    # Since local midnight (your machine's timezone)
-    now = datetime.datetime.now()
-    midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    ts = int(midnight.timestamp())
-    q = f"after:{ts} label:inbox category:primary"
-    if unread_only:
-        q += " is:unread"
-    return q
+                page_token = resp.get("nextPageToken")
+                pages += 1
+                if not page_token or pages >= max_pages:
+                    break
 
-def list_overnight(max_results: int = 25, unread_only: bool = True):
-    return list_messages(midnight_query(unread_only), max_results=max_results)
+            return messages
 
-def search(query_text: str, max_results: int = 25):
-    # allow natural text + gmail operators
-    q = f"{query_text} label:inbox"
-    return list_messages(q, max_results=max_results)
+        except HttpError as e:
+            # Surface the query in the error for easier debugging
+            raise RuntimeError(f"Gmail list failed for query='{query}': {e}") from e
 
-# =============================================================================
-# CALENDAR FUNCTIONS (new functionality)
-# =============================================================================
+    def list_overnight_messages(
+        self,
+        include_unread: bool = False,
+        include_primary: bool = False,
+        user_id: str = "me",
+        query_extra: Optional[str] = None,
+    ) -> List[GmailMessage]:
+        """
+        Return messages that arrived after **local midnight** today,
+        using a date-based Gmail query. Example: 'after:2025/08/25 in:inbox'
 
-def _format_datetime(dt_str: str) -> str:
-    """Format datetime string for display"""
-    try:
-        if 'T' in dt_str:
-            # Parse ISO format datetime
-            if dt_str.endswith('Z'):
-                dt = datetime.datetime.fromisoformat(dt_str[:-1] + '+00:00')
+        Args:
+          include_unread: if True, append 'is:unread'
+          include_primary: if True, append 'category:primary'
+          query_extra: optional extra terms to append (e.g., '-from:noreply@…')
+        """
+        query = self._build_overnight_query(
+            include_unread=include_unread,
+            include_primary=include_primary,
+            query_extra=query_extra,
+        )
+        return self.list_messages(query=query, user_id=user_id)
+
+    # ---------- Internals ----------
+
+    def _build_overnight_query(
+        self,
+        include_unread: bool,
+        include_primary: bool,
+        query_extra: Optional[str],
+    ) -> str:
+        """
+        Builds a Gmail-compatible date query using local midnight.
+
+        Gmail understands 'after:YYYY/MM/DD' as midnight at the start of that date.
+        We combine with 'in:inbox' by default (broad but practical).
+        """
+        now = datetime.now(self.tz)
+        local_midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        # Gmail date format must be YYYY/MM/DD
+        after_str = local_midnight.strftime("%Y/%m/%d")
+
+        parts = [f"after:{after_str}", "in:inbox"]
+        if include_unread:
+            parts.append("is:unread")
+        if include_primary:
+            parts.append("category:primary")
+        if query_extra:
+            parts.append(query_extra.strip())
+
+        # Final query string
+        return " ".join(parts)
+
+    def _ensure_service(self):
+        """
+        Loads/refreshes OAuth token and returns a Gmail API service client.
+        Honors env var paths and keeps tokens out of your repo.
+        """
+        creds = None
+        if os.path.exists(self.token_path):
+            creds = Credentials.from_authorized_user_file(self.token_path, self.scopes)
+
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
             else:
-                dt = datetime.datetime.fromisoformat(dt_str)
-            return dt.strftime("%I:%M %p")
-        else:
-            # All-day event
-            return "All day"
-    except:
-        return dt_str
+                if not os.path.exists(self.credentials_path):
+                    raise FileNotFoundError(
+                        f"Missing Google OAuth credentials file at '{self.credentials_path}'. "
+                        "Set GOOGLE_CREDENTIALS_PATH or place credentials.json beside the app."
+                    )
+                flow = InstalledAppFlow.from_client_secrets_file(self.credentials_path, self.scopes)
+                creds = flow.run_local_server(port=0)
 
-def _parse_calendar_datetime(dt_obj: Dict) -> Optional[datetime.datetime]:
-    """Parse calendar datetime object"""
-    try:
-        if 'dateTime' in dt_obj:
-            dt_str = dt_obj['dateTime']
-            if dt_str.endswith('Z'):
-                return datetime.datetime.fromisoformat(dt_str[:-1] + '+00:00')
-            else:
-                return datetime.datetime.fromisoformat(dt_str)
-        elif 'date' in dt_obj:
-            # All-day event
-            date_str = dt_obj['date']
-            return datetime.datetime.fromisoformat(date_str + 'T00:00:00')
-    except:
-        pass
-    return None
+            # Save the token for next runs (keep token.json out of git)
+            with open(self.token_path, "w") as token:
+                token.write(creds.to_json())
 
-def list_calendar_events(
-    start_date: datetime.datetime, 
-    end_date: datetime.datetime, 
-    max_results: int = 20
-) -> List[Dict[str, Any]]:
-    """List calendar events between start_date and end_date"""
-    try:
-        service = get_calendar_service()
-        
-        # Convert to RFC3339 format
-        time_min = start_date.isoformat() + 'Z'
-        time_max = end_date.isoformat() + 'Z'
-        
-        events_result = service.events().list(
-            calendarId='primary',
-            timeMin=time_min,
-            timeMax=time_max,
-            maxResults=max_results,
-            singleEvents=True,
-            orderBy='startTime'
-        ).execute()
-        
-        events = events_result.get('items', [])
-        
-        formatted_events = []
-        for event in events:
-            start = event['start'].get('dateTime', event['start'].get('date'))
-            end = event['end'].get('dateTime', event['end'].get('date'))
-            
-            formatted_events.append({
-                'id': event.get('id', ''),
-                'summary': event.get('summary', 'No title'),
-                'start': start,
-                'end': end,
-                'start_formatted': _format_datetime(start),
-                'end_formatted': _format_datetime(end),
-                'location': event.get('location', ''),
-                'description': event.get('description', ''),
-                'attendees': [a.get('email', '') for a in event.get('attendees', [])],
-                'organizer': event.get('organizer', {}).get('email', ''),
-                'status': event.get('status', ''),
-                'htmlLink': event.get('htmlLink', '')
-            })
-        
-        return formatted_events
-        
-    except Exception as e:
-        print(f"Calendar API error: {e}")
-        return []
+        return build("gmail", "v1", credentials=creds)
 
-def list_today_events(max_results: int = 20) -> List[Dict[str, Any]]:
-    """Get today's calendar events"""
-    now = datetime.datetime.now()
-    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    end_of_day = now.replace(hour=23, minute=59, second=59, microsecond=999999)
-    
-    return list_calendar_events(start_of_day, end_of_day, max_results)
 
-def list_tomorrow_events(max_results: int = 20) -> List[Dict[str, Any]]:
-    """Get tomorrow's calendar events"""
-    tomorrow = datetime.datetime.now() + datetime.timedelta(days=1)
-    start_of_day = tomorrow.replace(hour=0, minute=0, second=0, microsecond=0)
-    end_of_day = tomorrow.replace(hour=23, minute=59, second=59, microsecond=999999)
-    
-    return list_calendar_events(start_of_day, end_of_day, max_results)
+# ---------- Convenience entry points ----------
 
-def list_this_week_events(max_results: int = 50) -> List[Dict[str, Any]]:
-    """Get this week's calendar events"""
-    now = datetime.datetime.now()
-    # Start of week (Monday)
-    start_of_week = now - datetime.timedelta(days=now.weekday())
-    start_of_week = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
-    # End of week (Sunday)
-    end_of_week = start_of_week + datetime.timedelta(days=6, hours=23, minutes=59, seconds=59)
-    
-    return list_calendar_events(start_of_week, end_of_week, max_results)
+def get_overnight_messages(
+    include_unread: bool = False,
+    include_primary: bool = False,
+    query_extra: Optional[str] = None,
+    timezone: str = DEFAULT_TZ,
+) -> List[GmailMessage]:
+    """
+    One-shot helper if you don’t want to manage the class yourself.
+    """
+    client = GmailClient(timezone=timezone)
+    return client.list_overnight_messages(
+        include_unread=include_unread,
+        include_primary=include_primary,
+        query_extra=query_extra,
+    )
 
-def search_calendar(query: str, days_ahead: int = 30, max_results: int = 20) -> List[Dict[str, Any]]:
-    """Search calendar events by query string"""
-    now = datetime.datetime.now()
-    start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    end_date = start_date + datetime.timedelta(days=days_ahead)
-    
-    # Get all events in the time range
-    all_events = list_calendar_events(start_date, end_date, max_results * 2)
-    
-    # Filter events that match the query
-    query_lower = query.lower()
-    matching_events = []
-    
-    for event in all_events:
-        # Search in title, description, location
-        searchable_text = ' '.join([
-            event.get('summary', ''),
-            event.get('description', ''),
-            event.get('location', ''),
-            event.get('organizer', '')
-        ]).lower()
-        
-        if query_lower in searchable_text:
-            matching_events.append(event)
-            
-        if len(matching_events) >= max_results:
-            break
-    
-    return matching_events
 
-def get_next_meeting(hours_ahead: int = 24) -> Optional[Dict[str, Any]]:
-    """Get the next upcoming meeting"""
-    now = datetime.datetime.now()
-    end_time = now + datetime.timedelta(hours=hours_ahead)
-    
-    events = list_calendar_events(now, end_time, max_results=5)
-    
-    # Find the next event that hasn't started yet
-    for event in events:
-        start_dt = _parse_calendar_datetime({'dateTime': event['start']})
-        if start_dt and start_dt > now:
-            return event
-    
-    return None
-
-# =============================================================================
-# UTILITY FUNCTIONS
-# =============================================================================
-
-def format_calendar_summary(events: List[Dict[str, Any]], title: str = "Calendar Events") -> str:
-    """Format calendar events for display"""
-    if not events:
-        return f"{title}: No events found."
-    
-    lines = [f"{title}:"]
-    
-    for event in events:
-        time_str = event['start_formatted']
-        if event['start_formatted'] != event['end_formatted'] and event['end_formatted'] != "All day":
-            time_str += f" - {event['end_formatted']}"
-        
-        line = f"• {time_str} — {event['summary']}"
-        if event.get('location'):
-            line += f" ({event['location']})"
-        
-        lines.append(line)
-    
-    return '\n'.join(lines)
-
-def test_calendar_connection() -> bool:
-    """Test if calendar API is working"""
-    try:
-        service = get_calendar_service()
-        # Try to get calendar list
-        service.calendarList().list().execute()
-        return True
-    except Exception as e:
-        print(f"Calendar connection test failed: {e}")
-        return False
-
-def test_gmail_connection() -> bool:
-    """Test if Gmail API is working"""
-    try:
-        service = get_gmail_service()
-        # Try to get profile
-        service.users().getProfile(userId='me').execute()
-        return True
-    except Exception as e:
-        print(f"Gmail connection test failed: {e}")
-        return False
+if __name__ == "__main__":
+    # Quick manual test (prints count + first few IDs)
+    msgs = get_overnight_messages(include_unread=False, include_primary=False)
+    print(f"Overnight messages: {len(msgs)}")
+    for m in msgs[:10]:
+        print("-", m.id)

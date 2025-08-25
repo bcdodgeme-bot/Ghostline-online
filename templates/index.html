@@ -7,9 +7,7 @@
   <link rel="icon" type="image/png" href="/static/favicon.png">
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     :root {
       --primary: #6366f1;
@@ -23,14 +21,14 @@
       --text-secondary: #a1a1aa;
       --text-muted: #71717a;
       --accent: #8b5cf6;
-      
+
       --header-h: 60px;
       --composer-h: auto;
-      
+
       --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
       --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
       --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-      
+
       --radius-sm: 6px;
       --radius-md: 8px;
       --radius-lg: 12px;
@@ -60,531 +58,149 @@
       z-index: 100;
     }
 
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .logo { width: 36px; height: 36px; border-radius: var(--radius-md); transition: transform 0.2s ease; }
+    .logo:hover { transform: scale(1.05); }
 
-    .logo {
-      width: 36px;
-      height: 36px;
-      border-radius: var(--radius-md);
-      transition: transform 0.2s ease;
-    }
-
-    .logo:hover {
-      transform: scale(1.05);
-    }
-
-    .brand {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-    }
-
-    .brand h1 {
-      margin: 0;
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      line-height: 1.2;
-    }
-
-    .brand .tagline {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      line-height: 1;
-      margin: 0;
-    }
+    .brand { display: flex; flex-direction: column; gap: 0; }
+    .brand h1 { margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary); line-height: 1.2; }
+    .brand .tagline { font-size: 0.75rem; color: var(--text-muted); line-height: 1; margin: 0; }
 
     .status-indicator {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 12px;
-      background: var(--surface-hover);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      font-size: 0.8rem;
-      color: var(--text-secondary);
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 12px; background: var(--surface-hover);
+      border: 1px solid var(--border); border-radius: var(--radius-lg);
+      font-size: 0.8rem; color: var(--text-secondary);
     }
 
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      background: var(--success);
-      border-radius: 50%;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
+    .status-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100% {opacity:1;} 50% {opacity:0.5;} }
 
     .logout-btn {
-      background: var(--surface-hover);
-      color: var(--text-secondary);
-      border: 1px solid var(--border);
-      padding: 8px 16px;
-      border-radius: var(--radius-md);
-      cursor: pointer;
-      font-size: 0.85rem;
-      transition: all 0.2s ease;
+      background: var(--surface-hover); color: var(--text-secondary);
+      border: 1px solid var(--border); padding: 8px 16px;
+      border-radius: var(--radius-md); cursor: pointer; font-size: 0.85rem; transition: all 0.2s ease;
     }
-
-    .logout-btn:hover {
-      background: var(--border);
-      color: var(--text-primary);
-    }
+    .logout-btn:hover { background: var(--border); color: var(--text-primary); }
 
     /* Main Chat Area */
-    .chat-container {
-      height: calc(100vh - var(--header-h));
-      display: flex;
-      flex-direction: column;
-    }
-
+    .chat-container { height: calc(100vh - var(--header-h)); display: flex; flex-direction: column; }
     .thread {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      scroll-behavior: smooth;
+      flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; scroll-behavior: smooth;
     }
-
-    .thread::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .thread::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    .thread::-webkit-scrollbar-thumb {
-      background: var(--border);
-      border-radius: 3px;
-    }
-
-    .thread::-webkit-scrollbar-thumb:hover {
-      background: var(--text-muted);
-    }
+    .thread::-webkit-scrollbar { width: 6px; }
+    .thread::-webkit-scrollbar-track { background: transparent; }
+    .thread::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .thread::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
     /* Messages */
-    .message {
-      display: flex;
-      margin-bottom: 4px;
-      animation: slideIn 0.3s ease-out;
-    }
-
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .message.user {
-      justify-content: flex-end;
-    }
-
-    .message-bubble {
-      max-width: 70%;
-      padding: 12px 16px;
-      border-radius: var(--radius-xl);
-      position: relative;
-      word-wrap: break-word;
-      line-height: 1.4;
-    }
-
-    .message-bubble.user {
-      background: var(--primary);
-      color: white;
-      border-bottom-right-radius: var(--radius-sm);
-    }
-
-    .message-bubble.bot {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text-primary);
-      border-bottom-left-radius: var(--radius-sm);
-    }
-
-    .message-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 6px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      opacity: 0.8;
-    }
-
-    .message-content {
-      font-size: 0.95rem;
-      white-space: pre-line;
-    }
+    .message { display: flex; margin-bottom: 4px; animation: slideIn 0.3s ease-out; }
+    @keyframes slideIn { from {opacity:0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);} }
+    .message.user { justify-content: flex-end; }
+    .message-bubble { max-width: 70%; padding: 12px 16px; border-radius: var(--radius-xl); position: relative; word-wrap: break-word; line-height: 1.4; }
+    .message-bubble.user { background: var(--primary); color: white; border-bottom-right-radius: var(--radius-sm); }
+    .message-bubble.bot { background: var(--surface); border: 1px solid var(--border); color: var(--text-primary); border-bottom-left-radius: var(--radius-sm); }
+    .message-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.8rem; font-weight: 500; opacity: 0.8; }
+    .message-content { font-size: 0.95rem; white-space: pre-line; }
 
     /* Typing indicator */
-    .typing-indicator {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 16px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-xl);
-      border-bottom-left-radius: var(--radius-sm);
-      max-width: 70%;
-      margin-bottom: 16px;
-    }
-
-    .typing-dots {
-      display: flex;
-      gap: 4px;
-    }
-
-    .typing-dot {
-      width: 8px;
-      height: 8px;
-      background: var(--text-muted);
-      border-radius: 50%;
-      animation: typing 1.4s infinite ease-in-out;
-    }
-
-    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
-    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
-
-    @keyframes typing {
-      0%, 80%, 100% { 
-        opacity: 0.3;
-        transform: scale(0.8);
-      }
-      40% { 
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
+    .typing-indicator { display:flex; align-items:center; gap:8px; padding:12px 16px; background: var(--surface); border:1px solid var(--border); border-radius:var(--radius-xl); border-bottom-left-radius:var(--radius-sm); max-width:70%; margin-bottom:16px; }
+    .typing-dots { display:flex; gap:4px; }
+    .typing-dot { width:8px; height:8px; background:var(--text-muted); border-radius:50%; animation: typing 1.4s infinite ease-in-out; }
+    .typing-dot:nth-child(1){animation-delay:-0.32s;} .typing-dot:nth-child(2){animation-delay:-0.16s;}
+    @keyframes typing { 0%,80%,100%{opacity:.3; transform:scale(.8);} 40%{opacity:1; transform:scale(1);} }
 
     /* Composer */
-    .composer {
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      padding: 16px 20px;
-      backdrop-filter: blur(10px);
-    }
-
-    .composer-form {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .input-row {
-      display: flex;
-      gap: 12px;
-      align-items: flex-end;
-    }
-
-    .input-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .input-group.grow {
-      flex: 1;
-    }
-
-    .input-label {
-      font-size: 0.8rem;
-      color: var(--text-secondary);
-      font-weight: 500;
-    }
-
+    .composer { background: var(--surface); border-top:1px solid var(--border); padding:16px 20px; backdrop-filter: blur(10px); }
+    .composer-form { display:flex; flex-direction:column; gap:12px; }
+    .input-row { display:flex; gap:12px; align-items:flex-end; }
+    .input-group { display:flex; flex-direction:column; gap:6px; }
+    .input-group.grow { flex:1; }
+    .input-label { font-size:.8rem; color:var(--text-secondary); font-weight:500; }
     .project-select {
-      background: var(--background);
-      color: var(--text-primary);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      padding: 10px 12px;
-      font-size: 0.9rem;
-      min-width: 180px;
-      transition: border-color 0.2s ease;
+      background: var(--background); color: var(--text-primary);
+      border: 1px solid var(--border); border-radius: var(--radius-md);
+      padding: 10px 12px; font-size: .9rem; min-width:180px; transition: border-color .2s ease;
     }
+    .project-select:focus { outline:none; border-color: var(--primary); }
 
-    .project-select:focus {
-      outline: none;
-      border-color: var(--primary);
-    }
-
-    .prompt-container {
-      position: relative;
-      flex: 1;
-    }
-
+    .prompt-container { position:relative; flex:1; }
     .prompt-input {
-      width: 100%;
-      min-height: 44px;
-      max-height: 120px;
-      background: var(--background);
-      color: var(--text-primary);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 12px 50px 12px 16px;
-      font-size: 0.95rem;
-      resize: vertical;
-      font-family: inherit;
-      line-height: 1.4;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      width:100%; min-height:44px; max-height:120px;
+      background:var(--background); color:var(--text-primary);
+      border:1px solid var(--border); border-radius:var(--radius-lg);
+      padding:12px 50px 12px 16px; font-size:.95rem; resize:vertical; font-family:inherit; line-height:1.4;
+      transition: border-color .2s ease, box-shadow .2s ease;
     }
-
-    .prompt-input:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgb(99 102 241 / 0.1);
-    }
-
-    .prompt-input::placeholder {
-      color: var(--text-muted);
-    }
+    .prompt-input:focus { outline:none; border-color: var(--primary); box-shadow:0 0 0 3px rgb(99 102 241 / 0.1); }
+    .prompt-input::placeholder { color: var(--text-muted); }
 
     .send-button {
-      position: absolute;
-      right: 8px;
-      bottom: 8px;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: var(--radius-md);
-      width: 36px;
-      height: 36px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
-      font-size: 1.1rem;
+      position:absolute; right:8px; bottom:8px;
+      background:var(--primary); color:#fff; border:none; border-radius:var(--radius-md);
+      width:36px; height:36px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+      transition: all .2s ease; font-size:1.1rem;
     }
-
-    .send-button:hover {
-      background: var(--primary-hover);
-      transform: scale(1.05);
-    }
-
-    .send-button:active {
-      transform: scale(0.95);
-    }
+    .send-button:hover { background:var(--primary-hover); transform: scale(1.05); }
+    .send-button:active { transform: scale(0.95); }
 
     /* Advanced Controls */
-    .advanced-controls {
-      border-top: 1px solid var(--border);
-      padding-top: 12px;
-      margin-top: 12px;
-    }
-
+    .advanced-controls { border-top:1px solid var(--border); padding-top:12px; margin-top:12px; }
     .advanced-toggle {
-      background: var(--background);
-      color: var(--text-secondary);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      padding: 8px 12px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      background:var(--background); color:var(--text-secondary); border:1px solid var(--border);
+      border-radius:var(--radius-md); padding:8px 12px; cursor:pointer; font-size:.85rem; transition:all .2s ease; display:flex; align-items:center; gap:6px;
     }
+    .advanced-toggle:hover { background:var(--surface-hover); color:var(--text-primary); }
+    .advanced-content { margin-top:12px; display:flex; flex-direction:column; gap:12px; }
+    .controls-row { display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
 
-    .advanced-toggle:hover {
-      background: var(--surface-hover);
-      color: var(--text-primary);
-    }
+    .voice-controls { display:flex; gap:12px; flex-wrap:wrap; }
+    .voice-checkbox { display:flex; align-items:center; gap:6px; font-size:.85rem; color:var(--text-secondary); cursor:pointer; padding:4px 8px; border-radius:var(--radius-sm); transition: background .2s ease; }
+    .voice-checkbox:hover { background:var(--surface-hover); }
+    .voice-checkbox input { margin:0; }
 
-    .advanced-content {
-      margin-top: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .controls-row {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .voice-controls {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .voice-checkbox {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-      cursor: pointer;
-      padding: 4px 8px;
-      border-radius: var(--radius-sm);
-      transition: background 0.2s ease;
-    }
-
-    .voice-checkbox:hover {
-      background: var(--surface-hover);
-    }
-
-    .voice-checkbox input {
-      margin: 0;
-    }
-
-    .upload-section {
-      display: flex;
-      gap: 8px;
-      align-items: flex-end;
-    }
-
+    .upload-section { display:flex; gap:8px; align-items:flex-end; }
     .file-input {
-      background: var(--background);
-      color: var(--text-secondary);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      padding: 8px 12px;
-      font-size: 0.85rem;
-      cursor: pointer;
+      background:var(--background); color:var(--text-secondary);
+      border:1px solid var(--border); border-radius:var(--radius-md);
+      padding:8px 12px; font-size:.85rem; cursor:pointer;
     }
-
     .secondary-btn {
-      background: var(--surface-hover);
-      color: var(--text-primary);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      padding: 8px 16px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      text-decoration: none;
-      display: inline-block;
-      transition: all 0.2s ease;
+      background:var(--surface-hover); color:var(--text-primary); border:1px solid var(--border);
+      border-radius:var(--radius-md); padding:8px 16px; cursor:pointer; font-size:.85rem; text-decoration:none; display:inline-block; transition:all .2s ease;
     }
+    .secondary-btn:hover { background:var(--border); transform: translateY(-1px); }
 
-    .secondary-btn:hover {
-      background: var(--border);
-      transform: translateY(-1px);
-    }
-
-    /* Mobile Responsive */
+    /* Mobile */
     @media (max-width: 768px) {
-      :root {
-        --header-h: 56px;
-      }
-
-      header {
-        padding: 0 16px;
-      }
-
-      .brand .tagline {
-        display: none;
-      }
-
-      .status-indicator {
-        display: none;
-      }
-
-      .thread {
-        padding: 16px;
-        gap: 12px;
-      }
-
-      .message-bubble {
-        max-width: 85%;
-        font-size: 1rem;
-      }
-
-      .composer {
-        padding: 12px 16px;
-      }
-
-      .input-row {
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      .project-select {
-        min-width: auto;
-      }
-
-      .controls-row {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-      }
-
-      .voice-controls {
-        gap: 8px;
-      }
-
-      .upload-section {
-        flex-direction: column;
-        gap: 6px;
-        width: 100%;
-      }
-
-      .file-input {
-        width: 100%;
-      }
+      :root { --header-h: 56px; }
+      header { padding: 0 16px; }
+      .brand .tagline { display:none; }
+      .status-indicator { display:none; }
+      .thread { padding:16px; gap:12px; }
+      .message-bubble { max-width:85%; font-size:1rem; }
+      .composer { padding:12px 16px; }
+      .input-row { flex-direction:column; gap:8px; }
+      .project-select { min-width:auto; }
+      .controls-row { flex-direction:column; align-items:flex-start; gap:8px; }
+      .voice-controls { gap:8px; }
+      .upload-section { flex-direction:column; gap:6px; width:100%; }
+      .file-input { width:100%; }
     }
 
     /* Loader */
     .loader {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      position: fixed; inset: 0;
       background: rgba(0, 0, 0, 0.8);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px);
     }
+    .loader-content { text-align: center; color: var(--text-primary); }
+    .loader img { width:80px; height:80px; margin-bottom:16px; animation: spin 2s linear infinite; }
+    @keyframes spin { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
 
-    .loader-content {
-      text-align: center;
-      color: var(--text-primary);
-    }
-
-    .loader img {
-      width: 80px;
-      height: 80px;
-      margin-bottom: 16px;
-      animation: spin 2s linear infinite;
-    }
-
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-
-    /* Utility classes */
-    .hidden { display: none !important; }
-    .fade-in { animation: fadeIn 0.3s ease-out; }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
+    .hidden { display:none !important; }
+    .fade-in { animation: fadeIn .3s ease-out; }
+    @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
   </style>
 </head>
 
@@ -604,16 +220,14 @@
         <p class="tagline">Creative Intelligence System</p>
       </div>
     </div>
-    
+
     <div class="status-indicator">
       <div class="status-dot"></div>
       <span>Syntax Prime Online</span>
     </div>
 
     <form action="{{ url_for('logout') }}" method="get" style="display: inline;">
-      <button type="submit" class="logout-btn" onclick="return confirm('Log out of Ghostline?')">
-        Logout
-      </button>
+      <button type="submit" class="logout-btn" onclick="return confirm('Log out of Ghostline?')">Logout</button>
     </form>
   </header>
 
@@ -659,70 +273,48 @@
               {% endfor %}
             </select>
           </div>
-          
+
           <div class="input-group grow">
             <label class="input-label">Message</label>
             <div class="prompt-container">
-              <textarea 
-                name="user_input" 
-                class="prompt-input" 
+              <textarea
+                name="user_input"
+                class="prompt-input"
                 id="promptInput"
                 placeholder="Ask me anything... (Enter to send, Shift+Enter for new line)"
                 rows="1"
               ></textarea>
-              <button type="submit" class="send-button">
-                →
-              </button>
+              <button type="submit" class="send-button">→</button>
             </div>
           </div>
         </div>
 
         <details class="advanced-controls" id="advancedControls">
-          <summary class="advanced-toggle">
-            <span>⚙️ Advanced Options</span>
-          </summary>
+          <summary class="advanced-toggle"><span>⚙️ Advanced Options</span></summary>
           <div class="advanced-content">
             <div class="controls-row">
               <span class="input-label">AI Personalities:</span>
               <div class="voice-controls">
-                <label class="voice-checkbox">
-                  <input type="checkbox" name="voices" value="SyntaxPrime" checked>
-                  <span>Syntax Prime</span>
-                </label>
-                <label class="voice-checkbox">
-                  <input type="checkbox" name="voices" value="SyntaxBot">
-                  <span>SyntaxBot</span>
-                </label>
-                <label class="voice-checkbox">
-                  <input type="checkbox" name="voices" value="Nil.exe">
-                  <span>Nil.exe</span>
-                </label>
-                <label class="voice-checkbox">
-                  <input type="checkbox" name="voices" value="GhadaGPT">
-                  <span>GGPT</span>
-                </label>
-                <label class="voice-checkbox">
-                  <input type="checkbox" name="random">
-                  <span>🎲 Random</span>
-                </label>
+                <label class="voice-checkbox"><input type="checkbox" name="voices" value="SyntaxPrime" checked><span>Syntax Prime</span></label>
+                <label class="voice-checkbox"><input type="checkbox" name="voices" value="SyntaxBot"><span>SyntaxBot</span></label>
+                <label class="voice-checkbox"><input type="checkbox" name="voices" value="Nil.exe"><span>Nil.exe</span></label>
+                <label class="voice-checkbox"><input type="checkbox" name="voices" value="GhadaGPT"><span>GGPT</span></label>
+                <label class="voice-checkbox"><input type="checkbox" name="random"><span>🎲 Random</span></label>
               </div>
             </div>
 
             <div class="controls-row">
-              <div class="upload-section">
+              <!-- Upload & Analyze: no nested form -->
+              <div class="upload-section" style="width:100%;">
                 <label class="input-label">Upload & Analyze</label>
-             <form action="/upload" method="post" enctype="multipart/form-data" style="display: flex; gap: 8px; width: 100%;">
-  <input type="file" name="file" class="file-input" style="flex: 1;" required accept="image/*,.pdf,.docx">
-  <button type="submit" class="secondary-btn">Analyze</button>
-</form>
+                <div style="display:flex; gap:8px; width:100%;">
+                  <input id="uploadInput" type="file" name="file" class="file-input" style="flex:1;" required accept="image/*,.pdf,.docx">
+                  <button type="button" class="secondary-btn" onclick="analyzeUpload()">Analyze</button>
+                </div>
               </div>
-              
-              <a href="/export/{{ current_project or 'Personal Operating Manual' }}" class="secondary-btn">
-                📤 Export Session
-              </a>
-              <a href="/backup_all" class="secondary-btn">
-                📦 Backup All Projects
-              </a>
+
+              <a href="/export/{{ current_project or 'Personal Operating Manual' }}" class="secondary-btn">📤 Export Session</a>
+              <a href="/backup_all" class="secondary-btn">📦 Backup All Projects</a>
             </div>
           </div>
         </details>
@@ -731,8 +323,7 @@
   </div>
 
   <script>
-    // Upload form validation - separate from main chat
- 
+    // ========= Front-end helpers =========
 
     // Auto-resize textarea
     function autoResize(textarea) {
@@ -742,14 +333,19 @@
       textarea.style.height = newHeight + 'px';
     }
 
-    // Initialize textarea
+    // Initialize textarea & Enter behavior
     const promptInput = document.getElementById('promptInput');
+    const mainForm = document.getElementById('mainForm');
+    const isCoarse = window.matchMedia('(pointer: coarse)').matches; // phones/tablets
+
     if (promptInput) {
       promptInput.addEventListener('input', () => autoResize(promptInput));
       autoResize(promptInput);
 
-      // Handle Enter key
+      // On mobile/tablet: Enter should NOT submit (use the Send button).
+      // On desktop: Enter submits, Shift+Enter = newline.
       promptInput.addEventListener('keydown', (e) => {
+        if (isCoarse) return; // do nothing on Enter for mobile
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
           submitForm();
@@ -757,19 +353,10 @@
       });
     }
 
-    // Form submission
-    const mainForm = document.getElementById('mainForm');
-    
     function submitForm() {
       if (!promptInput.value.trim()) return;
-      
-      // Show typing indicator
       showTypingIndicator();
-      
-      // Copy voice selections to main form
       copyVoiceSelections();
-      
-      // Submit form
       mainForm.submit();
     }
 
@@ -794,8 +381,7 @@
     function showTypingIndicator() {
       const thread = document.getElementById('thread');
       const anchor = document.getElementById('bottom-anchor');
-      
-      // Create typing indicator
+
       const typingDiv = document.createElement('div');
       typingDiv.className = 'typing-indicator';
       typingDiv.innerHTML = `
@@ -806,16 +392,13 @@
         </div>
         <span style="color: var(--text-muted); font-size: 0.85rem;">Syntax Prime is thinking...</span>
       `;
-      
       thread.insertBefore(typingDiv, anchor);
       scrollToBottom();
     }
 
-    // Scroll to bottom
     function scrollToBottom() {
       const thread = document.getElementById('thread');
       const anchor = document.getElementById('bottom-anchor');
-      
       if (anchor) {
         anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
       } else if (thread) {
@@ -823,10 +406,9 @@
       }
     }
 
-    // Handle form submission
+    // Validate form submit (prevent empty)
     if (mainForm) {
       mainForm.addEventListener('submit', (e) => {
-        // Only validate if there's actual input to prevent empty submissions
         if (!promptInput.value.trim()) {
           e.preventDefault();
           return false;
@@ -839,41 +421,50 @@
     // Auto-scroll on load
     window.addEventListener('load', () => {
       setTimeout(scrollToBottom, 100);
-      if (window.location.hash === '#bottom-anchor') {
-        setTimeout(scrollToBottom, 500);
-      }
+      if (window.location.hash === '#bottom-anchor') setTimeout(scrollToBottom, 500);
+      if (promptInput) promptInput.focus();
     });
 
     // Update export link when project changes
     function updateExportLink() {
       const projectSelect = document.getElementById('projectSelect');
       const exportLink = document.querySelector('a[href*="/export/"]');
-      
       if (projectSelect && exportLink) {
         const selectedProject = encodeURIComponent(projectSelect.value);
         exportLink.href = `/export/${selectedProject}`;
       }
     }
-
     document.getElementById('projectSelect')?.addEventListener('change', updateExportLink);
 
-    // Advanced controls toggle (auto-open on desktop)
-    const advancedControls = document.getElementById('advancedControls');
-    function setAdvancedOpen() {
-      if (advancedControls) {
-        advancedControls.open = window.innerWidth > 900;
+    // ========= Upload & Analyze (no nested form) =========
+    async function analyzeUpload() {
+      try {
+        const input = document.getElementById('uploadInput');
+        if (!input || !input.files || !input.files[0]) {
+          alert('Choose a file first.');
+          return;
+        }
+
+        const fd = new FormData();
+        fd.append('file', input.files[0]);
+
+        // optional spinner
+        document.getElementById('loader')?.classList?.remove('hidden');
+
+        const resp = await fetch('/upload', { method: 'POST', body: fd });
+        const text = await resp.text();
+
+        // open OCR result in a new tab
+        const w = window.open('', '_blank');
+        w.document.write(text);
+        w.document.close();
+      } catch (err) {
+        console.error(err);
+        alert('Upload failed: ' + err);
+      } finally {
+        document.getElementById('loader')?.classList?.add('hidden');
       }
     }
-
-    window.addEventListener('load', setAdvancedOpen);
-    window.addEventListener('resize', setAdvancedOpen);
-
-    // Focus prompt input on load
-    window.addEventListener('load', () => {
-      if (promptInput) {
-        promptInput.focus();
-      }
-    });
   </script>
 </body>
 </html>
