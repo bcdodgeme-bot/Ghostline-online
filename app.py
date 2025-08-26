@@ -80,7 +80,10 @@ def _save_daily_log(sync_type: str, content: str):
             f.write("\n\n---\n")
             
     except Exception as e:
-        app.logger.error(f"Failed to save daily log: {e}")
+        import traceback
+    error_details = traceback.format_exc()
+    print(f"DEBUG: Full error trace: {error_details}")
+    response_data = {"SyntaxPrime": f"Morning briefing failed: {str(e)} | Type: {type(e).__name__}"}
 
 def build_brain_background():
     """Build the RAG system using batched processing"""
