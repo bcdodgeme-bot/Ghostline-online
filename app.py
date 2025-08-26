@@ -160,11 +160,10 @@ def index():
         # ---- Command: Gmail overnight (multiple aliases) ----
         if user_input.lower().strip() in ["overnight", "mail", "emails", "inbox", "check mail"]:
             try:
-                msgs = list_overnight(max_results=25, unread_only=True)
-                lines = [f"- {m['date']} — {m['from']} — {m['subject']}" for m in msgs]
+                msgs = list_overnight(include_unread=True, include_primary=False)
+                lines = [f"- Email from {msg.get('id', 'Unknown')}" for msg in msgs[:25]]
                 summary_prompt = (
-                    "Summarize these overnight emails into 5—8 concise bullets. "
-                    "Group related threads, call out anything urgent, and suggest 3 next actions:\n\n"
+                    f"Found {len(msgs)} overnight emails. Here's the summary:\n\n"
                     + "\n".join(lines)
                 )
                 retrieval_ctx = retrieve(summary_prompt, k=5) if is_ready() else []
@@ -187,11 +186,10 @@ def index():
                     break
             
             try:
-                msgs = gmail_search(query_text, max_results=25)
-                lines = [f"- {m['date']} — {m['from']} — {m['subject']}" for m in msgs]
+                msgs = gmail_search(query_text)
+                lines = [f"- Message ID: {msg.get('id', 'Unknown')}" for msg in msgs[:25]]
                 summary_prompt = (
-                    f"Summarize the most relevant messages for query: '{query_text}'. "
-                    "Give key points, who it's from, and any required follow‑ups:\n\n"
+                    f"Found {len(msgs)} messages for search query: '{query_text}'\n\n"
                     + "\n".join(lines)
                 )
                 retrieval_ctx = retrieve(summary_prompt, k=5) if is_ready() else []
@@ -250,16 +248,14 @@ def index():
         # ---- Command: Next meeting ----
         if user_input.lower().strip() in ["next meeting", "next", "upcoming"]:
             try:
-                next_meeting = get_next_meeting(hours_ahead=48)
-                if next_meeting:
+                next_meeting = get_next_meeting()
+                if next_meeting and next_meeting.get('summary'):
                     summary_prompt = (
-                        f"Carl's next meeting: {next_meeting['summary']} at {next_meeting['start_formatted']} "
-                        f"on {next_meeting['start'][:10]}. "
-                        f"Location: {next_meeting.get('location', 'Not specified')}. "
+                        f"Carl's next meeting: {next_meeting['summary']} at {next_meeting.get('start_formatted', 'Unknown time')}. "
                         f"Give a brief overview and any prep suggestions."
                     )
                 else:
-                    summary_prompt = "No upcoming meetings found in the next 48 hours."
+                    summary_prompt = "No upcoming meetings found."
                 
                 retrieval_ctx = retrieve(summary_prompt, k=5) if is_ready() else []
                 response_data = generate_response(
@@ -303,25 +299,25 @@ def index():
         # ---- Command: Good Morning ----
         if user_input.lower().strip() in ["good morning", "morning", "gm"]:
             try:
-                # Get overnight emails and today's calendar
-                msgs = list_overnight(max_results=25, unread_only=True)
+                # Get overnight emails and today's calendar - using correct function signatures
+                msgs = list_overnight(include_unread=True, include_primary=False)
                 events = list_today_events(max_results=20)
-                next_meeting = get_next_meeting(hours_ahead=24)
+                next_meeting = get_next_meeting()
                 
                 # Format briefing
-                email_lines = [f"• {m['date']} — {m['from']} — {m['subject']}" for m in msgs[:10]]
+                email_summary = f"Found {len(msgs)} overnight emails"
                 calendar_summary = format_calendar_summary(events, "Today's Schedule")
                 
                 morning_briefing = f"""Good morning! Here's your daily briefing:
 
-**OVERNIGHT EMAILS ({len(msgs)} total)**
-{chr(10).join(email_lines) if email_lines else "No new emails"}
+**OVERNIGHT EMAILS**
+{email_summary}
 
 **TODAY'S CALENDAR**
 {calendar_summary}
 
 **NEXT MEETING**
-{f"{next_meeting['summary']} at {next_meeting['start_formatted']}" if next_meeting else "No meetings scheduled"}
+{f"{next_meeting.get('summary', 'Unknown')} at {next_meeting.get('start_formatted', 'Unknown time')}" if next_meeting else "No meetings scheduled"}
 
 **PRIORITIES FOR TODAY**
 • Review urgent emails
