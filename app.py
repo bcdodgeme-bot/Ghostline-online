@@ -301,6 +301,7 @@ def index():
 
         # ---- Command: Good Morning ----
         if user_input.lower().strip() in ["good morning", "morning", "gm"]:
+            print("DEBUG: Good Morning command triggered")
             try:
                 # Get overnight emails and today's calendar - using correct function signatures
                 msgs = list_overnight(include_unread=True, include_primary=False)
