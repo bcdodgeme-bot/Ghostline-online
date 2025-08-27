@@ -154,6 +154,7 @@ def index():
     selected_project = PROJECTS[0]
 
     if request.method == 'POST':
+        print(f"DEBUG: POST request received with input: {user_input}")
         user_input = request.form['user_input'].strip()
         project = request.form['project']
         selected_project = project
