@@ -159,10 +159,11 @@ def index():
         random_toggle = 'random' in request.form
 
         # ---- Command: Gmail overnight (multiple aliases) ----
+	# ---- Command: Gmail overnight (multiple aliases) ----
         if user_input.lower().strip() in ["overnight", "mail", "emails", "inbox", "check mail"]:
             try:
                 msgs = list_overnight(include_unread=True, include_primary=False)
-               lines = [f"- {msg.get('sender', 'Unknown')}: {msg.get('subject', 'No Subject')}" for msg in msgs[:25]]
+                lines = [f"- {msg.get('sender', 'Unknown')}: {msg.get('subject', 'No Subject')}" for msg in 		msgs[:25]]
                 summary_prompt = (
                     f"Found {len(msgs)} overnight emails. Here's the summary:\n\n"
                     + "\n".join(lines)
@@ -177,6 +178,7 @@ def index():
 
             _append_session(project, user_input, response_data)
             return _render(project, response_data)
+
 
         # ---- Command: Gmail search (multiple aliases) ----
         if user_input.lower().startswith(("search ", "find ", "email about ")):
