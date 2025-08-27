@@ -1,14 +1,10 @@
-# utils/gmail_client.py
-# Gmail + Google Calendar helpers
-# - Backward-compatible exports for app.py:
-#   list_overnight, search, list_today_events, list_tomorrow_events,
-#   search_calendar, get_next_meeting, format_calendar_summary
-# - Timezone-aware using America/New_York by default (override with APP_TIMEZONE)
-# - Secrets loaded from env paths (keep token/credentials out of git)
+# utils/gmail_client.py - Debug-enhanced version
+# This version includes detailed error logging to identify the exact Google API issue
 
 from __future__ import annotations
 
 import os
+import json
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict
@@ -40,10 +36,19 @@ def _build_creds() -> Credentials:
     """Build credentials with all required scopes"""
     creds: Optional[Credentials] = None
     
+    print(f"DEBUG: Looking for token at: {TOKEN_PATH}")
+    print(f"DEBUG: Token file exists: {os.path.exists(TOKEN_PATH)}")
+    
     # Try to load existing credentials
     if os.path.exists(TOKEN_PATH):
         try:
+            print("DEBUG: Loading existing token...")
             creds = Credentials.from_authorized_user_file(TOKEN_PATH, ALL_SCOPES)
+            print("DEBUG: Token loaded successfully")
+            print(f"DEBUG: Token valid: {creds.valid}")
+            print(f"DEBUG: Token expired: {creds.expired}")
+            print(f"DEBUG: Has refresh token: {bool(creds.refresh_token)}")
+            print(f"DEBUG: Token scopes: {creds.scopes}")
         except Exception as e:
             print(f"DEBUG: Failed to load existing token: {e}")
             creds = None
@@ -55,54 +60,57 @@ def _build_creds() -> Credentials:
                 print("DEBUG: Refreshing expired credentials...")
                 creds.refresh(Request())
                 print("DEBUG: Credentials refreshed successfully")
+                
+                # Save refreshed credentials
+                with open(TOKEN_PATH, "w") as f:
+                    f.write(creds.to_json())
+                print("DEBUG: Refreshed token saved")
+                
             except Exception as e:
                 print(f"DEBUG: Failed to refresh credentials: {e}")
                 creds = None
         
-        # If we still don't have valid credentials, create new ones
+        # If we still don't have valid credentials, show error
         if not creds:
+            print("DEBUG: No valid credentials available")
             if not os.path.exists(CREDENTIALS_PATH):
                 raise FileNotFoundError(
                     f"Missing Google OAuth credentials at '{CREDENTIALS_PATH}'. "
                     "Set GOOGLE_CREDENTIALS_PATH or place credentials.json."
                 )
-            print("DEBUG: Creating new credentials...")
-            flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, ALL_SCOPES)
-            creds = flow.run_local_server(port=0)
-            print("DEBUG: New credentials created successfully")
+            
+            # Don't try to create new creds in server environment
+            raise RuntimeError(
+                "No valid token available. Please regenerate token.json locally and upload it."
+            )
 
-        # Save the credentials
-        try:
-            with open(TOKEN_PATH, "w") as f:
-                f.write(creds.to_json())
-            print(f"DEBUG: Credentials saved to {TOKEN_PATH}")
-        except Exception as e:
-            print(f"DEBUG: Failed to save credentials: {e}")
-
+    print("DEBUG: Final credentials check - valid:", creds.valid)
     return creds
 
 
 def _gmail_service():
     """Build Gmail service with shared credentials"""
     try:
+        print("DEBUG: Creating Gmail service...")
         creds = _build_creds()
         service = build("gmail", "v1", credentials=creds)
         print("DEBUG: Gmail service created successfully")
         return service
     except Exception as e:
-        print(f"DEBUG: Failed to create Gmail service: {e}")
+        print(f"DEBUG: Failed to create Gmail service: {type(e).__name__}: {e}")
         raise
 
 
 def _calendar_service():
     """Build Calendar service with shared credentials"""
     try:
+        print("DEBUG: Creating Calendar service...")
         creds = _build_creds()
         service = build("calendar", "v3", credentials=creds)
         print("DEBUG: Calendar service created successfully")
         return service
     except Exception as e:
-        print(f"DEBUG: Failed to create Calendar service: {e}")
+        print(f"DEBUG: Failed to create Calendar service: {type(e).__name__}: {e}")
         raise
 
 
@@ -123,26 +131,32 @@ def _gmail_list(query: str, user_id: str = "me", max_pages: int = 10) -> List[Gm
         print(f"DEBUG: Gmail search query: '{query}'")
         
         while True:
-            resp = svc.users().messages().list(
-                userId=user_id, q=query, pageToken=page_token, maxResults=100
-            ).execute()
-            
-            message_batch = resp.get("messages", [])
-            print(f"DEBUG: Found {len(message_batch)} messages in this batch")
-            
-            for m in message_batch:
-                messages.append(GmailMessage(id=m["id"], thread_id=m["threadId"]))
-            
-            page_token = resp.get("nextPageToken")
-            pages += 1
-            if not page_token or pages >= max_pages:
-                break
+            try:
+                resp = svc.users().messages().list(
+                    userId=user_id, q=query, pageToken=page_token, maxResults=100
+                ).execute()
+                
+                message_batch = resp.get("messages", [])
+                print(f"DEBUG: Found {len(message_batch)} messages in this batch")
+                
+                for m in message_batch:
+                    messages.append(GmailMessage(id=m["id"], thread_id=m["threadId"]))
+                
+                page_token = resp.get("nextPageToken")
+                pages += 1
+                if not page_token or pages >= max_pages:
+                    break
+                    
+            except HttpError as e:
+                print(f"DEBUG: Gmail API HttpError: Status {e.resp.status}, Reason: {e.resp.reason}")
+                print(f"DEBUG: Gmail API Error content: {e.content}")
+                raise
         
         print(f"DEBUG: Total Gmail messages found: {len(messages)}")
         return messages
         
     except Exception as e:
-        print(f"DEBUG: Gmail list error: {e}")
+        print(f"DEBUG: Gmail list error - Type: {type(e).__name__}, Details: {e}")
         raise
 
 
@@ -173,7 +187,7 @@ def list_overnight(include_unread: bool = False, include_primary: bool = False, 
         print(f"DEBUG: list_overnight returning {len(result)} messages")
         return result
     except Exception as e:
-        print(f"DEBUG: list_overnight error: {e}")
+        print(f"DEBUG: list_overnight error - Type: {type(e).__name__}, Details: {e}")
         raise
 
 
@@ -185,7 +199,7 @@ def search(query: str) -> List[Dict]:
         print(f"DEBUG: Gmail search returning {len(result)} messages")
         return result
     except Exception as e:
-        print(f"DEBUG: Gmail search error: {e}")
+        print(f"DEBUG: Gmail search error - Type: {type(e).__name__}, Details: {e}")
         raise
 
 
@@ -194,7 +208,6 @@ def search(query: str) -> List[Dict]:
 def _iso_bounds_today_local():
     start = datetime.now(DEFAULT_TZ).replace(hour=0, minute=0, second=0, microsecond=0)
     end = start + timedelta(days=1)
-    # RFC3339 with offset (ZoneInfo ensures offset present)
     return start.isoformat(), end.isoformat(), str(DEFAULT_TZ)
 
 
@@ -220,20 +233,14 @@ def _to_local(dt_str: str) -> Optional[datetime]:
 def _format_time_local(dt: Optional[datetime]) -> str:
     if not dt:
         return ""
-    # e.g., 1:30 PM
     return dt.strftime("%-I:%M %p") if os.name != "nt" else dt.strftime("%#I:%M %p")
 
 
 def _event_item(e: Dict) -> Dict:
-    """
-    Normalize a Calendar event to what app.py expects:
-    - 'summary': event title (fallback to '(No title)')
-    - 'start': ISO string (start.dateTime or start.date)
-    - 'start_formatted': local time string (empty for all-day)
-    """
+    """Normalize a Calendar event to what app.py expects"""
     summary = e.get("summary") or "(No title)"
     start = e.get("start", {})
-    start_iso = start.get("dateTime") or start.get("date")  # all-day is date only
+    start_iso = start.get("dateTime") or start.get("date")
     start_dt_local = _to_local(start_iso) if start_iso else None
     start_formatted = _format_time_local(start_dt_local) if start_dt_local else ("All day" if start.get("date") else "")
     return {
@@ -247,29 +254,55 @@ def _event_item(e: Dict) -> Dict:
 def list_today_events(max_results: int = 10, calendar_id: str = "primary") -> List[Dict]:
     """Calendar events from local today 00:00 to tomorrow 00:00, tz-aware."""
     try:
-        print("DEBUG: Getting today's calendar events...")
+        print("DEBUG: === Starting list_today_events ===")
+        print(f"DEBUG: Requesting {max_results} events for calendar '{calendar_id}'")
+        
         svc = _calendar_service()
         timeMin, timeMax, tzname = _iso_bounds_today_local()
         
-        print(f"DEBUG: Calendar query - timeMin: {timeMin}, timeMax: {timeMax}, tz: {tzname}")
+        print(f"DEBUG: Time bounds - Min: {timeMin}, Max: {timeMax}")
+        print(f"DEBUG: Timezone: {tzname}")
         
-        resp = svc.events().list(
-            calendarId=calendar_id,
-            timeMin=timeMin,
-            timeMax=timeMax,
-            singleEvents=True,
-            orderBy="startTime",
-            timeZone=tzname,
-            maxResults=max_results,
-        ).execute()
+        # Make the actual API call with detailed error handling
+        try:
+            print("DEBUG: Making Calendar API call...")
+            resp = svc.events().list(
+                calendarId=calendar_id,
+                timeMin=timeMin,
+                timeMax=timeMax,
+                singleEvents=True,
+                orderBy="startTime",
+                timeZone=tzname,
+                maxResults=max_results,
+            ).execute()
+            print("DEBUG: Calendar API call successful")
+            
+        except HttpError as he:
+            print(f"DEBUG: Calendar API HttpError Details:")
+            print(f"DEBUG: - Status Code: {he.resp.status}")
+            print(f"DEBUG: - Reason: {he.resp.reason}")
+            print(f"DEBUG: - Error Content: {he.content}")
+            
+            # Try to parse the error content for more details
+            try:
+                error_details = json.loads(he.content.decode('utf-8'))
+                print(f"DEBUG: - Parsed Error: {error_details}")
+            except:
+                pass
+                
+            raise
         
         items = resp.get("items", [])
         result = [_event_item(e) for e in items]
-        print(f"DEBUG: Found {len(result)} events for today")
+        print(f"DEBUG: Successfully processed {len(result)} events for today")
+        print("DEBUG: === Completed list_today_events ===")
         return result
         
     except Exception as e:
-        print(f"DEBUG: list_today_events error: {e}")
+        print(f"DEBUG: list_today_events FAILED - Type: {type(e).__name__}")
+        print(f"DEBUG: Error details: {str(e)}")
+        import traceback
+        print(f"DEBUG: Full traceback: {traceback.format_exc()}")
         raise
 
 
@@ -280,17 +313,22 @@ def list_tomorrow_events(max_results: int = 10, calendar_id: str = "primary") ->
         svc = _calendar_service()
         timeMin, timeMax, tzname = _iso_bounds_tomorrow_local()
         
-        print(f"DEBUG: Tomorrow calendar query - timeMin: {timeMin}, timeMax: {timeMax}")
+        print(f"DEBUG: Tomorrow bounds - Min: {timeMin}, Max: {timeMax}")
         
-        resp = svc.events().list(
-            calendarId=calendar_id,
-            timeMin=timeMin,
-            timeMax=timeMax,
-            singleEvents=True,
-            orderBy="startTime",
-            timeZone=tzname,
-            maxResults=max_results,
-        ).execute()
+        try:
+            resp = svc.events().list(
+                calendarId=calendar_id,
+                timeMin=timeMin,
+                timeMax=timeMax,
+                singleEvents=True,
+                orderBy="startTime",
+                timeZone=tzname,
+                maxResults=max_results,
+            ).execute()
+            
+        except HttpError as he:
+            print(f"DEBUG: Tomorrow events HttpError: Status {he.resp.status}, Content: {he.content}")
+            raise
         
         items = resp.get("items", [])
         result = [_event_item(e) for e in items]
@@ -298,7 +336,7 @@ def list_tomorrow_events(max_results: int = 10, calendar_id: str = "primary") ->
         return result
         
     except Exception as e:
-        print(f"DEBUG: list_tomorrow_events error: {e}")
+        print(f"DEBUG: list_tomorrow_events error - Type: {type(e).__name__}, Details: {e}")
         raise
 
 
@@ -310,16 +348,21 @@ def search_calendar(query: str, days_ahead: int = 90, max_results: int = 50, cal
         start = datetime.now(DEFAULT_TZ)
         end = start + timedelta(days=days_ahead)
         
-        resp = svc.events().list(
-            calendarId=calendar_id,
-            q=query,
-            timeMin=start.isoformat(),
-            timeMax=end.isoformat(),
-            singleEvents=True,
-            orderBy="startTime",
-            timeZone=str(DEFAULT_TZ),
-            maxResults=max_results,
-        ).execute()
+        try:
+            resp = svc.events().list(
+                calendarId=calendar_id,
+                q=query,
+                timeMin=start.isoformat(),
+                timeMax=end.isoformat(),
+                singleEvents=True,
+                orderBy="startTime",
+                timeZone=str(DEFAULT_TZ),
+                maxResults=max_results,
+            ).execute()
+            
+        except HttpError as he:
+            print(f"DEBUG: Calendar search HttpError: Status {he.resp.status}, Content: {he.content}")
+            raise
         
         items = resp.get("items", [])
         result = [_event_item(e) for e in items]
@@ -327,7 +370,7 @@ def search_calendar(query: str, days_ahead: int = 90, max_results: int = 50, cal
         return result
         
     except Exception as e:
-        print(f"DEBUG: search_calendar error: {e}")
+        print(f"DEBUG: search_calendar error - Type: {type(e).__name__}, Details: {e}")
         raise
 
 
@@ -338,14 +381,19 @@ def get_next_meeting(calendar_id: str = "primary") -> Dict:
         svc = _calendar_service()
         now = datetime.now(DEFAULT_TZ)
         
-        resp = svc.events().list(
-            calendarId=calendar_id,
-            timeMin=now.isoformat(),
-            singleEvents=True,
-            orderBy="startTime",
-            timeZone=str(DEFAULT_TZ),
-            maxResults=1,
-        ).execute()
+        try:
+            resp = svc.events().list(
+                calendarId=calendar_id,
+                timeMin=now.isoformat(),
+                singleEvents=True,
+                orderBy="startTime",
+                timeZone=str(DEFAULT_TZ),
+                maxResults=1,
+            ).execute()
+            
+        except HttpError as he:
+            print(f"DEBUG: Next meeting HttpError: Status {he.resp.status}, Content: {he.content}")
+            raise
         
         items = resp.get("items", [])
         result = _event_item(items[0]) if items else {}
@@ -353,7 +401,7 @@ def get_next_meeting(calendar_id: str = "primary") -> Dict:
         return result
         
     except Exception as e:
-        print(f"DEBUG: get_next_meeting error: {e}")
+        print(f"DEBUG: get_next_meeting error - Type: {type(e).__name__}, Details: {e}")
         raise
 
 
