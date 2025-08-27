@@ -162,7 +162,7 @@ def index():
         if user_input.lower().strip() in ["overnight", "mail", "emails", "inbox", "check mail"]:
             try:
                 msgs = list_overnight(include_unread=True, include_primary=False)
-                lines = [f"- Email from {msg.get('id', 'Unknown')}" for msg in msgs[:25]]
+               lines = [f"- {msg.get('sender', 'Unknown')}: {msg.get('subject', 'No Subject')}" for msg in msgs[:25]]
                 summary_prompt = (
                     f"Found {len(msgs)} overnight emails. Here's the summary:\n\n"
                     + "\n".join(lines)

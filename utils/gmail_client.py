@@ -415,3 +415,113 @@ def format_calendar_summary(events: List[Dict], header: str = "") -> str:
     for e in events:
         lines.append(f"• {e.get('start_formatted','')} — {e.get('summary','')}".strip())
     return "\n".join(lines)
+
+# Add this new function to your gmail_client.py
+
+def _get_message_details(service, message_id: str, user_id: str = "me") -> Dict:
+    """Fetch sender and subject for a specific message"""
+    try:
+        message = service.users().messages().get(
+            userId=user_id, 
+            id=message_id, 
+            format='metadata',  # Only get headers, not full content
+            metadataHeaders=['From', 'Subject', 'Date']
+        ).execute()
+        
+        payload = message.get('payload', {})
+        headers = payload.get('headers', [])
+        
+        # Extract sender and subject from headers
+        sender = "Unknown Sender"
+        subject = "No Subject"
+        date = ""
+        
+        for header in headers:
+            name = header.get('name', '').lower()
+            value = header.get('value', '')
+            
+            if name == 'from':
+                # Extract just the name/email, remove extra formatting
+                if '<' in value and '>' in value:
+                    # Format: "Name <email@domain.com>" -> "Name"
+                    sender = value.split('<')[0].strip().strip('"')
+                    if not sender:
+                        # If no name, use email
+                        sender = value.split('<')[1].split('>')[0]
+                else:
+                    sender = value
+                    
+            elif name == 'subject':
+                subject = value
+                
+            elif name == 'date':
+                date = value
+        
+        return {
+            'id': message_id,
+            'sender': sender,
+            'subject': subject,
+            'date': date
+        }
+        
+    except Exception as e:
+        print(f"DEBUG: Failed to get details for message {message_id}: {e}")
+        return {
+            'id': message_id,
+            'sender': "Unknown",
+            'subject': "Error fetching details",
+            'date': ""
+        }
+
+
+def _gmail_list_with_details(query: str, user_id: str = "me", max_results: int = 25) -> List[Dict]:
+    """Get Gmail messages with sender/subject details"""
+    try:
+        svc = _gmail_service()
+        print(f"DEBUG: Gmail search query: '{query}'")
+        
+        # First, get the list of message IDs
+        resp = svc.users().messages().list(
+            userId=user_id, q=query, maxResults=max_results
+        ).execute()
+        
+        message_batch = resp.get("messages", [])
+        print(f"DEBUG: Found {len(message_batch)} messages")
+        
+        # Then fetch details for each message
+        detailed_messages = []
+        for msg in message_batch:
+            details = _get_message_details(svc, msg['id'], user_id)
+            detailed_messages.append(details)
+        
+        print(f"DEBUG: Fetched details for {len(detailed_messages)} messages")
+        return detailed_messages
+        
+    except Exception as e:
+        print(f"DEBUG: Gmail list with details error: {e}")
+        raise
+
+
+# Update the existing functions to use detailed messages:
+
+def list_overnight(include_unread: bool = False, include_primary: bool = False, query_extra: Optional[str] = None) -> List[Dict]:
+    """Return list of detailed message info since local midnight"""
+    try:
+        q = _overnight_query(include_unread, include_primary, query_extra)
+        detailed_msgs = _gmail_list_with_details(q, max_results=25)
+        print(f"DEBUG: list_overnight returning {len(detailed_msgs)} detailed messages")
+        return detailed_msgs
+    except Exception as e:
+        print(f"DEBUG: list_overnight error: {e}")
+        raise
+
+
+def search(query: str) -> List[Dict]:
+    """Generic Gmail search with sender/subject details"""
+    try:
+        detailed_msgs = _gmail_list_with_details(query, max_results=25)
+        print(f"DEBUG: Gmail search returning {len(detailed_msgs)} detailed messages")
+        return detailed_msgs
+    except Exception as e:
+        print(f"DEBUG: Gmail search error: {e}")
+        raise
