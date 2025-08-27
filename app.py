@@ -161,6 +161,7 @@ def index():
         random_toggle = 'random' in request.form
 
         # ---- Command: Gmail overnight (multiple aliases) ----
+# ---- Command: Gmail overnight (multiple aliases) ----
         if user_input.lower().strip() in ["overnight", "mail", "emails", "inbox", "check mail"]:
             try:
                 msgs = list_overnight(include_unread=True, include_primary=False)
@@ -303,10 +304,17 @@ def index():
         if user_input.lower().strip() in ["good morning", "morning", "gm"]:
             print("DEBUG: Good Morning command triggered")
             try:
-                # Get overnight emails and today's calendar - using correct function signatures
+                print("DEBUG: About to call list_overnight")
                 msgs = list_overnight(include_unread=True, include_primary=False)
+                print(f"DEBUG: Got {len(msgs)} messages")
+                
+                print("DEBUG: About to call list_today_events")
                 events = list_today_events(max_results=20)
+                print(f"DEBUG: Got {len(events)} events")
+                
+                print("DEBUG: About to call get_next_meeting")
                 next_meeting = get_next_meeting()
+                print(f"DEBUG: Got next meeting: {next_meeting}")
                 
                 # Format briefing
                 email_summary = f"Found {len(msgs)} overnight emails"
@@ -328,18 +336,26 @@ def index():
 • Prepare for upcoming meetings
 • Check calendar for conflicts"""
 
-                # Save to daily log
+                print("DEBUG: About to save daily log")
                 _save_daily_log("morning", morning_briefing)
+                print("DEBUG: Daily log saved")
                 
-                # Generate AI response
+                print("DEBUG: About to call retrieve")
                 retrieval_ctx = retrieve(morning_briefing, k=5) if is_ready() else []
+                print("DEBUG: Retrieve completed")
+                
+                print("DEBUG: About to call generate_response")
                 response_data = generate_response(
                     f"Summarize this morning briefing and suggest 3 key priorities:\n\n{morning_briefing}",
                     use_voices, random_toggle, project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
                 )
+                print("DEBUG: generate_response completed")
                 
             except Exception as e:
-                response_data = {"SyntaxPrime": f"Morning briefing failed: {e}"}
+                import traceback
+                error_details = traceback.format_exc()
+                print(f"DEBUG: Full error trace: {error_details}")
+                response_data = {"SyntaxPrime": f"Morning briefing failed: {str(e)} | Type: {type(e).__name__}"}
 
             _append_session(project, user_input, response_data)
             return _render(project, response_data)
