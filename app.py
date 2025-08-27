@@ -81,9 +81,8 @@ def _save_daily_log(sync_type: str, content: str):
             
     except Exception as e:
         import traceback
-    error_details = traceback.format_exc()
-    print(f"DEBUG: Full error trace: {error_details}")
-    response_data = {"SyntaxPrime": f"Morning briefing failed: {str(e)} | Type: {type(e).__name__}"}
+        error_details = traceback.format_exc()
+        print(f"DEBUG: Daily log save failed: {error_details}")
 
 def build_brain_background():
     """Build the RAG system using batched processing"""
@@ -162,7 +161,6 @@ def index():
         random_toggle = 'random' in request.form
 
         # ---- Command: Gmail overnight (multiple aliases) ----
-# ---- Command: Gmail overnight (multiple aliases) ----
         if user_input.lower().strip() in ["overnight", "mail", "emails", "inbox", "check mail"]:
             try:
                 msgs = list_overnight(include_unread=True, include_primary=False)
@@ -356,12 +354,11 @@ def index():
                 import traceback
                 error_details = traceback.format_exc()
                 print(f"DEBUG: Full error trace: {error_details}")
-                response_data = {"SyntaxPrime": f"Morning briefing failed: {str(e)} | Type: {type(e).__name__}"}
+                response_data = {"SyntaxPrime": f"Morning briefing failed: {str(e)} | Type: {type(e).__name__} | Details: {error_details[:200]}"}
 
             _append_session(project, user_input, response_data)
             return _render(project, response_data)
-
-        # ---- Command: Good Evening ----
+# ---- Command: Good Evening ----
         if user_input.lower().strip() in ["good evening", "evening", "ge", "wrap up", "day summary"]:
             try:
                 # Get today's sent emails and completed meetings
@@ -600,7 +597,6 @@ def brain_status():
         }
     
     return jsonify(status)
-
 # --- BRAIN CONTROL PAGE ---
 @app.route('/brain')
 def brain_control():
@@ -644,7 +640,6 @@ def brain_control():
             .btn.server-build { background: #059669; }
             .btn.server-build:hover { background: #047857; }
             
-            /* Enhanced progress bar for batches */
             .progress-container { 
                 margin: 15px 0;
                 background: #333; 
@@ -693,7 +688,6 @@ def brain_control():
                 font-size: 16px;
             }
             
-            /* Batch progress section */
             .batch-info {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
@@ -810,7 +804,6 @@ def brain_control():
                                 progressBar.style.width = data.percentage + '%';
                                 progressText.textContent = `${data.percentage}%`;
                                 
-                                // Show batch info
                                 if (data.total_batches > 0) {
                                     batchInfo.style.display = 'grid';
                                     document.getElementById('chunks-processed').textContent = data.chunks.toLocaleString();
@@ -882,10 +875,7 @@ def brain_control():
                     .catch(e => alert('Build request failed: ' + e));
             }
             
-            // Initial status check
             refreshStatus();
-            
-            // Auto-refresh every 5 seconds
             setInterval(refreshStatus, 5000);
         </script>
     </body>
@@ -913,9 +903,8 @@ def debug_sessions():
             size = os.path.getsize(filepath)
             result.append(f"File: {filename} ({size} bytes)")
             
-            # Show first few lines of each file
             with open(filepath, 'r', encoding='utf-8') as f:
-                lines = f.readlines()[:3]  # First 3 lines
+                lines = f.readlines()[:3]
                 for i, line in enumerate(lines, 1):
                     result.append(f"  Line {i}: {line.strip()[:100]}...")
         
@@ -932,7 +921,6 @@ def debug_files():
     try:
         result = ["=== Debug Files Report ===\n"]
         
-        # Check data/cleaned directory
         if os.path.exists('data/cleaned/'):
             files = os.listdir('data/cleaned/')
             file_info = []
@@ -944,7 +932,6 @@ def debug_files():
         else:
             result.append("data/cleaned/ directory not found\n")
         
-        # Check for raw data folders
         raw_folders = []
         for item in os.listdir('data/'):
             if item.startswith('raw_') and os.path.isdir(f'data/{item}'):
@@ -962,7 +949,7 @@ def debug_files():
         return f"Error checking files: {e}"
 
 
-# --- STREAMING (plain text) ---
+# --- STREAMING ---
 @app.route('/stream', methods=['POST'])
 def stream():
     if not session.get('logged_in'):
@@ -1008,7 +995,7 @@ def healthz():
     return jsonify(status)
 
 
-# --- DEBUG RAG: see what the retriever returns ---
+# --- DEBUG RAG ---
 @app.route('/debug/rag')
 def debug_rag():
     if not session.get('logged_in'):
@@ -1023,23 +1010,21 @@ def debug_rag():
     return jsonify({"ok": True, "count": len(hits), "results": hits})
 
 
-# --- DEBUG: Sample entries to see data structure ---
+# --- DEBUG: Sample entries ---
 @app.route('/debug/sample')
 def debug_sample():
     if not session.get('logged_in'):
         return "Unauthorized", 401
     
     try:
-        # Get a few sample entries to see their structure
         import gzip
         samples = []
         with gzip.open('data/cleaned/ghostline_sources.jsonl.gz', 'rt', encoding='utf-8') as f:
             for i, line in enumerate(f):
-                if i >= 5:  # Just first 5 entries
+                if i >= 5:
                     break
                 try:
                     entry = json.loads(line)
-                    # Only show metadata, not full content
                     sample = {k: v for k, v in entry.items() if k != 'content'}
                     sample['content_length'] = len(entry.get('content', ''))
                     samples.append(sample)
@@ -1051,7 +1036,7 @@ def debug_sample():
         return jsonify({"ok": False, "error": str(e)})
 
 
-# --- DEBUG: Check EasyOCR status ---
+# --- DEBUG: EasyOCR ---
 @app.route('/debug/ocr')
 def debug_ocr():
     if not session.get('logged_in'):
@@ -1061,7 +1046,6 @@ def debug_ocr():
         import easyocr
         import numpy as np
         
-        # Test EasyOCR initialization
         reader = easyocr.Reader(['en'])
         
         return "<pre>EasyOCR is working!\n\nSupported languages: English\nReady for image analysis!</pre>"
@@ -1181,5 +1165,4 @@ def upload_file():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
-
 
