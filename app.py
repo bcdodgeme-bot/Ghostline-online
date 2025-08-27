@@ -142,8 +142,6 @@ def load_conversation(project: str, limit: int = 50):
         except json.JSONDecodeError:
             continue
     return turns
-
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if not session.get('logged_in'):
@@ -298,74 +296,27 @@ def index():
 
             _append_session(project, user_input, response_data)
             return _render(project, response_data)
-
-        # ---- Command: Good Morning ----
-        # ---- Command: Good Morning ----
+# ---- Command: Good Morning ----
         if user_input.lower().strip() in ["good morning", "morning", "gm"]:
             print("DEBUG: Good Morning command triggered")
             try:
                 print("DEBUG: About to call list_overnight")
                 msgs = list_overnight(include_unread=True, include_primary=False)
                 print(f"DEBUG: Got {len(msgs)} messages")
-
+                
                 print("DEBUG: About to call list_today_events")
                 events = list_today_events(max_results=20)
                 print(f"DEBUG: Got {len(events)} events")
-
+                
                 print("DEBUG: About to call get_next_meeting")
                 next_meeting = get_next_meeting()
                 print(f"DEBUG: Got next meeting: {next_meeting}")
-
+                
                 # Format briefing
                 email_summary = f"Found {len(msgs)} overnight emails"
                 calendar_summary = format_calendar_summary(events, "Today's Schedule")
-
+                
                 morning_briefing = f"""Good morning! Here's your daily briefing:
-
-**OVERNIGHT EMAILS**
-{email_summary}
-
-**TODAY'S CALENDAR**
-{calendar_summary}
-
-**NEXT MEETING**
-{f"{next_meeting.get('summary', 'Unknown')} at {next_meeting.get('start_formatted', 'Unknown time')}" if next_meeting else "No meetings scheduled"}
-
-**PRIORITIES FOR TODAY**
-• Review urgent emails
-• Prepare for upcoming meetings
-• Check calendar for conflicts"""
-
-                print("DEBUG: About to save daily log")
-                _save_daily_log("morning", morning_briefing)
-                print("DEBUG: Daily log saved")
-
-                print("DEBUG: About to call retrieve")
-                retrieval_ctx = retrieve(morning_briefing, k=5) if is_ready() else []
-                print("DEBUG: Retrieve completed")
-
-                print("DEBUG: About to call generate_response")
-                response_data = generate_response(
-                    f"Summarize this morning briefing and suggest 3 key priorities:\n\n{morning_briefing}",
-                    use_voices, random_toggle, project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
-                )
-                print("DEBUG: generate_response completed")
-
-            except Exception as e:
-                import traceback
-                error_details = traceback.format_exc()
-                print(f"DEBUG: Full error trace: {error_details}")
-                app.logger.error(f"Morning briefing failed! Exception: {e}\nTraceback:\n{error_details}")
-                response_data = {
-                    "SyntaxPrime": (
-                        f"Morning briefing failed: {str(e)} | "
-                        f"Type: {type(e).__name__} | "
-                        f"Details: {error_details[:500]}"
-                    )
-                }
-
-            _append_session(project, user_input, response_data)
-            return _render(project, response_data)
 
 **OVERNIGHT EMAILS**
 {email_summary}
@@ -404,7 +355,8 @@ def index():
 
             _append_session(project, user_input, response_data)
             return _render(project, response_data)
-# ---- Command: Good Evening ----
+
+        # ---- Command: Good Evening ----
         if user_input.lower().strip() in ["good evening", "evening", "ge", "wrap up", "day summary"]:
             try:
                 # Get today's sent emails and completed meetings
@@ -505,8 +457,6 @@ def _render(project: str, response_data: dict):
         conversation=conversation,
         current_project=project
     )
-
-
 # --- BACKUP ALL PROJECTS ---
 @app.route('/backup_all')
 def backup_all():
@@ -643,6 +593,7 @@ def brain_status():
         }
     
     return jsonify(status)
+
 # --- BRAIN CONTROL PAGE ---
 @app.route('/brain')
 def brain_control():
@@ -760,175 +711,262 @@ def brain_control():
             #status { font-family: monospace; font-size: 14px; }
             .error { color: #ef4444; }
             .success { color: #10b981; }
-            .building { color: #f59e0b; }
-            .eta { 
-                font-size: 12px; 
-                color: #888; 
-                margin-top: 8px;
+            .
+# --- BACKUP ALL PROJECTS ---
+@app.route('/backup_all')
+def backup_all():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    try:
+        # Create temporary file for the zip
+        temp_zip = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
+        temp_zip.close()
+        
+        with zipfile.ZipFile(temp_zip.name, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            backup_count = 0
+            
+            # Add all session files
+            if os.path.exists('sessions'):
+                for filename in os.listdir('sessions'):
+                    if filename.endswith('.json'):
+                        file_path = os.path.join('sessions', filename)
+                        zipf.write(file_path, f"sessions/{filename}")
+                        backup_count += 1
+            
+            # Add daily logs if they exist
+            if os.path.exists('daily_logs'):
+                for filename in os.listdir('daily_logs'):
+                    if filename.endswith('.md'):
+                        file_path = os.path.join('daily_logs', filename)
+                        zipf.write(file_path, f"daily_logs/{filename}")
+            
+            # Create backup manifest
+            manifest = f"""# Ghostline Backup Manifest
+Created: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Session files backed up: {backup_count}
+Projects: {', '.join(PROJECTS)}
+
+## Contents:
+- /sessions/ - All conversation history
+- /daily_logs/ - Daily sync summaries (if any)
+
+## Restore Instructions:
+1. Extract this ZIP file
+2. Copy session files to your sessions/ directory
+3. Copy daily_logs to your daily_logs/ directory
+"""
+            zipf.writestr("backup_manifest.md", manifest)
+        
+        # Send the zip file
+        backup_name = f"ghostline_backup_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+        
+        return send_file(
+            temp_zip.name,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name=backup_name
+        )
+        
+    except Exception as e:
+        return f"Backup failed: {e}", 500
+
+
+# --- BRAIN BUILDING ENDPOINTS ---
+@app.route('/build_brain', methods=['POST'])
+def build_brain():
+    """Manually trigger batched brain building"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    global _rag_building
+    
+    if _rag_building:
+        return jsonify({"ok": False, "error": "Brain is already building"}), 400
+    
+    if is_ready():
+        return jsonify({"ok": False, "error": "Brain is already built"}), 400
+    
+    # Start building in background
+    thread = threading.Thread(target=build_brain_background)
+    thread.daemon = True
+    thread.start()
+    
+    return jsonify({"ok": True, "message": "Batched brain building started"})
+
+@app.route('/build_new_brain', methods=['POST'])
+def build_new_brain():
+    """Build brain from raw sources on server"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    global _brain_building
+    
+    if _brain_building:
+        return jsonify({"ok": False, "error": "Brain is already building"}), 400
+    
+    # Start server-side building in background
+    thread = threading.Thread(target=build_new_brain_background)
+    thread.daemon = True
+    thread.start()
+    
+    return jsonify({"ok": True, "message": "Server-side brain building started"})
+
+@app.route('/brain_status')
+def brain_status():
+    """Enhanced brain status with batch progress"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    global _rag_building, _rag_build_error, _brain_building, _brain_build_error
+    
+    # Get detailed build status from the batched system
+    build_status = get_build_status()
+    
+    # Check if server-side building is in progress
+    if _brain_building:
+        status = {
+            "ready": False,
+            "building": True,
+            "progress": "Building brain from raw sources on server...",
+            "error": _brain_build_error,
+            "percentage": 50,  # Indeterminate progress
+            "chunks": 0,
+            "batches_completed": 0,
+            "total_batches": 1
+        }
+    else:
+        status = {
+            "ready": build_status["status"] == "complete",
+            "building": _rag_building or build_status["status"] == "building", 
+            "progress": build_status["progress"],
+            "error": _rag_build_error or _brain_build_error,
+            "percentage": build_status["percentage"],
+            "chunks": build_status.get("chunks_processed", 0),
+            "batches_completed": build_status.get("batches_completed", 0),
+            "total_batches": build_status.get("total_batches", 0)
+        }
+    
+    return jsonify(status)
+
+# --- BRAIN CONTROL PAGE ---
+@app.route('/brain')
+def brain_control():
+    """Enhanced brain control dashboard with batch progress"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Ghostline Brain Control v0.1.9.7</title>
+        <style>
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #0f0f0f; 
+                color: #fff; 
+                margin: 0; 
+                padding: 20px; 
+            }
+            .container { max-width: 900px; margin: 0 auto; }
+            .status-box { 
+                background: #1a1a1a; 
+                border: 1px solid #333; 
+                border-radius: 8px; 
+                padding: 20px; 
+                margin: 20px 0; 
+            }
+            .btn { 
+                background: #6366f1; 
+                color: white; 
+                border: none; 
+                padding: 12px 24px; 
+                border-radius: 8px; 
+                cursor: pointer; 
+                font-size: 16px;
+                margin: 10px 5px;
+            }
+            .btn:hover { background: #5855eb; }
+            .btn:disabled { background: #666; cursor: not-allowed; }
+            .btn.server-build { background: #059669; }
+            .btn.server-build:hover { background: #047857; }
+            
+            .progress-container { 
+                margin: 15px 0;
+                background: #333; 
+                border: 2px inset #666;
+                height: 40px; 
+                border-radius: 8px;
+                position: relative;
+                overflow: hidden;
+            }
+            .progress-bar { 
+                background: linear-gradient(90deg, #10b981 0%, #34d399 50%, #10b981 100%);
+                height: 100%; 
+                transition: width 0.8s ease;
+                position: relative;
+                min-width: 0;
+                border-radius: 6px;
+            }
+            .progress-bar::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 12px,
+                    rgba(255,255,255,0.15) 12px,
+                    rgba(255,255,255,0.15) 24px
+                );
+                animation: slide 2s linear infinite;
+            }
+            @keyframes slide {
+                0% { transform: translateX(-24px); }
+                100% { transform: translateX(24px); }
+            }
+            .progress-text {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-weight: bold;
+                text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+                z-index: 10;
+                font-size: 16px;
+            }
+            
+            .batch-info {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+                margin: 15px 0;
+            }
+            .batch-stat {
+                background: #2a2a2a;
+                padding: 12px;
+                border-radius: 6px;
                 text-align: center;
             }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>Ghostline Brain Control v0.1.9.7</h1>
-            <p>Batched RAG system with server-side brain building from raw sources.</p>
-            
-            <div class="status-box">
-                <h3>Brain Status</h3>
-                <div id="status">Loading...</div>
-                
-                <div id="progress-container" class="progress-container" style="display: none;">
-                    <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
-                    <div class="progress-text" id="progress-text">0%</div>
-                </div>
-                
-                <div id="batch-info" class="batch-info" style="display: none;">
-                    <div class="batch-stat">
-                        <div class="number" id="chunks-processed">0</div>
-                        <div class="label">Chunks Processed</div>
-                    </div>
-                    <div class="batch-stat">
-                        <div class="number" id="batches-completed">0</div>
-                        <div class="label">Batches Complete</div>
-                    </div>
-                </div>
-                
-                <div id="eta" class="eta"></div>
-            </div>
-            
-            <div class="status-box">
-                <h3>Controls</h3>
-                <button class="btn" id="build-btn" onclick="buildBrain()">Build Brain (from file)</button>
-                <button class="btn server-build" id="server-build-btn" onclick="buildNewBrain()">Build Brain (from sources)</button>
-                <button class="btn" onclick="refreshStatus()">Refresh Status</button>
-                <button class="btn" onclick="window.location.href='/'">Back to Chat</button>
-            </div>
-            
-            <div class="status-box">
-                <h3>Build Options</h3>
-                <p><strong>Build Brain (from file):</strong> Uses existing brain file with batched processing.</p>
-                <p><strong>Build Brain (from sources):</strong> Creates fresh brain from raw HTML/TXT/JSON files on server.</p>
-                <p><strong>Memory Safe:</strong> Both approaches work with Railway's 32GB RAM.</p>
-                <p><strong>Auto-Resume:</strong> Batched processing continues from last completed batch.</p>
-            </div>
-        </div>
-        
-        <script>
-            let statusInterval;
-            
-            function refreshStatus() {
-                fetch('/brain_status')
-                    .then(r => r.json())
-                    .then(data => {
-                        const statusDiv = document.getElementById('status');
-                        const buildBtn = document.getElementById('build-btn');
-                        const serverBuildBtn = document.getElementById('server-build-btn');
-                        const progressContainer = document.getElementById('progress-container');
-                        const progressBar = document.getElementById('progress-bar');
-                        const progressText = document.getElementById('progress-text');
-                        const batchInfo = document.getElementById('batch-info');
-                        const etaDiv = document.getElementById('eta');
-                        
-                        let statusText = '';
-                        
-                        if (data.ready) {
-                            statusText = `<span class="success">✓ Brain Ready</span><br>Total chunks: ${data.chunks.toLocaleString()}`;
-                            buildBtn.disabled = true;
-                            buildBtn.textContent = 'Brain Complete';
-                            serverBuildBtn.disabled = true;
-                            serverBuildBtn.textContent = 'Brain Complete';
-                            progressContainer.style.display = 'none';
-                            batchInfo.style.display = 'none';
-                            etaDiv.textContent = '';
-                            
-                        } else if (data.building) {
-                            statusText = `<span class="building">⚡ Building Brain...</span><br>${data.progress}`;
-                            
-                            if (data.percentage > 0) {
-                                progressContainer.style.display = 'block';
-                                progressBar.style.width = data.percentage + '%';
-                                progressText.textContent = `${data.percentage}%`;
-                                
-                                if (data.total_batches > 0) {
-                                    batchInfo.style.display = 'grid';
-                                    document.getElementById('chunks-processed').textContent = data.chunks.toLocaleString();
-                                    document.getElementById('batches-completed').textContent = `${data.batches_completed}/${data.total_batches}`;
-                                    
-                                    etaDiv.textContent = `Batch ${data.batches_completed + 1} of ${data.total_batches} in progress`;
-                                }
-                            } else {
-                                progressContainer.style.display = 'none';
-                                batchInfo.style.display = 'none';
-                            }
-                            
-                            buildBtn.disabled = true;
-                            buildBtn.textContent = 'Building...';
-                            serverBuildBtn.disabled = true;
-                            serverBuildBtn.textContent = 'Building...';
-                            
-                        } else if (data.error) {
-                            statusText = `<span class="error">✗ Build Failed</span><br>${data.error}`;
-                            buildBtn.disabled = false;
-                            buildBtn.textContent = 'Retry Build (from file)';
-                            serverBuildBtn.disabled = false;
-                            serverBuildBtn.textContent = 'Retry Build (from sources)';
-                            progressContainer.style.display = 'none';
-                            batchInfo.style.display = 'none';
-                            etaDiv.textContent = '';
-                            
-                        } else {
-                            statusText = '<span style="color: #fbbf24;">◯ Brain Not Built</span><br>Ready for building';
-                            buildBtn.disabled = false;
-                            buildBtn.textContent = 'Build Brain (from file)';
-                            serverBuildBtn.disabled = false;
-                            serverBuildBtn.textContent = 'Build Brain (from sources)';
-                            progressContainer.style.display = 'none';
-                            batchInfo.style.display = 'none';
-                            etaDiv.textContent = '';
-                        }
-                        
-                        statusDiv.innerHTML = statusText;
-                    })
-                    .catch(e => {
-                        document.getElementById('status').innerHTML = `<span class="error">Connection error: ${e}</span>`;
-                    });
+            .batch-stat .number {
+                font-size: 24px;
+                font-weight: bold;
+                color: #10b981;
+            }
+            .batch-stat .label {
+                font-size: 12px;
+                color: #888;
+                margin-top: 4px;
             }
             
-            function buildBrain() {
-                fetch('/build_brain', { method: 'POST' })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.ok) {
-                            statusInterval = setInterval(refreshStatus, 3000);
-                        } else {
-                            alert('Build failed: ' + data.error);
-                        }
-                    })
-                    .catch(e => alert('Build request failed: ' + e));
-            }
-            
-            function buildNewBrain() {
-                fetch('/build_new_brain', { method: 'POST' })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.ok) {
-                            statusInterval = setInterval(refreshStatus, 3000);
-                        } else {
-                            alert('Build failed: ' + data.error);
-                        }
-                    })
-                    .catch(e => alert('Build request failed: ' + e));
-            }
-            
-            refreshStatus();
-            setInterval(refreshStatus, 5000);
-        </script>
-    </body>
-    </html>
-    """
-
-
+            #status { font-family: monospace; font-size: 14px; }
+            .error { color: #ef4444; }
+            .success { color: #10b981; }
+            .
 # --- DEBUG ROUTES ---
 @app.route('/debug/sessions')
 def debug_sessions():
