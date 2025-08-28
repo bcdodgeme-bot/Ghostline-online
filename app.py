@@ -1030,7 +1030,7 @@ def analyze_image_with_vision(file_stream, filename):
         
         # Create vision analysis prompt
         payload = {
-            "model": "gpt-4-vision-preview",
+            "model": "gpt-4o",
             "messages": [
                 {
                     "role": "user",
