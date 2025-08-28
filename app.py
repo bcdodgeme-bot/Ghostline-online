@@ -1002,6 +1002,8 @@ def stream():
     return app.response_class(generate(), mimetype='text/plain')
 
 # --- ENHANCED UPLOAD / OCR ---
+# Replace your existing upload route with this integrated version
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     try:
@@ -1009,13 +1011,15 @@ def upload_file():
         if not file or not file.filename:
             return "No file uploaded", 400
         
+        # Get current project from form or session
+        project = request.form.get('project', PROJECTS[0])
         filename = file.filename.lower()
         text = ""
         
-        app.logger.info(f"Processing file: {filename}")
+        app.logger.info(f"Processing file: {filename} for project: {project}")
 
+        # Process different file types
         if filename.endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
-            # Use the new OCR processing function from Part 1
             text = process_image_ocr(file.stream, filename)
                 
         elif filename.endswith('.pdf'):
@@ -1025,8 +1029,6 @@ def upload_file():
                 
                 if not data:
                     return "PDF file appears to be empty", 400
-                
-                app.logger.info(f"PDF file size: {len(data)} bytes")
                 
                 doc = fitz.open(stream=data, filetype="pdf")
                 
@@ -1046,8 +1048,6 @@ def upload_file():
                 if not text.strip():
                     text = "No text found in PDF (may be image-based or encrypted)"
                     
-                app.logger.info(f"PDF processed: {doc.page_count} pages, {len(text)} characters")
-                
             except Exception as e:
                 app.logger.error(f"PDF processing failed: {e}")
                 return f"PDF Error: {str(e)}", 500
@@ -1059,8 +1059,6 @@ def upload_file():
                 
                 if not file_data:
                     return "Word document appears to be empty", 400
-                
-                app.logger.info(f"Word document size: {len(file_data)} bytes")
                 
                 import io
                 file_stream = io.BytesIO(file_data)
@@ -1087,8 +1085,6 @@ def upload_file():
                 if not text.strip():
                     text = "No readable text found in Word document"
                     
-                app.logger.info(f"Word document processed: {len(paragraphs)} paragraphs, {len(document.tables)} tables")
-                
             except Exception as e:
                 app.logger.error(f"Word document processing failed: {e}")
                 return f"Word Document Error: {str(e)}", 500
@@ -1099,76 +1095,45 @@ def upload_file():
         # Truncate if too long
         if len(text) > 15000:
             text = text[:15000] + "\n\n[...Content truncated...]"
-            
+        
+        # Create analysis prompt for AI
+        analysis_prompt = f"""I've uploaded and processed the file '{file.filename}'. Here's what was extracted:
+
+=== EXTRACTED CONTENT ===
+{text}
+
+=== FILE DETAILS ===
+- Filename: {file.filename}
+- Type: {filename.split('.')[-1].upper()}
+- Characters: {len(text):,}
+- Words: {len(text.split()):,}
+- Lines: {len(text.splitlines()):,}
+
+Please analyze this content and provide insights, summaries, or answer any questions about what you see."""
+
         app.logger.info(f"File processing successful: {len(text)} characters extracted")
 
-        # Return formatted HTML
-        import html
-        escaped_text = html.escape(text)
-        
-        return f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>File Analysis Result</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <style>
-                body {{ 
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    margin: 0; 
-                    padding: 20px;
-                    background: #0f0f0f; 
-                    color: #fff; 
-                    line-height: 1.6;
-                }}
-                .container {{ max-width: 1200px; margin: 0 auto; }}
-                pre {{ 
-                    white-space: pre-wrap; 
-                    word-wrap: break-word; 
-                    background: #1a1a1a;
-                    padding: 20px;
-                    border-radius: 8px;
-                    border: 1px solid #333;
-                    font-size: 14px;
-                    overflow-x: auto;
-                }}
-                .header {{
-                    background: #6366f1;
-                    color: white;
-                    padding: 15px 20px;
-                    border-radius: 8px;
-                    margin-bottom: 20px;
-                }}
-                .stats {{
-                    display: flex;
-                    gap: 20px;
-                    margin-top: 10px;
-                    font-size: 14px;
-                    opacity: 0.9;
-                }}
-                @media (max-width: 768px) {{
-                    body {{ padding: 10px; }}
-                    .stats {{ flex-direction: column; gap: 5px; }}
-                    pre {{ font-size: 12px; padding: 15px; }}
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h2>📄 File Analysis Complete</h2>
-                    <div><strong>{html.escape(file.filename)}</strong></div>
-                    <div class="stats">
-                        <span>📊 {len(text):,} characters extracted</span>
-                        <span>🔤 {len(text.split()):,} words</span>
-                        <span>📝 {len(text.splitlines()):,} lines</span>
-                    </div>
-                </div>
-                <pre>{escaped_text}</pre>
-            </div>
-        </body>
-        </html>
-        """
+        # Get AI voices from form or use default
+        use_voices = ['SyntaxPrime']  # Default to SyntaxPrime for file analysis
+        random_toggle = False
+
+        # Generate AI analysis
+        try:
+            retrieval_ctx = retrieve(analysis_prompt, k=5) if is_ready() else []
+            response_data = generate_response(
+                analysis_prompt, use_voices, random_toggle,
+                project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+            )
+        except Exception as e:
+            app.logger.error(f"AI analysis failed: {e}")
+            response_data = {"SyntaxPrime": f"File processed successfully, but AI analysis failed: {e}"}
+
+        # Append to session as if user asked about the file
+        user_message = f"[File Upload] {file.filename}"
+        _append_session(project, user_message, response_data)
+
+        # Redirect back to main chat with the analysis
+        return redirect(f'/?project={project}#bottom-anchor')
         
     except Exception as e:
         app.logger.error(f"Upload route failed: {e}")
