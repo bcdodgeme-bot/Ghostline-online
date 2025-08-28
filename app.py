@@ -155,12 +155,31 @@ def init_database():
                 )
             ''')
             
+            # Create brain_documents table for RAG system storage
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS brain_documents (
+                    id SERIAL PRIMARY KEY,
+                    document_id VARCHAR(255) NOT NULL,
+                    title VARCHAR(500),
+                    content TEXT NOT NULL,
+                    embedding_vector FLOAT8[] NULL,
+                    chunk_index INTEGER DEFAULT 0,
+                    metadata JSONB DEFAULT '{}',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # Create indexes for brain_documents
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_brain_docs_id ON brain_documents (document_id)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_brain_docs_title ON brain_documents (title)')
+            
             conn.commit()
             app.logger.info("Database tables initialized successfully")
             
         except Exception as e:
             conn.rollback()
             app.logger.error(f"Database initialization failed: {e}")
+
 
 # Enhanced session management with database backup - NEW
 def load_conversation_enhanced(project: str, limit: int = 50):
@@ -266,6 +285,163 @@ def track_uploaded_file(filename: str, file_type: str, project: str, content_pre
             except Exception as e:
                 app.logger.error(f"Failed to track uploaded file: {e}")
                 conn.rollback()
+def save_brain_to_database(corpus_data):
+    """Save processed brain corpus to database"""
+    with get_db_connection() as conn:
+        if not conn:
+            app.logger.warning("No database connection - brain will only be saved to file")
+            return False
+            
+        try:
+            cursor = conn.cursor()
+            
+            # Clear existing brain data
+            cursor.execute('DELETE FROM brain_documents')
+            app.logger.info("Cleared existing brain documents from database")
+            
+            # Insert new brain data
+            saved_count = 0
+            for item in corpus_data:
+                cursor.execute('''
+                    INSERT INTO brain_documents (document_id, title, content, chunk_index, metadata)
+                    VALUES (%s, %s, %s, %s, %s)
+                ''', (
+                    item.get('id', 'unknown'),
+                    item.get('title', '')[:500],  # Limit title length
+                    item.get('content', ''),
+                    item.get('chunk_index', 0),
+                    psycopg2.extras.Json(item.get('metadata', {}))
+                ))
+                saved_count += 1
+            
+            conn.commit()
+            app.logger.info(f"Saved {saved_count} brain documents to database")
+            return True
+            
+        except Exception as e:
+            app.logger.error(f"Failed to save brain to database: {e}")
+            conn.rollback()
+            return False
+
+def load_brain_from_database():
+    """Load brain corpus from database"""
+    with get_db_connection() as conn:
+        if not conn:
+            return None
+            
+        try:
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            cursor.execute('''
+                SELECT document_id, title, content, chunk_index, metadata 
+                FROM brain_documents 
+                ORDER BY document_id, chunk_index
+            ''')
+            
+            rows = cursor.fetchall()
+            corpus_data = []
+            
+            for row in rows:
+                corpus_data.append({
+                    'id': row['document_id'],
+                    'title': row['title'],
+                    'content': row['content'],
+                    'chunk_index': row['chunk_index'],
+                    'metadata': row['metadata'] or {}
+                })
+            
+            app.logger.info(f"Loaded {len(corpus_data)} brain documents from database")
+            return corpus_data
+            
+        except Exception as e:
+            app.logger.error(f"Failed to load brain from database: {e}")
+            return None
+
+def enhanced_build_brain_background():
+    """Enhanced brain building with database storage"""
+    global _rag_building, _rag_build_error
+    
+    try:
+        _rag_building = True
+        _rag_build_error = None
+        app.logger.info("Starting enhanced brain build with database integration...")
+        
+        # Build the brain using existing corpus file
+        load_corpus(CORPUS_PATH)
+        
+        # Now save to database
+        try:
+            # Load the corpus data that was just processed
+            import gzip
+            import json
+            
+            corpus_data = []
+            with gzip.open(CORPUS_PATH, 'rt', encoding='utf-8') as f:
+                for line in f:
+                    if line.strip():
+                        corpus_data.append(json.loads(line))
+            
+            # Save to database
+            if save_brain_to_database(corpus_data):
+                app.logger.info("Brain successfully saved to database")
+            else:
+                app.logger.warning("Brain build completed but database save failed - file backup available")
+        
+        except Exception as db_error:
+            app.logger.error(f"Database save failed during brain build: {db_error}")
+            # Continue anyway - we still have the file version
+        
+        _rag_building = False
+        app.logger.info("Enhanced brain build complete!")
+        
+    except Exception as e:
+        _rag_building = False
+        _rag_build_error = str(e)
+        app.logger.error(f"Enhanced brain build failed: {e}")
+
+def enhanced_build_new_brain_background():
+    """Enhanced new brain building from sources with database storage"""
+    global _brain_building, _brain_build_error
+    
+    try:
+        _brain_building = True
+        _brain_build_error = None
+        app.logger.info("Starting enhanced new brain build from raw sources...")
+        
+        from build_brain_fixed2 import build_new_brain
+        result_path = build_new_brain()
+        
+        # Copy the new brain to the expected location
+        import shutil
+        shutil.copy(str(result_path), CORPUS_PATH)
+        app.logger.info(f"New brain saved to {CORPUS_PATH}")
+        
+        # Now save to database
+        try:
+            import gzip
+            import json
+            
+            corpus_data = []
+            with gzip.open(CORPUS_PATH, 'rt', encoding='utf-8') as f:
+                for line in f:
+                    if line.strip():
+                        corpus_data.append(json.loads(line))
+            
+            if save_brain_to_database(corpus_data):
+                app.logger.info("New brain successfully saved to database")
+            else:
+                app.logger.warning("New brain build completed but database save failed")
+        
+        except Exception as db_error:
+            app.logger.error(f"Database save failed during new brain build: {db_error}")
+        
+        _brain_building = False
+        app.logger.info("Enhanced new brain build complete!")
+        
+    except Exception as e:
+        _brain_building = False
+        _brain_build_error = str(e)
+        app.logger.error(f"Enhanced new brain build failed: {e}")
+
 # Part 3: EasyOCR setup and processing functions (UNCHANGED)
 
 # Initialize database when app starts - NEW
@@ -857,70 +1033,9 @@ def index():
 
 # Part 7: Brain building endpoints and backup functionality
 
-# --- BACKUP ALL PROJECTS ---
-@app.route('/backup_all')
-def backup_all():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    
-    try:
-        # Create temporary file for the zip
-        temp_zip = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
-        temp_zip.close()
-        
-        with zipfile.ZipFile(temp_zip.name, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            backup_count = 0
-            
-            # Add all session files
-            if os.path.exists('sessions'):
-                for filename in os.listdir('sessions'):
-                    if filename.endswith('.json'):
-                        file_path = os.path.join('sessions', filename)
-                        zipf.write(file_path, f"sessions/{filename}")
-                        backup_count += 1
-            
-            # Add daily logs if they exist
-            if os.path.exists('daily_logs'):
-                for filename in os.listdir('daily_logs'):
-                    if filename.endswith('.md'):
-                        file_path = os.path.join('daily_logs', filename)
-                        zipf.write(file_path, f"daily_logs/{filename}")
-            
-            # Create backup manifest
-            manifest = f"""# Ghostline Backup Manifest
-Created: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-Session files backed up: {backup_count}
-Projects: {', '.join(PROJECTS)}
-
-## Contents:
-- /sessions/ - All conversation history
-- /daily_logs/ - Daily sync summaries (if any)
-
-## Restore Instructions:
-1. Extract this ZIP file
-2. Copy session files to your sessions/ directory
-3. Copy daily_logs to your daily_logs/ directory
-"""
-            zipf.writestr("backup_manifest.md", manifest)
-        
-        # Send the zip file
-        backup_name = f"ghostline_backup_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
-        
-        return send_file(
-            temp_zip.name,
-            mimetype='application/zip',
-            as_attachment=True,
-            download_name=backup_name
-        )
-        
-    except Exception as e:
-        app.logger.error(f"Backup failed: {e}")
-        return f"Backup failed: {e}", 500
-
-# --- BRAIN BUILDING ENDPOINTS ---
 @app.route('/build_brain', methods=['POST'])
 def build_brain():
-    """Manually trigger batched brain building"""
+    """Manually trigger enhanced brain building with database storage"""
     if not session.get('logged_in'):
         return "Unauthorized", 401
     
@@ -932,16 +1047,16 @@ def build_brain():
     if is_ready():
         return jsonify({"ok": False, "error": "Brain is already built"}), 400
     
-    # Start building in background
-    thread = threading.Thread(target=build_brain_background)
+    # Start enhanced building in background
+    thread = threading.Thread(target=enhanced_build_brain_background)
     thread.daemon = True
     thread.start()
     
-    return jsonify({"ok": True, "message": "Batched brain building started"})
+    return jsonify({"ok": True, "message": "Enhanced brain building with database storage started"})
 
 @app.route('/build_new_brain', methods=['POST'])
 def build_new_brain():
-    """Build brain from raw sources on server"""
+    """Build new brain from raw sources with database storage"""
     if not session.get('logged_in'):
         return "Unauthorized", 401
     
@@ -950,12 +1065,12 @@ def build_new_brain():
     if _brain_building:
         return jsonify({"ok": False, "error": "Brain is already building"}), 400
     
-    # Start building in background
-    thread = threading.Thread(target=build_new_brain_background)
+    # Start enhanced building in background
+    thread = threading.Thread(target=enhanced_build_new_brain_background)
     thread.daemon = True
     thread.start()
     
-    return jsonify({"ok": True, "message": "Server-side brain building started"})
+    return jsonify({"ok": True, "message": "Enhanced new brain building with database storage started"})
 
 # Part 8: Brain control dashboard with enhanced loading bar
 
