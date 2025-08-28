@@ -140,6 +140,8 @@
       background:var(--primary); color:#fff; border:none; border-radius:var(--radius-md);
       width:36px; height:36px; cursor:pointer; display:flex; align-items:center; justify-content:center;
       transition: all .2s ease; font-size:1.1rem;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
     .send-button:hover { background:var(--primary-hover); transform: scale(1.05); }
     .send-button:active { transform: scale(0.95); }
@@ -255,7 +257,7 @@
         <div class="message bot">
           <div class="message-bubble bot">
             <div class="message-header">Syntax Prime</div>
-            <div class="message-content">💻 Welcome back to Ghostline — now with 38% more sarcasm and full memory sync. I remember your coffee order, your chaos, and that one time you tried to code at 2am. Ask me anything—recipes, regrets, or revenge plots. Syntax Prime is online.</div>
+            <div class="message-content">Welcome back to Ghostline — now with 38% more sarcasm and full memory sync. I remember your coffee order, your chaos, and that one time you tried to code at 2am. Ask me anything—recipes, regrets, or revenge plots. Syntax Prime is online.</div>
           </div>
         </div>
       {% endif %}
@@ -290,7 +292,7 @@
         </div>
 
         <details class="advanced-controls" id="advancedControls">
-          <summary class="advanced-toggle"><span>⚙️ Advanced Options</span></summary>
+          <summary class="advanced-toggle"><span>Advanced Options</span></summary>
           <div class="advanced-content">
             <div class="controls-row">
               <span class="input-label">AI Personalities:</span>
@@ -299,12 +301,11 @@
                 <label class="voice-checkbox"><input type="checkbox" name="voices" value="SyntaxBot"><span>SyntaxBot</span></label>
                 <label class="voice-checkbox"><input type="checkbox" name="voices" value="Nil.exe"><span>Nil.exe</span></label>
                 <label class="voice-checkbox"><input type="checkbox" name="voices" value="GhadaGPT"><span>GGPT</span></label>
-                <label class="voice-checkbox"><input type="checkbox" name="random"><span>🎲 Random</span></label>
+                <label class="voice-checkbox"><input type="checkbox" name="random"><span>Random</span></label>
               </div>
             </div>
 
             <div class="controls-row">
-              <!-- Upload & Analyze: no nested form -->
               <div class="upload-section" style="width:100%;">
                 <label class="input-label">Upload & Analyze</label>
                 <div style="display:flex; gap:8px; width:100%;">
@@ -313,8 +314,8 @@
                 </div>
               </div>
 
-              <a href="/export/{{ current_project or 'Personal Operating Manual' }}" class="secondary-btn">📤 Export Session</a>
-              <a href="/backup_all" class="secondary-btn">📦 Backup All Projects</a>
+              <a href="/export/{{ current_project or 'Personal Operating Manual' }}" class="secondary-btn">Export Session</a>
+              <a href="/backup_all" class="secondary-btn">Backup All Projects</a>
             </div>
           </div>
         </details>
@@ -323,8 +324,6 @@
   </div>
 
   <script>
-    // ========= Front-end helpers =========
-
     // Auto-resize textarea
     function autoResize(textarea) {
       textarea.style.height = 'auto';
@@ -333,19 +332,16 @@
       textarea.style.height = newHeight + 'px';
     }
 
-    // Initialize textarea & Enter behavior
+    // Initialize textarea and form handling
     const promptInput = document.getElementById('promptInput');
     const mainForm = document.getElementById('mainForm');
-    const isCoarse = window.matchMedia('(pointer: coarse)').matches; // phones/tablets
 
     if (promptInput) {
       promptInput.addEventListener('input', () => autoResize(promptInput));
       autoResize(promptInput);
 
-      // On mobile/tablet: Enter should NOT submit (use the Send button).
-      // On desktop: Enter submits, Shift+Enter = newline.
+      // Simplified keyboard handling - Enter works on all devices
       promptInput.addEventListener('keydown', (e) => {
-        if (isCoarse) return; // do nothing on Enter for mobile
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
           submitForm();
@@ -406,7 +402,7 @@
       }
     }
 
-    // Validate form submit (prevent empty)
+    // Form validation
     if (mainForm) {
       mainForm.addEventListener('submit', (e) => {
         if (!promptInput.value.trim()) {
@@ -418,7 +414,7 @@
       });
     }
 
-    // Auto-scroll on load
+    // Auto-scroll and focus on load
     window.addEventListener('load', () => {
       setTimeout(scrollToBottom, 100);
       if (window.location.hash === '#bottom-anchor') setTimeout(scrollToBottom, 500);
@@ -436,7 +432,7 @@
     }
     document.getElementById('projectSelect')?.addEventListener('change', updateExportLink);
 
-    // ========= Upload & Analyze (no nested form) =========
+    // Upload and analyze function
     async function analyzeUpload() {
       try {
         const input = document.getElementById('uploadInput');
@@ -448,13 +444,11 @@
         const fd = new FormData();
         fd.append('file', input.files[0]);
 
-        // optional spinner
         document.getElementById('loader')?.classList?.remove('hidden');
 
         const resp = await fetch('/upload', { method: 'POST', body: fd });
         const text = await resp.text();
 
-        // open OCR result in a new tab
         const w = window.open('', '_blank');
         w.document.write(text);
         w.document.close();
