@@ -571,64 +571,8 @@ def index():
 # Part 5: Brain building endpoints and backup functionality
 
 # --- BACKUP ALL PROJECTS ---
-@app.route('/backup_all')
-def backup_all():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    
-    try:
-        # Create temporary file for the zip
-        temp_zip = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
-        temp_zip.close()
-        
-        with zipfile.ZipFile(temp_zip.name, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            backup_count = 0
-            
-            # Add all session files
-            if os.path.exists('sessions'):
-                for filename in os.listdir('sessions'):
-                    if filename.endswith('.json'):
-                        file_path = os.path.join('sessions', filename)
-                        zipf.write(file_path, f"sessions/{filename}")
-                        backup_count += 1
-            
-            # Add daily logs if they exist
-            if os.path.exists('daily_logs'):
-                for filename in os.listdir('daily_logs'):
-                    if filename.endswith('.md'):
-                        file_path = os.path.join('daily_logs', filename)
-                        zipf.write(file_path, f"daily_logs/{filename}")
-            
-            # Create backup manifest
-            manifest = f"""# Ghostline Backup Manifest
-Created: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-Session files backed up: {backup_count}
-Projects: {', '.join(PROJECTS)}
 
-## Contents:
-- /sessions/ - All conversation history
-- /daily_logs/ - Daily sync summaries (if any)
-
-## Restore Instructions:
-1. Extract this ZIP file
-2. Copy session files to your sessions/ directory
-3. Copy daily_logs to your daily_logs/ directory
-"""
-            zipf.writestr("backup_manifest.md", manifest)
-        
-        # Send the zip file
-        backup_name = f"ghostline_backup_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
-        
-        return send_file(
-            temp_zip.name,
-            mimetype='application/zip',
-            as_attachment=True,
-            download_name=backup_name
-        )
-        
-    except Exception as e:
-        app.logger.error(f"Backup failed: {e}")
-        return f"Backup failed: {e}", 500
+# --- Removed Duplicate Code ---
 
 # --- BRAIN BUILDING ENDPOINTS ---
 @app.route('/build_brain', methods=['POST'])
@@ -726,44 +670,9 @@ Projects: {', '.join(PROJECTS)}
         return f"Backup failed: {e}", 500
 
 # --- BRAIN BUILDING ENDPOINTS ---
-@app.route('/build_brain', methods=['POST'])
-def build_brain():
-    """Manually trigger batched brain building"""
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
-    global _rag_building
-    
-    if _rag_building:
-        return jsonify({"ok": False, "error": "Brain is already building"}), 400
-    
-    if is_ready():
-        return jsonify({"ok": False, "error": "Brain is already built"}), 400
-    
-    # Start building in background
-    thread = threading.Thread(target=build_brain_background)
-    thread.daemon = True
-    thread.start()
-    
-    return jsonify({"ok": True, "message": "Batched brain building started"})
+# --- Removed Duplicate Code ---
 
-@app.route('/build_new_brain', methods=['POST'])
-def build_new_brain():
-    """Build brain from raw sources on server"""
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
-    global _brain_building
-    
-    if _brain_building:
-        return jsonify({"ok": False, "error": "Brain is already building"}), 400
-    
-    # Start server-side building in background
-    thread = threading.Thread(target=build_new_brain_background)
-    thread.daemon = True
-    thread.start()
-    
-    return jsonify({"ok": True, "message": "Server-side brain building started"})
+# Part 6: Brain control dashboard with enhanced loading bar
 
 @app.route('/brain_status')
 def brain_status():
@@ -801,8 +710,6 @@ def brain_status():
         }
     
     return jsonify(status)
-
-# Part 6: Brain control dashboard with enhanced loading bar
 
 @app.route('/brain')
 def brain_control():
