@@ -458,9 +458,16 @@ def enhanced_build_new_brain_background():
             else:
                 app.logger.warning("No chunks found in newly built RAG system")
         
-        except Exception as db_error:
+                except Exception as db_error:
             app.logger.error(f"Database save failed during new brain build: {db_error}")
         
+        _brain_building = False
+        app.logger.info("Enhanced new brain build complete!")
+        
+    except Exception as e:
+        _brain_building = False
+        _brain_build_error = str(e)
+        app.logger.error(f"Enhanced new brain build failed: {e}")
        
 # Part 3: EasyOCR setup and processing functions (UNCHANGED)
 
