@@ -1,3 +1,5 @@
+# Part 1: Add this at the very top of your app.py file (replace existing imports)
+
 from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify
 from utils.ghostline_engine import generate_response, stream_generate
 from utils.rag_basic import retrieve, is_ready, load_corpus, get_build_status
@@ -53,7 +55,86 @@ _rag_build_error = None
 _brain_building = False
 _brain_build_error = None
 
-# Markdown filter for Jinja2
+# Fix EasyOCR model directory permissions - ADD THIS NEW SECTION
+def setup_easyocr_environment():
+    """Setup writable directory for EasyOCR models"""
+    try:
+        # Create a writable temp directory for EasyOCR
+        easyocr_dir = os.path.join(tempfile.gettempdir(), 'easyocr_models')
+        os.makedirs(easyocr_dir, exist_ok=True)
+        
+        # Set environment variable to override EasyOCR's default path
+        os.environ['EASYOCR_MODULE_PATH'] = easyocr_dir
+        
+        app.logger.info(f"EasyOCR model path set to: {easyocr_dir}")
+        return True
+    except Exception as e:
+        app.logger.error(f"Failed to setup EasyOCR environment: {e}")
+        return False
+
+# Call this right after creating the Flask app
+setup_easyocr_environment()
+
+# Enhanced OCR processing function - ADD THIS NEW FUNCTION
+def process_image_ocr(file_stream, filename):
+    """Process image with EasyOCR, handling model download issues"""
+    try:
+        import easyocr
+        import numpy as np
+        
+        app.logger.info(f"Starting OCR processing for: {filename}")
+        
+        # Reset stream position
+        file_stream.seek(0)
+        
+        # Open and convert image
+        img = Image.open(file_stream)
+        
+        # Convert to RGB if necessary
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        
+        img_array = np.array(img)
+        app.logger.info(f"Image loaded: {img.size}, mode: {img.mode}")
+        
+        # Initialize EasyOCR with error handling for model downloads
+        try:
+            # Try to create reader with custom model path
+            reader = easyocr.Reader(
+                ['en'], 
+                gpu=False,  # Disable GPU for server compatibility
+                download_enabled=True,  # Allow model downloads
+                model_storage_directory=os.environ.get('EASYOCR_MODULE_PATH')
+            )
+            app.logger.info("EasyOCR reader initialized successfully")
+            
+        except Exception as model_error:
+            app.logger.error(f"EasyOCR model initialization failed: {model_error}")
+            
+            # Fallback: try without custom directory
+            reader = easyocr.Reader(['en'], gpu=False)
+            app.logger.info("EasyOCR reader initialized with default settings")
+        
+        # Perform OCR
+        results = reader.readtext(img_array)
+        
+        if results:
+            text = '\n'.join([result[1] for result in results if result[1].strip()])
+            app.logger.info(f"OCR extracted {len(results)} text regions, {len(text)} characters")
+            return text
+        else:
+            app.logger.warning("No OCR results found")
+            return "No text detected in image"
+            
+    except ImportError as e:
+        app.logger.error(f"EasyOCR not installed: {e}")
+        raise Exception("EasyOCR not installed. Please install with: pip install easyocr opencv-python-headless")
+    
+    except Exception as e:
+        app.logger.error(f"OCR processing failed: {e}")
+        raise Exception(f"OCR processing failed: {str(e)}")
+
+# Markdown filter for Jinja2 (keep existing)
 def markdown_filter(text):
     """Convert markdown to HTML"""
     if not text:
@@ -64,6 +145,8 @@ def markdown_filter(text):
 
 # Register markdown filter
 app.jinja_env.filters['markdown'] = markdown_filter
+
+# Part 2: Add these utility functions after Part 1
 
 def _save_daily_log(sync_type: str, content: str):
     """Save daily sync results to log file"""
@@ -85,14 +168,15 @@ def _save_daily_log(sync_type: str, content: str):
         print(f"DEBUG: Daily log save failed: {error_details}")
 
 def build_brain_background():
-    """Build the RAG system using batched processing"""
+    """Build the RAG system using batched processing - WITH PROGRESS TRACKING!"""
     global _rag_building, _rag_build_error
     
     try:
         _rag_building = True
         _rag_build_error = None
-        app.logger.info("Starting batched brain build...")
+        app.logger.info("Starting batched brain build with progress tracking...")
         
+        # Load corpus with progress tracking - this will show your loading bar!
         load_corpus(CORPUS_PATH)
         
         _rag_building = False
@@ -129,6 +213,7 @@ def build_new_brain_background():
         app.logger.error(f"Server-side brain build failed: {e}")
 
 def load_conversation(project: str, limit: int = 50):
+    """Load conversation history for a project"""
     path = f"sessions/{project.lower().replace(' ', '_')}.json"
     if not os.path.exists(path):
         return []
@@ -142,6 +227,27 @@ def load_conversation(project: str, limit: int = 50):
         except json.JSONDecodeError:
             continue
     return turns
+
+def _append_session(project: str, user_input: str, response_data: dict):
+    """Append conversation to session file"""
+    path = f"sessions/{project.lower().replace(' ', '_')}.json"
+    with open(path, 'a', encoding='utf-8') as f:
+        json.dump({'prompt': user_input, 'response': response_data}, f)
+        f.write('\n')
+
+def _render(project: str, response_data: dict):
+    """Render the main template with conversation data"""
+    conversation = load_conversation(project, limit=50)
+    return render_template(
+        'index.html',
+        projects=PROJECTS,
+        response_data=response_data,
+        conversation=conversation,
+        current_project=project
+    )
+
+# Part 3: Replace your existing @app.route('/') function with this enhanced version
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if not session.get('logged_in'):
@@ -152,18 +258,17 @@ def index():
 
     if request.method == 'POST':
         user_input = request.form['user_input'].strip()
-        print(f"DEBUG: POST request received with input: {user_input}")
+        app.logger.info(f"POST request received with input: {user_input}")
         project = request.form['project']
         selected_project = project
         use_voices = request.form.getlist('voices') or ['SyntaxPrime']
         random_toggle = 'random' in request.form
 
         # ---- Command: Gmail overnight (multiple aliases) ----
-	# ---- Command: Gmail overnight (multiple aliases) ----
         if user_input.lower().strip() in ["overnight", "mail", "emails", "inbox", "check mail"]:
             try:
                 msgs = list_overnight(include_unread=True, include_primary=False)
-                lines = [f"- {msg.get('sender', 'Unknown')}: {msg.get('subject', 'No Subject')}" for msg in 		msgs[:25]]
+                lines = [f"- {msg.get('sender', 'Unknown')}: {msg.get('subject', 'No Subject')}" for msg in msgs[:25]]
                 summary_prompt = (
                     f"Found {len(msgs)} overnight emails. Here's the summary:\n\n"
                     + "\n".join(lines)
@@ -174,11 +279,11 @@ def index():
                     project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
                 )
             except Exception as e:
+                app.logger.error(f"Gmail overnight check failed: {e}")
                 response_data = {"SyntaxPrime": f"Gmail check failed: {e}"}
 
             _append_session(project, user_input, response_data)
             return _render(project, response_data)
-
 
         # ---- Command: Gmail search (multiple aliases) ----
         if user_input.lower().startswith(("search ", "find ", "email about ")):
@@ -201,6 +306,7 @@ def index():
                     project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
                 )
             except Exception as e:
+                app.logger.error(f"Gmail search failed: {e}")
                 response_data = {"SyntaxPrime": f"Gmail search failed: {e}"}
 
             _append_session(project, user_input, response_data)
@@ -222,6 +328,7 @@ def index():
                     project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
                 )
             except Exception as e:
+                app.logger.error(f"Calendar check failed: {e}")
                 response_data = {"SyntaxPrime": f"Calendar check failed: {e}"}
 
             _append_session(project, user_input, response_data)
@@ -243,6 +350,7 @@ def index():
                     project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
                 )
             except Exception as e:
+                app.logger.error(f"Tomorrow's calendar failed: {e}")
                 response_data = {"SyntaxPrime": f"Tomorrow's calendar failed: {e}"}
 
             _append_session(project, user_input, response_data)
@@ -266,6 +374,7 @@ def index():
                     project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
                 )
             except Exception as e:
+                app.logger.error(f"Next meeting check failed: {e}")
                 response_data = {"SyntaxPrime": f"Next meeting check failed: {e}"}
 
             _append_session(project, user_input, response_data)
@@ -294,25 +403,31 @@ def index():
                     project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
                 )
             except Exception as e:
+                app.logger.error(f"Calendar search failed: {e}")
                 response_data = {"SyntaxPrime": f"Calendar search failed: {e}"}
 
             _append_session(project, user_input, response_data)
             return _render(project, response_data)
-# ---- Command: Good Morning ----
+
+        # Continue with Part 4 for the remaining commands...
+
+# Part 4: Add these commands to continue your index() function
+
+        # ---- Command: Good Morning ----
         if user_input.lower().strip() in ["good morning", "morning", "gm"]:
-            print("DEBUG: Good Morning command triggered")
+            app.logger.info("Good Morning command triggered")
             try:
-                print("DEBUG: About to call list_overnight")
+                app.logger.info("About to call list_overnight")
                 msgs = list_overnight(include_unread=True, include_primary=False)
-                print(f"DEBUG: Got {len(msgs)} messages")
+                app.logger.info(f"Got {len(msgs)} messages")
                 
-                print("DEBUG: About to call list_today_events")
+                app.logger.info("About to call list_today_events")
                 events = list_today_events(max_results=20)
-                print(f"DEBUG: Got {len(events)} events")
+                app.logger.info(f"Got {len(events)} events")
                 
-                print("DEBUG: About to call get_next_meeting")
+                app.logger.info("About to call get_next_meeting")
                 next_meeting = get_next_meeting()
-                print(f"DEBUG: Got next meeting: {next_meeting}")
+                app.logger.info(f"Got next meeting: {next_meeting}")
                 
                 # Format briefing
                 email_summary = f"Found {len(msgs)} overnight emails"
@@ -334,25 +449,25 @@ def index():
 • Prepare for upcoming meetings
 • Check calendar for conflicts"""
 
-                print("DEBUG: About to save daily log")
+                app.logger.info("About to save daily log")
                 _save_daily_log("morning", morning_briefing)
-                print("DEBUG: Daily log saved")
+                app.logger.info("Daily log saved")
                 
-                print("DEBUG: About to call retrieve")
+                app.logger.info("About to call retrieve")
                 retrieval_ctx = retrieve(morning_briefing, k=5) if is_ready() else []
-                print("DEBUG: Retrieve completed")
+                app.logger.info("Retrieve completed")
                 
-                print("DEBUG: About to call generate_response")
+                app.logger.info("About to call generate_response")
                 response_data = generate_response(
                     f"Summarize this morning briefing and suggest 3 key priorities:\n\n{morning_briefing}",
                     use_voices, random_toggle, project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
                 )
-                print("DEBUG: generate_response completed")
+                app.logger.info("generate_response completed")
                 
             except Exception as e:
                 import traceback
                 error_details = traceback.format_exc()
-                print(f"DEBUG: Full error trace: {error_details}")
+                app.logger.error(f"Full error trace: {error_details}")
                 response_data = {"SyntaxPrime": f"Morning briefing failed: {str(e)} | Type: {type(e).__name__} | Details: {error_details[:200]}"}
 
             _append_session(project, user_input, response_data)
@@ -407,6 +522,7 @@ def index():
                 )
                 
             except Exception as e:
+                app.logger.error(f"Evening summary failed: {e}")
                 response_data = {"SyntaxPrime": f"Evening summary failed: {e}"}
 
             _append_session(project, user_input, response_data)
@@ -415,50 +531,45 @@ def index():
         # ---- Command: scrape <url> ----
         if user_input.lower().startswith("scrape "):
             url = user_input.split(" ", 1)[1].strip()
-            result = scrape_url(url)
-            if not result["ok"]:
-                response_data = {"SyntaxPrime": f"Could not fetch/extract content: {result['error']}"}
-            else:
-                summary_prompt = (
-                    "Summarize the key points from the following webpage for Carl. "
-                    "Use bullets and keep it tight and actionable.\n\n"
-                    f"--- SCRAPED CONTENT START ---\n{result['text']}\n--- SCRAPED CONTENT END ---"
-                )
-                retrieval_ctx = retrieve(summary_prompt, k=5) if is_ready() else []
-                response_data = generate_response(
-                    summary_prompt, use_voices, random_toggle,
-                    project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
-                )
+            try:
+                result = scrape_url(url)
+                if not result["ok"]:
+                    response_data = {"SyntaxPrime": f"Could not fetch/extract content: {result['error']}"}
+                else:
+                    summary_prompt = (
+                        "Summarize the key points from the following webpage for Carl. "
+                        "Use bullets and keep it tight and actionable.\n\n"
+                        f"--- SCRAPED CONTENT START ---\n{result['text']}\n--- SCRAPED CONTENT END ---"
+                    )
+                    retrieval_ctx = retrieve(summary_prompt, k=5) if is_ready() else []
+                    response_data = generate_response(
+                        summary_prompt, use_voices, random_toggle,
+                        project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+                    )
+            except Exception as e:
+                app.logger.error(f"Scrape command failed: {e}")
+                response_data = {"SyntaxPrime": f"Scrape failed: {e}"}
+            
             _append_session(project, user_input, response_data)
             return _render(project, response_data)
 
         # ---- Normal flow ----
-        retrieval_ctx = retrieve(user_input, k=5) if is_ready() else []
-        response_data = generate_response(
-            user_input, use_voices, random_toggle,
-            project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
-        )
-        _append_session(project, user_input, response_data)
+        try:
+            retrieval_ctx = retrieve(user_input, k=5) if is_ready() else []
+            response_data = generate_response(
+                user_input, use_voices, random_toggle,
+                project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+            )
+            _append_session(project, user_input, response_data)
+        except Exception as e:
+            app.logger.error(f"Normal flow failed: {e}")
+            response_data = {"SyntaxPrime": f"Response generation failed: {e}"}
+            _append_session(project, user_input, response_data)
 
     return _render(selected_project, response_data)
 
+# Part 5: Brain building endpoints and backup functionality
 
-def _append_session(project: str, user_input: str, response_data: dict):
-    path = f"sessions/{project.lower().replace(' ', '_')}.json"
-    with open(path, 'a', encoding='utf-8') as f:
-        json.dump({'prompt': user_input, 'response': response_data}, f)
-        f.write('\n')
-
-
-def _render(project: str, response_data: dict):
-    conversation = load_conversation(project, limit=50)
-    return render_template(
-        'index.html',
-        projects=PROJECTS,
-        response_data=response_data,
-        conversation=conversation,
-        current_project=project
-    )
 # --- BACKUP ALL PROJECTS ---
 @app.route('/backup_all')
 def backup_all():
@@ -516,8 +627,103 @@ Projects: {', '.join(PROJECTS)}
         )
         
     except Exception as e:
+        app.logger.error(f"Backup failed: {e}")
         return f"Backup failed: {e}", 500
 
+# --- BRAIN BUILDING ENDPOINTS ---
+@app.route('/build_brain', methods=['POST'])
+def build_brain():
+    """Manually trigger batched brain building"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    global _rag_building
+    
+    if _rag_building:
+        return jsonify({"ok": False, "error": "Brain is already building"}), 400
+    
+    if is_ready():
+        return jsonify({"ok": False, "error": "Brain is already built"}), 400
+    
+    # Start building in background
+    thread = threading.Thread(target=build_brain_background)
+    thread.daemon = True
+    thread.start()
+    
+    return jsonify({"ok": True, "message": "Batched brain building started"})
+
+@app.route('/build_new_brain', methods=['POST'])
+def build_new_brain():
+    """Build brain from raw sources on server"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    global _brain_building
+    
+    if _brain_building:
+        return
+
+# Part 5: Brain building endpoints and backup functionality
+
+# --- BACKUP ALL PROJECTS ---
+@app.route('/backup_all')
+def backup_all():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    try:
+        # Create temporary file for the zip
+        temp_zip = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
+        temp_zip.close()
+        
+        with zipfile.ZipFile(temp_zip.name, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            backup_count = 0
+            
+            # Add all session files
+            if os.path.exists('sessions'):
+                for filename in os.listdir('sessions'):
+                    if filename.endswith('.json'):
+                        file_path = os.path.join('sessions', filename)
+                        zipf.write(file_path, f"sessions/{filename}")
+                        backup_count += 1
+            
+            # Add daily logs if they exist
+            if os.path.exists('daily_logs'):
+                for filename in os.listdir('daily_logs'):
+                    if filename.endswith('.md'):
+                        file_path = os.path.join('daily_logs', filename)
+                        zipf.write(file_path, f"daily_logs/{filename}")
+            
+            # Create backup manifest
+            manifest = f"""# Ghostline Backup Manifest
+Created: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Session files backed up: {backup_count}
+Projects: {', '.join(PROJECTS)}
+
+## Contents:
+- /sessions/ - All conversation history
+- /daily_logs/ - Daily sync summaries (if any)
+
+## Restore Instructions:
+1. Extract this ZIP file
+2. Copy session files to your sessions/ directory
+3. Copy daily_logs to your daily_logs/ directory
+"""
+            zipf.writestr("backup_manifest.md", manifest)
+        
+        # Send the zip file
+        backup_name = f"ghostline_backup_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+        
+        return send_file(
+            temp_zip.name,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name=backup_name
+        )
+        
+    except Exception as e:
+        app.logger.error(f"Backup failed: {e}")
+        return f"Backup failed: {e}", 500
 
 # --- BRAIN BUILDING ENDPOINTS ---
 @app.route('/build_brain', methods=['POST'])
@@ -561,7 +767,7 @@ def build_new_brain():
 
 @app.route('/brain_status')
 def brain_status():
-    """Enhanced brain status with batch progress"""
+    """Enhanced brain status with batch progress - YOUR LOADING BAR IS BACK!"""
     if not session.get('logged_in'):
         return "Unauthorized", 401
     
@@ -573,7 +779,7 @@ def brain_status():
     # Check if server-side building is in progress
     if _brain_building:
         status = {
-            "ready": False,
+            "ready": build_status["status"] == "complete",
             "building": True,
             "progress": "Building brain from raw sources on server...",
             "error": _brain_build_error,
@@ -596,10 +802,11 @@ def brain_status():
     
     return jsonify(status)
 
-# --- BRAIN CONTROL PAGE ---
+# Part 6: Brain control dashboard with enhanced loading bar
+
 @app.route('/brain')
 def brain_control():
-    """Enhanced brain control dashboard with batch progress"""
+    """Enhanced brain control dashboard with batch progress - YOUR LOADING BAR IS BACK!"""
     if not session.get('logged_in'):
         return redirect(url_for('login'))
     
@@ -607,7 +814,7 @@ def brain_control():
     <!DOCTYPE html>
     <html>
     <head>
-        <title>Ghostline Brain Control v0.1.9.7</title>
+        <title>Ghostline Brain Control v0.2.0</title>
         <style>
             body { 
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -633,70 +840,117 @@ def brain_control():
                 cursor: pointer; 
                 font-size: 16px;
                 margin: 10px 5px;
+                transition: all 0.3s ease;
             }
-            .btn:hover { background: #5855eb; }
-            .btn:disabled { background: #666; cursor: not-allowed; }
+            .btn:hover { background: #5855eb; transform: translateY(-2px); }
+            .btn:disabled { background: #666; cursor: not-allowed; transform: none; }
             .btn.server-build { background: #059669; }
             .btn.server-build:hover { background: #047857; }
             
             .progress-container { 
-                margin: 15px 0;
+                margin: 20px 0;
                 background: #333; 
-                border: 2px inset #666;
-                height: 40px; 
-                border-radius: 8px;
+                border: 2px solid #444;
+                height: 50px; 
+                border-radius: 12px;
                 position: relative;
                 overflow: hidden;
+                box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
             }
             .progress-bar { 
-                background: linear-gradient(90deg, #10b981 0%, #34d399 50%, #10b981 100%);
+                background: linear-gradient(90deg, #10b981 0%, #34d399 30%, #6ee7b7 60%, #34d399 100%);
                 height: 100%; 
                 transition: width 0.8s ease;
                 position: relative;
                 min-width: 0;
-                border-radius: 6px;
+                border-radius: 10px;
+                box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+            }
+            
+            .progress-bar::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
+                animation: shimmer 2s infinite;
+            }
+            
+            @keyframes shimmer {
+                0% { transform: translateX(-100%); }
+                100% { transform: translateX(100%); }
+            }
+            
+            .progress-text {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-weight: bold;
+                color: #fff;
+                text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+                z-index: 1;
             }
             
             .batch-info {
                 display: grid;
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
                 gap: 15px;
-                margin: 15px 0;
+                margin: 20px 0;
             }
             .batch-stat {
-                background: #2a2a2a;
-                padding: 12px;
-                border-radius: 6px;
+                background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+                padding: 15px;
+                border-radius: 8px;
                 text-align: center;
+                border: 1px solid #333;
+                transition: transform 0.2s ease;
             }
+            .batch-stat:hover { transform: translateY(-2px); }
+            
             .batch-stat .number {
-                font-size: 24px;
+                font-size: 28px;
                 font-weight: bold;
                 color: #10b981;
+                margin-bottom: 5px;
             }
             .batch-stat .label {
                 font-size: 12px;
                 color: #888;
-                margin-top: 4px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
             }
             
-            #status { font-family: monospace; font-size: 14px; }
+            #status { 
+                font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace; 
+                font-size: 16px;
+                padding: 10px;
+                border-radius: 6px;
+                background: #000;
+                border: 1px solid #333;
+            }
             .error { color: #ef4444; }
             .success { color: #10b981; }
             .building { color: #f59e0b; }
+            
+            .pulse { animation: pulse 2s infinite; }
+            @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
         </style>
     </head>
     <body>
         <div class="container">
-            <h1>Ghostline Brain Control v0.1.9.7</h1>
-            <p>Batched RAG system with server-side brain building from raw sources.</p>
+            <h1>🧠 Ghostline Brain Control v0.2.0</h1>
+            <p>Enhanced RAG system with real-time progress tracking and batch processing.</p>
             
             <div class="status-box">
-                <h3>Brain Status</h3>
-                <div id="status">Loading...</div>
+                <h3>🔍 Brain Status</h3>
+                <div id="status">Loading brain status...</div>
                 
                 <div id="progress-container" class="progress-container" style="display: none;">
                     <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+                    <div class="progress-text" id="progress-text">0%</div>
                 </div>
                 
                 <div id="batch-info" class="batch-info" style="display: none;">
@@ -708,15 +962,23 @@ def brain_control():
                         <div class="number" id="batches-completed">0</div>
                         <div class="label">Batches Complete</div>
                     </div>
+                    <div class="batch-stat">
+                        <div class="number" id="total-batches">0</div>
+                        <div class="label">Total Batches</div>
+                    </div>
+                    <div class="batch-stat">
+                        <div class="number" id="percentage">0%</div>
+                        <div class="label">Progress</div>
+                    </div>
                 </div>
             </div>
             
             <div class="status-box">
-                <h3>Controls</h3>
+                <h3>🎛️ Controls</h3>
                 <button class="btn" id="build-btn" onclick="buildBrain()">Build Brain (from file)</button>
                 <button class="btn server-build" id="server-build-btn" onclick="buildNewBrain()">Build Brain (from sources)</button>
-                <button class="btn" onclick="refreshStatus()">Refresh Status</button>
-                <button class="btn" onclick="window.location.href='/'">Back to Chat</button>
+                <button class="btn" onclick="refreshStatus()">🔄 Refresh Status</button>
+                <button class="btn" onclick="window.location.href='/'">← Back to Chat</button>
             </div>
         </div>
         
@@ -728,28 +990,60 @@ def brain_control():
                         const statusDiv = document.getElementById('status');
                         const buildBtn = document.getElementById('build-btn');
                         const serverBuildBtn = document.getElementById('server-build-btn');
+                        const progressContainer = document.getElementById('progress-container');
+                        const batchInfo = document.getElementById('batch-info');
                         
+                        // Update basic status
                         if (data.ready) {
-                            statusDiv.innerHTML = '<span class="success">✓ Brain Ready</span>';
+                            statusDiv.innerHTML = '<span class="success">✅ Brain Ready & Loaded</span>';
                             buildBtn.disabled = true;
                             serverBuildBtn.disabled = true;
+                            progressContainer.style.display = 'none';
+                            batchInfo.style.display = 'none';
                         } else if (data.building) {
-                            statusDiv.innerHTML = '<span class="building">⚡ Building...</span>';
+                            statusDiv.innerHTML = '<span class="building pulse">⚡ Building Brain...</span>';
                             buildBtn.disabled = true;
                             serverBuildBtn.disabled = true;
+                            showProgress(data);
                         } else if (data.error) {
-                            statusDiv.innerHTML = '<span class="error">✗ Error</span>';
+                            statusDiv.innerHTML = '<span class="error">❌ Build Error: ' + data.error + '</span>';
                             buildBtn.disabled = false;
                             serverBuildBtn.disabled = false;
+                            progressContainer.style.display = 'none';
+                            batchInfo.style.display = 'none';
                         } else {
-                            statusDiv.innerHTML = '<span style="color: #fbbf24;">◯ Not Built</span>';
+                            statusDiv.innerHTML = '<span style="color: #fbbf24;">⭕ Brain Not Built</span>';
                             buildBtn.disabled = false;
                             serverBuildBtn.disabled = false;
+                            progressContainer.style.display = 'none';
+                            batchInfo.style.display = 'none';
                         }
                     })
                     .catch(e => {
-                        document.getElementById('status').innerHTML = '<span class="error">Connection error</span>';
+                        document.getElementById('status').innerHTML = '<span class="error">❌ Connection Error</span>';
                     });
+            }
+            
+            function showProgress(data) {
+                const progressContainer = document.getElementById('progress-container');
+                const batchInfo = document.getElementById('batch-info');
+                const progressBar = document.getElementById('progress-bar');
+                const progressText = document.getElementById('progress-text');
+                
+                // Show progress elements
+                progressContainer.style.display = 'block';
+                batchInfo.style.display = 'grid';
+                
+                // Update progress bar
+                const percentage = Math.max(0, Math.min(100, data.percentage || 0));
+                progressBar.style.width = percentage + '%';
+                progressText.textContent = percentage + '%';
+                
+                // Update batch info
+                document.getElementById('chunks-processed').textContent = data.chunks || 0;
+                document.getElementById('batches-completed').textContent = data.batches_completed || 0;
+                document.getElementById('total-batches').textContent = data.total_batches || 0;
+                document.getElementById('percentage').textContent = percentage + '%';
             }
             
             function buildBrain() {
@@ -757,7 +1051,8 @@ def brain_control():
                     .then(r => r.json())
                     .then(data => {
                         if (!data.ok) alert('Build failed: ' + data.error);
-                    });
+                    })
+                    .catch(e => alert('Request failed: ' + e));
             }
             
             function buildNewBrain() {
@@ -765,81 +1060,20 @@ def brain_control():
                     .then(r => r.json())
                     .then(data => {
                         if (!data.ok) alert('Build failed: ' + data.error);
-                    });
+                    })
+                    .catch(e => alert('Request failed: ' + e));
             }
             
+            // Auto-refresh every 2 seconds
             refreshStatus();
-            setInterval(refreshStatus, 5000);
+            setInterval(refreshStatus, 2000);
         </script>
     </body>
     </html>
     '''
     return html_content
-# --- DEBUG ROUTES ---
-@app.route('/debug/sessions')
-def debug_sessions():
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
-    try:
-        if not os.path.exists('sessions'):
-            return "<pre>sessions/ directory does not exist</pre>"
-        
-        files = os.listdir('sessions')
-        result = [f"=== Sessions Directory Debug ===\n"]
-        result.append(f"Directory exists: Yes")
-        result.append(f"Files found: {len(files)}\n")
-        
-        for filename in files:
-            filepath = f"sessions/{filename}"
-            size = os.path.getsize(filepath)
-            result.append(f"File: {filename} ({size} bytes)")
-            
-            with open(filepath, 'r', encoding='utf-8') as f:
-                lines = f.readlines()[:3]
-                for i, line in enumerate(lines, 1):
-                    result.append(f"  Line {i}: {line.strip()[:100]}...")
-        
-        return "<pre>" + "\n".join(result) + "</pre>"
-        
-    except Exception as e:
-        return f"<pre>Error checking sessions: {e}</pre>"
 
-@app.route('/debug/files')
-def debug_files():
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
-    try:
-        result = ["=== Debug Files Report ===\n"]
-        
-        if os.path.exists('data/cleaned/'):
-            files = os.listdir('data/cleaned/')
-            file_info = []
-            for f in files:
-                path = os.path.join('data/cleaned/', f)
-                size = os.path.getsize(path) if os.path.isfile(path) else 0
-                file_info.append(f"{f} ({size} bytes)")
-            result.append(f"Files in data/cleaned/: {file_info}\n")
-        else:
-            result.append("data/cleaned/ directory not found\n")
-        
-        raw_folders = []
-        for item in os.listdir('data/'):
-            if item.startswith('raw_') and os.path.isdir(f'data/{item}'):
-                file_count = len(list(os.listdir(f'data/{item}')))
-                raw_folders.append(f"{item} ({file_count} files)")
-        
-        if raw_folders:
-            result.append(f"Raw data folders: {raw_folders}")
-        else:
-            result.append("No raw data folders found")
-        
-        return "<pre>" + "\n".join(result) + "</pre>"
-        
-    except Exception as e:
-        return f"Error checking files: {e}"
-
+# Part 7: Final routes - Enhanced upload, debug routes, and authentication
 
 # --- STREAMING ---
 @app.route('/stream', methods=['POST'])
@@ -860,20 +1094,193 @@ def stream():
 
     return app.response_class(generate(), mimetype='text/plain')
 
+# --- ENHANCED UPLOAD / OCR ---
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    try:
+        file = request.files.get('file')
+        if not file or not file.filename:
+            return "No file uploaded", 400
+        
+        filename = file.filename.lower()
+        text = ""
+        
+        app.logger.info(f"Processing file: {filename}")
 
-# --- RELOAD BRAIN ---
+        if filename.endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
+            # Use the new OCR processing function from Part 1
+            text = process_image_ocr(file.stream, filename)
+                
+        elif filename.endswith('.pdf'):
+            try:
+                file.stream.seek(0)
+                data = file.read()
+                
+                if not data:
+                    return "PDF file appears to be empty", 400
+                
+                app.logger.info(f"PDF file size: {len(data)} bytes")
+                
+                doc = fitz.open(stream=data, filetype="pdf")
+                
+                if doc.page_count == 0:
+                    return "PDF has no pages", 400
+                
+                text_parts = []
+                for page_num in range(doc.page_count):
+                    page = doc[page_num]
+                    page_text = page.get_text()
+                    if page_text.strip():
+                        text_parts.append(f"=== Page {page_num + 1} ===\n{page_text}")
+                
+                text = "\n\n".join(text_parts)
+                doc.close()
+                
+                if not text.strip():
+                    text = "No text found in PDF (may be image-based or encrypted)"
+                    
+                app.logger.info(f"PDF processed: {doc.page_count} pages, {len(text)} characters")
+                
+            except Exception as e:
+                app.logger.error(f"PDF processing failed: {e}")
+                return f"PDF Error: {str(e)}", 500
+                
+        elif filename.endswith('.docx'):
+            try:
+                file.stream.seek(0)
+                file_data = file.read()
+                
+                if not file_data:
+                    return "Word document appears to be empty", 400
+                
+                app.logger.info(f"Word document size: {len(file_data)} bytes")
+                
+                import io
+                file_stream = io.BytesIO(file_data)
+                document = docx.Document(file_stream)
+                
+                paragraphs = [p.text for p in document.paragraphs if p.text.strip()]
+                
+                tables_text = []
+                for table in document.tables:
+                    for row in table.rows:
+                        row_text = [cell.text.strip() for cell in row.cells if cell.text.strip()]
+                        if row_text:
+                            tables_text.append(" | ".join(row_text))
+                
+                all_text = []
+                if paragraphs:
+                    all_text.extend(paragraphs)
+                if tables_text:
+                    all_text.append("\n=== Tables ===")
+                    all_text.extend(tables_text)
+                
+                text = "\n".join(all_text)
+                
+                if not text.strip():
+                    text = "No readable text found in Word document"
+                    
+                app.logger.info(f"Word document processed: {len(paragraphs)} paragraphs, {len(document.tables)} tables")
+                
+            except Exception as e:
+                app.logger.error(f"Word document processing failed: {e}")
+                return f"Word Document Error: {str(e)}", 500
+                
+        else:
+            return "Unsupported file type. Supported: PNG, JPG, JPEG, GIF, BMP, PDF, DOCX", 400
+
+        # Truncate if too long
+        if len(text) > 15000:
+            text = text[:15000] + "\n\n[...Content truncated...]"
+            
+        app.logger.info(f"File processing successful: {len(text)} characters extracted")
+
+        # Return formatted HTML
+        import html
+        escaped_text = html.escape(text)
+        
+        return f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>File Analysis Result</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+                body {{ 
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    margin: 0; 
+                    padding: 20px;
+                    background: #0f0f0f; 
+                    color: #fff; 
+                    line-height: 1.6;
+                }}
+                .container {{ max-width: 1200px; margin: 0 auto; }}
+                pre {{ 
+                    white-space: pre-wrap; 
+                    word-wrap: break-word; 
+                    background: #1a1a1a;
+                    padding: 20px;
+                    border-radius: 8px;
+                    border: 1px solid #333;
+                    font-size: 14px;
+                    overflow-x: auto;
+                }}
+                .header {{
+                    background: #6366f1;
+                    color: white;
+                    padding: 15px 20px;
+                    border-radius: 8px;
+                    margin-bottom: 20px;
+                }}
+                .stats {{
+                    display: flex;
+                    gap: 20px;
+                    margin-top: 10px;
+                    font-size: 14px;
+                    opacity: 0.9;
+                }}
+                @media (max-width: 768px) {{
+                    body {{ padding: 10px; }}
+                    .stats {{ flex-direction: column; gap: 5px; }}
+                    pre {{ font-size: 12px; padding: 15px; }}
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h2>📄 File Analysis Complete</h2>
+                    <div><strong>{html.escape(file.filename)}</strong></div>
+                    <div class="stats">
+                        <span>📊 {len(text):,} characters extracted</span>
+                        <span>🔤 {len(text.split()):,} words</span>
+                        <span>📝 {len(text.splitlines()):,} lines</span>
+                    </div>
+                </div>
+                <pre>{escaped_text}</pre>
+            </div>
+        </body>
+        </html>
+        """
+        
+    except Exception as e:
+        app.logger.error(f"Upload route failed: {e}")
+        import traceback
+        app.logger.error(f"Full traceback: {traceback.format_exc()}")
+        return f"Upload Error: {str(e)}", 500
+
+# --- UTILITY ROUTES ---
 @app.route('/reload_corpus')
 def reload_corpus():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
     try:
         load_corpus(CORPUS_PATH)
-        return "Brain reloaded", 200
+        return "Brain reloaded successfully", 200
     except Exception as e:
+        app.logger.error(f"Corpus reload failed: {e}")
         return f"Reload failed: {e}", 500
 
-
-# --- HEALTH CHECK ---
 @app.route('/healthz')
 def healthz():
     build_status = get_build_status()
@@ -886,89 +1293,11 @@ def healthz():
     }
     return jsonify(status)
 
-
-# --- DEBUG RAG ---
-@app.route('/debug/rag')
-def debug_rag():
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    q = request.args.get('query', '').strip()
-    k = int(request.args.get('k', 5))
-    if not q:
-        return jsonify({"ok": False, "error": "missing query"}), 400
-    if not is_ready():
-        return jsonify({"ok": False, "error": "brain not ready"}), 500
-    hits = retrieve(q, k=k)
-    return jsonify({"ok": True, "count": len(hits), "results": hits})
-
-
-# --- DEBUG: Sample entries ---
-@app.route('/debug/sample')
-def debug_sample():
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
-    try:
-        import gzip
-        samples = []
-        with gzip.open('data/cleaned/ghostline_sources.jsonl.gz', 'rt', encoding='utf-8') as f:
-            for i, line in enumerate(f):
-                if i >= 5:
-                    break
-                try:
-                    entry = json.loads(line)
-                    sample = {k: v for k, v in entry.items() if k != 'content'}
-                    sample['content_length'] = len(entry.get('content', ''))
-                    samples.append(sample)
-                except:
-                    continue
-        
-        return jsonify({"ok": True, "samples": samples})
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)})
-
-
-# --- DEBUG: EasyOCR ---
-@app.route('/debug/ocr')
-def debug_ocr():
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
-    try:
-        import easyocr
-        import numpy as np
-        
-        reader = easyocr.Reader(['en'])
-        
-        return "<pre>EasyOCR is working!\n\nSupported languages: English\nReady for image analysis!</pre>"
-        
-    except ImportError as e:
-        return f"<pre>EasyOCR not installed: {str(e)}</pre>"
-    except Exception as e:
-        return f"<pre>EasyOCR error: {str(e)}</pre>"
-
-
-# --- AUTH ---
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    error = None
-    if request.method == 'POST':
-        if request.form['password'] == PASSWORD:
-            session['logged_in'] = True
-            return redirect(url_for('index'))
-        else:
-            error = "Wrong password."
-    return render_template('login.html', error=error)
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('login'))
-
-
-# --- EXPORT SESSION ---
 @app.route('/export/<project>')
 def export_session(project):
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+        
     session_path = f'sessions/{project.lower().replace(" ", "_")}.json'
     try:
         with open(session_path, 'r', encoding='utf-8') as f:
@@ -992,67 +1321,54 @@ def export_session(project):
     except FileNotFoundError:
         return f"No session data found for project: {project}", 404
 
+# --- DEBUG ROUTES ---
+@app.route('/debug/rag')
+def debug_rag():
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    q = request.args.get('query', '').strip()
+    k = int(request.args.get('k', 5))
+    if not q:
+        return jsonify({"ok": False, "error": "missing query"}), 400
+    if not is_ready():
+        return jsonify({"ok": False, "error": "brain not ready"}), 500
+    hits = retrieve(q, k=k)
+    return jsonify({"ok": True, "count": len(hits), "results": hits})
 
-# --- UPLOAD / OCR ---
-@app.route('/upload', methods=['POST'])
-def upload_file():
+@app.route('/debug/ocr')
+def debug_ocr():
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
     try:
-        file = request.files.get('file')
-        if not file or not file.filename:
-            return "No file uploaded", 400
+        import easyocr
+        import numpy as np
         
-        filename = file.filename.lower()
-        text = ""
-
-        if filename.endswith(('.png', '.jpg', '.jpeg')):
-            try:
-                import easyocr
-                import numpy as np
-                
-                file.stream.seek(0)
-                img = Image.open(file.stream)
-                img_array = np.array(img)
-                
-                reader = easyocr.Reader(['en'])
-                results = reader.readtext(img_array)
-                text = '\n'.join([result[1] for result in results if result[1].strip()])
-                
-                if not text.strip():
-                    text = "No text detected in image"
-                    
-            except Exception as e:
-                return f"OCR Error: {str(e)}. EasyOCR processing failed.", 500
-                
-        elif filename.endswith('.pdf'):
-            try:
-                file.stream.seek(0)
-                data = file.read()
-                doc = fitz.open(stream=data, filetype="pdf")
-                text = "".join(page.get_text() for page in doc)
-                if not text.strip():
-                    text = "No text found in PDF"
-            except Exception as e:
-                return f"PDF Error: {str(e)}", 500
-                
-        elif filename.endswith('.docx'):
-            try:
-                file.stream.seek(0)
-                document = docx.Document(file)
-                text = "\n".join(p.text for p in document.paragraphs)
-                if not text.strip():
-                    text = "No text found in Word document"
-            except Exception as e:
-                return f"Word Document Error: {str(e)}", 500
-        else:
-            return "Unsupported file type. Supported: PNG, JPG, JPEG, PDF, DOCX", 400
-
-        if len(text) > 10000:
-            text = text[:10000] + "\n\n[...truncated...]"
-            
-        return f"<pre>{text}</pre>"
+        reader = easyocr.Reader(['en'])
         
+        return "<pre>EasyOCR is working!\n\nSupported languages: English\nReady for image analysis!</pre>"
+        
+    except ImportError as e:
+        return f"<pre>EasyOCR not installed: {str(e)}</pre>"
     except Exception as e:
-        return f"Upload Error: {str(e)}", 500
+        return f"<pre>EasyOCR error: {str(e)}</pre>"
+
+# --- AUTHENTICATION ---
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = None
+    if request.method == 'POST':
+        if request.form['password'] == PASSWORD:
+            session['logged_in'] = True
+            return redirect(url_for('index'))
+        else:
+            error = "Wrong password."
+    return render_template('login.html', error=error)
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

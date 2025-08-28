@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Ghostline — Creative Intelligence System</title>
+  <title>Ghostline â€" Creative Intelligence System</title>
   <link rel="icon" type="image/png" href="/static/favicon.png">
 
   <style>
@@ -142,9 +142,11 @@
       transition: all .2s ease; font-size:1.1rem;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
+      user-select: none;
     }
-    .send-button:hover { background:var(--primary-hover); transform: scale(1.05); }
-    .send-button:active { transform: scale(0.95); }
+    .send-button:hover:not(:disabled) { background:var(--primary-hover); transform: scale(1.05); }
+    .send-button:active:not(:disabled) { transform: scale(0.95); }
+    .send-button:disabled { background: #666; cursor: not-allowed; opacity: 0.5; }
 
     /* Advanced Controls */
     .advanced-controls { border-top:1px solid var(--border); padding-top:12px; margin-top:12px; }
@@ -170,8 +172,13 @@
     .secondary-btn {
       background:var(--surface-hover); color:var(--text-primary); border:1px solid var(--border);
       border-radius:var(--radius-md); padding:8px 16px; cursor:pointer; font-size:.85rem; text-decoration:none; display:inline-block; transition:all .2s ease;
+      user-select: none;
     }
-    .secondary-btn:hover { background:var(--border); transform: translateY(-1px); }
+    .secondary-btn:hover:not(:disabled) { background:var(--border); transform: translateY(-1px); }
+    .secondary-btn:disabled { 
+      background: #666; cursor: not-allowed; opacity: 0.5; 
+      pointer-events: none; transform: none;
+    }
 
     /* Mobile */
     @media (max-width: 768px) {
@@ -257,7 +264,7 @@
         <div class="message bot">
           <div class="message-bubble bot">
             <div class="message-header">Syntax Prime</div>
-            <div class="message-content">Welcome back to Ghostline — now with 38% more sarcasm and full memory sync. I remember your coffee order, your chaos, and that one time you tried to code at 2am. Ask me anything—recipes, regrets, or revenge plots. Syntax Prime is online.</div>
+            <div class="message-content">Welcome back to Ghostline â€" now with 38% more sarcasm and full memory sync. I remember your coffee order, your chaos, and that one time you tried to code at 2am. Ask me anythingâ€"recipes, regrets, or revenge plots. Syntax Prime is online.</div>
           </div>
         </div>
       {% endif %}
@@ -286,7 +293,7 @@
                 placeholder="Ask me anything... (Enter to send, Shift+Enter for new line)"
                 rows="1"
               ></textarea>
-              <button type="submit" class="send-button">→</button>
+              <button type="button" class="send-button" id="sendBtn">→</button>
             </div>
           </div>
         </div>
@@ -309,8 +316,8 @@
               <div class="upload-section" style="width:100%;">
                 <label class="input-label">Upload & Analyze</label>
                 <div style="display:flex; gap:8px; width:100%;">
-                  <input id="uploadInput" type="file" name="file" class="file-input" style="flex:1;" required accept="image/*,.pdf,.docx">
-                  <button type="button" class="secondary-btn" onclick="analyzeUpload()">Analyze</button>
+                  <input id="uploadInput" type="file" name="file" class="file-input" style="flex:1;" accept="image/*,.pdf,.docx">
+                  <button type="button" class="secondary-btn" id="analyzeBtn">Analyze</button>
                 </div>
               </div>
 
@@ -324,6 +331,71 @@
   </div>
 
   <script>
+    // Global variables
+    let isSubmitting = false;
+
+    // Initialize all form handling
+    function initializeApp() {
+      const promptInput = document.getElementById('promptInput');
+      const mainForm = document.getElementById('mainForm');
+      const sendButton = document.getElementById('sendBtn');
+      const analyzeButton = document.getElementById('analyzeBtn');
+
+      if (promptInput) {
+        // Auto-resize functionality
+        promptInput.addEventListener('input', () => autoResize(promptInput));
+        autoResize(promptInput);
+
+        // Enhanced keyboard handling for all devices
+        promptInput.addEventListener('keydown', handleKeyDown);
+        
+        // Mobile viewport handling
+        promptInput.addEventListener('focus', handleInputFocus);
+        promptInput.addEventListener('blur', handleInputBlur);
+      }
+
+      if (sendButton) {
+        // Remove any existing listeners to avoid duplicates
+        sendButton.replaceWith(sendButton.cloneNode(true));
+        const newSendButton = document.getElementById('sendBtn');
+        
+        // Add comprehensive event handling
+        newSendButton.addEventListener('click', handleSendClick);
+        newSendButton.addEventListener('touchend', handleSendTouch);
+        
+        // Prevent iOS double-tap zoom and context menu
+        newSendButton.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+        });
+        
+        newSendButton.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+        });
+      }
+
+      if (analyzeButton) {
+        // Remove existing listeners
+        analyzeButton.replaceWith(analyzeButton.cloneNode(true));
+        const newAnalyzeButton = document.getElementById('analyzeBtn');
+        
+        newAnalyzeButton.addEventListener('click', analyzeUpload);
+        newAnalyzeButton.addEventListener('touchend', (e) => {
+          e.preventDefault();
+          analyzeUpload();
+        });
+      }
+
+      if (mainForm) {
+        mainForm.addEventListener('submit', handleFormSubmit);
+      }
+
+      // Set up project select handler
+      const projectSelect = document.getElementById('projectSelect');
+      if (projectSelect) {
+        projectSelect.addEventListener('change', updateExportLink);
+      }
+    }
+
     // Auto-resize textarea
     function autoResize(textarea) {
       textarea.style.height = 'auto';
@@ -332,31 +404,95 @@
       textarea.style.height = newHeight + 'px';
     }
 
-    // Initialize textarea and form handling
-    const promptInput = document.getElementById('promptInput');
-    const mainForm = document.getElementById('mainForm');
+    function handleKeyDown(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        submitForm();
+      }
+    }
 
-    if (promptInput) {
-      promptInput.addEventListener('input', () => autoResize(promptInput));
-      autoResize(promptInput);
+    function handleInputFocus() {
+      // Scroll input into view on mobile after keyboard opens
+      setTimeout(() => {
+        document.getElementById('promptInput')?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }, 300);
+    }
 
-      // Simplified keyboard handling - Enter works on all devices
-      promptInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          submitForm();
+    function handleInputBlur() {
+      // Reset viewport on mobile when keyboard closes
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+      }, 100);
+    }
+
+    function handleSendClick(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      submitForm();
+    }
+
+    function handleSendTouch(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Visual feedback for touch
+      const button = e.currentTarget;
+      button.style.transform = 'scale(0.95)';
+      button.style.opacity = '0.8';
+      
+      setTimeout(() => {
+        if (!isSubmitting) {
+          button.style.transform = '';
+          button.style.opacity = '';
         }
-      });
+      }, 150);
+      
+      submitForm();
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      submitForm();
     }
 
     function submitForm() {
-      if (!promptInput.value.trim()) return;
+      if (isSubmitting) return;
+      
+      const promptInput = document.getElementById('promptInput');
+      const mainForm = document.getElementById('mainForm');
+      
+      if (!promptInput || !mainForm) {
+        console.error('Form elements not found');
+        return;
+      }
+      
+      const inputValue = promptInput.value.trim();
+      if (!inputValue) {
+        promptInput.focus();
+        return;
+      }
+      
+      isSubmitting = true;
+      
+      // Disable send button to prevent double submission
+      const sendButton = document.getElementById('sendBtn');
+      if (sendButton) {
+        sendButton.disabled = true;
+        sendButton.style.opacity = '0.5';
+        sendButton.style.pointerEvents = 'none';
+      }
+      
       showTypingIndicator();
       copyVoiceSelections();
       mainForm.submit();
     }
 
     function copyVoiceSelections() {
+      const mainForm = document.getElementById('mainForm');
+      
       // Remove existing voice inputs
       const existingInputs = mainForm.querySelectorAll('input[name="voices"], input[name="random"]');
       existingInputs.forEach(input => input.remove());
@@ -388,13 +524,17 @@
         </div>
         <span style="color: var(--text-muted); font-size: 0.85rem;">Syntax Prime is thinking...</span>
       `;
-      thread.insertBefore(typingDiv, anchor);
-      scrollToBottom();
+      
+      if (thread && anchor) {
+        thread.insertBefore(typingDiv, anchor);
+        scrollToBottom();
+      }
     }
 
     function scrollToBottom() {
       const thread = document.getElementById('thread');
       const anchor = document.getElementById('bottom-anchor');
+      
       if (anchor) {
         anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
       } else if (thread) {
@@ -402,63 +542,113 @@
       }
     }
 
-    // Form validation
-    if (mainForm) {
-      mainForm.addEventListener('submit', (e) => {
-        if (!promptInput.value.trim()) {
-          e.preventDefault();
-          return false;
-        }
-        copyVoiceSelections();
-        showTypingIndicator();
-      });
-    }
-
-    // Auto-scroll and focus on load
-    window.addEventListener('load', () => {
-      setTimeout(scrollToBottom, 100);
-      if (window.location.hash === '#bottom-anchor') setTimeout(scrollToBottom, 500);
-      if (promptInput) promptInput.focus();
-    });
-
     // Update export link when project changes
     function updateExportLink() {
       const projectSelect = document.getElementById('projectSelect');
       const exportLink = document.querySelector('a[href*="/export/"]');
+      
       if (projectSelect && exportLink) {
         const selectedProject = encodeURIComponent(projectSelect.value);
         exportLink.href = `/export/${selectedProject}`;
       }
     }
-    document.getElementById('projectSelect')?.addEventListener('change', updateExportLink);
 
-    // Upload and analyze function
+    // Upload and analyze function with better error handling
     async function analyzeUpload() {
       try {
         const input = document.getElementById('uploadInput');
         if (!input || !input.files || !input.files[0]) {
-          alert('Choose a file first.');
+          alert('Please choose a file first.');
+          return;
+        }
+
+        const file = input.files[0];
+        const maxSize = 10 * 1024 * 1024; // 10MB limit
+        
+        if (file.size > maxSize) {
+          alert('File too large. Maximum size is 10MB.');
           return;
         }
 
         const fd = new FormData();
-        fd.append('file', input.files[0]);
+        fd.append('file', file);
 
-        document.getElementById('loader')?.classList?.remove('hidden');
+        const loader = document.getElementById('loader');
+        if (loader) {
+          loader.style.display = 'flex';
+        }
 
-        const resp = await fetch('/upload', { method: 'POST', body: fd });
-        const text = await resp.text();
+        // Show progress feedback
+        const analyzeButton = document.getElementById('analyzeBtn');
+        if (analyzeButton) {
+          analyzeButton.disabled = true;
+          analyzeButton.textContent = 'Processing...';
+        }
 
-        const w = window.open('', '_blank');
-        w.document.write(text);
-        w.document.close();
+        const resp = await fetch('/upload', { 
+          method: 'POST', 
+          body: fd 
+        });
+
+        if (!resp.ok) {
+          const errorText = await resp.text();
+          throw new Error(`Upload failed: ${resp.status} - ${errorText}`);
+        }
+
+        const result = await resp.text();
+
+        // Open result in new window
+        const newWindow = window.open('', '_blank');
+        if (newWindow) {
+          newWindow.document.write(result);
+          newWindow.document.close();
+        } else {
+          // Fallback if popup blocked - show in current window
+          document.open();
+          document.write(result);
+          document.close();
+        }
+
       } catch (err) {
-        console.error(err);
-        alert('Upload failed: ' + err);
+        console.error('Upload error:', err);
+        alert(`Upload failed: ${err.message}`);
       } finally {
-        document.getElementById('loader')?.classList?.add('hidden');
+        // Reset UI
+        const loader = document.getElementById('loader');
+        if (loader) {
+          loader.style.display = 'none';
+        }
+        
+        const analyzeButton = document.getElementById('analyzeBtn');
+        if (analyzeButton) {
+          analyzeButton.disabled = false;
+          analyzeButton.textContent = 'Analyze';
+        }
       }
     }
+
+    // Initialize everything when DOM is ready
+    document.addEventListener('DOMContentLoaded', initializeApp);
+
+    // Also initialize on window load for safety
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        scrollToBottom();
+        
+        // Focus input if no hash in URL
+        if (!window.location.hash) {
+          const promptInput = document.getElementById('promptInput');
+          if (promptInput) {
+            promptInput.focus();
+          }
+        }
+      }, 100);
+      
+      // Handle hash-based scrolling
+      if (window.location.hash === '#bottom-anchor') {
+        setTimeout(scrollToBottom, 500);
+      }
+    });
   </script>
 </body>
 </html>

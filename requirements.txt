@@ -20,6 +20,9 @@ Pillow==11.3.0
 PyMuPDF==1.26.3
 python-docx==1.2.0
 easyocr==1.7.1
+opencv-python-headless>=4.5.0
+torch>=1.9.0
+torchvision>=0.10.0
 
 # Text processing
 markdown==3.7
