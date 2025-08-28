@@ -1,4 +1,4 @@
-# Part 1: Add this at the very top of your app.py file (replace existing imports)
+# Part 1: Complete imports and initial Flask setup
 
 from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify
 from utils.ghostline_engine import generate_response, stream_generate
@@ -24,6 +24,12 @@ import docx
 # Markdown support
 import markdown
 from markupsafe import Markup
+
+# Database imports - NEW
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from contextlib import contextmanager
+import urllib.parse
 
 # .env support
 try:
@@ -55,7 +61,218 @@ _rag_build_error = None
 _brain_building = False
 _brain_build_error = None
 
-# Fix EasyOCR model directory permissions - ADD THIS NEW SECTION
+# Database configuration - NEW
+DATABASE_URL = os.getenv('DATABASE_URL')
+if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
+    # Railway provides postgres:// but psycopg2 needs postgresql://
+    DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+# Part 2: Database connection and initialization functions
+
+# Database connection helper - NEW
+@contextmanager
+def get_db_connection():
+    """Context manager for database connections"""
+    conn = None
+    try:
+        if DATABASE_URL:
+            conn = psycopg2.connect(DATABASE_URL)
+            yield conn
+        else:
+            app.logger.warning("No DATABASE_URL found - using file storage only")
+            yield None
+    except Exception as e:
+        app.logger.error(f"Database connection failed: {e}")
+        if conn:
+            conn.rollback()
+        yield None
+    finally:
+        if conn:
+            conn.close()
+
+# Database initialization - NEW
+def init_database():
+    """Create necessary database tables"""
+    if not DATABASE_URL:
+        app.logger.info("No database URL - running in file-only mode")
+        return
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return
+            
+        cursor = conn.cursor()
+        
+        try:
+            # Create chat_threads table for conversation storage
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS chat_threads (
+                    id SERIAL PRIMARY KEY,
+                    project VARCHAR(100) NOT NULL,
+                    user_input TEXT NOT NULL,
+                    response_data JSONB NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # Create index for better performance
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_chat_threads_project_date 
+                ON chat_threads (project, created_at DESC)
+            ''')
+            
+            # Create uploaded_files table for file tracking
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS uploaded_files (
+                    id SERIAL PRIMARY KEY,
+                    filename VARCHAR(255) NOT NULL,
+                    file_type VARCHAR(50) NOT NULL,
+                    content_preview TEXT,
+                    upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    project VARCHAR(100) NOT NULL,
+                    processing_status VARCHAR(50) DEFAULT 'completed'
+                )
+            ''')
+            
+            # Create user_settings table for preferences
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS user_settings (
+                    id SERIAL PRIMARY KEY,
+                    setting_key VARCHAR(100) UNIQUE NOT NULL,
+                    setting_value JSONB NOT NULL,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # Create daily_logs table for briefings
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS daily_logs (
+                    id SERIAL PRIMARY KEY,
+                    log_date DATE NOT NULL,
+                    log_type VARCHAR(50) NOT NULL,
+                    content TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(log_date, log_type)
+                )
+            ''')
+            
+            conn.commit()
+            app.logger.info("Database tables initialized successfully")
+            
+        except Exception as e:
+            conn.rollback()
+            app.logger.error(f"Database initialization failed: {e}")
+
+# Enhanced session management with database backup - NEW
+def load_conversation_enhanced(project: str, limit: int = 50):
+    """Load conversation history from database first, then fallback to file"""
+    conversations = []
+    
+    # Try database first
+    with get_db_connection() as conn:
+        if conn:
+            try:
+                cursor = conn.cursor(cursor_factory=RealDictCursor)
+                cursor.execute('''
+                    SELECT user_input, response_data, created_at 
+                    FROM chat_threads 
+                    WHERE project = %s 
+                    ORDER BY created_at DESC 
+                    LIMIT %s
+                ''', (project, limit))
+                
+                rows = cursor.fetchall()
+                for row in rows:
+                    conversations.append({
+                        "user": row['user_input'],
+                        "responses": row['response_data'],
+                        "timestamp": row['created_at'].isoformat()
+                    })
+                
+                # Reverse to get chronological order
+                conversations.reverse()
+                app.logger.info(f"Loaded {len(conversations)} conversations from database for {project}")
+                return conversations
+                
+            except Exception as e:
+                app.logger.error(f"Failed to load conversations from database: {e}")
+    
+    # Fallback to file system (your existing function)
+    app.logger.info(f"Falling back to file system for {project} conversations")
+    return load_conversation(project, limit)
+
+def save_conversation_enhanced(project: str, user_input: str, response_data: dict):
+    """Save conversation to both database and file"""
+    
+    # Save to database first
+    with get_db_connection() as conn:
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO chat_threads (project, user_input, response_data)
+                    VALUES (%s, %s, %s)
+                ''', (project, user_input, psycopg2.extras.Json(response_data)))
+                
+                conn.commit()
+                app.logger.info(f"Conversation saved to database for {project}")
+                
+            except Exception as e:
+                app.logger.error(f"Failed to save conversation to database: {e}")
+                conn.rollback()
+    
+    # Also save to file as backup (your existing function)
+    _append_session(project, user_input, response_data)
+
+def save_daily_log_enhanced(sync_type: str, content: str):
+    """Save daily log to both database and file"""
+    today = datetime.datetime.now().date()
+    
+    # Save to database
+    with get_db_connection() as conn:
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO daily_logs (log_date, log_type, content)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT (log_date, log_type) 
+                    DO UPDATE SET content = EXCLUDED.content, created_at = CURRENT_TIMESTAMP
+                ''', (today, sync_type, content))
+                
+                conn.commit()
+                app.logger.info(f"Daily log saved to database: {sync_type}")
+                
+            except Exception as e:
+                app.logger.error(f"Failed to save daily log to database: {e}")
+                conn.rollback()
+    
+    # Also save to file as backup
+    _save_daily_log(sync_type, content)
+
+def track_uploaded_file(filename: str, file_type: str, project: str, content_preview: str = ""):
+    """Track uploaded files in database"""
+    with get_db_connection() as conn:
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO uploaded_files (filename, file_type, project, content_preview)
+                    VALUES (%s, %s, %s, %s)
+                ''', (filename, file_type, project, content_preview[:500]))  # Limit preview length
+                
+                conn.commit()
+                app.logger.info(f"File upload tracked: {filename}")
+                
+            except Exception as e:
+                app.logger.error(f"Failed to track uploaded file: {e}")
+                conn.rollback()
+# Part 3: EasyOCR setup and processing functions (UNCHANGED)
+
+# Initialize database when app starts - NEW
+with app.app_context():
+    init_database()
+
+# Fix EasyOCR model directory permissions
 def setup_easyocr_environment():
     """Setup writable directory for EasyOCR models"""
     try:
@@ -75,7 +292,7 @@ def setup_easyocr_environment():
 # Call this right after creating the Flask app
 setup_easyocr_environment()
 
-# Enhanced OCR processing function - ADD THIS NEW FUNCTION
+# Enhanced OCR processing function
 def process_image_ocr(file_stream, filename):
     """Process image with EasyOCR, handling model download issues"""
     try:
@@ -134,7 +351,79 @@ def process_image_ocr(file_stream, filename):
         app.logger.error(f"OCR processing failed: {e}")
         raise Exception(f"OCR processing failed: {str(e)}")
 
-# Markdown filter for Jinja2 (keep existing)
+# Vision analysis function for when OCR fails
+def analyze_image_with_vision(file_stream, filename):
+    """Analyze image using GPT-4 Vision when OCR results are poor"""
+    try:
+        import base64
+        import requests
+        
+        # Get OpenAI API key from environment
+        openai_api_key = os.getenv('OPENAI_API_KEY')
+        if not openai_api_key:
+            return "OpenAI API key not configured for vision analysis"
+        
+        # Reset stream and encode image
+        file_stream.seek(0)
+        image_data = base64.b64encode(file_stream.read()).decode('utf-8')
+        
+        # Determine image format for data URL
+        file_extension = filename.split('.')[-1].lower()
+        mime_type = f"image/{file_extension}" if file_extension in ['png', 'jpg', 'jpeg', 'gif', 'bmp'] else "image/jpeg"
+        
+        headers = {
+            "Authorization": f"Bearer {openai_api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        # Create vision analysis prompt
+        payload = {
+            "model": "gpt-4o",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text", 
+                            "text": "Analyze this image in detail. If it contains charts, graphs, screenshots, or data visualizations, describe the key insights, trends, and important information. If it's a photo, describe what you see. Be specific and actionable in your analysis."
+                        },
+                        {
+                            "type": "image_url", 
+                            "image_url": {
+                                "url": f"data:{mime_type};base64,{image_data}",
+                                "detail": "high"
+                            }
+                        }
+                    ]
+                }
+            ],
+            "max_tokens": 500,
+            "temperature": 0.1
+        }
+        
+        app.logger.info(f"Sending image to GPT-4 Vision for analysis: {filename}")
+        
+        response = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            vision_analysis = result['choices'][0]['message']['content']
+            app.logger.info(f"GPT-4 Vision analysis successful: {len(vision_analysis)} characters")
+            return vision_analysis
+        else:
+            app.logger.error(f"GPT-4 Vision API error: {response.status_code} - {response.text}")
+            return f"Vision analysis failed: API error {response.status_code}"
+            
+    except Exception as e:
+        app.logger.error(f"Vision analysis failed: {e}")
+        return f"Vision analysis error: {str(e)}"
+
+# Markdown filter for Jinja2
 def markdown_filter(text):
     """Convert markdown to HTML"""
     if not text:
@@ -146,7 +435,7 @@ def markdown_filter(text):
 # Register markdown filter
 app.jinja_env.filters['markdown'] = markdown_filter
 
-# Part 2: Add these utility functions after Part 1
+# Part 4: Utility functions for brain building and session management
 
 def _save_daily_log(sync_type: str, content: str):
     """Save daily sync results to log file"""
@@ -235,9 +524,9 @@ def _append_session(project: str, user_input: str, response_data: dict):
         json.dump({'prompt': user_input, 'response': response_data}, f)
         f.write('\n')
 
-def _render(project: str, response_data: dict):
-    """Render the main template with conversation data"""
-    conversation = load_conversation(project, limit=50)
+def _render_enhanced(project: str, response_data: dict):
+    """Render the main template with enhanced conversation data"""
+    conversation = load_conversation_enhanced(project, limit=50)
     return render_template(
         'index.html',
         projects=PROJECTS,
@@ -246,7 +535,7 @@ def _render(project: str, response_data: dict):
         current_project=project
     )
 
-# Part 3: Replace your existing @app.route('/') function with this enhanced version
+# Part 5: Main route with enhanced database functionality
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -282,8 +571,8 @@ def index():
                 app.logger.error(f"Gmail overnight check failed: {e}")
                 response_data = {"SyntaxPrime": f"Gmail check failed: {e}"}
 
-            _append_session(project, user_input, response_data)
-            return _render(project, response_data)
+            save_conversation_enhanced(project, user_input, response_data)
+            return _render_enhanced(project, response_data)
 
         # ---- Command: Gmail search (multiple aliases) ----
         if user_input.lower().startswith(("search ", "find ", "email about ")):
@@ -309,8 +598,8 @@ def index():
                 app.logger.error(f"Gmail search failed: {e}")
                 response_data = {"SyntaxPrime": f"Gmail search failed: {e}"}
 
-            _append_session(project, user_input, response_data)
-            return _render(project, response_data)
+            save_conversation_enhanced(project, user_input, response_data)
+            return _render_enhanced(project, response_data)
 
         # ---- Command: Today's calendar ----
         if user_input.lower().strip() in ["calendar", "today", "meetings", "schedule"]:
@@ -331,8 +620,8 @@ def index():
                 app.logger.error(f"Calendar check failed: {e}")
                 response_data = {"SyntaxPrime": f"Calendar check failed: {e}"}
 
-            _append_session(project, user_input, response_data)
-            return _render(project, response_data)
+            save_conversation_enhanced(project, user_input, response_data)
+            return _render_enhanced(project, response_data)
 
         # ---- Command: Tomorrow's calendar ----
         if user_input.lower().strip() in ["tomorrow", "tomorrow's schedule", "next day"]:
@@ -353,8 +642,8 @@ def index():
                 app.logger.error(f"Tomorrow's calendar failed: {e}")
                 response_data = {"SyntaxPrime": f"Tomorrow's calendar failed: {e}"}
 
-            _append_session(project, user_input, response_data)
-            return _render(project, response_data)
+            save_conversation_enhanced(project, user_input, response_data)
+            return _render_enhanced(project, response_data)
 
         # ---- Command: Next meeting ----
         if user_input.lower().strip() in ["next meeting", "next", "upcoming"]:
@@ -377,8 +666,8 @@ def index():
                 app.logger.error(f"Next meeting check failed: {e}")
                 response_data = {"SyntaxPrime": f"Next meeting check failed: {e}"}
 
-            _append_session(project, user_input, response_data)
-            return _render(project, response_data)
+            save_conversation_enhanced(project, user_input, response_data)
+            return _render_enhanced(project, response_data)
 
         # ---- Command: Search calendar ----
         if user_input.lower().startswith(("meeting about ", "calendar search ")):
@@ -406,12 +695,10 @@ def index():
                 app.logger.error(f"Calendar search failed: {e}")
                 response_data = {"SyntaxPrime": f"Calendar search failed: {e}"}
 
-            _append_session(project, user_input, response_data)
-            return _render(project, response_data)
+            save_conversation_enhanced(project, user_input, response_data)
+            return _render_enhanced(project, response_data)
 
-        # Continue with Part 4 for the remaining commands...
-
-# Part 4: Add these commands to continue your index() function
+# Part 6: Continue main route - Good Morning, Evening, Scrape commands and normal flow
 
         # ---- Command: Good Morning ----
         if user_input.lower().strip() in ["good morning", "morning", "gm"]:
@@ -450,7 +737,7 @@ def index():
 • Check calendar for conflicts"""
 
                 app.logger.info("About to save daily log")
-                _save_daily_log("morning", morning_briefing)
+                save_daily_log_enhanced("morning", morning_briefing)
                 app.logger.info("Daily log saved")
                 
                 app.logger.info("About to call retrieve")
@@ -470,8 +757,8 @@ def index():
                 app.logger.error(f"Full error trace: {error_details}")
                 response_data = {"SyntaxPrime": f"Morning briefing failed: {str(e)} | Type: {type(e).__name__} | Details: {error_details[:200]}"}
 
-            _append_session(project, user_input, response_data)
-            return _render(project, response_data)
+            save_conversation_enhanced(project, user_input, response_data)
+            return _render_enhanced(project, response_data)
 
         # ---- Command: Good Evening ----
         if user_input.lower().strip() in ["good evening", "evening", "ge", "wrap up", "day summary"]:
@@ -512,7 +799,7 @@ def index():
 • Clear desk and close open tasks"""
 
                 # Save to daily log
-                _save_daily_log("evening", evening_summary)
+                save_daily_log_enhanced("evening", evening_summary)
                 
                 # Generate AI response
                 retrieval_ctx = retrieve(evening_summary, k=5) if is_ready() else []
@@ -525,8 +812,8 @@ def index():
                 app.logger.error(f"Evening summary failed: {e}")
                 response_data = {"SyntaxPrime": f"Evening summary failed: {e}"}
 
-            _append_session(project, user_input, response_data)
-            return _render(project, response_data)
+            save_conversation_enhanced(project, user_input, response_data)
+            return _render_enhanced(project, response_data)
 
         # ---- Command: scrape <url> ----
         if user_input.lower().startswith("scrape "):
@@ -550,8 +837,8 @@ def index():
                 app.logger.error(f"Scrape command failed: {e}")
                 response_data = {"SyntaxPrime": f"Scrape failed: {e}"}
             
-            _append_session(project, user_input, response_data)
-            return _render(project, response_data)
+            save_conversation_enhanced(project, user_input, response_data)
+            return _render_enhanced(project, response_data)
 
         # ---- Normal flow ----
         try:
@@ -560,54 +847,15 @@ def index():
                 user_input, use_voices, random_toggle,
                 project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
             )
-            _append_session(project, user_input, response_data)
+            save_conversation_enhanced(project, user_input, response_data)
         except Exception as e:
             app.logger.error(f"Normal flow failed: {e}")
             response_data = {"SyntaxPrime": f"Response generation failed: {e}"}
-            _append_session(project, user_input, response_data)
+            save_conversation_enhanced(project, user_input, response_data)
 
-    return _render(selected_project, response_data)
+    return _render_enhanced(selected_project, response_data)
 
-# Part 5: Brain building endpoints and backup functionality
-
-# --- BACKUP ALL PROJECTS ---
-
-# --- Removed Duplicate Code ---
-
-# --- BRAIN BUILDING ENDPOINTS ---
-@app.route('/build_brain', methods=['POST'])
-def build_brain():
-    """Manually trigger batched brain building"""
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
-    global _rag_building
-    
-    if _rag_building:
-        return jsonify({"ok": False, "error": "Brain is already building"}), 400
-    
-    if is_ready():
-        return jsonify({"ok": False, "error": "Brain is already built"}), 400
-    
-    # Start building in background
-    thread = threading.Thread(target=build_brain_background)
-    thread.daemon = True
-    thread.start()
-    
-    return jsonify({"ok": True, "message": "Batched brain building started"})
-
-@app.route('/build_new_brain', methods=['POST'])
-def build_new_brain():
-    """Build brain from raw sources on server"""
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
-    global _brain_building
-    
-    if _brain_building:
-        return
-
-# Part 5: Brain building endpoints and backup functionality
+# Part 7: Brain building endpoints and backup functionality
 
 # --- BACKUP ALL PROJECTS ---
 @app.route('/backup_all')
@@ -670,9 +918,46 @@ Projects: {', '.join(PROJECTS)}
         return f"Backup failed: {e}", 500
 
 # --- BRAIN BUILDING ENDPOINTS ---
-# --- Removed Duplicate Code ---
+@app.route('/build_brain', methods=['POST'])
+def build_brain():
+    """Manually trigger batched brain building"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    global _rag_building
+    
+    if _rag_building:
+        return jsonify({"ok": False, "error": "Brain is already building"}), 400
+    
+    if is_ready():
+        return jsonify({"ok": False, "error": "Brain is already built"}), 400
+    
+    # Start building in background
+    thread = threading.Thread(target=build_brain_background)
+    thread.daemon = True
+    thread.start()
+    
+    return jsonify({"ok": True, "message": "Batched brain building started"})
 
-# Part 6: Brain control dashboard with enhanced loading bar
+@app.route('/build_new_brain', methods=['POST'])
+def build_new_brain():
+    """Build brain from raw sources on server"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    global _brain_building
+    
+    if _brain_building:
+        return jsonify({"ok": False, "error": "Brain is already building"}), 400
+    
+    # Start building in background
+    thread = threading.Thread(target=build_new_brain_background)
+    thread.daemon = True
+    thread.start()
+    
+    return jsonify({"ok": True, "message": "Server-side brain building started"})
+
+# Part 8: Brain control dashboard with enhanced loading bar
 
 @app.route('/brain_status')
 def brain_status():
@@ -980,7 +1265,7 @@ def brain_control():
     '''
     return html_content
 
-# Part 7: Final routes - Enhanced upload, debug routes, and authentication
+# Part 9: Enhanced upload route with database integration (COMPLETE)
 
 # --- STREAMING ---
 @app.route('/stream', methods=['POST'])
@@ -1002,81 +1287,6 @@ def stream():
     return app.response_class(generate(), mimetype='text/plain')
 
 # --- ENHANCED UPLOAD / OCR ---
-# Add this vision analysis function first (place it after your process_image_ocr function)
-
-def analyze_image_with_vision(file_stream, filename):
-    """Analyze image using GPT-4 Vision when OCR results are poor"""
-    try:
-        import base64
-        import requests
-        
-        # Get OpenAI API key from environment
-        openai_api_key = os.getenv('OPENAI_API_KEY')
-        if not openai_api_key:
-            return "OpenAI API key not configured for vision analysis"
-        
-        # Reset stream and encode image
-        file_stream.seek(0)
-        image_data = base64.b64encode(file_stream.read()).decode('utf-8')
-        
-        # Determine image format for data URL
-        file_extension = filename.split('.')[-1].lower()
-        mime_type = f"image/{file_extension}" if file_extension in ['png', 'jpg', 'jpeg', 'gif', 'bmp'] else "image/jpeg"
-        
-        headers = {
-            "Authorization": f"Bearer {openai_api_key}",
-            "Content-Type": "application/json"
-        }
-        
-        # Create vision analysis prompt
-        payload = {
-            "model": "gpt-4o",
-            "messages": [
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text", 
-                            "text": "Analyze this image in detail. If it contains charts, graphs, screenshots, or data visualizations, describe the key insights, trends, and important information. If it's a photo, describe what you see. Be specific and actionable in your analysis."
-                        },
-                        {
-                            "type": "image_url", 
-                            "image_url": {
-                                "url": f"data:{mime_type};base64,{image_data}",
-                                "detail": "high"
-                            }
-                        }
-                    ]
-                }
-            ],
-            "max_tokens": 500,
-            "temperature": 0.1
-        }
-        
-        app.logger.info(f"Sending image to GPT-4 Vision for analysis: {filename}")
-        
-        response = requests.post(
-            "https://api.openai.com/v1/chat/completions",
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
-        
-        if response.status_code == 200:
-            result = response.json()
-            vision_analysis = result['choices'][0]['message']['content']
-            app.logger.info(f"GPT-4 Vision analysis successful: {len(vision_analysis)} characters")
-            return vision_analysis
-        else:
-            app.logger.error(f"GPT-4 Vision API error: {response.status_code} - {response.text}")
-            return f"Vision analysis failed: API error {response.status_code}"
-            
-    except Exception as e:
-        app.logger.error(f"Vision analysis failed: {e}")
-        return f"Vision analysis error: {str(e)}"
-
-# Replace your existing upload route with this complete version
-
 @app.route('/upload', methods=['POST'])
 def upload_file():
     try:
@@ -1228,9 +1438,14 @@ Please analyze this content and provide insights, summaries, or answer any quest
             app.logger.error(f"AI analysis failed: {e}")
             response_data = {"SyntaxPrime": f"File processed successfully, but AI analysis failed: {e}"}
 
-        # Append to session as if user asked about the file
+        # Save to database and track file upload
         user_message = f"[File Upload] {file.filename}"
-        _append_session(project, user_message, response_data)
+        save_conversation_enhanced(project, user_message, response_data)
+        
+        # Track the uploaded file in database
+        file_extension = filename.split('.')[-1].upper() if '.' in filename else 'UNKNOWN'
+        content_summary = text[:500] if text else "No text extracted"
+        track_uploaded_file(file.filename, file_extension, project, content_summary)
 
         # Redirect back to main chat with the analysis
         return redirect(f'/?project={project}#bottom-anchor')
@@ -1240,6 +1455,177 @@ Please analyze this content and provide insights, summaries, or answer any quest
         import traceback
         app.logger.error(f"Full traceback: {traceback.format_exc()}")
         return f"Upload Error: {str(e)}", 500
+
+# Part 10: Database dashboard and utility routes
+
+# --- DATABASE DASHBOARD - NEW ---
+@app.route('/database_status')
+def database_status():
+    """Check database connection and table status"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    status = {
+        "database_url_configured": bool(DATABASE_URL),
+        "connection_working": False,
+        "tables_exist": False,
+        "conversation_count": 0,
+        "uploaded_files_count": 0,
+        "daily_logs_count": 0
+    }
+    
+    with get_db_connection() as conn:
+        if conn:
+            try:
+                cursor = conn.cursor()
+                status["connection_working"] = True
+                
+                # Check if tables exist
+                cursor.execute('''
+                    SELECT COUNT(*) FROM information_schema.tables 
+                    WHERE table_name IN ('chat_threads', 'uploaded_files', 'daily_logs', 'user_settings')
+                ''')
+                table_count = cursor.fetchone()[0]
+                status["tables_exist"] = table_count == 4
+                
+                if status["tables_exist"]:
+                    # Get record counts
+                    cursor.execute('SELECT COUNT(*) FROM chat_threads')
+                    status["conversation_count"] = cursor.fetchone()[0]
+                    
+                    cursor.execute('SELECT COUNT(*) FROM uploaded_files')
+                    status["uploaded_files_count"] = cursor.fetchone()[0]
+                    
+                    cursor.execute('SELECT COUNT(*) FROM daily_logs')
+                    status["daily_logs_count"] = cursor.fetchone()[0]
+                
+            except Exception as e:
+                app.logger.error(f"Database status check failed: {e}")
+    
+    return jsonify(status)
+
+@app.route('/database')
+def database_dashboard():
+    """Simple database dashboard"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    html_content = '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Ghostline Database Dashboard</title>
+        <style>
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #0f0f0f; 
+                color: #fff; 
+                margin: 0; 
+                padding: 20px; 
+            }
+            .container { max-width: 900px; margin: 0 auto; }
+            .status-box { 
+                background: #1a1a1a; 
+                border: 1px solid #333; 
+                border-radius: 8px; 
+                padding: 20px; 
+                margin: 20px 0; 
+            }
+            .btn { 
+                background: #6366f1; 
+                color: white; 
+                border: none; 
+                padding: 12px 24px; 
+                border-radius: 8px; 
+                cursor: pointer; 
+                font-size: 16px;
+                margin: 10px 5px;
+            }
+            .btn:hover { background: #5855eb; }
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+                margin: 20px 0;
+            }
+            .stat-box {
+                background: #2a2a2a;
+                padding: 15px;
+                border-radius: 8px;
+                text-align: center;
+            }
+            .stat-number {
+                font-size: 28px;
+                font-weight: bold;
+                color: #10b981;
+            }
+            .success { color: #10b981; }
+            .error { color: #ef4444; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>📊 Database Dashboard</h1>
+            
+            <div class="status-box">
+                <h3>Connection Status</h3>
+                <div id="status">Loading...</div>
+            </div>
+            
+            <div class="status-box">
+                <h3>Statistics</h3>
+                <div id="stats" class="stats-grid">Loading...</div>
+            </div>
+            
+            <div class="status-box">
+                <button class="btn" onclick="refreshStatus()">🔄 Refresh</button>
+                <button class="btn" onclick="window.location.href='/'">← Back to Chat</button>
+            </div>
+        </div>
+        
+        <script>
+            function refreshStatus() {
+                fetch('/database_status')
+                    .then(r => r.json())
+                    .then(data => {
+                        const statusDiv = document.getElementById('status');
+                        const statsDiv = document.getElementById('stats');
+                        
+                        // Update status
+                        if (data.database_url_configured && data.connection_working && data.tables_exist) {
+                            statusDiv.innerHTML = '<span class="success">✅ Database Connected & Ready</span>';
+                        } else {
+                            statusDiv.innerHTML = '<span class="error">❌ Database Issues Detected</span>';
+                        }
+                        
+                        // Update stats
+                        statsDiv.innerHTML = `
+                            <div class="stat-box">
+                                <div class="stat-number">${data.conversation_count}</div>
+                                <div>Conversations</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number">${data.uploaded_files_count}</div>
+                                <div>Files Uploaded</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number">${data.daily_logs_count}</div>
+                                <div>Daily Logs</div>
+                            </div>
+                        `;
+                    })
+                    .catch(e => {
+                        document.getElementById('status').innerHTML = '<span class="error">❌ Connection Error</span>';
+                    });
+            }
+            
+            refreshStatus();
+            setInterval(refreshStatus, 5000);
+        </script>
+    </body>
+    </html>
+    '''
+    return html_content
 
 # --- UTILITY ROUTES ---
 @app.route('/reload_corpus')
@@ -1292,6 +1678,8 @@ def export_session(project):
         )
     except FileNotFoundError:
         return f"No session data found for project: {project}", 404
+
+# Part 11: Debug routes and authentication (FINAL PART)
 
 # --- DEBUG ROUTES ---
 @app.route('/debug/rag')
