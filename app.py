@@ -357,7 +357,7 @@ def load_brain_from_database():
             return None
 
 def enhanced_build_brain_background():
-    """Enhanced brain building with database storage"""
+    """Enhanced brain building with database storage - works with chunked files"""
     global _rag_building, _rag_build_error
     
     try:
@@ -365,30 +365,44 @@ def enhanced_build_brain_background():
         _rag_build_error = None
         app.logger.info("Starting enhanced brain build with database integration...")
         
-        # Build the brain using existing corpus file
+        # Build the brain using existing corpus (this handles the chunked files)
         load_corpus(CORPUS_PATH)
         
-        # Now save to database
+        # Now save to database by extracting data from the loaded RAG system
         try:
-            # Load the corpus data that was just processed
-            import gzip
-            import json
+            # Import your RAG system to access the loaded data
+            from utils.rag_basic import _rag_system
             
-            corpus_data = []
-            with gzip.open(CORPUS_PATH, 'rt', encoding='utf-8') as f:
-                for line in f:
-                    if line.strip():
-                        corpus_data.append(json.loads(line))
-            
-            # Save to database
-            if save_brain_to_database(corpus_data):
-                app.logger.info("Brain successfully saved to database")
+            if _rag_system and hasattr(_rag_system, 'chunks') and _rag_system.chunks:
+                app.logger.info(f"Found {len(_rag_system.chunks)} chunks in loaded RAG system")
+                
+                # Convert RAG chunks to database format
+                corpus_data = []
+                for i, chunk in enumerate(_rag_system.chunks):
+                    # Adapt to your RAG system's chunk format
+                    corpus_item = {
+                        'id': str(chunk.get('id', f'chunk_{i}')),
+                        'title': chunk.get('source', f'chunk_{i}'),
+                        'content': chunk.get('text', ''),
+                        'chunk_index': i,
+                        'metadata': {
+                            'created_at': chunk.get('created_at', ''),
+                            'source': chunk.get('source', ''),
+                            'batch': chunk.get('batch', 0)
+                        }
+                    }
+                    corpus_data.append(corpus_item)
+                
+                # Save to database
+                if save_brain_to_database(corpus_data):
+                    app.logger.info("Brain successfully saved to database from RAG system")
+                else:
+                    app.logger.warning("Brain build completed but database save failed")
             else:
-                app.logger.warning("Brain build completed but database save failed - file backup available")
+                app.logger.warning("No chunks found in RAG system - skipping database save")
         
         except Exception as db_error:
             app.logger.error(f"Database save failed during brain build: {db_error}")
-            # Continue anyway - we still have the file version
         
         _rag_building = False
         app.logger.info("Enhanced brain build complete!")
@@ -410,38 +424,44 @@ def enhanced_build_new_brain_background():
         from build_brain_fixed2 import build_new_brain
         result_path = build_new_brain()
         
-        # Copy the new brain to the expected location
-        import shutil
-        shutil.copy(str(result_path), CORPUS_PATH)
-        app.logger.info(f"New brain saved to {CORPUS_PATH}")
+        app.logger.info(f"New brain built with result path: {result_path}")
         
-        # Now save to database
+        # Load the new brain into the RAG system
+        load_corpus(CORPUS_PATH)
+        
+        # Now try to save to database
         try:
-            import gzip
-            import json
+            from utils.rag_basic import _rag_system
             
-            corpus_data = []
-            with gzip.open(CORPUS_PATH, 'rt', encoding='utf-8') as f:
-                for line in f:
-                    if line.strip():
-                        corpus_data.append(json.loads(line))
-            
-            if save_brain_to_database(corpus_data):
-                app.logger.info("New brain successfully saved to database")
+            if _rag_system and hasattr(_rag_system, 'chunks') and _rag_system.chunks:
+                app.logger.info(f"Found {len(_rag_system.chunks)} chunks in newly built RAG system")
+                
+                corpus_data = []
+                for i, chunk in enumerate(_rag_system.chunks):
+                    corpus_item = {
+                        'id': str(chunk.get('id', f'chunk_{i}')),
+                        'title': chunk.get('source', f'chunk_{i}'),
+                        'content': chunk.get('text', ''),
+                        'chunk_index': i,
+                        'metadata': {
+                            'created_at': chunk.get('created_at', ''),
+                            'source': chunk.get('source', ''),
+                            'batch': chunk.get('batch', 0)
+                        }
+                    }
+                    corpus_data.append(corpus_item)
+                
+                if save_brain_to_database(corpus_data):
+                    app.logger.info("New brain successfully saved to database")
+                else:
+                    app.logger.warning("New brain build completed but database save failed")
             else:
-                app.logger.warning("New brain build completed but database save failed")
+                app.logger.warning("No chunks found in newly built RAG system")
         
         except Exception as db_error:
             app.logger.error(f"Database save failed during new brain build: {db_error}")
         
-        _brain_building = False
-        app.logger.info("Enhanced new brain build complete!")
-        
-    except Exception as e:
-        _brain_building = False
-        _brain_build_error = str(e)
-        app.logger.error(f"Enhanced new brain build failed: {e}")
-
+       
 # Part 3: EasyOCR setup and processing functions (UNCHANGED)
 
 # Initialize database when app starts - NEW
