@@ -1,4 +1,4 @@
-# Part 1: Complete imports and initial Flask setup
+# Section 1: Imports and Initial Flask Setup
 
 from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify
 from utils.ghostline_engine import generate_response, stream_generate
@@ -66,7 +66,8 @@ DATABASE_URL = os.getenv('DATABASE_URL')
 if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
     # Railway provides postgres:// but psycopg2 needs postgresql://
     DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
-# Part 2: Database connection and initialization functions
+
+# Section 2: Database Connection and Management Functions
 
 # Database connection helper - NEW
 @contextmanager
@@ -180,8 +181,7 @@ def init_database():
             conn.rollback()
             app.logger.error(f"Database initialization failed: {e}")
 
-
-# Enhanced session management with database backup - NEW
+# Enhanced session management with database backup
 def load_conversation_enhanced(project: str, limit: int = 50):
     """Load conversation history from database first, then fallback to file"""
     conversations = []
@@ -215,7 +215,7 @@ def load_conversation_enhanced(project: str, limit: int = 50):
             except Exception as e:
                 app.logger.error(f"Failed to load conversations from database: {e}")
     
-    # Fallback to file system (your existing function)
+    # Fallback to file system
     app.logger.info(f"Falling back to file system for {project} conversations")
     return load_conversation(project, limit)
 
@@ -239,7 +239,7 @@ def save_conversation_enhanced(project: str, user_input: str, response_data: dic
                 app.logger.error(f"Failed to save conversation to database: {e}")
                 conn.rollback()
     
-    # Also save to file as backup (your existing function)
+    # Also save to file as backup
     _append_session(project, user_input, response_data)
 
 def save_daily_log_enhanced(sync_type: str, content: str):
@@ -285,6 +285,13 @@ def track_uploaded_file(filename: str, file_type: str, project: str, content_pre
             except Exception as e:
                 app.logger.error(f"Failed to track uploaded file: {e}")
                 conn.rollback()
+
+# Initialize database when app starts
+with app.app_context():
+    init_database()
+
+# Section 3: Brain and RAG System Functions
+
 def save_brain_to_database(corpus_data):
     """Save processed brain corpus to database"""
     with get_db_connection() as conn:
@@ -458,7 +465,7 @@ def enhanced_build_new_brain_background():
             else:
                 app.logger.warning("No chunks found in newly built RAG system")
         
-                except Exception as db_error:
+        except Exception as db_error:
             app.logger.error(f"Database save failed during new brain build: {db_error}")
         
         _brain_building = False
@@ -468,12 +475,53 @@ def enhanced_build_new_brain_background():
         _brain_building = False
         _brain_build_error = str(e)
         app.logger.error(f"Enhanced new brain build failed: {e}")
-       
-# Part 3: EasyOCR setup and processing functions (UNCHANGED)
 
-# Initialize database when app starts - NEW
-with app.app_context():
-    init_database()
+def build_brain_background():
+    """Build the RAG system using batched processing - WITH PROGRESS TRACKING!"""
+    global _rag_building, _rag_build_error
+    
+    try:
+        _rag_building = True
+        _rag_build_error = None
+        app.logger.info("Starting batched brain build with progress tracking...")
+        
+        # Load corpus with progress tracking - this will show your loading bar!
+        load_corpus(CORPUS_PATH)
+        
+        _rag_building = False
+        app.logger.info("Batched brain build complete!")
+        
+    except Exception as e:
+        _rag_building = False
+        _rag_build_error = str(e)
+        app.logger.error(f"Batched brain build failed: {e}")
+
+def build_new_brain_background():
+    """Build new brain from raw sources on server"""
+    global _brain_building, _brain_build_error
+    
+    try:
+        _brain_building = True
+        _brain_build_error = None
+        app.logger.info("Starting server-side brain building from raw sources...")
+        
+        from build_brain_fixed2 import build_new_brain
+        result_path = build_new_brain()
+        
+        # Copy the new brain to the expected location
+        import shutil
+        shutil.copy(str(result_path), CORPUS_PATH)
+        app.logger.info(f"New brain saved to {CORPUS_PATH}")
+        
+        _brain_building = False
+        app.logger.info("Server-side brain build complete!")
+        
+    except Exception as e:
+        _brain_building = False
+        _brain_build_error = str(e)
+        app.logger.error(f"Server-side brain build failed: {e}")
+
+# Section 4: OCR and File Processing Functions
 
 # Fix EasyOCR model directory permissions
 def setup_easyocr_environment():
@@ -638,7 +686,7 @@ def markdown_filter(text):
 # Register markdown filter
 app.jinja_env.filters['markdown'] = markdown_filter
 
-# Part 4: Utility functions for brain building and session management
+# Section 5: Utility Functions
 
 def _save_daily_log(sync_type: str, content: str):
     """Save daily sync results to log file"""
@@ -658,51 +706,6 @@ def _save_daily_log(sync_type: str, content: str):
         import traceback
         error_details = traceback.format_exc()
         print(f"DEBUG: Daily log save failed: {error_details}")
-
-def build_brain_background():
-    """Build the RAG system using batched processing - WITH PROGRESS TRACKING!"""
-    global _rag_building, _rag_build_error
-    
-    try:
-        _rag_building = True
-        _rag_build_error = None
-        app.logger.info("Starting batched brain build with progress tracking...")
-        
-        # Load corpus with progress tracking - this will show your loading bar!
-        load_corpus(CORPUS_PATH)
-        
-        _rag_building = False
-        app.logger.info("Batched brain build complete!")
-        
-    except Exception as e:
-        _rag_building = False
-        _rag_build_error = str(e)
-        app.logger.error(f"Batched brain build failed: {e}")
-
-def build_new_brain_background():
-    """Build new brain from raw sources on server"""
-    global _brain_building, _brain_build_error
-    
-    try:
-        _brain_building = True
-        _brain_build_error = None
-        app.logger.info("Starting server-side brain building from raw sources...")
-        
-        from build_brain_fixed2 import build_new_brain
-        result_path = build_new_brain()
-        
-        # Copy the new brain to the expected location
-        import shutil
-        shutil.copy(str(result_path), CORPUS_PATH)
-        app.logger.info(f"New brain saved to {CORPUS_PATH}")
-        
-        _brain_building = False
-        app.logger.info("Server-side brain build complete!")
-        
-    except Exception as e:
-        _brain_building = False
-        _brain_build_error = str(e)
-        app.logger.error(f"Server-side brain build failed: {e}")
 
 def load_conversation(project: str, limit: int = 50):
     """Load conversation history for a project"""
@@ -738,7 +741,7 @@ def _render_enhanced(project: str, response_data: dict):
         current_project=project
     )
 
-# Part 5: Main route with enhanced database functionality
+# Section 6: Main Route with Enhanced Database Functionality
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -901,8 +904,6 @@ def index():
             save_conversation_enhanced(project, user_input, response_data)
             return _render_enhanced(project, response_data)
 
-# Part 6: Continue main route - Good Morning, Evening, Scrape commands and normal flow
-
         # ---- Command: Good Morning ----
         if user_input.lower().strip() in ["good morning", "morning", "gm"]:
             app.logger.info("Good Morning command triggered")
@@ -1058,7 +1059,7 @@ def index():
 
     return _render_enhanced(selected_project, response_data)
 
-# Part 7: Brain building endpoints and backup functionality
+# Section 7: Brain Building Endpoints and Dashboard
 
 @app.route('/build_brain', methods=['POST'])
 def build_brain():
@@ -1099,11 +1100,9 @@ def build_new_brain():
     
     return jsonify({"ok": True, "message": "Enhanced new brain building with database storage started"})
 
-# Part 8: Brain control dashboard with enhanced loading bar
-
 @app.route('/brain_status')
 def brain_status():
-    """Enhanced brain status with batch progress - YOUR LOADING BAR IS BACK!"""
+    """Enhanced brain status with batch progress"""
     if not session.get('logged_in'):
         return "Unauthorized", 401
     
@@ -1140,7 +1139,7 @@ def brain_status():
 
 @app.route('/brain')
 def brain_control():
-    """Enhanced brain control dashboard with batch progress - YOUR LOADING BAR IS BACK!"""
+    """Enhanced brain control dashboard with batch progress"""
     if not session.get('logged_in'):
         return redirect(url_for('login'))
     
@@ -1275,11 +1274,11 @@ def brain_control():
     </head>
     <body>
         <div class="container">
-            <h1>🧠 Ghostline Brain Control v0.2.0</h1>
+            <h1>Brain Control v0.2.0</h1>
             <p>Enhanced RAG system with real-time progress tracking and batch processing.</p>
             
             <div class="status-box">
-                <h3>🔍 Brain Status</h3>
+                <h3>Brain Status</h3>
                 <div id="status">Loading brain status...</div>
                 
                 <div id="progress-container" class="progress-container" style="display: none;">
@@ -1308,11 +1307,11 @@ def brain_control():
             </div>
             
             <div class="status-box">
-                <h3>🎛️ Controls</h3>
+                <h3>Controls</h3>
                 <button class="btn" id="build-btn" onclick="buildBrain()">Build Brain (from file)</button>
                 <button class="btn server-build" id="server-build-btn" onclick="buildNewBrain()">Build Brain (from sources)</button>
-                <button class="btn" onclick="refreshStatus()">🔄 Refresh Status</button>
-                <button class="btn" onclick="window.location.href='/'">← Back to Chat</button>
+                <button class="btn" onclick="refreshStatus()">Refresh Status</button>
+                <button class="btn" onclick="window.location.href='/'">&larr; Back to Chat</button>
             </div>
         </div>
         
@@ -1329,24 +1328,24 @@ def brain_control():
                         
                         // Update basic status
                         if (data.ready) {
-                            statusDiv.innerHTML = '<span class="success">✅ Brain Ready & Loaded</span>';
+                            statusDiv.innerHTML = '<span class="success">Brain Ready &amp; Loaded</span>';
                             buildBtn.disabled = true;
                             serverBuildBtn.disabled = true;
                             progressContainer.style.display = 'none';
                             batchInfo.style.display = 'none';
                         } else if (data.building) {
-                            statusDiv.innerHTML = '<span class="building pulse">⚡ Building Brain...</span>';
+                            statusDiv.innerHTML = '<span class="building pulse">Building Brain...</span>';
                             buildBtn.disabled = true;
                             serverBuildBtn.disabled = true;
                             showProgress(data);
                         } else if (data.error) {
-                            statusDiv.innerHTML = '<span class="error">❌ Build Error: ' + data.error + '</span>';
+                            statusDiv.innerHTML = '<span class="error">Build Error: ' + data.error + '</span>';
                             buildBtn.disabled = false;
                             serverBuildBtn.disabled = false;
                             progressContainer.style.display = 'none';
                             batchInfo.style.display = 'none';
                         } else {
-                            statusDiv.innerHTML = '<span style="color: #fbbf24;">⭕ Brain Not Built</span>';
+                            statusDiv.innerHTML = '<span style="color: #fbbf24;">Brain Not Built</span>';
                             buildBtn.disabled = false;
                             serverBuildBtn.disabled = false;
                             progressContainer.style.display = 'none';
@@ -1354,7 +1353,7 @@ def brain_control():
                         }
                     })
                     .catch(e => {
-                        document.getElementById('status').innerHTML = '<span class="error">❌ Connection Error</span>';
+                        document.getElementById('status').innerHTML = '<span class="error">Connection Error</span>';
                     });
             }
             
@@ -1407,28 +1406,8 @@ def brain_control():
     '''
     return html_content
 
-# Part 9: Enhanced upload route with database integration (COMPLETE)
+# Section 8: File Upload and Processing Route
 
-# --- STREAMING ---
-@app.route('/stream', methods=['POST'])
-def stream():
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    user_input = request.form['user_input'].strip()
-    project = request.form['project']
-    use_voices = request.form.getlist('voices') or ['SyntaxPrime']
-    retrieval_ctx = retrieve(user_input, k=5) if is_ready() else []
-
-    def generate():
-        for chunk in stream_generate(
-            user_input, use_voices, project=project,
-            model=CHAT_MODEL, retrieval_context=retrieval_ctx
-        ):
-            yield chunk
-
-    return app.response_class(generate(), mimetype='text/plain')
-
-# --- ENHANCED UPLOAD / OCR ---
 @app.route('/upload', methods=['POST'])
 def upload_file():
     try:
@@ -1598,7 +1577,26 @@ Please analyze this content and provide insights, summaries, or answer any quest
         app.logger.error(f"Full traceback: {traceback.format_exc()}")
         return f"Upload Error: {str(e)}", 500
 
-# Part 10: Database dashboard and utility routes
+# Section 9: Other Routes - Streaming, Database Dashboard, and Utilities
+
+# --- STREAMING ---
+@app.route('/stream', methods=['POST'])
+def stream():
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    user_input = request.form['user_input'].strip()
+    project = request.form['project']
+    use_voices = request.form.getlist('voices') or ['SyntaxPrime']
+    retrieval_ctx = retrieve(user_input, k=5) if is_ready() else []
+
+    def generate():
+        for chunk in stream_generate(
+            user_input, use_voices, project=project,
+            model=CHAT_MODEL, retrieval_context=retrieval_ctx
+        ):
+            yield chunk
+
+    return app.response_class(generate(), mimetype='text/plain')
 
 # --- DATABASE DASHBOARD - NEW ---
 @app.route('/database_status')
@@ -1707,7 +1705,7 @@ def database_dashboard():
     </head>
     <body>
         <div class="container">
-            <h1>📊 Database Dashboard</h1>
+            <h1>Database Dashboard</h1>
             
             <div class="status-box">
                 <h3>Connection Status</h3>
@@ -1720,8 +1718,8 @@ def database_dashboard():
             </div>
             
             <div class="status-box">
-                <button class="btn" onclick="refreshStatus()">🔄 Refresh</button>
-                <button class="btn" onclick="window.location.href='/'">← Back to Chat</button>
+                <button class="btn" onclick="refreshStatus()">Refresh</button>
+                <button class="btn" onclick="window.location.href='/'">&larr; Back to Chat</button>
             </div>
         </div>
         
@@ -1735,9 +1733,9 @@ def database_dashboard():
                         
                         // Update status
                         if (data.database_url_configured && data.connection_working && data.tables_exist) {
-                            statusDiv.innerHTML = '<span class="success">✅ Database Connected & Ready</span>';
+                            statusDiv.innerHTML = '<span class="success">Database Connected &amp; Ready</span>';
                         } else {
-                            statusDiv.innerHTML = '<span class="error">❌ Database Issues Detected</span>';
+                            statusDiv.innerHTML = '<span class="error">Database Issues Detected</span>';
                         }
                         
                         // Update stats
@@ -1757,7 +1755,7 @@ def database_dashboard():
                         `;
                     })
                     .catch(e => {
-                        document.getElementById('status').innerHTML = '<span class="error">❌ Connection Error</span>';
+                        document.getElementById('status').innerHTML = '<span class="error">Connection Error</span>';
                     });
             }
             
@@ -1821,7 +1819,7 @@ def export_session(project):
     except FileNotFoundError:
         return f"No session data found for project: {project}", 404
 
-# Part 11: Debug routes and authentication (FINAL PART)
+# Section 10: Debug Routes, Authentication, and App Startup
 
 # --- DEBUG ROUTES ---
 @app.route('/debug/rag')
@@ -1872,7 +1870,10 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
+# --- APP STARTUP ---
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
+
 
