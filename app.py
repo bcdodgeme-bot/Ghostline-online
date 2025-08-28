@@ -1002,7 +1002,80 @@ def stream():
     return app.response_class(generate(), mimetype='text/plain')
 
 # --- ENHANCED UPLOAD / OCR ---
-# Replace your existing upload route with this integrated version
+# Add this vision analysis function first (place it after your process_image_ocr function)
+
+def analyze_image_with_vision(file_stream, filename):
+    """Analyze image using GPT-4 Vision when OCR results are poor"""
+    try:
+        import base64
+        import requests
+        
+        # Get OpenAI API key from environment
+        openai_api_key = os.getenv('OPENAI_API_KEY')
+        if not openai_api_key:
+            return "OpenAI API key not configured for vision analysis"
+        
+        # Reset stream and encode image
+        file_stream.seek(0)
+        image_data = base64.b64encode(file_stream.read()).decode('utf-8')
+        
+        # Determine image format for data URL
+        file_extension = filename.split('.')[-1].lower()
+        mime_type = f"image/{file_extension}" if file_extension in ['png', 'jpg', 'jpeg', 'gif', 'bmp'] else "image/jpeg"
+        
+        headers = {
+            "Authorization": f"Bearer {openai_api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        # Create vision analysis prompt
+        payload = {
+            "model": "gpt-4-vision-preview",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text", 
+                            "text": "Analyze this image in detail. If it contains charts, graphs, screenshots, or data visualizations, describe the key insights, trends, and important information. If it's a photo, describe what you see. Be specific and actionable in your analysis."
+                        },
+                        {
+                            "type": "image_url", 
+                            "image_url": {
+                                "url": f"data:{mime_type};base64,{image_data}",
+                                "detail": "high"
+                            }
+                        }
+                    ]
+                }
+            ],
+            "max_tokens": 500,
+            "temperature": 0.1
+        }
+        
+        app.logger.info(f"Sending image to GPT-4 Vision for analysis: {filename}")
+        
+        response = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            vision_analysis = result['choices'][0]['message']['content']
+            app.logger.info(f"GPT-4 Vision analysis successful: {len(vision_analysis)} characters")
+            return vision_analysis
+        else:
+            app.logger.error(f"GPT-4 Vision API error: {response.status_code} - {response.text}")
+            return f"Vision analysis failed: API error {response.status_code}"
+            
+    except Exception as e:
+        app.logger.error(f"Vision analysis failed: {e}")
+        return f"Vision analysis error: {str(e)}"
+
+# Replace your existing upload route with this complete version
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -1096,8 +1169,35 @@ def upload_file():
         if len(text) > 15000:
             text = text[:15000] + "\n\n[...Content truncated...]"
         
-        # Create analysis prompt for AI
-        analysis_prompt = f"""I've uploaded and processed the file '{file.filename}'. Here's what was extracted:
+        # Check if OCR results are meaningful (fallback logic)
+        text_words = len(text.split()) if text else 0
+        is_image_file = filename.endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp'))
+        
+        # Create analysis prompt based on OCR quality
+        if is_image_file and text_words < 5:
+            # Poor OCR results - switch to GPT-4 Vision analysis
+            app.logger.info(f"OCR extracted only {text_words} words, switching to vision analysis")
+            
+            # Get vision analysis
+            vision_description = analyze_image_with_vision(file.stream, file.filename)
+            
+            analysis_prompt = f"""I've uploaded an image file '{file.filename}'. OCR only extracted: "{text.strip()}"
+
+Since the text was minimal, I analyzed the image visually instead:
+
+=== VISUAL ANALYSIS ===
+{vision_description}
+
+=== FILE DETAILS ===
+- Filename: {file.filename}
+- Type: IMAGE ({filename.split('.')[-1].upper()})
+- Analysis Method: GPT-4 Vision (due to minimal text extraction)
+
+Please provide insights based on this visual analysis."""
+
+        else:
+            # Good OCR results - proceed with text analysis
+            analysis_prompt = f"""I've uploaded and processed the file '{file.filename}'. Here's what was extracted:
 
 === EXTRACTED CONTENT ===
 {text}
