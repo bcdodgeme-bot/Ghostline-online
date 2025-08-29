@@ -101,6 +101,7 @@
     .message-bubble.user { background: var(--primary); color: white; border-bottom-right-radius: var(--radius-sm); }
     .message-bubble.bot { background: var(--surface); border: 1px solid var(--border); color: var(--text-primary); border-bottom-left-radius: var(--radius-sm); }
     .message-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.8rem; font-weight: 500; opacity: 0.8; }
+    .message-header .logo { width: 20px; height: 20px; border-radius: 4px; }
     .message-content { font-size: 0.95rem; white-space: pre-line; }
 
     /* Typing indicator */
@@ -254,7 +255,10 @@
           {% for voice, reply in turn.responses.items() %}
             <div class="message bot">
               <div class="message-bubble bot">
-                <div class="message-header">{{ display_names.get(voice, voice) }}</div>
+                <div class="message-header">
+                  <img src="/static/syntax-buffering.png" alt="{{ display_names.get(voice, voice) }}" class="logo">
+                  {{ display_names.get(voice, voice) }}
+                </div>
                 <div class="message-content">{{ reply | trim | markdown }}</div>
               </div>
             </div>

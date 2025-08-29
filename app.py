@@ -114,59 +114,19 @@ setup_easyocr_environment()
 app.jinja_env.filters['markdown'] = markdown_filter
 
 # Section 5: Utility Functions
+# Section 5: Utility Functions
 
-def _save_daily_log(sync_type: str, content: str):
-    """Save daily sync results to log file"""
-    try:
-        os.makedirs("daily_logs", exist_ok=True)
-        today = datetime.datetime.now().strftime("%Y-%m-%d")
-        log_path = f"daily_logs/{today}.md"
-        
-        timestamp = datetime.datetime.now().strftime("%I:%M %p")
-        
-        with open(log_path, 'a', encoding='utf-8') as f:
-            f.write(f"\n## {sync_type.title()} Sync - {timestamp}\n\n")
-            f.write(content)
-            f.write("\n\n---\n")
-            
-    except Exception as e:
-        import traceback
-        error_details = traceback.format_exc()
-        print(f"DEBUG: Daily log save failed: {error_details}")
-
-def load_conversation(project: str, limit: int = 50):
-    """Load conversation history for a project"""
-    path = f"sessions/{project.lower().replace(' ', '_')}.json"
-    if not os.path.exists(path):
-        return []
-    turns = []
-    with open(path, "r", encoding="utf-8") as f:
-        lines = [ln.strip() for ln in f if ln.strip()]
-    for line in lines[-limit:]:
-        try:
-            row = json.loads(line)
-            turns.append({"user": row.get("prompt", ""), "responses": row.get("response", {})})
-        except json.JSONDecodeError:
-            continue
-    return turns
-
-def _append_session(project: str, user_input: str, response_data: dict):
-    """Append conversation to session file"""
-    path = f"sessions/{project.lower().replace(' ', '_')}.json"
-    with open(path, 'a', encoding='utf-8') as f:
-        json.dump({'prompt': user_input, 'response': response_data}, f)
-        f.write('\n')
-
-def _render_enhanced(project: str, response_data: dict):
-    """Render the main template with enhanced conversation data"""
-    conversation = load_conversation_enhanced(project, limit=50)
-    return render_template(
-        'index.html',
-        projects=PROJECTS,
-        response_data=response_data,
-        conversation=conversation,
-        current_project=project
-    )
+from modules.utils import (
+    load_conversation,
+    _append_session, 
+    _save_daily_log,
+    _render_enhanced,
+    ensure_directories,
+    format_timestamp,
+    safe_filename,
+    get_file_extension,
+    is_supported_file_type
+)
 
 # Section 6: Main Route with Enhanced Database Functionality
 
