@@ -292,6 +292,8 @@ with app.app_context():
 
 # Section 3: Brain and RAG System Functions
 
+# Section 3: Brain and RAG System Functions
+
 def save_brain_to_database(corpus_data):
     """Save processed brain corpus to database"""
     with get_db_connection() as conn:
@@ -377,7 +379,7 @@ def enhanced_build_brain_background():
         
         # Now save to database by extracting data from the loaded RAG system
         try:
-            # Import your RAG system to access the loaded data
+            # Import your RAG system to access the loaded data - FIXED IMPORT
             from utils.rag_basic import _rag_system
             
             if _rag_system and hasattr(_rag_system, 'chunks') and _rag_system.chunks:
@@ -386,7 +388,6 @@ def enhanced_build_brain_background():
                 # Convert RAG chunks to database format
                 corpus_data = []
                 for i, chunk in enumerate(_rag_system.chunks):
-                    # Adapt to your RAG system's chunk format
                     corpus_item = {
                         'id': str(chunk.get('id', f'chunk_{i}')),
                         'title': chunk.get('source', f'chunk_{i}'),
@@ -400,7 +401,7 @@ def enhanced_build_brain_background():
                     }
                     corpus_data.append(corpus_item)
                 
-                # Save to database
+                # Save to database using the new module
                 if save_brain_to_database(corpus_data):
                     app.logger.info("Brain successfully saved to database from RAG system")
                 else:
