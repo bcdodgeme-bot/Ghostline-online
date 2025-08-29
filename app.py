@@ -479,6 +479,215 @@ def export_session(project):
     except FileNotFoundError:
         return f"No session data found for project: {project}", 404
 
+# Section 11: PDF Generation Routes
+
+from modules.pdf_generation import (
+    sync_generate_project_pdf,
+    sync_generate_daily_briefing_pdf,
+    generate_project_report,
+    generate_daily_briefing_report
+)
+import datetime
+
+@app.route('/reports/<project_name>.pdf')
+def project_report_pdf(project_name):
+    """Generate project report as PDF"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    try:
+        # Get optional date range parameter
+        days = request.args.get('days', 30, type=int)
+        days = min(days, 365)  # Limit to 1 year max
+        
+        # Generate PDF
+        pdf_bytes, temp_path = sync_generate_project_pdf(project_name, days)
+        
+        # Safe filename for download
+        safe_name = f"{project_name.replace(' ', '_')}_report_{datetime.datetime.now().strftime('%Y%m%d')}.pdf"
+        
+        return send_file(
+            temp_path,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=safe_name
+        )
+        
+    except Exception as e:
+        app.logger.error(f"Project PDF generation failed: {e}")
+        return f"PDF generation failed: {str(e)}", 500
+
+@app.route('/reports/daily/<date>.pdf')
+def daily_briefing_pdf(date):
+    """Generate daily briefing as PDF"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    try:
+        # Parse date
+        report_date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
+        
+        # Generate PDF
+        pdf_bytes, temp_path = sync_generate_daily_briefing_pdf(report_date)
+        
+        # Safe filename for download
+        safe_name = f"daily_briefing_{date}.pdf"
+        
+        return send_file(
+            temp_path,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=safe_name
+        )
+        
+    except ValueError:
+        return "Invalid date format. Use YYYY-MM-DD", 400
+    except Exception as e:
+        app.logger.error(f"Daily briefing PDF generation failed: {e}")
+        return f"PDF generation failed: {str(e)}", 500
+
+@app.route('/reports/daily/today.pdf')
+def daily_briefing_today_pdf():
+    """Generate today's briefing as PDF"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    today = datetime.datetime.now().strftime('%Y-%m-%d')
+    return redirect(url_for('daily_briefing_pdf', date=today))
+
+@app.route('/reports/<project_name>')
+def project_report_preview(project_name):
+    """Preview project report as HTML"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    try:
+        days = request.args.get('days', 30, type=int)
+        days = min(days, 365)  # Limit to 1 year max
+        
+        html_content = generate_project_report(project_name, days)
+        return html_content
+        
+    except Exception as e:
+        app.logger.error(f"Project report preview failed: {e}")
+        return f"Report generation failed: {str(e)}", 500
+
+@app.route('/reports/daily/<date>')
+def daily_briefing_preview(date):
+    """Preview daily briefing as HTML"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    try:
+        # Parse date
+        report_date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
+        
+        html_content = generate_daily_briefing_report(report_date)
+        return html_content
+        
+    except ValueError:
+        return "Invalid date format. Use YYYY-MM-DD", 400
+    except Exception as e:
+        app.logger.error(f"Daily briefing preview failed: {e}")
+        return f"Report generation failed: {str(e)}", 500
+
+@app.route('/reports')
+def reports_dashboard():
+    """Simple reports dashboard"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    html_content = '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Ghostline Reports Dashboard</title>
+        <style>
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #0f0f0f; 
+                color: #fff; 
+                margin: 0; 
+                padding: 20px; 
+            }
+            .container { max-width: 1000px; margin: 0 auto; }
+            .report-section { 
+                background: #1a1a1a; 
+                border: 1px solid #333; 
+                border-radius: 8px; 
+                padding: 20px; 
+                margin: 20px 0; 
+            }
+            .btn { 
+                background: #6366f1; 
+                color: white; 
+                border: none; 
+                padding: 12px 24px; 
+                border-radius: 8px; 
+                cursor: pointer; 
+                font-size: 16px;
+                margin: 10px 5px;
+                text-decoration: none;
+                display: inline-block;
+            }
+            .btn:hover { background: #5855eb; }
+            .btn.secondary { background: #374151; }
+            .btn.secondary:hover { background: #4b5563; }
+            .projects-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 15px;
+                margin: 20px 0;
+            }
+            .project-card {
+                background: #2a2a2a;
+                padding: 15px;
+                border-radius: 8px;
+            }
+            .project-title {
+                font-size: 18px;
+                font-weight: bold;
+                margin-bottom: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Reports Dashboard</h1>
+            
+            <div class="report-section">
+                <h3>Daily Intelligence Briefings</h3>
+                <p>Generate comprehensive daily activity summaries and intelligence reports.</p>
+                <a href="/reports/daily/today" class="btn secondary">Preview Today's Briefing</a>
+                <a href="/reports/daily/today.pdf" class="btn">Download Today's PDF</a>
+            </div>
+            
+            <div class="report-section">
+                <h3>Project Reports</h3>
+                <p>Generate detailed reports for specific projects with conversation history and analytics.</p>
+                <div class="projects-grid">
+                    {% for project in projects %}
+                    <div class="project-card">
+                        <div class="project-title">{{ project }}</div>
+                        <a href="/reports/{{ project }}" class="btn secondary">Preview</a>
+                        <a href="/reports/{{ project }}.pdf" class="btn">Download PDF</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="report-section">
+                <button class="btn secondary" onclick="window.location.href='/'">← Back to Chat</button>
+                <button class="btn secondary" onclick="window.location.href='/brain'">Brain Dashboard</button>
+                <button class="btn secondary" onclick="window.location.href='/database'">Database Dashboard</button>
+            </div>
+        </div>
+    </body>
+    </html>
+    '''
+    
+    return render_template_string(html_content, projects=PROJECTS)
+
 # Section 10: Debug Routes, Authentication, and App Startup
 
 # --- DEBUG ROUTES ---

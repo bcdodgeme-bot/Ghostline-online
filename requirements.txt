@@ -44,3 +44,5 @@ click==8.2.1
 
 # Database Building
 psycopg2-binary
+
+playwright==1.40.0
