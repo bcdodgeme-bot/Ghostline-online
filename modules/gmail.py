@@ -1,5 +1,6 @@
 # modules/gmail.py - Gmail Integration Module
 
+import os
 import datetime
 from utils.gmail_client import (
     list_overnight, search as gmail_search,
