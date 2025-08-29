@@ -480,10 +480,11 @@ def export_session(project):
         return f"No session data found for project: {project}", 404
 
 # Section 11: PDF Generation Routes
+# Section 11: PDF Generation Routes
 
 from modules.pdf_generation import (
-    sync_generate_project_pdf,
-    sync_generate_daily_briefing_pdf,
+    generate_project_pdf,
+    generate_daily_briefing_pdf,
     generate_project_report,
     generate_daily_briefing_report
 )
@@ -501,7 +502,7 @@ def project_report_pdf(project_name):
         days = min(days, 365)  # Limit to 1 year max
         
         # Generate PDF
-        pdf_bytes, temp_path = sync_generate_project_pdf(project_name, days)
+        pdf_bytes, temp_path = generate_project_pdf(project_name, days)
         
         # Safe filename for download
         safe_name = f"{project_name.replace(' ', '_')}_report_{datetime.datetime.now().strftime('%Y%m%d')}.pdf"
@@ -528,7 +529,7 @@ def daily_briefing_pdf(date):
         report_date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
         
         # Generate PDF
-        pdf_bytes, temp_path = sync_generate_daily_briefing_pdf(report_date)
+        pdf_bytes, temp_path = generate_daily_briefing_pdf(report_date)
         
         # Safe filename for download
         safe_name = f"daily_briefing_{date}.pdf"

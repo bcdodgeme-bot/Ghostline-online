@@ -1,12 +1,12 @@
 # modules/pdf_generation.py
-# PDF Generation using Playwright for high-fidelity HTML to PDF conversion
+# PDF Generation using WeasyPrint for reliable HTML to PDF conversion
 
-import asyncio
 import os
 import tempfile
 from datetime import datetime, timedelta
 from flask import render_template_string, current_app
-from playwright.async_api import async_playwright
+from weasyprint import HTML, CSS
+from weasyprint.text.fonts import FontConfiguration
 from modules.database import load_conversation_enhanced, get_db_connection
 from modules.utils import safe_filename
 
@@ -176,38 +176,56 @@ REPORT_TEMPLATE = '''
 </html>
 '''
 
-async def generate_pdf_from_html(html_content, output_path=None, options=None):
-    """Generate PDF from HTML content using Playwright"""
+def generate_pdf_from_html(html_content, output_path=None, options=None):
+    """Generate PDF from HTML content using WeasyPrint"""
     default_options = {
         'format': 'A4',
-        'margin': {'top': '1in', 'right': '1in', 'bottom': '1in', 'left': '1in'},
-        'print_background': True,
-        'display_header_footer': True,
-        'header_template': '<div style="font-size:10px; text-align:center; width:100%;">Ghostline Report</div>',
-        'footer_template': '<div style="font-size:10px; text-align:center; width:100%;">Page <span class="pageNumber"></span> of <span class="totalPages"></span></div>'
+        'margin': '1in',
+        'enable_hinting': True
     }
     
     if options:
         default_options.update(options)
     
     try:
-        async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
-            page = await browser.new_page()
-            
-            # Set content and wait for any dynamic content
-            await page.set_content(html_content)
-            await page.wait_for_load_state('networkidle')
-            
-            # Generate PDF
-            if output_path:
-                pdf_bytes = await page.pdf(path=output_path, **default_options)
-            else:
-                pdf_bytes = await page.pdf(**default_options)
-            
-            await browser.close()
-            return pdf_bytes
-            
+        # Create font configuration for better rendering
+        font_config = FontConfiguration()
+        
+        # Create WeasyPrint HTML object
+        html_doc = HTML(string=html_content)
+        
+        # Basic CSS for better PDF formatting
+        base_css = CSS(string='''
+            @page {
+                size: A4;
+                margin: 1in;
+                @top-right {
+                    content: "Page " counter(page) " of " counter(pages);
+                    font-size: 10px;
+                }
+                @top-left {
+                    content: "Ghostline Report";
+                    font-size: 10px;
+                }
+            }
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                font-size: 12px;
+                line-height: 1.4;
+            }
+            .page-break { page-break-before: always; }
+        ''')
+        
+        # Generate PDF
+        if output_path:
+            html_doc.write_pdf(output_path, stylesheets=[base_css], font_config=font_config)
+            with open(output_path, 'rb') as f:
+                pdf_bytes = f.read()
+        else:
+            pdf_bytes = html_doc.write_pdf(stylesheets=[base_css], font_config=font_config)
+        
+        return pdf_bytes
+        
     except Exception as e:
         current_app.logger.error(f"PDF generation failed: {e}")
         raise
