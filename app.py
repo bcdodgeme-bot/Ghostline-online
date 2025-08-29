@@ -1,6 +1,6 @@
 # Section 1: Imports and Initial Flask Setup
 
-from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify
+from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify, render_template_string
 from utils.ghostline_engine import generate_response, stream_generate
 from utils.rag_basic import retrieve, is_ready, load_corpus, get_build_status
 from utils.scraper import scrape_url
@@ -15,6 +15,7 @@ import time
 import zipfile
 import tempfile
 import datetime
+from modules.cloze_integration import process_cloze_command, is_cloze_configured
 
 # OCR/File Parsing
 from PIL import Image
@@ -131,8 +132,10 @@ from modules.utils import (
 # Section 6: Main Route with Enhanced Database Functionality
 
 # Section 6: Main Route with Enhanced Database Functionality
+# Section 6: Main Route with Enhanced Database Functionality
 
 from modules.gmail import process_gmail_command
+from modules.cloze_integration import process_cloze_command, is_cloze_configured
 from utils.scraper import scrape_url
 
 @app.route('/', methods=['GET', 'POST'])
@@ -155,6 +158,13 @@ def index():
         response_data, handled = process_gmail_command(user_input, project, use_voices, random_toggle)
         if handled:
             return _render_enhanced(project, response_data)
+
+        # Try Cloze commands
+        if is_cloze_configured():
+            response_data, handled = process_cloze_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
 
         # ---- Command: scrape <url> ----
         if user_input.lower().startswith("scrape "):
@@ -688,6 +698,327 @@ def reports_dashboard():
     '''
     
     return render_template_string(html_content, projects=PROJECTS)
+
+# Section 12: Cloze CRM Integration
+
+from modules.cloze_integration import (
+    process_cloze_command,
+    get_cloze_morning_briefing,
+    get_cloze_pipeline_summary,
+    search_cloze_contacts,
+    log_ghostline_interaction_to_cloze,
+    is_cloze_configured
+)
+
+# Update the main index route to include Cloze command processing
+# Add this to the existing index() function after Gmail command processing:
+
+def index_with_cloze():
+    """Enhanced index route with Cloze integration"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+
+    response_data = {}
+    selected_project = PROJECTS[0]
+
+    if request.method == 'POST':
+        user_input = request.form['user_input'].strip()
+        app.logger.info(f"POST request received with input: {user_input}")
+        project = request.form['project']
+        selected_project = project
+        use_voices = request.form.getlist('voices') or ['SyntaxPrime']
+        random_toggle = 'random' in request.form
+
+        # Try Gmail/calendar commands first
+        response_data, handled = process_gmail_command(user_input, project, use_voices, random_toggle)
+        if handled:
+            return _render_enhanced(project, response_data)
+
+        # Try Cloze commands
+        if is_cloze_configured():
+            response_data, handled = process_cloze_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                # Log to Cloze if it's a regular interaction (not a Cloze command itself)
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+
+        # ---- Command: scrape <url> ---- (existing code continues...)
+
+@app.route('/cloze/status')
+def cloze_status():
+    """Check Cloze API configuration and connection"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    status = {
+        "configured": is_cloze_configured(),
+        "api_key_present": bool(os.getenv('CLOZE_API_KEY')),
+        "connection_working": False,
+        "user_info": None
+    }
+    
+    if is_cloze_configured():
+        try:
+            from modules.cloze_integration import ClozeClient
+            client = ClozeClient()
+            profile = client.get_profile()
+            status["connection_working"] = True
+            status["user_info"] = {
+                "name": profile.get('name', 'Unknown'),
+                "email": profile.get('email', 'Unknown')
+            }
+        except Exception as e:
+            status["error"] = str(e)
+    
+    return jsonify(status)
+
+@app.route('/cloze/briefing')
+def cloze_briefing():
+    """Get Cloze morning briefing"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    if not is_cloze_configured():
+        return "Cloze API not configured", 400
+    
+    try:
+        briefing = get_cloze_morning_briefing()
+        return render_template_string('''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Cloze Briefing</title>
+            <style>
+                body { 
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    background: #0f0f0f; color: #fff; margin: 0; padding: 20px; line-height: 1.6;
+                }
+                .container { max-width: 800px; margin: 0 auto; }
+                .btn { 
+                    background: #6366f1; color: white; border: none; padding: 12px 24px;
+                    border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
+                    text-decoration: none; display: inline-block;
+                }
+                .btn:hover { background: #5855eb; }
+                pre { background: #1a1a1a; padding: 20px; border-radius: 8px; white-space: pre-wrap; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Cloze Morning Briefing</h1>
+                <pre>{{ briefing }}</pre>
+                <a href="/" class="btn">← Back to Chat</a>
+                <a href="/cloze" class="btn">Cloze Dashboard</a>
+            </div>
+        </body>
+        </html>
+        ''', briefing=briefing)
+        
+    except Exception as e:
+        return f"Briefing generation failed: {str(e)}", 500
+
+@app.route('/cloze/pipeline')
+def cloze_pipeline():
+    """Get Cloze pipeline summary"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    if not is_cloze_configured():
+        return "Cloze API not configured", 400
+    
+    try:
+        pipeline = get_cloze_pipeline_summary()
+        return render_template_string('''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Cloze Pipeline</title>
+            <style>
+                body { 
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    background: #0f0f0f; color: #fff; margin: 0; padding: 20px; line-height: 1.6;
+                }
+                .container { max-width: 800px; margin: 0 auto; }
+                .btn { 
+                    background: #6366f1; color: white; border: none; padding: 12px 24px;
+                    border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
+                    text-decoration: none; display: inline-block;
+                }
+                .btn:hover { background: #5855eb; }
+                pre { background: #1a1a1a; padding: 20px; border-radius: 8px; white-space: pre-wrap; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Cloze Pipeline Summary</h1>
+                <pre>{{ pipeline }}</pre>
+                <a href="/" class="btn">← Back to Chat</a>
+                <a href="/cloze" class="btn">Cloze Dashboard</a>
+            </div>
+        </body>
+        </html>
+        ''', pipeline=pipeline)
+        
+    except Exception as e:
+        return f"Pipeline summary failed: {str(e)}", 500
+
+@app.route('/cloze')
+def cloze_dashboard():
+    """Cloze integration dashboard"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    html_content = '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Cloze Integration Dashboard</title>
+        <style>
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #0f0f0f; 
+                color: #fff; 
+                margin: 0; 
+                padding: 20px; 
+            }
+            .container { max-width: 1000px; margin: 0 auto; }
+            .status-box { 
+                background: #1a1a1a; 
+                border: 1px solid #333; 
+                border-radius: 8px; 
+                padding: 20px; 
+                margin: 20px 0; 
+            }
+            .btn { 
+                background: #6366f1; 
+                color: white; 
+                border: none; 
+                padding: 12px 24px; 
+                border-radius: 8px; 
+                cursor: pointer; 
+                font-size: 16px;
+                margin: 10px 5px;
+                text-decoration: none;
+                display: inline-block;
+            }
+            .btn:hover { background: #5855eb; }
+            .btn.secondary { background: #374151; }
+            .btn.secondary:hover { background: #4b5563; }
+            .commands-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 15px;
+                margin: 20px 0;
+            }
+            .command-card {
+                background: #2a2a2a;
+                padding: 15px;
+                border-radius: 8px;
+            }
+            .command-title {
+                font-size: 18px;
+                font-weight: bold;
+                margin-bottom: 10px;
+                color: #6366f1;
+            }
+            .command-example {
+                background: #1a1a1a;
+                padding: 10px;
+                border-radius: 4px;
+                font-family: monospace;
+                margin-top: 10px;
+            }
+            .success { color: #10b981; }
+            .error { color: #ef4444; }
+            .warning { color: #f59e0b; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Cloze CRM Integration</h1>
+            
+            <div class="status-box">
+                <h3>Connection Status</h3>
+                <div id="status">Loading...</div>
+            </div>
+            
+            <div class="status-box">
+                <h3>Quick Actions</h3>
+                <a href="/cloze/briefing" class="btn">Morning Briefing</a>
+                <a href="/cloze/pipeline" class="btn">Pipeline Summary</a>
+                <a href="/cloze/status" class="btn secondary">API Status</a>
+            </div>
+            
+            <div class="status-box">
+                <h3>Available Chat Commands</h3>
+                <div class="commands-grid">
+                    <div class="command-card">
+                        <div class="command-title">Morning Briefing</div>
+                        <p>Get daily activity summary and active projects from Cloze</p>
+                        <div class="command-example">cloze morning</div>
+                        <div class="command-example">morning cloze</div>
+                    </div>
+                    
+                    <div class="command-card">
+                        <div class="command-title">Pipeline Summary</div>
+                        <p>View deals and pipeline status by stage</p>
+                        <div class="command-example">cloze pipeline</div>
+                        <div class="command-example">cloze deals</div>
+                    </div>
+                    
+                    <div class="command-card">
+                        <div class="command-title">Contact Search</div>
+                        <p>Search for contacts in your Cloze database</p>
+                        <div class="command-example">cloze search john smith</div>
+                        <div class="command-example">cloze search acme corp</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="status-box">
+                <h3>Setup Instructions</h3>
+                <ol>
+                    <li>Email <strong>support@cloze.com</strong> to request API access</li>
+                    <li>Get your API key from Cloze Pro settings</li>
+                    <li>Set <strong>CLOZE_API_KEY</strong> environment variable</li>
+                    <li>Restart Ghostline to activate integration</li>
+                </ol>
+            </div>
+            
+            <div class="status-box">
+                <button class="btn secondary" onclick="window.location.href='/'">← Back to Chat</button>
+                <button class="btn secondary" onclick="window.location.href='/brain'">Brain Dashboard</button>
+                <button class="btn secondary" onclick="window.location.href='/database'">Database Dashboard</button>
+            </div>
+        </div>
+        
+        <script>
+            function refreshStatus() {
+                fetch('/cloze/status')
+                    .then(r => r.json())
+                    .then(data => {
+                        const statusDiv = document.getElementById('status');
+                        
+                        if (!data.configured) {
+                            statusDiv.innerHTML = '<span class="warning">API Key Not Configured</span><br>Set CLOZE_API_KEY environment variable';
+                        } else if (data.connection_working && data.user_info) {
+                            statusDiv.innerHTML = `<span class="success">Connected to Cloze</span><br>User: ${data.user_info.name} (${data.user_info.email})`;
+                        } else {
+                            statusDiv.innerHTML = `<span class="error">Connection Failed</span><br>${data.error || 'Unknown error'}`;
+                        }
+                    })
+                    .catch(e => {
+                        document.getElementById('status').innerHTML = '<span class="error">Status Check Failed</span>';
+                    });
+            }
+            
+            refreshStatus();
+            setInterval(refreshStatus, 30000);
+        </script>
+    </body>
+    </html>
+    '''
+    return html_content
 
 # Section 10: Debug Routes, Authentication, and App Startup
 
