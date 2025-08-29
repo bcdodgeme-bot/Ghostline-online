@@ -293,6 +293,67 @@ with app.app_context():
 # Section 3: Brain and RAG System Functions
 
 # Section 3: Brain and RAG System Functions
+# Section 3: Brain and RAG System Functions
+
+def search_brain_database(query_text, k=5):
+    """Search brain documents in database using PostgreSQL full-text search"""
+    with get_db_connection() as conn:
+        if not conn:
+            return []
+        
+        try:
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            
+            # Use PostgreSQL's full-text search with ranking
+            search_sql = '''
+                SELECT document_id, title, content, metadata,
+                       ts_rank(to_tsvector('english', content || ' ' || COALESCE(title, '')), 
+                               plainto_tsquery('english', %s)) as rank
+                FROM brain_documents 
+                WHERE to_tsvector('english', content || ' ' || COALESCE(title, '')) 
+                      @@ plainto_tsquery('english', %s)
+                ORDER BY rank DESC
+                LIMIT %s
+            '''
+            
+            cursor.execute(search_sql, (query_text, query_text, k))
+            rows = cursor.fetchall()
+            
+            # Convert to format expected by RAG system
+            results = []
+            for row in rows:
+                results.append({
+                    'text': row['content'][:1000],  # Limit chunk size
+                    'source': row['title'] or f"Document {row['document_id']}",
+                    'id': row['document_id'],
+                    'score': float(row['rank']),
+                    'metadata': row['metadata'] or {}
+                })
+            
+            app.logger.info(f"Database search found {len(results)} results for: {query_text}")
+            return results
+            
+        except Exception as e:
+            app.logger.error(f"Database search failed: {e}")
+            return []
+
+def enhanced_retrieve(query_text, k=5):
+    """Enhanced retrieve function that searches database first, then falls back to files"""
+    # Try database first
+    db_results = search_brain_database(query_text, k)
+    
+    if db_results:
+        app.logger.info(f"Using {len(db_results)} database results for query: {query_text}")
+        return db_results
+    
+    # Fallback to file-based RAG system
+    app.logger.info(f"No database results, falling back to file search for: {query_text}")
+    try:
+        from utils.rag_basic import retrieve
+        return retrieve(query_text, k)
+    except Exception as e:
+        app.logger.error(f"File-based retrieve also failed: {e}")
+        return []
 
 def save_brain_to_database(corpus_data):
     """Save processed brain corpus to database"""
@@ -769,7 +830,7 @@ def index():
                     f"Found {len(msgs)} overnight emails. Here's the summary:\n\n"
                     + "\n".join(lines)
                 )
-                retrieval_ctx = retrieve(summary_prompt, k=5) if is_ready() else []
+                retrieval_ctx = enhanced_retrieve(summary_prompt, k=5) if is_ready() else []
                 response_data = generate_response(
                     summary_prompt, use_voices, random_toggle,
                     project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
@@ -796,7 +857,7 @@ def index():
                     f"Found {len(msgs)} messages for search query: '{query_text}'\n\n"
                     + "\n".join(lines)
                 )
-                retrieval_ctx = retrieve(summary_prompt, k=5) if is_ready() else []
+                retrieval_ctx = enhanced_retrieve(summary_prompt, k=5) if is_ready() else []
                 response_data = generate_response(
                     summary_prompt, use_voices, random_toggle,
                     project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
@@ -818,7 +879,7 @@ def index():
                     f"Here's Carl's calendar for today. Summarize the key meetings and suggest priorities:\n\n"
                     f"{calendar_summary}"
                 )
-                retrieval_ctx = retrieve(summary_prompt, k=5) if is_ready() else []
+                retrieval_ctx = enhanced_retrieve(summary_prompt, k=5) if is_ready() else []
                 response_data = generate_response(
                     summary_prompt, use_voices, random_toggle,
                     project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
@@ -840,7 +901,7 @@ def index():
                     f"Here's Carl's calendar for tomorrow. Highlight important meetings and prep needed:\n\n"
                     f"{calendar_summary}"
                 )
-                retrieval_ctx = retrieve(summary_prompt, k=5) if is_ready() else []
+                retrieval_ctx = enhanced_retrieve(summary_prompt, k=5) if is_ready() else []
                 response_data = generate_response(
                     summary_prompt, use_voices, random_toggle,
                     project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
@@ -864,7 +925,7 @@ def index():
                 else:
                     summary_prompt = "No upcoming meetings found."
                 
-                retrieval_ctx = retrieve(summary_prompt, k=5) if is_ready() else []
+                retrieval_ctx = enhanced_retrieve(summary_prompt, k=5) if is_ready() else []
                 response_data = generate_response(
                     summary_prompt, use_voices, random_toggle,
                     project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
@@ -893,7 +954,7 @@ def index():
                     f"{calendar_summary}\n\n"
                     f"Summarize the key meetings and any patterns or next steps."
                 )
-                retrieval_ctx = retrieve(summary_prompt, k=5) if is_ready() else []
+                retrieval_ctx = enhanced_retrieve(summary_prompt, k=5) if is_ready() else []
                 response_data = generate_response(
                     summary_prompt, use_voices, random_toggle,
                     project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
@@ -946,7 +1007,7 @@ def index():
                 app.logger.info("Daily log saved")
                 
                 app.logger.info("About to call retrieve")
-                retrieval_ctx = retrieve(morning_briefing, k=5) if is_ready() else []
+                retrieval_ctx = enhanced_retrieve(morning_briefing, k=5) if is_ready() else []
                 app.logger.info("Retrieve completed")
                 
                 app.logger.info("About to call generate_response")
@@ -1007,7 +1068,7 @@ def index():
                 save_daily_log_enhanced("evening", evening_summary)
                 
                 # Generate AI response
-                retrieval_ctx = retrieve(evening_summary, k=5) if is_ready() else []
+                retrieval_ctx = enhanced_retrieve(evening_summary, k=5) if is_ready() else []
                 response_data = generate_response(
                     f"Summarize this evening wrap-up and suggest 3 things to prepare for tomorrow:\n\n{evening_summary}",
                     use_voices, random_toggle, project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
@@ -1033,7 +1094,7 @@ def index():
                         "Use bullets and keep it tight and actionable.\n\n"
                         f"--- SCRAPED CONTENT START ---\n{result['text']}\n--- SCRAPED CONTENT END ---"
                     )
-                    retrieval_ctx = retrieve(summary_prompt, k=5) if is_ready() else []
+                    retrieval_ctx = enhanced_retrieve(summary_prompt, k=5) if is_ready() else []
                     response_data = generate_response(
                         summary_prompt, use_voices, random_toggle,
                         project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
@@ -1047,7 +1108,7 @@ def index():
 
         # ---- Normal flow ----
         try:
-            retrieval_ctx = retrieve(user_input, k=5) if is_ready() else []
+            retrieval_ctx = enhanced_retrieve(user_input, k=5) if is_ready() else []
             response_data = generate_response(
                 user_input, use_voices, random_toggle,
                 project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
@@ -1551,7 +1612,7 @@ Please analyze this content and provide insights, summaries, or answer any quest
 
         # Generate AI analysis
         try:
-            retrieval_ctx = retrieve(analysis_prompt, k=5) if is_ready() else []
+            retrieval_ctx = enhanced_retrieve(analysis_prompt, k=5) if is_ready() else []
             response_data = generate_response(
                 analysis_prompt, use_voices, random_toggle,
                 project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
@@ -1588,7 +1649,7 @@ def stream():
     user_input = request.form['user_input'].strip()
     project = request.form['project']
     use_voices = request.form.getlist('voices') or ['SyntaxPrime']
-    retrieval_ctx = retrieve(user_input, k=5) if is_ready() else []
+    retrieval_ctx = enhanced_retrieve(user_input, k=5) if is_ready() else []
 
     def generate():
         for chunk in stream_generate(
