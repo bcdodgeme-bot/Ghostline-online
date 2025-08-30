@@ -379,14 +379,17 @@ class GhostlineTelegramReminders:
                     
                     conn.commit()
                     
-                    # Send confirmation
-                    self.bot.send_message("✅ *Reminder marked as completed!*")
+                    # Send confirmation using the existing bot instance
+                    if self.bot:
+                        self.bot.send_message("✅ *Reminder marked as completed!*")
                     current_app.logger.info(f"Reminder {reminder_id} marked as completed")
                     return {"success": True, "action": "completed"}
                     
                 except Exception as e:
                     current_app.logger.error(f"Failed to mark reminder as done: {e}")
                     return {"success": False, "error": str(e)}
+        
+        return {"success": False, "error": "Database not available"}
     
     def _handle_snooze(self, reminder_id, minutes, message_id):
         """Snooze reminder for specified minutes"""
@@ -404,16 +407,19 @@ class GhostlineTelegramReminders:
                     
                     conn.commit()
                     
-                    # Convert to Eastern for display
+                    # Convert to Eastern for display and send confirmation
                     eastern_snooze = self._utc_to_eastern(snooze_until)
                     time_str = eastern_snooze.strftime('%I:%M %p')
-                    self.bot.send_message(f"⏰ *Reminder snoozed until {time_str}*")
+                    if self.bot:
+                        self.bot.send_message(f"⏰ *Reminder snoozed until {time_str}*")
                     current_app.logger.info(f"Reminder {reminder_id} snoozed until {snooze_until}")
                     return {"success": True, "action": "snoozed", "until": snooze_until}
                     
                 except Exception as e:
                     current_app.logger.error(f"Failed to snooze reminder: {e}")
                     return {"success": False, "error": str(e)}
+        
+        return {"success": False, "error": "Database not available"}
     
     def _handle_info_request(self, reminder_id):
         """Handle more info request"""
@@ -449,16 +455,20 @@ class GhostlineTelegramReminders:
                         info_parts.append(f"*Created:* {created_str}")
                         
                         info_message = "\n".join(info_parts)
-                        self.bot.send_message(info_message)
+                        if self.bot:
+                            self.bot.send_message(info_message)
                         
                         return {"success": True, "action": "info_sent"}
                     else:
-                        self.bot.send_message("❌ *Reminder not found*")
+                        if self.bot:
+                            self.bot.send_message("❌ *Reminder not found*")
                         return {"success": False, "error": "Reminder not found"}
                         
                 except Exception as e:
                     current_app.logger.error(f"Failed to get reminder info: {e}")
                     return {"success": False, "error": str(e)}
+        
+        return {"success": False, "error": "Database not available"}
     
     def emergency_stop_all(self):
         """Emergency function to stop all pending reminders"""
