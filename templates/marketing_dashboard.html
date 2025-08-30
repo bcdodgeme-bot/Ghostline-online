@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketing Asset Generator - FLUX Powered</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        .marketing-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        
+        .loading-pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .cost-calculator {
+            font-family: 'Courier New', monospace;
+            background: #f8fafc;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .platform-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+        }
+        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-operational { background-color: #10b981; }
+        .status-error { background-color: #ef4444; }
+        
+        .asset-preview {
+            aspect-ratio: 1;
+            background: #f1f5f9;
+            border: 2px dashed #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .asset-preview.has-image {
+            border: 2px solid #3b82f6;
+            background: white;
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="marketing-gradient text-white py-6 shadow-xl">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold">Marketing Asset Generator</h1>
+                        <p class="text-white/80 text-sm">Powered by FLUX AI - No More Spelling Mistakes!</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center text-sm">
+                        <div id="statusIndicator" class="status-indicator mr-2"></div>
+                        <span id="statusText">Checking...</span>
+                    </div>
+                    <a href="/marketing/campaigns" class="bg-white/20 px-4 py-2 rounded-lg hover:bg-white/30 transition-colors text-sm">
+                        Campaigns
+                    </a>
+                    <a href="/marketing/assets" class="bg-white/20 px-4 py-2 rounded-lg hover:bg-white/30 transition-colors text-sm">
+                        Asset Library
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Quick Actions -->
+        <div class="mb-8">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">🚀 Quick Actions</h2>
+            <div class="quick-actions">
+                <button onclick="showQuickAsset()" class="bg-blue-600 text-white p-4 rounded-lg hover:bg-blue-700 transition-colors card-hover">
+                    <div class="text-lg font-semibold">Single Asset</div>
+                    <div class="text-sm opacity-90">Create one perfect image</div>
+                </button>
+                
+                <button onclick="showSocialSet()" class="bg-green-600 text-white p-4 rounded-lg hover:bg-green-700 transition-colors card-hover">
+                    <div class="text-lg font-semibold">Social Media Set</div>
+                    <div class="text-sm opacity-90">All platforms at once</div>
+                </button>
+                
+                <button onclick="showFullCampaign()" class="bg-purple-600 text-white p-4 rounded-lg hover:bg-purple-700 transition-colors card-hover">
+                    <div class="text-lg font-semibold">Full Campaign</div>
+                    <div class="text-sm opacity-90">Complete asset package</div>
+                </button>
+                
+                <button onclick="showConceptTesting()" class="bg-orange-600 text-white p-4 rounded-lg hover:bg-orange-700 transition-colors card-hover">
+                    <div class="text-lg font-semibold">Test Concepts</div>
+                    <div class="text-sm opacity-90">Rapid A/B testing</div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column - Generation Forms -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Quick Asset Form -->
+                <div id="quickAssetForm" class="bg-white rounded-xl shadow-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                        <span class="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                        Single Marketing Asset
+                    </h3>
+                    
+                    <form id="assetForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">What do you need?</label>
+                            <textarea 
+                                id="assetConcept" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none" 
+                                rows="3"
+                                placeholder="Summer sale announcement, new product launch, team headshots..."
+                                required
+                            ></textarea>
+                            
+                            <!-- Quick concept buttons -->
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                <button type="button" onclick="fillConcept('Professional headshots for LinkedIn')" class="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full">Headshots</button>
+                                <button type="button" onclick="fillConcept('Summer sale 50% off announcement')" class="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full">Sale Event</button>
+                                <button type="button" onclick="fillConcept('New product launch announcement')" class="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full">Product Launch</button>
+                                <button type="button" onclick="fillConcept('Company team building event')" class="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full">Team Event</button>
+                            </div>
+                            
+                            <div class="cost-calculator p-3 rounded-lg">
+                                <div class="text-sm text-gray-600">Testing Cost</div>
+                                <div id="testingCostEstimate" class="text-lg font-bold text-orange-600">$0.012</div>
+                                <div class="text-xs text-gray-500">4 concepts × $0.003</div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-orange-600 text-white py-3 rounded-lg hover:bg-orange-700 transition-colors">
+                            Test Concepts Rapidly
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Column - Status & Results -->
+            <div class="space-y-6">
+                <!-- System Status -->
+                <div class="bg-white rounded-xl shadow-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">System Status</h3>
+                    
+                    <div id="systemStatus" class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm">FLUX API</span>
+                            <span id="fluxStatus" class="text-sm text-gray-500">Checking...</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm">Available Models</span>
+                            <span id="modelCount" class="text-sm font-semibold">-</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm">Available Formats</span>
+                            <span id="formatCount" class="text-sm font-semibold">-</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 p-3 bg-blue-50 rounded-lg">
+                        <div class="text-xs font-medium text-blue-800 mb-1">💡 Pro Tip</div>
+                        <div class="text-xs text-blue-700">Use "Rapid" quality for concept testing, then switch to "Standard" for final assets!</div>
+                    </div>
+                </div>
+
+                <!-- Cost Tracker -->
+                <div class="bg-white rounded-xl shadow-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Today's Usage</h3>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm">Assets Generated</span>
+                            <span id="todayAssets" class="text-lg font-bold text-blue-600">0</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm">Estimated Cost</span>
+                            <span id="todayCost" class="text-lg font-bold text-green-600">$0.00</span>
+                        </div>
+                        
+                        <div class="pt-3 border-t">
+                            <div class="text-xs text-gray-500 mb-2">Cost Comparison</div>
+                            <div class="text-xs">
+                                <div class="flex justify-between"><span>Stock Photo:</span><span>~$10-50 each</span></div>
+                                <div class="flex justify-between"><span>Designer:</span><span>~$50-200/hour</span></div>
+                                <div class="flex justify-between text-green-600 font-semibold"><span>FLUX AI:</span><span>$0.003-0.055 each</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Assets -->
+                <div class="bg-white rounded-xl shadow-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Recent Assets</h3>
+                    <div id="recentAssets" class="space-y-3">
+                        <div class="text-sm text-gray-500 text-center py-4">
+                            No assets generated yet today.<br>
+                            Create your first asset above!
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Generation Progress Modal -->
+        <div id="progressModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+            <div class="bg-white rounded-xl p-8 m-4 max-w-md w-full">
+                <div class="text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 loading-pulse">
+                        <svg class="w-full h-full text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"/>
+                        </svg>
+                    </div>
+                    
+                    <h3 id="progressTitle" class="text-lg font-bold text-gray-800 mb-2">Generating Assets...</h3>
+                    <p id="progressDescription" class="text-gray-600 mb-4">This usually takes 10-30 seconds</p>
+                    
+                    <div class="bg-gray-200 rounded-full h-2 mb-4">
+                        <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    
+                    <div id="progressStatus" class="text-sm text-gray-500">Starting generation...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Display -->
+        <div id="resultsSection" class="hidden mt-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Generated Assets</h2>
+            <div id="resultsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Results will be populated here -->
+            </div>
+        </div>
+
+        <!-- Error Display -->
+        <div id="errorSection" class="hidden mt-8 bg-red-50 border border-red-200 rounded-xl p-6">
+            <div class="flex items-center mb-3">
+                <svg class="w-6 h-6 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                </svg>
+                <h4 class="text-lg font-medium text-red-800">Generation Failed</h4>
+            </div>
+            <p id="errorMessage" class="text-red-700 mb-4"></p>
+            <button id="retryButton" class="bg-red-100 text-red-800 px-4 py-2 rounded-lg hover:bg-red-200 transition-colors">
+                Try Again
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let currentOperation = null;
+        let formats = {};
+        
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            checkSystemStatus();
+            loadFormats();
+            setupEventListeners();
+            updateFormatOptions();
+        });
+        
+        // System status check
+        async function checkSystemStatus() {
+            try {
+                const response = await fetch('/api/marketing/status');
+                const data = await response.json();
+                
+                const indicator = document.getElementById('statusIndicator');
+                const statusText = document.getElementById('statusText');
+                
+                if (data.success) {
+                    indicator.className = 'status-indicator status-operational';
+                    statusText.textContent = 'Operational';
+                    
+                    document.getElementById('fluxStatus').textContent = 'Connected';
+                    document.getElementById('modelCount').textContent = data.available_models || '4';
+                    document.getElementById('formatCount').textContent = data.available_formats || '14+';
+                } else {
+                    indicator.className = 'status-indicator status-error';
+                    statusText.textContent = 'Setup Required';
+                    document.getElementById('fluxStatus').textContent = 'Setup Needed';
+                    
+                    if (data.setup_required) {
+                        showSetupMessage();
+                    }
+                }
+            } catch (error) {
+                document.getElementById('statusIndicator').className = 'status-indicator status-error';
+                document.getElementById('statusText').textContent = 'Connection Error';
+            }
+        }
+        
+        // Load available formats
+        async function loadFormats() {
+            try {
+                const response = await fetch('/api/marketing/formats');
+                const data = await response.json();
+                
+                if (data.success) {
+                    formats = data.social_formats;
+                    updateFormatOptions();
+                }
+            } catch (error) {
+                console.error('Failed to load formats:', error);
+            }
+        }
+        
+        // Setup all event listeners
+        function setupEventListeners() {
+            // Form submissions
+            document.getElementById('assetForm').addEventListener('submit', handleAssetGeneration);
+            document.getElementById('socialForm').addEventListener('submit', handleSocialGeneration);
+            document.getElementById('campaignForm').addEventListener('submit', handleCampaignGeneration);
+            document.getElementById('testingForm').addEventListener('submit', handleConceptTesting);
+            
+            // Platform checkboxes for cost calculation
+            document.querySelectorAll('.platform-checkbox').forEach(cb => {
+                cb.addEventListener('change', updateSocialCost);
+            });
+            
+            document.querySelectorAll('.campaign-platform').forEach(cb => {
+                cb.addEventListener('change', updateCampaignCost);
+            });
+            
+            // Concept list for cost calculation
+            document.getElementById('conceptsList').addEventListener('input', updateTestingCost);
+            
+            // Retry button
+            document.getElementById('retryButton').addEventListener('click', retryLastOperation);
+        }
+        
+        // Quick action button handlers
+        function showQuickAsset() {
+            hideAllForms();
+            document.getElementById('quickAssetForm').classList.remove('hidden');
+        }
+        
+        function showSocialSet() {
+            hideAllForms();
+            document.getElementById('socialSetForm').classList.remove('hidden');
+            updateSocialCost();
+        }
+        
+        function showFullCampaign() {
+            hideAllForms();
+            document.getElementById('fullCampaignForm').classList.remove('hidden');
+            updateCampaignCost();
+        }
+        
+        function showConceptTesting() {
+            hideAllForms();
+            document.getElementById('conceptTestingForm').classList.remove('hidden');
+            updateTestingCost();
+        }
+        
+        function hideAllForms() {
+            document.getElementById('quickAssetForm').classList.add('hidden');
+            document.getElementById('socialSetForm').classList.add('hidden');
+            document.getElementById('fullCampaignForm').classList.add('hidden');
+            document.getElementById('conceptTestingForm').classList.add('hidden');
+        }
+        
+        // Format options update
+        function updateFormatOptions() {
+            const platform = document.getElementById('assetPlatform').value;
+            const formatSelect = document.getElementById('assetFormat');
+            
+            formatSelect.innerHTML = '';
+            
+            // Add relevant formats for the platform
+            const platformFormats = {
+                'instagram': ['instagram_post', 'instagram_story'],
+                'facebook': ['facebook_post', 'facebook_cover'],
+                'linkedin': ['linkedin_post', 'linkedin_banner'],
+                'twitter': ['twitter_post', 'twitter_header'],
+                'youtube': ['youtube_thumbnail'],
+                'email': ['email_banner'],
+                'blog': ['blog_header'],
+                'web': ['website_hero', 'presentation_slide']
+            };
+            
+            const availableFormats = platformFormats[platform] || ['instagram_post'];
+            
+            availableFormats.forEach(formatKey => {
+                if (formats[formatKey]) {
+                    const option = document.createElement('option');
+                    option.value = formatKey;
+                    option.textContent = formats[formatKey].name;
+                    formatSelect.appendChild(option);
+                }
+            });
+        }
+        
+        // Cost calculation functions
+        function updateCostEstimate() {
+            const quality = document.getElementById('assetQuality').value;
+            const costs = { 'rapid': 0.003, 'standard': 0.030, 'professional': 0.055 };
+            // This is handled by the select option display
+        }
+        
+        function updateSocialCost() {
+            const selectedPlatforms = document.querySelectorAll('.platform-checkbox:checked').length;
+            const cost = selectedPlatforms * 0.030; // Standard quality
+            document.getElementById('socialCostEstimate').textContent = `${cost.toFixed(3)}`;
+            document.querySelector('#socialCostEstimate').nextElementSibling.textContent = `${selectedPlatforms} platforms × $0.030`;
+        }
+        
+        function updateCampaignCost() {
+            const quality = document.getElementById('campaignQuality').value;
+            const costPerAsset = quality === 'professional' ? 0.055 : 0.030;
+            const selectedPlatforms = document.querySelectorAll('.campaign-platform:checked').length;
+            const assetsPerPlatform = 2; // Average assets per platform
+            const totalAssets = selectedPlatforms * assetsPerPlatform;
+            const totalCost = totalAssets * costPerAsset;
+            
+            document.getElementById('campaignCostEstimate').textContent = `${totalCost.toFixed(3)}`;
+            document.querySelector('#campaignCostEstimate').nextElementSibling.textContent = `${totalAssets} assets × ${costPerAsset.toFixed(3)}`;
+        }
+        
+        function updateTestingCost() {
+            const concepts = document.getElementById('conceptsList').value.split('\n').filter(line => line.trim().length > 0);
+            const conceptCount = Math.min(concepts.length, 10);
+            const cost = conceptCount * 0.003;
+            document.getElementById('testingCostEstimate').textContent = `${cost.toFixed(3)}`;
+            document.querySelector('#testingCostEstimate').nextElementSibling.textContent = `${conceptCount} concepts × $0.003`;
+        }
+        
+        // Generation handlers
+        async function handleAssetGeneration(e) {
+            e.preventDefault();
+            
+            const data = {
+                concept: document.getElementById('assetConcept').value,
+                style: document.getElementById('assetStyle').value,
+                platform: document.getElementById('assetPlatform').value,
+                quality: document.getElementById('assetQuality').value,
+                format_name: document.getElementById('assetFormat').value
+            };
+            
+            currentOperation = { type: 'asset', data };
+            
+            showProgress('Generating Marketing Asset', 'Creating your professional asset...');
+            
+            try {
+                const response = await fetch('/api/marketing/quick-asset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                hideProgress();
+                
+                if (result.success) {
+                    displaySingleResult(result);
+                    updateUsageStats();
+                } else {
+                    showError(result.error);
+                }
+            } catch (error) {
+                hideProgress();
+                showError('Network error occurred. Please try again.');
+            }
+        }
+        
+        async function handleSocialGeneration(e) {
+            e.preventDefault();
+            
+            const selectedPlatforms = Array.from(document.querySelectorAll('.platform-checkbox:checked')).map(cb => cb.value);
+            
+            const data = {
+                concept: document.getElementById('socialConcept').value,
+                platforms: selectedPlatforms,
+                style: document.getElementById('socialStyle').value
+            };
+            
+            currentOperation = { type: 'social', data };
+            
+            showProgress('Creating Social Media Set', `Generating ${selectedPlatforms.length} platform-optimized assets...`);
+            
+            try {
+                const response = await fetch('/api/marketing/social-set', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                hideProgress();
+                
+                if (result.success) {
+                    displayCampaignResults(result);
+                    updateUsageStats();
+                } else {
+                    showError(result.error);
+                }
+            } catch (error) {
+                hideProgress();
+                showError('Network error occurred. Please try again.');
+            }
+        }
+        
+        async function handleCampaignGeneration(e) {
+            e.preventDefault();
+            
+            const selectedPlatforms = Array.from(document.querySelectorAll('.campaign-platform:checked')).map(cb => cb.value);
+            
+            const data = {
+                campaign_name: document.getElementById('campaignName').value,
+                concept: document.getElementById('campaignConcept').value,
+                platforms: selectedPlatforms,
+                style: document.getElementById('campaignStyle').value,
+                quality: document.getElementById('campaignQuality').value
+            };
+            
+            currentOperation = { type: 'campaign', data };
+            
+            showProgress('Creating Full Campaign', `Generating complete asset package for ${selectedPlatforms.length} channels...`);
+            
+            try {
+                const response = await fetch('/api/marketing/campaign', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                hideProgress();
+                
+                if (result.success) {
+                    displayCampaignResults(result);
+                    updateUsageStats();
+                } else {
+                    showError(result.error);
+                }
+            } catch (error) {
+                hideProgress();
+                showError('Network error occurred. Please try again.');
+            }
+        }
+        
+        async function handleConceptTesting(e) {
+            e.preventDefault();
+            
+            const conceptsText = document.getElementById('conceptsList').value;
+            const concepts = conceptsText.split('\n').filter(line => line.trim().length > 0).slice(0, 10);
+            
+            if (concepts.length === 0) {
+                showError('Please enter at least one concept to test.');
+                return;
+            }
+            
+            const data = {
+                concepts: concepts,
+                style: document.getElementById('testingStyle').value
+            };
+            
+            currentOperation = { type: 'testing', data };
+            
+            showProgress('Testing Concepts', `Rapidly generating ${concepts.length} concept variations...`);
+            
+            try {
+                const response = await fetch('/api/marketing/test-concepts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                hideProgress();
+                
+                if (result.success) {
+                    displayTestingResults(result);
+                    updateUsageStats();
+                } else {
+                    showError(result.error);
+                }
+            } catch (error) {
+                hideProgress();
+                showError('Network error occurred. Please try again.');
+            }
+        }
+        
+        // UI helper functions
+        function fillConcept(text) {
+            document.getElementById('assetConcept').value = text;
+        }
+        
+        function showProgress(title, description) {
+            document.getElementById('progressTitle').textContent = title;
+            document.getElementById('progressDescription').textContent = description;
+            document.getElementById('progressModal').classList.remove('hidden');
+            document.getElementById('progressModal').classList.add('flex');
+            
+            // Simulate progress
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 90) progress = 90;
+                document.getElementById('progressBar').style.width = progress + '%';
+            }, 1000);
+            
+            // Store interval for cleanup
+            document.getElementById('progressModal').dataset.interval = interval;
+        }
+        
+        function hideProgress() {
+            const modal = document.getElementById('progressModal');
+            const interval = modal.dataset.interval;
+            if (interval) {
+                clearInterval(interval);
+            }
+            
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.getElementById('progressBar').style.width = '0%';
+        }
+        
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorSection').classList.remove('hidden');
+            hideResults();
+        }
+        
+        function hideError() {
+            document.getElementById('errorSection').classList.add('hidden');
+        }
+        
+        function showResults() {
+            document.getElementById('resultsSection').classList.remove('hidden');
+            hideError();
+        }
+        
+        function hideResults() {
+            document.getElementById('resultsSection').classList.add('hidden');
+        }
+        
+        // Result display functions
+        function displaySingleResult(result) {
+            const grid = document.getElementById('resultsGrid');
+            grid.innerHTML = '';
+            
+            if (result.image_url) {
+                const card = createAssetCard({
+                    url: result.image_url,
+                    title: result.format || 'Marketing Asset',
+                    cost: result.estimated_cost,
+                    platform: result.platform,
+                    style: result.style,
+                    prompt: result.prompt
+                });
+                grid.appendChild(card);
+            }
+            
+            showResults();
+        }
+        
+        function displayCampaignResults(result) {
+            const grid = document.getElementById('resultsGrid');
+            grid.innerHTML = '';
+            
+            if (result.assets) {
+                Object.entries(result.assets).forEach(([platform, platformAssets]) => {
+                    Object.entries(platformAssets).forEach(([format, asset]) => {
+                        if (asset.success && asset.image_url) {
+                            const card = createAssetCard({
+                                url: asset.image_url,
+                                title: asset.format || format,
+                                cost: asset.estimated_cost,
+                                platform: platform,
+                                style: result.style,
+                                prompt: result.base_prompt || result.concept
+                            });
+                            grid.appendChild(card);
+                        }
+                    });
+                });
+            }
+            
+            showResults();
+        }
+        
+        function displayTestingResults(result) {
+            const grid = document.getElementById('resultsGrid');
+            grid.innerHTML = '';
+            
+            if (result.results) {
+                Object.entries(result.results).forEach(([conceptKey, conceptResult]) => {
+                    if (conceptResult.success && conceptResult.image_url) {
+                        const card = createAssetCard({
+                            url: conceptResult.image_url,
+                            title: `Concept Test`,
+                            cost: conceptResult.estimated_cost,
+                            platform: 'testing',
+                            style: result.style,
+                            prompt: conceptResult.prompt
+                        });
+                        grid.appendChild(card);
+                    }
+                });
+            }
+            
+            showResults();
+        }
+        
+        function createAssetCard(asset) {
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-xl shadow-lg overflow-hidden card-hover';
+            
+            card.innerHTML = `
+                <div class="aspect-square bg-gray-100 relative">
+                    <img src="${asset.url}" alt="${asset.title}" class="w-full h-full object-cover" loading="lazy">
+                    <div class="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
+                        ${asset.platform}
+                    </div>
+                </div>
+                <div class="p-4">
+                    <h4 class="font-semibold text-gray-800 mb-2">${asset.title}</h4>
+                    <p class="text-sm text-gray-600 mb-3 line-clamp-2">${asset.prompt}</p>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-green-600 font-semibold">${asset.cost?.toFixed(3) || '0.030'}</span>
+                        <div class="flex gap-2">
+                            <button onclick="downloadAsset('${asset.url}', '${asset.title}')" class="text-blue-600 hover:text-blue-800">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                </svg>
+                            </button>
+                            <button onclick="copyLink('${asset.url}')" class="text-gray-600 hover:text-gray-800">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clip-rule="evenodd"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+        
+        // Utility functions
+        async function downloadAsset(url, title) {
+            try {
+                const response = await fetch('/api/marketing/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        image_url: url, 
+                        filename: title.replace(/[^a-zA-Z0-9]/g, '_'),
+                        campaign_name: 'individual_assets'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Create download link
+                    const a = document.createElement('a');
+                    a.href = result.web_path;
+                    a.download = result.filename;
+                    a.click();
+                } else {
+                    alert('Download failed: ' + result.error);
+                }
+            } catch (error) {
+                alert('Download failed: Network error');
+            }
+        }
+        
+        function copyLink(url) {
+            navigator.clipboard.writeText(url).then(() => {
+                showToast('Link copied to clipboard!');
+            });
+        }
+        
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 2000);
+        }
+        
+        function updateUsageStats() {
+            // This would typically fetch from your backend
+            // For now, just increment the display
+            const currentAssets = parseInt(document.getElementById('todayAssets').textContent) || 0;
+            const currentCost = parseFloat(document.getElementById('todayCost').textContent.replace('
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Brand Style</label>
+                                <select id="assetStyle" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option value="corporate">Corporate</option>
+                                    <option value="startup">Startup</option>
+                                    <option value="luxury">Luxury</option>
+                                    <option value="friendly">Friendly</option>
+                                    <option value="bold">Bold</option>
+                                    <option value="minimalist">Minimalist</option>
+                                    <option value="creative">Creative</option>
+                                    <option value="trustworthy">Trustworthy</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Platform</label>
+                                <select id="assetPlatform" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" onchange="updateFormatOptions()">
+                                    <option value="instagram">Instagram</option>
+                                    <option value="facebook">Facebook</option>
+                                    <option value="linkedin">LinkedIn</option>
+                                    <option value="twitter">Twitter</option>
+                                    <option value="youtube">YouTube</option>
+                                    <option value="email">Email</option>
+                                    <option value="blog">Blog</option>
+                                    <option value="web">Website</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Quality</label>
+                                <select id="assetQuality" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" onchange="updateCostEstimate()">
+                                    <option value="rapid">Rapid ($0.003)</option>
+                                    <option value="standard" selected>Standard ($0.030)</option>
+                                    <option value="professional">Professional ($0.055)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Format</label>
+                            <select id="assetFormat" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <!-- Populated by JavaScript -->
+                            </select>
+                        </div>
+
+                        <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center">
+                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
+                            </svg>
+                            Generate Asset
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Social Media Set Form -->
+                <div id="socialSetForm" class="bg-white rounded-xl shadow-lg p-6 card-hover hidden">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+                        Social Media Asset Set
+                    </h3>
+                    
+                    <form id="socialForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Post Concept</label>
+                            <textarea 
+                                id="socialConcept" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 resize-none" 
+                                rows="3"
+                                placeholder="Monday motivation quote, behind-the-scenes content, customer success story..."
+                                required
+                            ></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Platforms</label>
+                            <div class="platform-grid">
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                                    <input type="checkbox" value="instagram" checked class="platform-checkbox mr-2 rounded text-green-600">
+                                    <span class="text-sm">Instagram</span>
+                                </label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                                    <input type="checkbox" value="facebook" checked class="platform-checkbox mr-2 rounded text-green-600">
+                                    <span class="text-sm">Facebook</span>
+                                </label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                                    <input type="checkbox" value="linkedin" checked class="platform-checkbox mr-2 rounded text-green-600">
+                                    <span class="text-sm">LinkedIn</span>
+                                </label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                                    <input type="checkbox" value="twitter" class="platform-checkbox mr-2 rounded text-green-600">
+                                    <span class="text-sm">Twitter</span>
+                                </label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                                    <input type="checkbox" value="youtube" class="platform-checkbox mr-2 rounded text-green-600">
+                                    <span class="text-sm">YouTube</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Brand Style</label>
+                                <select id="socialStyle" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                    <option value="corporate">Corporate</option>
+                                    <option value="friendly" selected>Friendly</option>
+                                    <option value="bold">Bold</option>
+                                    <option value="creative">Creative</option>
+                                    <option value="minimalist">Minimalist</option>
+                                </select>
+                            </div>
+                            
+                            <div class="cost-calculator p-3 rounded-lg">
+                                <div class="text-sm text-gray-600">Estimated Cost</div>
+                                <div id="socialCostEstimate" class="text-lg font-bold text-green-600">$0.12</div>
+                                <div class="text-xs text-gray-500">4 platforms × $0.030</div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors">
+                            Generate Social Media Set
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Full Campaign Form -->
+                <div id="fullCampaignForm" class="bg-white rounded-xl shadow-lg p-6 card-hover hidden">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                        <span class="w-2 h-2 bg-purple-500 rounded-full mr-3"></span>
+                        Full Campaign Package
+                    </h3>
+                    
+                    <form id="campaignForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Campaign Name</label>
+                                <input 
+                                    type="text" 
+                                    id="campaignName"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                                    placeholder="Q4 Product Launch"
+                                    required
+                                />
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Quality Level</label>
+                                <select id="campaignQuality" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" onchange="updateCampaignCost()">
+                                    <option value="standard" selected>Standard ($0.030/asset)</option>
+                                    <option value="professional">Professional ($0.055/asset)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Campaign Concept</label>
+                            <textarea 
+                                id="campaignConcept" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 resize-none" 
+                                rows="3"
+                                placeholder="Complete rebranding launch with new logo, messaging focused on innovation and reliability..."
+                                required
+                            ></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Platforms & Channels</label>
+                            <div class="platform-grid">
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                                    <input type="checkbox" value="instagram" checked class="campaign-platform mr-2 rounded text-purple-600">
+                                    <span class="text-sm">Instagram</span>
+                                </label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                                    <input type="checkbox" value="facebook" checked class="campaign-platform mr-2 rounded text-purple-600">
+                                    <span class="text-sm">Facebook</span>
+                                </label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                                    <input type="checkbox" value="linkedin" checked class="campaign-platform mr-2 rounded text-purple-600">
+                                    <span class="text-sm">LinkedIn</span>
+                                </label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                                    <input type="checkbox" value="twitter" class="campaign-platform mr-2 rounded text-purple-600">
+                                    <span class="text-sm">Twitter</span>
+                                </label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                                    <input type="checkbox" value="email" checked class="campaign-platform mr-2 rounded text-purple-600">
+                                    <span class="text-sm">Email</span>
+                                </label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                                    <input type="checkbox" value="blog" checked class="campaign-platform mr-2 rounded text-purple-600">
+                                    <span class="text-sm">Blog</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Brand Style</label>
+                                <select id="campaignStyle" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                    <option value="corporate" selected>Corporate</option>
+                                    <option value="startup">Startup</option>
+                                    <option value="luxury">Luxury</option>
+                                    <option value="bold">Bold</option>
+                                    <option value="trustworthy">Trustworthy</option>
+                                </select>
+                            </div>
+                            
+                            <div class="cost-calculator p-3 rounded-lg">
+                                <div class="text-sm text-gray-600">Campaign Cost Estimate</div>
+                                <div id="campaignCostEstimate" class="text-lg font-bold text-purple-600">$0.36</div>
+                                <div class="text-xs text-gray-500">12 assets × $0.030</div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition-colors">
+                            Create Full Campaign
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Concept Testing Form -->
+                <div id="conceptTestingForm" class="bg-white rounded-xl shadow-lg p-6 card-hover hidden">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                        <span class="w-2 h-2 bg-orange-500 rounded-full mr-3"></span>
+                        Rapid Concept Testing
+                    </h3>
+                    
+                    <form id="testingForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Concepts to Test (one per line, max 10)</label>
+                            <textarea 
+                                id="conceptsList" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 resize-none" 
+                                rows="6"
+                                placeholder="Bold modern design with geometric shapes&#10;Friendly approachable style with warm colors&#10;Minimalist clean layout with lots of whitespace&#10;Creative artistic approach with hand-drawn elements"
+                            ></textarea>
+                            <div class="text-xs text-gray-500 mt-1">Uses ultra-fast FLUX Schnell - only $0.003 per concept!</div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Base Style</label>
+                                <select id="testingStyle" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
+                                    <option value="corporate">Corporate</option>
+                                    <option value="creative" selected>Creative</option>
+                                    <option value="minimalist">Minimalist</option>
+                                    <option value="bold">Bold</option>
+                                </select>
+                            </div>
+                            , '')) || 0;
+            
+            document.getElementById('todayAssets').textContent = currentAssets + 1;
+            document.getElementById('todayCost').textContent = `${(currentCost + 0.030).toFixed(3)}`;
+        }
+        
+        function retryLastOperation() {
+            if (currentOperation) {
+                hideError();
+                
+                switch (currentOperation.type) {
+                    case 'asset':
+                        handleAssetGeneration({ preventDefault: () => {} });
+                        break;
+                    case 'social':
+                        handleSocialGeneration({ preventDefault: () => {} });
+                        break;
+                    case 'campaign':
+                        handleCampaignGeneration({ preventDefault: () => {} });
+                        break;
+                    case 'testing':
+                        handleConceptTesting({ preventDefault: () => {} });
+                        break;
+                }
+            }
+        }
+        
+        function showSetupMessage() {
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 right-4 bg-yellow-500 text-white p-4 rounded-lg shadow-lg z-50 max-w-sm';
+            toast.innerHTML = `
+                <div class="font-semibold mb-2">🔧 Setup Required</div>
+                <div class="text-sm">Get your free API token at <a href="https://replicate.com" target="_blank" class="underline">replicate.com</a> and set REPLICATE_API_TOKEN</div>
+            `;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                if (document.body.contains(toast)) {
+                    document.body.removeChild(toast);
+                }
+            }, 10000);
+        }
+    </script>
+</body>
+</html>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Brand Style</label>
+                                <select id="assetStyle" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option value="corporate">Corporate</option>
+                                    <option value="startup">Startup</option>
+                                    <option value="luxury">Luxury</option>
+                                    <option value="friendly">Friendly</option>
+                                    <option value="bold">Bold</option>
+                                    <option value="minimalist">Minimalist</option>
+                                    <option value="creative">Creative</option>
+                                    <option value="trustworthy">Trustworthy</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Platform</label>
+                                <select id="assetPlatform" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" onchange="updateFormatOptions()">
+                                    <option value="instagram">Instagram</option>
+                                    <option value="facebook">Facebook</option>
+                                    <option value="linkedin">LinkedIn</option>
+                                    <option value="twitter">Twitter</option>
+                                    <option value="youtube">YouTube</option>
+                                    <option value="email">Email</option>
+                                    <option value="blog">Blog</option>
+                                    <option value="web">Website</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Quality</label>
+                                <select id="assetQuality" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" onchange="updateCostEstimate()">
+                                    <option value="rapid">Rapid ($0.003)</option>
+                                    <option value="standard" selected>Standard ($0.030)</option>
+                                    <option value="professional">Professional ($0.055)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Format</label>
+                            <select id="assetFormat" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <!-- Populated by JavaScript -->
+                            </select>
+                        </div>
+
+                        <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center">
+                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
+                            </svg>
+                            Generate Asset
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Social Media Set Form -->
+                <div id="socialSetForm" class="bg-white rounded-xl shadow-lg p-6 card-hover hidden">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+                        Social Media Asset Set
+                    </h3>
+                    
+                    <form id="socialForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Post Concept</label>
+                            <textarea 
+                                id="socialConcept" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 resize-none" 
+                                rows="3"
+                                placeholder="Monday motivation quote, behind-the-scenes content, customer success story..."
+                                required
+                            ></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Platforms</label>
+                            <div class="platform-grid">
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                                    <input type="checkbox" value="instagram" checked class="platform-checkbox mr-2 rounded text-green-600">
+                                    <span class="text-sm">Instagram</span>
+                                </label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                                    <input type="checkbox" value="facebook" checked class="platform-checkbox mr-2 rounded text-green-600">
+                                    <span class="text-sm">Facebook</span>
+                                </label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                                    <input type="checkbox" value="linkedin" checked class="platform-checkbox mr-2 rounded text-green-600">
+                                    <span class="text-sm">LinkedIn</span>
+                                </label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                                    <input type="checkbox" value="twitter" class="platform-checkbox mr-2 rounded text-green-600">
+                                    <span class="text-sm">Twitter</span>
+                                </label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                                    <input type="checkbox" value="youtube" class="platform-checkbox mr-2 rounded text-green-600">
+                                    <span class="text-sm">YouTube</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Brand Style</label>
+                                <select id="socialStyle" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                    <option value="corporate">Corporate</option>
+                                    <option value="friendly" selected>Friendly</option>
+                                    <option value="bold">Bold</option>
+                                    <option value="creative">Creative</option>
+                                    <option value="minimalist">Minimalist</option>
+                                </select>
+                            </div>
+                            
+                            <div class="cost-calculator p-3 rounded-lg">
+                                <div class="text-sm text-gray-600">Estimated Cost</div>
+                                <div id="socialCostEstimate" class="text-lg font-bold text-green-600">$0.12</div>
+                                <div class="text-xs text-gray-500">4 platforms × $0.030</div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors">
+                            Generate Social Media Set
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Full Campaign Form -->
+                <div id="fullCampaignForm" class="bg-white rounded-xl shadow-lg p-6 card-hover hidden">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                        <span class="w-2 h-2 bg-purple-500 rounded-full mr-3"></span>
+                        Full Campaign Package
+                    </h3>
+                    
+                    <form id="campaignForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Campaign Name</label>
+                                <input 
+                                    type="text" 
+                                    id="campaignName"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                                    placeholder="Q4 Product Launch"
+                                    required
+                                />
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Quality Level</label>
+                                <select id="campaignQuality" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" onchange="updateCampaignCost()">
+                                    <option value="standard" selected>Standard ($0.030/asset)</option>
+                                    <option value="professional">Professional ($0.055/asset)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Campaign Concept</label>
+                            <textarea 
+                                id="campaignConcept" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 resize-none" 
+                                rows="3"
+                                placeholder="Complete rebranding launch with new logo, messaging focused on innovation and reliability..."
+                                required
+                            ></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Platforms & Channels</label>
+                            <div class="platform-grid">
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                                    <input type="checkbox" value="instagram" checked class="campaign-platform mr-2 rounded text-purple-600">
+                                    <span class="text-sm">Instagram</span>
+                                </label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                                    <input type="checkbox" value="facebook" checked class="campaign-platform mr-2 rounded text-purple-600">
+                                    <span class="text-sm">Facebook</span>
+                                </label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                                    <input type="checkbox" value="linkedin" checked class="campaign-platform mr-2 rounded text-purple-600">
+                                    <span class="text-sm">LinkedIn</span>
+                                </label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                                    <input type="checkbox" value="twitter" class="campaign-platform mr-2 rounded text-purple-600">
+                                    <span class="text-sm">Twitter</span>
+                                </label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                                    <input type="checkbox" value="email" checked class="campaign-platform mr-2 rounded text-purple-600">
+                                    <span class="text-sm">Email</span>
+                                </label>
+                                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                                    <input type="checkbox" value="blog" checked class="campaign-platform mr-2 rounded text-purple-600">
+                                    <span class="text-sm">Blog</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Brand Style</label>
+                                <select id="campaignStyle" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                    <option value="corporate" selected>Corporate</option>
+                                    <option value="startup">Startup</option>
+                                    <option value="luxury">Luxury</option>
+                                    <option value="bold">Bold</option>
+                                    <option value="trustworthy">Trustworthy</option>
+                                </select>
+                            </div>
+                            
+                            <div class="cost-calculator p-3 rounded-lg">
+                                <div class="text-sm text-gray-600">Campaign Cost Estimate</div>
+                                <div id="campaignCostEstimate" class="text-lg font-bold text-purple-600">$0.36</div>
+                                <div class="text-xs text-gray-500">12 assets × $0.030</div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition-colors">
+                            Create Full Campaign
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Concept Testing Form -->
+                <div id="conceptTestingForm" class="bg-white rounded-xl shadow-lg p-6 card-hover hidden">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                        <span class="w-2 h-2 bg-orange-500 rounded-full mr-3"></span>
+                        Rapid Concept Testing
+                    </h3>
+                    
+                    <form id="testingForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Concepts to Test (one per line, max 10)</label>
+                            <textarea 
+                                id="conceptsList" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 resize-none" 
+                                rows="6"
+                                placeholder="Bold modern design with geometric shapes&#10;Friendly approachable style with warm colors&#10;Minimalist clean layout with lots of whitespace&#10;Creative artistic approach with hand-drawn elements"
+                            ></textarea>
+                            <div class="text-xs text-gray-500 mt-1">Uses ultra-fast FLUX Schnell - only $0.003 per concept!</div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Base Style</label>
+                                <select id="testingStyle" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
+                                    <option value="corporate">Corporate</option>
+                                    <option value="creative" selected>Creative</option>
+                                    <option value="minimalist">Minimalist</option>
+                                    <option value="bold">Bold</option>
+                                </select>
+                            </div>

@@ -15,6 +15,7 @@ import time
 import zipfile
 import tempfile
 import datetime
+import requests  # Add this if not already present
 from modules.cloze_integration import process_cloze_command, is_cloze_configured
 
 # OCR/File Parsing
@@ -1019,6 +1020,335 @@ def cloze_dashboard():
     </html>
     '''
     return html_content
+
+# Section 13: Marketing FLUX Integration Routes
+
+from modules.marketing_flux import (
+    MarketingFluxGenerator, 
+    quick_social_post, 
+    test_campaign_ideas, 
+    create_full_campaign
+)
+
+@app.route('/marketing')
+def marketing_dashboard():
+    """Main marketing asset creation dashboard"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    return render_template('marketing_dashboard.html')
+
+@app.route('/api/marketing/quick-asset', methods=['POST'])
+def api_marketing_quick_asset():
+    """Generate single marketing asset quickly"""
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+        
+    try:
+        data = request.get_json()
+        
+        # Required fields
+        concept = data.get('concept')
+        if not concept:
+            return jsonify({'success': False, 'error': 'Concept description required'}), 400
+        
+        # Optional parameters with smart defaults
+        style = data.get('style', 'corporate')
+        platform = data.get('platform', 'instagram')
+        quality = data.get('quality', 'standard')
+        format_name = data.get('format_name')
+        
+        generator = MarketingFluxGenerator()
+        result = generator.create_and_wait(
+            prompt=concept,
+            style=style,
+            platform=platform,
+            quality=quality,
+            format_name=format_name
+        )
+        
+        # Store in database if available
+        if result['success'] and 'database' in globals():
+            try:
+                save_conversation_enhanced('marketing_assets', concept, {
+                    'marketing_asset': {
+                        'concept': concept,
+                        'style': style,
+                        'platform': platform,
+                        'quality': quality,
+                        'format_name': format_name,
+                        'image_url': result.get('image_url'),
+                        'cost': result.get('estimated_cost'),
+                        'success': result['success']
+                    }
+                })
+            except Exception as e:
+                app.logger.error(f"Database storage failed: {e}")
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        app.logger.error(f"Marketing asset generation failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Asset generation failed: {str(e)}'
+        }), 500
+
+@app.route('/api/marketing/campaign', methods=['POST'])
+def api_marketing_campaign():
+    """Create complete campaign asset set"""
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+        
+    try:
+        data = request.get_json()
+        
+        campaign_name = data.get('campaign_name')
+        concept = data.get('concept')
+        
+        if not campaign_name or not concept:
+            return jsonify({
+                'success': False, 
+                'error': 'Campaign name and concept required'
+            }), 400
+        
+        platforms = data.get('platforms', ['instagram', 'facebook', 'linkedin', 'twitter'])
+        style = data.get('style', 'corporate')
+        quality = data.get('quality', 'standard')
+        
+        generator = MarketingFluxGenerator()
+        result = generator.create_campaign_assets(
+            campaign_name=campaign_name,
+            base_prompt=concept,
+            platforms=platforms,
+            style=style,
+            quality=quality
+        )
+        
+        # Store campaign in database
+        if result['success']:
+            try:
+                save_conversation_enhanced('marketing_campaigns', f"Campaign: {campaign_name}", {
+                    'campaign_results': result
+                })
+            except Exception as e:
+                app.logger.error(f"Campaign storage failed: {e}")
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        app.logger.error(f"Campaign creation failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Campaign creation failed: {str(e)}'
+        }), 500
+
+@app.route('/api/marketing/test-concepts', methods=['POST'])
+def api_marketing_test_concepts():
+    """Rapidly test multiple creative concepts"""
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+        
+    try:
+        data = request.get_json()
+        
+        concepts = data.get('concepts', [])
+        if not concepts or not isinstance(concepts, list):
+            return jsonify({
+                'success': False, 
+                'error': 'Concepts array required'
+            }), 400
+        
+        if len(concepts) > 10:
+            return jsonify({
+                'success': False,
+                'error': 'Maximum 10 concepts per test batch'
+            }), 400
+        
+        style = data.get('style', 'corporate')
+        
+        generator = MarketingFluxGenerator()
+        result = generator.test_concepts(concepts, style)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        app.logger.error(f"Concept testing failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Concept testing failed: {str(e)}'
+        }), 500
+
+@app.route('/api/marketing/social-set', methods=['POST'])
+def api_marketing_social_set():
+    """Create social media asset set"""
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+        
+    try:
+        data = request.get_json()
+        
+        concept = data.get('concept')
+        if not concept:
+            return jsonify({'success': False, 'error': 'Post concept required'}), 400
+        
+        platforms = data.get('platforms', ['instagram', 'facebook', 'linkedin', 'twitter'])
+        style = data.get('style', 'corporate')
+        
+        generator = MarketingFluxGenerator()
+        result = generator.create_social_media_set(concept, platforms, style)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        app.logger.error(f"Social media set creation failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Social media set creation failed: {str(e)}'
+        }), 500
+
+@app.route('/api/marketing/formats')
+def api_marketing_formats():
+    """Get available formats and specifications"""
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+        
+    try:
+        generator = MarketingFluxGenerator()
+        
+        return jsonify({
+            'success': True,
+            'social_formats': generator.social_specs,
+            'styles': generator.marketing_styles,
+            'models': generator.models,
+            'recommendations': generator.get_marketing_recommendations()
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Formats fetch failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/marketing/download', methods=['POST'])
+def api_marketing_download():
+    """Download generated marketing asset"""
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+        
+    try:
+        data = request.get_json()
+        image_url = data.get('image_url')
+        filename = data.get('filename', 'marketing_asset')
+        campaign_name = data.get('campaign_name', 'general')
+        
+        if not image_url:
+            return jsonify({'success': False, 'error': 'Image URL required'}), 400
+        
+        # Create organized folder structure
+        import re
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        safe_campaign = re.sub(r'[^a-zA-Z0-9_-]', '_', campaign_name)
+        safe_filename = re.sub(r'[^a-zA-Z0-9_-]', '_', filename)
+        
+        folder_path = os.path.join("static", "marketing", safe_campaign)
+        file_path = os.path.join(folder_path, f"{safe_filename}_{timestamp}.png")
+        
+        # Download image
+        response = requests.get(image_url)
+        response.raise_for_status()
+        
+        # Ensure directory exists
+        os.makedirs(folder_path, exist_ok=True)
+        
+        with open(file_path, 'wb') as f:
+            f.write(response.content)
+        
+        # Return web-accessible path
+        web_path = f"/static/marketing/{safe_campaign}/{os.path.basename(file_path)}"
+        
+        return jsonify({
+            'success': True,
+            'local_path': file_path,
+            'web_path': web_path,
+            'filename': os.path.basename(file_path),
+            'campaign_folder': safe_campaign
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Download failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Download failed: {str(e)}'
+        }), 500
+
+@app.route('/api/marketing/status')
+def api_marketing_status():
+    """Check marketing tools status"""
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+        
+    try:
+        generator = MarketingFluxGenerator()
+        
+        return jsonify({
+            'success': True,
+            'status': 'operational',
+            'api_connected': True,
+            'available_models': len(generator.models),
+            'available_formats': len(generator.social_specs),
+            'cost_estimate': {
+                'rapid_generation': '$0.003 per image',
+                'standard_quality': '$0.030 per image', 
+                'professional_quality': '$0.055 per image'
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'status': 'error',
+            'error': str(e),
+            'setup_required': 'REPLICATE_API_TOKEN' in str(e)
+        })
+
+@app.route('/marketing/campaigns')
+def marketing_campaigns():
+    """Campaign management page"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+        
+    # Simple campaigns view
+    return render_template_string('''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Marketing Campaigns</title>
+        <style>
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
+            }
+            .container { max-width: 1000px; margin: 0 auto; }
+            .btn { 
+                background: #6366f1; color: white; border: none; padding: 12px 24px;
+                border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
+                text-decoration: none; display: inline-block;
+            }
+            .btn:hover { background: #5855eb; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Marketing Campaigns</h1>
+            <p>Campaign history and management coming soon!</p>
+            <a href="/marketing" class="btn">← Back to Marketing Dashboard</a>
+            <a href="/" class="btn">Chat Interface</a>
+        </div>
+    </body>
+    </html>
+    '''
+
 
 # Section 10: Debug Routes, Authentication, and App Startup
 

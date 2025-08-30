@@ -46,3 +46,6 @@ click==8.2.1
 psycopg2-binary
 
 weasyprint==60.2
+
+requests>=2.31.0
+Pillow>=10.0.0
