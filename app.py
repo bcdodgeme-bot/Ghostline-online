@@ -1347,7 +1347,7 @@ def marketing_campaigns():
         </div>
     </body>
     </html>
-    '''
+    ''')
 
 
 # Section 10: Debug Routes, Authentication, and App Startup
