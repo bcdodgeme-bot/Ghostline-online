@@ -1,4 +1,5 @@
 # Section 1: Imports and Initial Flask Setup
+# Section 1: Imports and Initial Flask Setup
 
 from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify, render_template_string
 from utils.ghostline_engine import generate_response, stream_generate
@@ -19,6 +20,13 @@ import requests  # Add this if not already present
 # Add this with your other function imports
 from modules.marketing_commands import process_marketing_command, is_marketing_configured
 from modules.cloze_integration import process_cloze_command, is_cloze_configured
+
+# Add these imports to the top of app.py
+from modules.telegram_notifications import (
+    GhostlineTelegramReminders, 
+    parse_reminder_command,
+    is_telegram_configured
+)
 
 # OCR/File Parsing
 from PIL import Image
@@ -106,7 +114,6 @@ from modules.brain import (
 )
 
 # Section 4: OCR and File Processing Functions
-
 # Section 4: OCR and File Processing Functions
 
 from modules.file_processing import setup_easyocr_environment, markdown_filter
@@ -136,11 +143,65 @@ from modules.utils import (
 # Section 6: Main Route with Enhanced Database Functionality
 # Section 6: Main Route with Enhanced Database Functionality
 # Section 6: Main Route with Enhanced Database Functionality
+# Section 6: Main Route with Enhanced Database Functionality
 
 from modules.gmail import process_gmail_command
 from modules.cloze_integration import process_cloze_command, is_cloze_configured
 from modules.marketing_commands import process_marketing_command, is_marketing_configured
 from utils.scraper import scrape_url
+
+def handle_reminder_command(user_input, project, use_voices, random_toggle):
+    """Handle reminder creation commands"""
+    # Check if this looks like a reminder command
+    reminder_keywords = [
+        'remind me', 'reminder', 'set reminder', 'alert me', 
+        'don\'t forget', 'remember to', 'remind'
+    ]
+    
+    if not any(keyword in user_input.lower() for keyword in reminder_keywords):
+        return None, False
+    
+    if not is_telegram_configured():
+        response_data = {
+            "SyntaxPrime": "Telegram reminders not configured. Visit /telegram to set up your bot."
+        }
+        return response_data, True
+    
+    try:
+        # Parse the reminder command
+        parsed = parse_reminder_command(user_input, project)
+        
+        if not parsed["success"]:
+            response_data = {"SyntaxPrime": parsed["error"]}
+            return response_data, True
+        
+        # Create the reminder
+        reminders = GhostlineTelegramReminders()
+        result = reminders.create_reminder(
+            title=parsed["title"],
+            remind_at=parsed["remind_at"],
+            project=parsed["project"],
+            priority=2
+        )
+        
+        if result["success"]:
+            time_str = result["remind_at"].strftime('%I:%M %p on %B %d')
+            response_text = f"✅ **Reminder Created!**\n\n"
+            response_text += f"**What:** {parsed['title']}\n"
+            response_text += f"**When:** {time_str}\n"
+            response_text += f"**Project:** {project}\n\n"
+            response_text += "You'll receive a Telegram notification with action buttons to mark complete or snooze."
+            
+            response_data = {"SyntaxPrime": response_text}
+        else:
+            response_data = {"SyntaxPrime": f"Failed to create reminder: {result['error']}"}
+        
+        return response_data, True
+        
+    except Exception as e:
+        app.logger.error(f"Reminder command failed: {e}")
+        response_data = {"SyntaxPrime": f"Reminder creation failed: {str(e)}"}
+        return response_data, True
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -161,6 +222,12 @@ def index():
         # Try Gmail/calendar commands first
         response_data, handled = process_gmail_command(user_input, project, use_voices, random_toggle)
         if handled:
+            return _render_enhanced(project, response_data)
+
+        # Try reminder commands
+        response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
+        if handled:
+            save_conversation_enhanced(project, user_input, response_data)
             return _render_enhanced(project, response_data)
 
         # Try marketing commands (image generation)
@@ -216,6 +283,7 @@ def index():
             save_conversation_enhanced(project, user_input, response_data)
 
     return _render_enhanced(selected_project, response_data)
+
 
 
 # Section 7: Brain Building Endpoints and Dashboard
@@ -1435,6 +1503,316 @@ def marketing_assets():
         app.logger.error(f"Assets library error: {e}")
         return f"Assets library error: {str(e)}", 500
 
+
+# Section 14: Telegram Integration Routes and Background Services
+
+# Add this route for manual reminder checking
+@app.route('/reminders/check', methods=['POST'])
+def check_telegram_reminders():
+    """Manual trigger for reminder checking"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    if not is_telegram_configured():
+        return jsonify({"success": False, "error": "Telegram not configured"}), 400
+    
+    reminders = GhostlineTelegramReminders()
+    result = reminders.check_and_send_reminders()
+    return jsonify(result)
+
+# Add Telegram webhook endpoint
+@app.route('/telegram/webhook', methods=['POST'])
+def telegram_webhook():
+    """Handle Telegram webhook for button responses"""
+    try:
+        data = request.get_json()
+        
+        # Handle callback queries (button presses)
+        if 'callback_query' in data:
+            reminders = GhostlineTelegramReminders()
+            result = reminders.process_callback_query(data['callback_query'])
+            return jsonify({"ok": True})
+        
+        # Handle regular messages (could add chat interface later)
+        if 'message' in data:
+            # For now, just acknowledge
+            return jsonify({"ok": True})
+        
+        return jsonify({"ok": True})
+        
+    except Exception as e:
+        app.logger.error(f"Telegram webhook failed: {e}")
+        return jsonify({"ok": False}), 500
+
+# Add Telegram status check
+@app.route('/telegram/status')
+def telegram_status():
+    """Check Telegram bot configuration and connection"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    status = {
+        "configured": is_telegram_configured(),
+        "bot_token_present": bool(os.getenv('TELEGRAM_BOT_TOKEN')),
+        "connection_working": False,
+        "bot_info": None,
+        "webhook_set": False
+    }
+    
+    if is_telegram_configured():
+        try:
+            from modules.telegram_notifications import TelegramBot
+            bot = TelegramBot()
+            
+            # Test bot connection
+            import requests
+            response = requests.get(f"https://api.telegram.org/bot{bot.token}/getMe")
+            result = response.json()
+            
+            if result['ok']:
+                status["connection_working"] = True
+                status["bot_info"] = {
+                    "username": result['result']['username'],
+                    "first_name": result['result']['first_name'],
+                    "id": result['result']['id']
+                }
+                status["chat_id"] = bot.chat_id
+            
+            # Check webhook status
+            webhook_response = requests.get(f"https://api.telegram.org/bot{bot.token}/getWebhookInfo")
+            webhook_result = webhook_response.json()
+            if webhook_result['ok']:
+                status["webhook_info"] = webhook_result['result']
+                status["webhook_set"] = bool(webhook_result['result'].get('url'))
+            
+        except Exception as e:
+            status["error"] = str(e)
+    
+    return jsonify(status)
+
+# Add Telegram dashboard
+@app.route('/telegram')
+def telegram_dashboard():
+    """Telegram integration dashboard"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    return render_template_string('''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Telegram Reminders</title>
+        <style>
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
+            }
+            .container { max-width: 1000px; margin: 0 auto; }
+            .status-box { 
+                background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
+                padding: 20px; margin: 20px 0; 
+            }
+            .btn { 
+                background: #6366f1; color: white; border: none; padding: 12px 24px;
+                border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
+                text-decoration: none; display: inline-block;
+            }
+            .btn:hover { background: #5855eb; }
+            .btn.success { background: #059669; }
+            .btn.warning { background: #d97706; }
+            .commands-grid {
+                display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 15px; margin: 20px 0;
+            }
+            .command-card {
+                background: #2a2a2a; padding: 15px; border-radius: 8px;
+            }
+            .command-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #6366f1; }
+            .command-example { 
+                background: #1a1a1a; padding: 10px; border-radius: 4px; 
+                font-family: monospace; margin-top: 10px; 
+            }
+            .success { color: #10b981; }
+            .error { color: #ef4444; }
+            .warning { color: #f59e0b; }
+            pre { background: #000; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 12px; }
+            .setup-steps { background: #1a1a1a; padding: 20px; border-radius: 8px; margin: 15px 0; }
+            .setup-steps h4 { color: #6366f1; margin: 0 0 10px 0; }
+            .setup-steps ol li { margin: 10px 0; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🤖 Telegram Reminders</h1>
+            <p>Reliable push notifications that actually work! No SMS fees, works on all devices.</p>
+            
+            <div class="status-box">
+                <h3>Bot Status</h3>
+                <div id="status">Loading...</div>
+                
+                <div class="setup-steps" id="setup-steps" style="display: none;">
+                    <h4>Setup Instructions:</h4>
+                    <ol>
+                        <li>Message <strong>@BotFather</strong> on Telegram</li>
+                        <li>Send <code>/newbot</code></li>
+                        <li>Choose name: "Ghostline Assistant"</li>
+                        <li>Choose username: "ghostline_yourname_bot"</li>
+                        <li>Copy the bot token</li>
+                        <li>Add <strong>TELEGRAM_BOT_TOKEN</strong> to Railway environment</li>
+                        <li>Restart Ghostline</li>
+                        <li>Message your bot to activate</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <div class="status-box">
+                <h3>Quick Actions</h3>
+                <button class="btn" onclick="checkReminders()">Send Due Reminders Now</button>
+                <button class="btn warning" onclick="testReminder()">Send Test Reminder</button>
+                <button class="btn" onclick="refreshStatus()">Refresh Status</button>
+                <button class="btn" onclick="showActiveReminders()">Show Active Reminders</button>
+            </div>
+            
+            <div class="status-box">
+                <h3>Chat Commands</h3>
+                <div class="commands-grid">
+                    <div class="command-card">
+                        <div class="command-title">Basic Reminders</div>
+                        <p>Set reminders that will actually be sent!</p>
+                        <div class="command-example">remind me to call John in 30 minutes</div>
+                        <div class="command-example">reminder: meeting prep in 2 hours</div>
+                        <div class="command-example">remind me to review proposal tomorrow at 9am</div>
+                    </div>
+                    
+                    <div class="command-card">
+                        <div class="command-title">Quick Shortcuts</div>
+                        <p>Fast reminder creation</p>
+                        <div class="command-example">remind me to follow up in 1h</div>
+                        <div class="command-example">alert me to check email in 15m</div>
+                        <div class="command-example">don't forget to call client at 3pm</div>
+                    </div>
+                    
+                    <div class="command-card">
+                        <div class="command-title">Button Actions</div>
+                        <p>Interactive buttons in Telegram:</p>
+                        <div style="margin: 10px 0;">
+                            <span style="background: #059669; padding: 5px 10px; border-radius: 15px; margin: 2px;">✅ Done</span>
+                            <span style="background: #d97706; padding: 5px 10px; border-radius: 15px; margin: 2px;">⏰ Snooze 15m</span><br>
+                            <span style="background: #d97706; padding: 5px 10px; border-radius: 15px; margin: 2px;">⏰ Snooze 1h</span>
+                            <span style="background: #6366f1; padding: 5px 10px; border-radius: 15px; margin: 2px;">📝 More Info</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="status-box">
+                <h3>Active Reminders</h3>
+                <div id="active-reminders">Loading...</div>
+            </div>
+            
+            <div class="status-box">
+                <button class="btn" onclick="window.location.href='/'">← Back to Chat</button>
+                <button class="btn" onclick="window.location.href='/brain'">Brain Dashboard</button>
+            </div>
+        </div>
+        
+        <script>
+            function refreshStatus() {
+                fetch('/telegram/status')
+                    .then(r => r.json())
+                    .then(data => {
+                        const statusDiv = document.getElementById('status');
+                        const setupDiv = document.getElementById('setup-steps');
+                        
+                        if (!data.configured) {
+                            statusDiv.innerHTML = '<span class="warning">⚠️ Bot Token Not Configured</span>';
+                            setupDiv.style.display = 'block';
+                        } else if (data.connection_working && data.bot_info) {
+                            statusDiv.innerHTML = `
+                                <span class="success">✅ Bot Connected</span><br>
+                                <strong>Bot:</strong> @${data.bot_info.username}<br>
+                                <strong>Name:</strong> ${data.bot_info.first_name}<br>
+                                <strong>Chat ID:</strong> ${data.chat_id || 'Auto-detecting...'}
+                            `;
+                            setupDiv.style.display = 'none';
+                        } else {
+                            statusDiv.innerHTML = `<span class="error">❌ Connection Failed</span><br>${data.error || 'Unknown error'}`;
+                            setupDiv.style.display = 'block';
+                        }
+                    })
+                    .catch(e => {
+                        document.getElementById('status').innerHTML = '<span class="error">❌ Status Check Failed</span>';
+                    });
+            }
+            
+            function checkReminders() {
+                fetch('/reminders/check', { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.sent > 0) {
+                            alert(`✅ Sent ${data.sent} reminder(s)`);
+                        } else {
+                            alert('No reminders due right now');
+                        }
+                    })
+                    .catch(e => alert('Failed to check reminders'));
+            }
+            
+            function testReminder() {
+                // Create a test reminder for 1 minute from now
+                const testMessage = "This is a test reminder from Ghostline! 🚀";
+                
+                fetch('/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        'user_input': `remind me that ${testMessage} in 1 minute`,
+                        'project': 'Personal Operating Manual',
+                        'voices': 'SyntaxPrime'
+                    })
+                })
+                .then(() => {
+                    alert('Test reminder created! You should receive it in 1 minute.');
+                })
+                .catch(e => alert('Failed to create test reminder'));
+            }
+            
+            function showActiveReminders() {
+                // This would fetch and display active reminders
+                document.getElementById('active-reminders').innerHTML = 'Feature coming soon...';
+            }
+            
+            // Auto-refresh every 30 seconds
+            refreshStatus();
+            setInterval(refreshStatus, 30000);
+        </script>
+    </body>
+    </html>
+    ''')
+
+# Background reminder checker (add at the end of the file, before if __name__ == '__main__':)
+def reminder_checker():
+    """Background thread to check reminders every 2 minutes"""
+    while True:
+        try:
+            if is_telegram_configured():
+                reminders = GhostlineTelegramReminders()
+                result = reminders.check_and_send_reminders()
+                if result["sent"] > 0:
+                    print(f"Sent {result['sent']} reminders")
+        except Exception as e:
+            print(f"Reminder check failed: {e}")
+        
+        time.sleep(120)  # Check every 2 minutes
+
+# Start background checker only on Railway
+if os.getenv('RAILWAY_ENVIRONMENT'):
+    checker_thread = threading.Thread(target=reminder_checker, daemon=True)
+    checker_thread.start()
+    print("Telegram reminder checker started")
+
+
+# Section 10: Debug Routes, Authentication, and App Startup
 # Section 10: Debug Routes, Authentication, and App Startup
 
 # --- DEBUG ROUTES ---
@@ -1486,10 +1864,28 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
+# Background reminder checker function
+def reminder_checker():
+    """Background thread to check reminders every 2 minutes"""
+    while True:
+        try:
+            if is_telegram_configured():
+                reminders = GhostlineTelegramReminders()
+                result = reminders.check_and_send_reminders()
+                if result["sent"] > 0:
+                    print(f"Sent {result['sent']} reminders")
+        except Exception as e:
+            print(f"Reminder check failed: {e}")
+        
+        time.sleep(120)  # Check every 2 minutes
+
 # --- APP STARTUP ---
 if __name__ == '__main__':
+    # Start background reminder checker only on Railway
+    if os.getenv('RAILWAY_ENVIRONMENT'):
+        checker_thread = threading.Thread(target=reminder_checker, daemon=True)
+        checker_thread.start()
+        print("Telegram reminder checker started")
+    
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
-
-
-
