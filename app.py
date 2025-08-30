@@ -1509,6 +1509,8 @@ def marketing_assets():
 # Section 14: Telegram Integration Routes and Background Services
 # Section 14: Telegram Integration Routes and Background Services
 # Section 14: Telegram Integration Routes and Background Services
+# Section 14: Telegram Integration Routes and Background Services
+# Section 14: Telegram Integration Routes and Background Services
 
 # Add this route for manual reminder checking
 @app.route('/reminders/check', methods=['POST'])
@@ -1524,7 +1526,7 @@ def check_telegram_reminders():
     result = reminders.check_and_send_reminders()
     return jsonify(result)
 
-# Emergency stop route
+# Emergency stop routes - BOTH GET AND POST
 @app.route('/telegram/emergency_stop', methods=['POST'])
 def emergency_stop_reminders():
     """EMERGENCY: Stop all pending reminders to prevent spam"""
@@ -1538,6 +1540,23 @@ def emergency_stop_reminders():
     except Exception as e:
         app.logger.error(f"Emergency stop failed: {e}")
         return jsonify({"success": False, "error": str(e)})
+
+@app.route('/telegram/emergency_stop_now')
+def emergency_stop_now():
+    """GET version for emergency stop when buttons fail"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    try:
+        reminders = GhostlineTelegramReminders()
+        result = reminders.emergency_stop_all()
+        
+        if result["success"]:
+            return f"<h1>EMERGENCY STOP SUCCESS</h1><p>Stopped {result['stopped_count']} reminders</p><a href='/telegram'>Back to Telegram Dashboard</a>"
+        else:
+            return f"<h1>EMERGENCY STOP FAILED</h1><p>{result['error']}</p><a href='/telegram'>Back to Telegram Dashboard</a>"
+    except Exception as e:
+        return f"<h1>EMERGENCY STOP ERROR</h1><p>{str(e)}</p><a href='/telegram'>Back to Telegram Dashboard</a>"
 
 # Enhanced Telegram webhook endpoint
 @app.route('/telegram/webhook', methods=['POST'])
@@ -1581,7 +1600,7 @@ def telegram_webhook():
         app.logger.error(f"Telegram webhook failed: {e}", exc_info=True)
         return jsonify({"ok": False, "error": str(e)}), 500
 
-# Enhanced webhook setup route
+# Enhanced webhook setup routes - BOTH GET AND POST
 @app.route('/telegram/setup_webhook', methods=['POST'])
 def setup_telegram_webhook():
     """Setup Telegram webhook - FIXED VERSION"""
@@ -1628,6 +1647,34 @@ def setup_telegram_webhook():
     except Exception as e:
         app.logger.error(f"Webhook setup failed: {e}")
         return jsonify({"success": False, "error": str(e)})
+
+@app.route('/telegram/setup_webhook_now')
+def setup_webhook_now():
+    """GET version for webhook setup when buttons fail"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    webhook_url = os.getenv('WEBHOOK_URL')
+    if not webhook_url:
+        return "<h1>WEBHOOK SETUP FAILED</h1><p>WEBHOOK_URL not configured</p><a href='/telegram'>Back</a>"
+    
+    try:
+        from modules.telegram_notifications import TelegramBot
+        bot = TelegramBot()
+        
+        response = requests.post(
+            f"https://api.telegram.org/bot{bot.token}/setWebhook",
+            json={"url": webhook_url, "allowed_updates": ["callback_query", "message"]}
+        )
+        result = response.json()
+        
+        if result.get('ok'):
+            return f"<h1>WEBHOOK SETUP SUCCESS</h1><p>Webhook set to: {webhook_url}</p><a href='/telegram'>Back to Telegram Dashboard</a>"
+        else:
+            return f"<h1>WEBHOOK SETUP FAILED</h1><p>{result.get('description', 'Unknown error')}</p><a href='/telegram'>Back</a>"
+            
+    except Exception as e:
+        return f"<h1>WEBHOOK SETUP ERROR</h1><p>{str(e)}</p><a href='/telegram'>Back</a>"
 
 # Add webhook info route
 @app.route('/telegram/webhook_info')
@@ -1747,12 +1794,23 @@ def telegram_dashboard():
                 background: #dc2626; color: white; padding: 15px; border-radius: 8px; margin: 15px 0;
                 font-weight: bold; text-align: center;
             }
+            .emergency-panel {
+                background: #7f1d1d; border: 2px solid #dc2626; border-radius: 8px;
+                padding: 20px; margin: 20px 0; text-align: center;
+            }
         </style>
     </head>
     <body>
         <div class="container">
             <h1>🤖 Telegram Reminders</h1>
             <p>Reliable push notifications that actually work! No SMS fees, works on all devices.</p>
+            
+            <div class="emergency-panel">
+                <h3>🚨 EMERGENCY CONTROLS</h3>
+                <p>If buttons below are grayed out, use these direct links:</p>
+                <a href="/telegram/emergency_stop_now" class="btn critical">🛑 STOP SPAM NOW</a>
+                <a href="/telegram/setup_webhook_now" class="btn success">⚙️ SETUP WEBHOOK NOW</a>
+            </div>
             
             <div class="status-box">
                 <h3>Bot Status</h3>
