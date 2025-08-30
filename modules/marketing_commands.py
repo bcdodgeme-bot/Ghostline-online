@@ -10,37 +10,17 @@ def process_marketing_command(user_input, project, use_voices, random_toggle):
     
     lower_input = user_input.lower().strip()
     
-    # Check if it's a marketing command
-    marketing_triggers = [
-        'generate image', 'create image', 'make image',
-        'marketing asset', 'social post', 'campaign image',
-        'flux generate', 'flux create', 'flux make'
-    ]
-    
-    is_marketing_command = any(trigger in lower_input for trigger in marketing_triggers)
-    
-    if not is_marketing_command:
+    # Single command trigger - only "mockup" activates image generation
+    if not lower_input.startswith('mockup'):
         return {}, False
     
     try:
-        # Extract concept from command
-        concept = None
+        # Extract concept after "mockup"
+        concept = lower_input.replace('mockup', '', 1).strip()
         
-        # Pattern matching for different command formats
-        if 'generate image' in lower_input:
-            concept = re.sub(r'generate image (for |of |about )?', '', lower_input, flags=re.IGNORECASE).strip()
-        elif 'create image' in lower_input:
-            concept = re.sub(r'create image (for |of |about )?', '', lower_input, flags=re.IGNORECASE).strip()
-        elif 'marketing asset' in lower_input:
-            concept = re.sub(r'(create |make |generate )?(marketing asset (for |of |about )?)?', '', lower_input, flags=re.IGNORECASE).strip()
-        elif 'social post' in lower_input:
-            concept = re.sub(r'(create |make |generate )?(social post (for |about )?)?', '', lower_input, flags=re.IGNORECASE).strip()
-        elif 'flux' in lower_input:
-            concept = re.sub(r'flux (generate|create|make) ', '', lower_input, flags=re.IGNORECASE).strip()
-        
-        if not concept or len(concept.strip()) < 5:
+        if not concept or len(concept.strip()) < 3:
             return {
-                "SyntaxPrime": "I need more details about what image you want me to create. Try: 'generate image for summer sale announcement' or 'create social post about new product launch'"
+                "SyntaxPrime": "I need a description for the mockup. Try: 'mockup summer sale banner' or 'mockup tuxedo cat logo'"
             }, True
         
         # Generate the image

@@ -619,10 +619,19 @@
       // Close menu when clicking overlay
       menuOverlay.addEventListener('click', closeMenu);
       
-      // Close menu when clicking outside
+      // Close menu when clicking outside (but not on menu items)
       document.addEventListener('click', (e) => {
         if (!dropdownMenu.contains(e.target) && !hamburgerBtn.contains(e.target)) {
           closeMenu();
+        }
+      });
+      
+      // Prevent menu from closing when clicking menu items
+      dropdownMenu.addEventListener('click', (e) => {
+        // Only prevent closing if clicking on a link or button
+        if (e.target.closest('a, button')) {
+          // Let the link/button work normally, but close menu after a brief delay
+          setTimeout(() => closeMenu(), 100);
         }
       });
       
