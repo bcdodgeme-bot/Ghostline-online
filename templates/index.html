@@ -66,6 +66,8 @@
     .brand h1 { margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary); line-height: 1.2; }
     .brand .tagline { font-size: 0.75rem; color: var(--text-muted); line-height: 1; margin: 0; }
 
+    .header-right { display: flex; align-items: center; gap: 12px; }
+
     .status-indicator {
       display: flex; align-items: center; gap: 8px;
       padding: 6px 12px; background: var(--surface-hover);
@@ -75,6 +77,134 @@
 
     .status-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
     @keyframes pulse { 0%,100% {opacity:1;} 50% {opacity:0.5;} }
+
+    /* Hamburger Menu Styles */
+    .menu-container { position: relative; }
+    
+    .hamburger-btn {
+      background: var(--surface-hover);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      padding: 10px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      width: 40px;
+      height: 40px;
+    }
+    
+    .hamburger-btn:hover { 
+      background: var(--border); 
+      color: var(--text-primary); 
+      transform: translateY(-1px);
+    }
+    
+    .hamburger-icon {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    
+    .hamburger-line {
+      width: 16px;
+      height: 2px;
+      background: currentColor;
+      border-radius: 1px;
+      transition: all 0.3s ease;
+    }
+    
+    .hamburger-btn.active .hamburger-line:nth-child(1) {
+      transform: rotate(45deg) translate(5px, 5px);
+    }
+    
+    .hamburger-btn.active .hamburger-line:nth-child(2) {
+      opacity: 0;
+    }
+    
+    .hamburger-btn.active .hamburger-line:nth-child(3) {
+      transform: rotate(-45deg) translate(7px, -6px);
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      min-width: 280px;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: all 0.2s ease;
+      z-index: 1000;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    .dropdown-menu.show {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .menu-section {
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+    }
+
+    .menu-section:last-child {
+      border-bottom: none;
+    }
+
+    .menu-section-title {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      padding: 0 16px;
+      margin-bottom: 6px;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 16px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+      border: none;
+      background: none;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .menu-item:hover {
+      background: var(--surface-hover);
+      color: var(--text-primary);
+    }
+
+    .menu-icon {
+      width: 16px;
+      height: 16px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .menu-shortcut {
+      margin-left: auto;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
 
     .logout-btn {
       background: var(--surface-hover); color: var(--text-secondary);
@@ -181,12 +311,32 @@
       pointer-events: none; transform: none;
     }
 
+    /* Overlay for closing menu */
+    .menu-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s ease;
+    }
+
+    .menu-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
     /* Mobile */
     @media (max-width: 768px) {
       :root { --header-h: 56px; }
       header { padding: 0 16px; }
       .brand .tagline { display:none; }
       .status-indicator { display:none; }
+      .dropdown-menu { 
+        right: -8px; 
+        min-width: 260px; 
+        max-width: calc(100vw - 32px);
+      }
       .thread { padding:16px; gap:12px; }
       .message-bubble { max-width:85%; font-size:1rem; }
       .composer { padding:12px 16px; }
@@ -222,6 +372,8 @@
     </div>
   </div>
 
+  <div class="menu-overlay" id="menuOverlay"></div>
+
   <header>
     <div class="header-left">
       <img src="/static/syntax-buffering.png" alt="Syntax Prime" class="logo">
@@ -236,9 +388,118 @@
       <span>Syntax Prime Online</span>
     </div>
 
-    <form action="{{ url_for('logout') }}" method="get" style="display: inline;">
-      <button type="submit" class="logout-btn" onclick="return confirm('Log out of Ghostline?')">Logout</button>
-    </form>
+    <div class="header-right">
+      <div class="menu-container">
+        <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+          <div class="hamburger-icon">
+            <div class="hamburger-line"></div>
+            <div class="hamburger-line"></div>
+            <div class="hamburger-line"></div>
+          </div>
+        </button>
+        
+        <nav class="dropdown-menu" id="dropdownMenu">
+          <div class="menu-section">
+            <div class="menu-section-title">Main Dashboards</div>
+            <a href="/marketing" class="menu-item">
+              <span class="menu-icon">🎨</span>
+              <span>Marketing Assets</span>
+            </a>
+            <a href="/reports" class="menu-item">
+              <span class="menu-icon">📊</span>
+              <span>Reports & Analytics</span>
+            </a>
+            <a href="/brain" class="menu-item">
+              <span class="menu-icon">🧠</span>
+              <span>Brain Control</span>
+            </a>
+            <a href="/database" class="menu-item">
+              <span class="menu-icon">🗄️</span>
+              <span>Database Status</span>
+            </a>
+            <a href="/cloze" class="menu-item">
+              <span class="menu-icon">👥</span>
+              <span>CRM Integration</span>
+            </a>
+          </div>
+
+          <div class="menu-section">
+            <div class="menu-section-title">Marketing Tools</div>
+            <a href="/marketing/campaigns" class="menu-item">
+              <span class="menu-icon">🚀</span>
+              <span>Campaign Manager</span>
+            </a>
+            <a href="/marketing/assets" class="menu-item">
+              <span class="menu-icon">🖼️</span>
+              <span>Asset Library</span>
+            </a>
+            <a href="/api/marketing/status" class="menu-item">
+              <span class="menu-icon">⚡</span>
+              <span>FLUX Status</span>
+            </a>
+          </div>
+
+          <div class="menu-section">
+            <div class="menu-section-title">Reports & Briefings</div>
+            <a href="/reports/daily/today" class="menu-item">
+              <span class="menu-icon">📅</span>
+              <span>Today's Briefing</span>
+            </a>
+            <a href="/reports/daily/today.pdf" class="menu-item">
+              <span class="menu-icon">📄</span>
+              <span>Download PDF</span>
+            </a>
+            <a href="/cloze/briefing" class="menu-item">
+              <span class="menu-icon">☀️</span>
+              <span>CRM Morning Brief</span>
+            </a>
+            <a href="/cloze/pipeline" class="menu-item">
+              <span class="menu-icon">💼</span>
+              <span>Sales Pipeline</span>
+            </a>
+          </div>
+
+          <div class="menu-section">
+            <div class="menu-section-title">System Tools</div>
+            <a href="/healthz" class="menu-item">
+              <span class="menu-icon">❤️</span>
+              <span>Health Check</span>
+            </a>
+            <button onclick="location.reload()" class="menu-item">
+              <span class="menu-icon">🔄</span>
+              <span>Refresh Page</span>
+            </button>
+            <a href="/debug/rag" class="menu-item">
+              <span class="menu-icon">🔍</span>
+              <span>Debug RAG</span>
+            </a>
+          </div>
+
+          <div class="menu-section">
+            <div class="menu-section-title">Quick Actions</div>
+            <button onclick="document.getElementById('promptInput').value='good morning'; document.getElementById('mainForm').submit();" class="menu-item">
+              <span class="menu-icon">☀️</span>
+              <span>Morning Briefing</span>
+              <span class="menu-shortcut">Alt+M</span>
+            </button>
+            <button onclick="document.getElementById('promptInput').value='overnight'; document.getElementById('mainForm').submit();" class="menu-item">
+              <span class="menu-icon">📧</span>
+              <span>Check Email</span>
+              <span class="menu-shortcut">Alt+E</span>
+            </button>
+            <button onclick="document.getElementById('promptInput').value='calendar'; document.getElementById('mainForm').submit();" class="menu-item">
+              <span class="menu-icon">📅</span>
+              <span>Today's Calendar</span>
+              <span class="menu-shortcut">Alt+C</span>
+            </button>
+          </div>
+        </nav>
+      </div>
+
+      <form action="{{ url_for('logout') }}" method="get" style="display: inline;">
+        <button type="submit" class="logout-btn" onclick="return confirm('Log out of Ghostline?')">Logout</button>
+      </form>
+    </div>
   </header>
 
   <div class="chat-container">
@@ -341,8 +602,109 @@
     // Global variables
     let isSubmitting = false;
 
+    // Menu handling
+    function initializeMenu() {
+      const hamburgerBtn = document.getElementById('hamburgerBtn');
+      const dropdownMenu = document.getElementById('dropdownMenu');
+      const menuOverlay = document.getElementById('menuOverlay');
+      
+      if (!hamburgerBtn || !dropdownMenu || !menuOverlay) return;
+      
+      // Toggle menu
+      hamburgerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleMenu();
+      });
+      
+      // Close menu when clicking overlay
+      menuOverlay.addEventListener('click', closeMenu);
+      
+      // Close menu when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!dropdownMenu.contains(e.target) && !hamburgerBtn.contains(e.target)) {
+          closeMenu();
+        }
+      });
+      
+      // Close menu on escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeMenu();
+        }
+      });
+      
+      // Keyboard shortcuts
+      document.addEventListener('keydown', (e) => {
+        if (e.altKey && !e.ctrlKey && !e.shiftKey) {
+          switch(e.key.toLowerCase()) {
+            case 'm':
+              e.preventDefault();
+              sendQuickCommand('good morning');
+              break;
+            case 'e':
+              e.preventDefault();
+              sendQuickCommand('overnight');
+              break;
+            case 'c':
+              e.preventDefault();
+              sendQuickCommand('calendar');
+              break;
+          }
+        }
+      });
+    }
+    
+    function toggleMenu() {
+      const hamburgerBtn = document.getElementById('hamburgerBtn');
+      const dropdownMenu = document.getElementById('dropdownMenu');
+      const menuOverlay = document.getElementById('menuOverlay');
+      
+      const isOpen = dropdownMenu.classList.contains('show');
+      
+      if (isOpen) {
+        closeMenu();
+      } else {
+        openMenu();
+      }
+    }
+    
+    function openMenu() {
+      const hamburgerBtn = document.getElementById('hamburgerBtn');
+      const dropdownMenu = document.getElementById('dropdownMenu');
+      const menuOverlay = document.getElementById('menuOverlay');
+      
+      hamburgerBtn.classList.add('active');
+      dropdownMenu.classList.add('show');
+      menuOverlay.classList.add('show');
+    }
+    
+    function closeMenu() {
+      const hamburgerBtn = document.getElementById('hamburgerBtn');
+      const dropdownMenu = document.getElementById('dropdownMenu');
+      const menuOverlay = document.getElementById('menuOverlay');
+      
+      hamburgerBtn.classList.remove('active');
+      dropdownMenu.classList.remove('show');
+      menuOverlay.classList.remove('show');
+    }
+    
+    function sendQuickCommand(command) {
+      const promptInput = document.getElementById('promptInput');
+      const mainForm = document.getElementById('mainForm');
+      
+      if (promptInput && mainForm) {
+        promptInput.value = command;
+        closeMenu();
+        setTimeout(() => {
+          mainForm.submit();
+        }, 100);
+      }
+    }
+
     // Initialize all form handling
     function initializeApp() {
+      initializeMenu();
+      
       const promptInput = document.getElementById('promptInput');
       const mainForm = document.getElementById('mainForm');
       const sendButton = document.getElementById('sendBtn');

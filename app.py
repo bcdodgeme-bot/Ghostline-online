@@ -133,12 +133,13 @@ from modules.utils import (
 )
 
 # Section 6: Main Route with Enhanced Database Functionality
-
+# Section 6: Main Route with Enhanced Database Functionality
 # Section 6: Main Route with Enhanced Database Functionality
 # Section 6: Main Route with Enhanced Database Functionality
 
 from modules.gmail import process_gmail_command
 from modules.cloze_integration import process_cloze_command, is_cloze_configured
+from modules.marketing_commands import process_marketing_command, is_marketing_configured
 from utils.scraper import scrape_url
 
 @app.route('/', methods=['GET', 'POST'])
@@ -161,6 +162,13 @@ def index():
         response_data, handled = process_gmail_command(user_input, project, use_voices, random_toggle)
         if handled:
             return _render_enhanced(project, response_data)
+
+        # Try marketing commands (image generation)
+        if is_marketing_configured():
+            response_data, handled = process_marketing_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
 
         # Try Cloze commands
         if is_cloze_configured():
@@ -209,8 +217,8 @@ def index():
 
     return _render_enhanced(selected_project, response_data)
 
-# Section 7: Brain Building Endpoints and Dashboard
 
+# Section 7: Brain Building Endpoints and Dashboard
 # Section 7: Brain Building Endpoints and Dashboard
 
 from modules.brain import handle_build_brain, handle_build_new_brain, get_brain_status, get_brain_control_dashboard
@@ -994,6 +1002,7 @@ def cloze_dashboard():
 
 # Section 13: Marketing FLUX Integration Routes
 # Section 13: Marketing FLUX Integration Routes
+# Section 13: Marketing FLUX Integration Routes
 
 from modules.marketing_flux import (
     MarketingFluxGenerator, 
@@ -1001,74 +1010,6 @@ from modules.marketing_flux import (
     test_campaign_ideas, 
     create_full_campaign
 )
-
-# Marketing command processing for chat interface
-def process_marketing_command(user_input, project, use_voices, random_toggle):
-    """Process marketing-related commands in chat"""
-    
-    lower_input = user_input.lower().strip()
-    
-    # Check if it's a marketing command
-    marketing_triggers = [
-        'generate image', 'create image', 'make image',
-        'marketing asset', 'social post', 'campaign image',
-        'flux generate', 'flux create', 'flux make'
-    ]
-    
-    is_marketing_command = any(trigger in lower_input for trigger in marketing_triggers)
-    
-    if not is_marketing_command:
-        return {}, False
-    
-    try:
-        # Extract concept from command
-        import re
-        concept = None
-        
-        # Pattern matching for different command formats
-        if 'generate image' in lower_input:
-            concept = re.sub(r'generate image (for |of |about )?', '', lower_input, flags=re.IGNORECASE).strip()
-        elif 'create image' in lower_input:
-            concept = re.sub(r'create image (for |of |about )?', '', lower_input, flags=re.IGNORECASE).strip()
-        elif 'marketing asset' in lower_input:
-            concept = re.sub(r'(create |make |generate )?(marketing asset (for |of |about )?)?', '', lower_input, flags=re.IGNORECASE).strip()
-        elif 'social post' in lower_input:
-            concept = re.sub(r'(create |make |generate )?(social post (for |about )?)?', '', lower_input, flags=re.IGNORECASE).strip()
-        elif 'flux' in lower_input:
-            concept = re.sub(r'flux (generate|create|make) ', '', lower_input, flags=re.IGNORECASE).strip()
-        
-        if not concept or len(concept.strip()) < 5:
-            return {
-                "SyntaxPrime": "I need more details about what image you want me to create. Try: 'generate image for summer sale announcement' or 'create social post about new product launch'"
-            }, True
-        
-        # Generate the image
-        generator = MarketingFluxGenerator()
-        result = generator.create_and_wait(
-            prompt=concept,
-            style='corporate',
-            platform='instagram', 
-            quality='standard'
-        )
-        
-        if result['success']:
-            response_text = f"Marketing asset created successfully!\n\n**Concept**: {concept}\n**Format**: {result.get('format', 'Instagram Post')}\n**Cost**: ${result.get('estimated_cost', 0.030):.3f}\n**Generation Time**: {result.get('generation_time', 0):.1f}s\n\n**Image URL**: {result.get('image_url', 'Not available')}\n\nYou can download this from the Marketing Dashboard at /marketing"
-        else:
-            response_text = f"Image generation failed: {result.get('error', 'Unknown error')}\n\nTry rephrasing your request or check the Marketing Dashboard at /marketing"
-        
-        return {"SyntaxPrime": response_text}, True
-        
-    except Exception as e:
-        error_msg = f"Marketing command failed: {str(e)}\n\nYou can still use the Marketing Dashboard at /marketing for image generation."
-        return {"SyntaxPrime": error_msg}, True
-
-def is_marketing_configured():
-    """Check if marketing/FLUX is configured"""
-    try:
-        generator = MarketingFluxGenerator()
-        return True
-    except:
-        return False
 
 @app.route('/marketing')
 def marketing_dashboard():
@@ -1493,7 +1434,6 @@ def marketing_assets():
     except Exception as e:
         app.logger.error(f"Assets library error: {e}")
         return f"Assets library error: {str(e)}", 500
-
 
 # Section 10: Debug Routes, Authentication, and App Startup
 
