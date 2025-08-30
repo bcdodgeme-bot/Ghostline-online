@@ -179,7 +179,7 @@ class GhostlineTelegramReminders:
         return {"success": False, "error": "Database not available"}
     
     def check_and_send_reminders(self):
-        """Check for due reminders and send via Telegram"""
+        """Check for due reminders and send via Telegram - FIXED TO PREVENT SPAM"""
         if not self.bot:
             return {"sent": 0, "error": "Telegram not configured"}
         
@@ -191,6 +191,7 @@ class GhostlineTelegramReminders:
                 cursor = conn.cursor()
                 
                 # Get pending reminders that are due (not snoozed)
+                # CRITICAL FIX: Only get 'pending' status, not 'sent'
                 cursor.execute('''
                     SELECT reminder_id, reminder_type, title, content, priority, 
                            project, remind_at, repeat_pattern
@@ -208,6 +209,13 @@ class GhostlineTelegramReminders:
                 for reminder in due_reminders:
                     (reminder_id, reminder_type, title, content, priority, 
                      project, remind_at, repeat_pattern) = reminder
+                    
+                    # CRITICAL FIX: Immediately mark as 'sent' to prevent duplicates
+                    cursor.execute('''
+                        UPDATE telegram_reminders 
+                        SET status = 'sent' 
+                        WHERE reminder_id = %s
+                    ''', (reminder_id,))
                     
                     # Format Telegram message with markdown
                     message_parts = ["🔔 *GHOSTLINE REMINDER*"]
@@ -238,7 +246,7 @@ class GhostlineTelegramReminders:
                             ],
                             [
                                 {"text": "⏰ Snooze 1h", "callback_data": f"snooze60_{reminder_id}"},
-                                {"text": "📝 More Info", "callback_data": f"info_{reminder_id}"}
+                                {"text": "🔍 More Info", "callback_data": f"info_{reminder_id}"}
                             ]
                         ]
                     }
@@ -249,13 +257,6 @@ class GhostlineTelegramReminders:
                     result = self.bot.send_message(telegram_message, reply_markup=reply_markup)
                     
                     if result["success"]:
-                        # Mark as sent
-                        cursor.execute('''
-                            UPDATE telegram_reminders 
-                            SET status = 'sent' 
-                            WHERE reminder_id = %s
-                        ''', (reminder_id,))
-                        
                         # Track the sent message
                         cursor.execute('''
                             INSERT INTO telegram_messages 
@@ -270,6 +271,12 @@ class GhostlineTelegramReminders:
                         if repeat_pattern:
                             self._schedule_repeat(reminder_id, repeat_pattern, remind_at, cursor)
                     else:
+                        # If send failed, revert to pending
+                        cursor.execute('''
+                            UPDATE telegram_reminders 
+                            SET status = 'pending' 
+                            WHERE reminder_id = %s
+                        ''', (reminder_id,))
                         current_app.logger.error(f"Failed to send reminder {reminder_id}: {result['error']}")
                 
                 conn.commit()
@@ -337,6 +344,8 @@ class GhostlineTelegramReminders:
             data = callback_query.get('data', '')
             message_id = callback_query.get('message', {}).get('message_id')
             
+            current_app.logger.info(f"Processing callback: {data} for message: {message_id}")
+            
             if data.startswith('done_'):
                 reminder_id = data[5:]
                 return self._handle_done(reminder_id, message_id)
@@ -372,9 +381,11 @@ class GhostlineTelegramReminders:
                     
                     # Send confirmation
                     self.bot.send_message("✅ *Reminder marked as completed!*")
+                    current_app.logger.info(f"Reminder {reminder_id} marked as completed")
                     return {"success": True, "action": "completed"}
                     
                 except Exception as e:
+                    current_app.logger.error(f"Failed to mark reminder as done: {e}")
                     return {"success": False, "error": str(e)}
     
     def _handle_snooze(self, reminder_id, minutes, message_id):
@@ -397,9 +408,11 @@ class GhostlineTelegramReminders:
                     eastern_snooze = self._utc_to_eastern(snooze_until)
                     time_str = eastern_snooze.strftime('%I:%M %p')
                     self.bot.send_message(f"⏰ *Reminder snoozed until {time_str}*")
+                    current_app.logger.info(f"Reminder {reminder_id} snoozed until {snooze_until}")
                     return {"success": True, "action": "snoozed", "until": snooze_until}
                     
                 except Exception as e:
+                    current_app.logger.error(f"Failed to snooze reminder: {e}")
                     return {"success": False, "error": str(e)}
     
     def _handle_info_request(self, reminder_id):
@@ -418,7 +431,7 @@ class GhostlineTelegramReminders:
                     if result:
                         title, content, project, created_at, priority = result
                         
-                        info_parts = [f"📝 *Reminder Details*"]
+                        info_parts = [f"🔍 *Reminder Details*"]
                         info_parts.append(f"*Title:* {title}")
                         
                         if content:
@@ -444,7 +457,33 @@ class GhostlineTelegramReminders:
                         return {"success": False, "error": "Reminder not found"}
                         
                 except Exception as e:
+                    current_app.logger.error(f"Failed to get reminder info: {e}")
                     return {"success": False, "error": str(e)}
+    
+    def emergency_stop_all(self):
+        """Emergency function to stop all pending reminders"""
+        with get_db_connection() as conn:
+            if conn:
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        UPDATE telegram_reminders 
+                        SET status = 'emergency_stopped', 
+                            snooze_until = NULL
+                        WHERE status IN ('pending', 'sent')
+                    ''')
+                    
+                    stopped_count = cursor.rowcount
+                    conn.commit()
+                    
+                    current_app.logger.info(f"Emergency stop: {stopped_count} reminders stopped")
+                    return {"success": True, "stopped_count": stopped_count}
+                    
+                except Exception as e:
+                    current_app.logger.error(f"Emergency stop failed: {e}")
+                    return {"success": False, "error": str(e)}
+        
+        return {"success": False, "error": "Database not available"}
     
     def quick_reminder(self, message, minutes_from_now=60, project=None):
         """Create a quick reminder for X minutes from now"""

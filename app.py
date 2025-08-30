@@ -1507,6 +1507,8 @@ def marketing_assets():
 
 # Section 14: Telegram Integration Routes and Background Services
 # Section 14: Telegram Integration Routes and Background Services
+# Section 14: Telegram Integration Routes and Background Services
+# Section 14: Telegram Integration Routes and Background Services
 
 # Add this route for manual reminder checking
 @app.route('/reminders/check', methods=['POST'])
@@ -1522,55 +1524,126 @@ def check_telegram_reminders():
     result = reminders.check_and_send_reminders()
     return jsonify(result)
 
-# Add Telegram webhook endpoint
-@app.route('/telegram/webhook', methods=['POST'])
-def telegram_webhook():
-    """Handle Telegram webhook for button responses"""
-    try:
-        data = request.get_json()
-        
-        # Handle callback queries (button presses)
-        if 'callback_query' in data:
-            reminders = GhostlineTelegramReminders()
-            result = reminders.process_callback_query(data['callback_query'])
-            return jsonify({"ok": True})
-        
-        # Handle regular messages (could add chat interface later)
-        if 'message' in data:
-            # For now, just acknowledge
-            return jsonify({"ok": True})
-        
-        return jsonify({"ok": True})
-        
-    except Exception as e:
-        app.logger.error(f"Telegram webhook failed: {e}")
-        return jsonify({"ok": False}), 500
-
-# Add webhook setup route
-@app.route('/telegram/setup_webhook', methods=['POST'])
-def setup_telegram_webhook():
-    """Setup Telegram webhook"""
+# Emergency stop route
+@app.route('/telegram/emergency_stop', methods=['POST'])
+def emergency_stop_reminders():
+    """EMERGENCY: Stop all pending reminders to prevent spam"""
     if not session.get('logged_in'):
         return "Unauthorized", 401
     
+    try:
+        reminders = GhostlineTelegramReminders()
+        result = reminders.emergency_stop_all()
+        return jsonify(result)
+    except Exception as e:
+        app.logger.error(f"Emergency stop failed: {e}")
+        return jsonify({"success": False, "error": str(e)})
+
+# Enhanced Telegram webhook endpoint
+@app.route('/telegram/webhook', methods=['POST'])
+def telegram_webhook():
+    """Enhanced Telegram webhook handler with detailed logging"""
+    try:
+        data = request.get_json()
+        app.logger.info(f"Telegram webhook received: {data}")
+        
+        # Handle callback queries (button presses)
+        if 'callback_query' in data:
+            callback_query = data['callback_query']
+            app.logger.info(f"Processing callback: {callback_query.get('data', 'no data')}")
+            
+            reminders = GhostlineTelegramReminders()
+            result = reminders.process_callback_query(callback_query)
+            
+            app.logger.info(f"Callback result: {result}")
+            
+            # Send callback answer to remove loading state
+            callback_id = callback_query.get('id')
+            if callback_id:
+                bot = reminders.bot
+                answer_url = f"https://api.telegram.org/bot{bot.token}/answerCallbackQuery"
+                requests.post(answer_url, json={
+                    "callback_query_id": callback_id,
+                    "text": "Action processed!" if result.get('success') else "Action failed"
+                })
+            
+            return jsonify({"ok": True})
+        
+        # Handle regular messages
+        if 'message' in data:
+            app.logger.info(f"Received message: {data['message'].get('text', 'no text')}")
+            return jsonify({"ok": True})
+        
+        app.logger.info("Webhook received unknown data type")
+        return jsonify({"ok": True})
+        
+    except Exception as e:
+        app.logger.error(f"Telegram webhook failed: {e}", exc_info=True)
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+# Enhanced webhook setup route
+@app.route('/telegram/setup_webhook', methods=['POST'])
+def setup_telegram_webhook():
+    """Setup Telegram webhook - FIXED VERSION"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    # Get webhook URL from environment or construct it
     webhook_url = os.getenv('WEBHOOK_URL')
+    
     if not webhook_url:
-        return jsonify({"success": False, "error": "WEBHOOK_URL not configured"}), 400
+        # Construct from Railway URL if available
+        railway_url = os.getenv('RAILWAY_STATIC_URL')
+        if railway_url:
+            webhook_url = f"https://{railway_url}/telegram/webhook"
+        else:
+            return jsonify({
+                "success": False, 
+                "error": "WEBHOOK_URL not configured and RAILWAY_STATIC_URL not found"
+            }), 400
     
     try:
         from modules.telegram_notifications import TelegramBot
         bot = TelegramBot()
+        
+        # Set the webhook
         response = requests.post(
             f"https://api.telegram.org/bot{bot.token}/setWebhook",
-            json={"url": webhook_url}
+            json={
+                "url": webhook_url,
+                "allowed_updates": ["callback_query", "message"]
+            }
         )
         result = response.json()
+        
+        app.logger.info(f"Webhook setup result: {result}")
         
         return jsonify({
             "success": result.get('ok', False),
             "description": result.get('description', ''),
-            "webhook_url": webhook_url
+            "webhook_url": webhook_url,
+            "raw_response": result
         })
+        
+    except Exception as e:
+        app.logger.error(f"Webhook setup failed: {e}")
+        return jsonify({"success": False, "error": str(e)})
+
+# Add webhook info route
+@app.route('/telegram/webhook_info')
+def telegram_webhook_info():
+    """Get current webhook information"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    try:
+        from modules.telegram_notifications import TelegramBot
+        bot = TelegramBot()
+        
+        response = requests.get(f"https://api.telegram.org/bot{bot.token}/getWebhookInfo")
+        result = response.json()
+        
+        return jsonify(result)
         
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
@@ -1620,7 +1693,7 @@ def telegram_status():
     
     return jsonify(status)
 
-# Add Telegram dashboard with webhook setup
+# Add Telegram dashboard with webhook setup and emergency stop
 @app.route('/telegram')
 def telegram_dashboard():
     """Telegram integration dashboard"""
@@ -1667,7 +1740,6 @@ def telegram_dashboard():
             .error { color: #ef4444; }
             .warning { color: #f59e0b; }
             .critical { color: #dc2626; }
-            pre { background: #000; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 12px; }
             .setup-steps { background: #1a1a1a; padding: 20px; border-radius: 8px; margin: 15px 0; }
             .setup-steps h4 { color: #6366f1; margin: 0 0 10px 0; }
             .setup-steps ol li { margin: 10px 0; }
@@ -1712,7 +1784,7 @@ def telegram_dashboard():
                 <button class="btn" onclick="checkReminders()">Send Due Reminders Now</button>
                 <button class="btn warning" onclick="testReminder()">Send Test Reminder</button>
                 <button class="btn success" id="webhook-btn" onclick="setupWebhook()" style="display: none;">Setup Webhook</button>
-                <button class="btn critical" onclick="stopSpam()">Stop Reminder Spam</button>
+                <button class="btn critical" onclick="emergencyStop()">🚨 EMERGENCY STOP SPAM</button>
                 <button class="btn" onclick="refreshStatus()">Refresh Status</button>
             </div>
             
@@ -1742,7 +1814,7 @@ def telegram_dashboard():
                             <span style="background: #059669; padding: 5px 10px; border-radius: 15px; margin: 2px;">✅ Done</span>
                             <span style="background: #d97706; padding: 5px 10px; border-radius: 15px; margin: 2px;">⏰ Snooze 15m</span><br>
                             <span style="background: #d97706; padding: 5px 10px; border-radius: 15px; margin: 2px;">⏰ Snooze 1h</span>
-                            <span style="background: #6366f1; padding: 5px 10px; border-radius: 15px; margin: 2px;">📝 More Info</span>
+                            <span style="background: #6366f1; padding: 5px 10px; border-radius: 15px; margin: 2px;">🔍 More Info</span>
                         </div>
                     </div>
                 </div>
@@ -1812,10 +1884,18 @@ def telegram_dashboard():
                     .catch(e => alert('Failed to setup webhook'));
             }
             
-            function stopSpam() {
-                if (confirm('This will mark all pending reminders as completed to stop spam. Continue?')) {
-                    // This would need a separate endpoint to bulk update reminders
-                    alert('Contact admin to manually stop reminder spam via database.');
+            function emergencyStop() {
+                if (confirm('🚨 EMERGENCY STOP: This will mark all pending reminders as completed to stop spam. Continue?')) {
+                    fetch('/telegram/emergency_stop', { method: 'POST' })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert(`🛑 Emergency stop successful! Stopped ${data.stopped_count} reminders.`);
+                            } else {
+                                alert('Emergency stop failed: ' + data.error);
+                            }
+                        })
+                        .catch(e => alert('Emergency stop request failed'));
                 }
             }
             
@@ -1858,28 +1938,49 @@ def telegram_dashboard():
     </html>
     ''')
 
-# Background reminder checker function
-def reminder_checker():
-    """Background thread to check reminders every 2 minutes"""
+# Safe reminder checker function with error handling
+def safe_reminder_checker():
+    """Background thread with safety checks to prevent infinite loops"""
+    consecutive_errors = 0
+    max_errors = 5
+    
     while True:
         try:
-            if is_telegram_configured():
+            if is_telegram_configured() and consecutive_errors < max_errors:
                 reminders = GhostlineTelegramReminders()
                 result = reminders.check_and_send_reminders()
+                
                 if result["sent"] > 0:
                     print(f"Sent {result['sent']} reminders")
+                    consecutive_errors = 0  # Reset error count on success
+                elif "error" in result:
+                    consecutive_errors += 1
+                    print(f"Reminder check error #{consecutive_errors}: {result['error']}")
+            else:
+                if consecutive_errors >= max_errors:
+                    print(f"Too many consecutive errors ({consecutive_errors}), pausing reminder checker for 10 minutes")
+                    time.sleep(600)  # Wait 10 minutes before trying again
+                    consecutive_errors = 0
+                    
         except Exception as e:
-            print(f"Reminder check failed: {e}")
+            consecutive_errors += 1
+            print(f"Reminder check failed #{consecutive_errors}: {e}")
         
-        time.sleep(120)  # Check every 2 minutes
+        # Only sleep if we're not in error recovery mode
+        if consecutive_errors < max_errors:
+            time.sleep(120)  # Check every 2 minutes
 
-# Start background checker only on Railway
-if os.getenv('RAILWAY_ENVIRONMENT'):
-    checker_thread = threading.Thread(target=reminder_checker, daemon=True)
-    checker_thread.start()
-    print("Telegram reminder checker started")
+# Start background checker only on Railway - TEMPORARILY DISABLED TO FIX SPAM
+# if os.getenv('RAILWAY_ENVIRONMENT'):
+#     checker_thread = threading.Thread(target=safe_reminder_checker, daemon=True)
+#     checker_thread.start()
+#     print("Telegram reminder checker started")
+# else:
+#     print("Telegram reminder checker disabled (not on Railway)")
 
 
+# Section 10: Debug Routes, Authentication, and App Startup
+# Section 10: Debug Routes, Authentication, and App Startup
 # Section 10: Debug Routes, Authentication, and App Startup
 # Section 10: Debug Routes, Authentication, and App Startup
 
@@ -1932,28 +2033,65 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# Background reminder checker function
-def reminder_checker():
-    """Background thread to check reminders every 2 minutes"""
+# Safe reminder checker function with proper error handling and safety limits
+def safe_reminder_checker():
+    """Background thread with safety checks to prevent infinite loops and spam"""
+    consecutive_errors = 0
+    max_errors = 5
+    last_check_time = datetime.datetime.now()
+    
     while True:
         try:
-            if is_telegram_configured():
+            current_time = datetime.datetime.now()
+            
+            # Safety check: don't run if we just ran (prevent rapid fire)
+            if (current_time - last_check_time).total_seconds() < 100:
+                time.sleep(30)
+                continue
+            
+            if is_telegram_configured() and consecutive_errors < max_errors:
                 reminders = GhostlineTelegramReminders()
                 result = reminders.check_and_send_reminders()
+                
                 if result["sent"] > 0:
-                    print(f"Sent {result['sent']} reminders")
+                    print(f"Sent {result['sent']} reminders at {current_time}")
+                    consecutive_errors = 0  # Reset error count on success
+                elif "error" in result:
+                    consecutive_errors += 1
+                    print(f"Reminder check error #{consecutive_errors}: {result['error']}")
+                
+                last_check_time = current_time
+                
+            else:
+                if consecutive_errors >= max_errors:
+                    print(f"Too many consecutive errors ({consecutive_errors}), pausing reminder checker for 10 minutes")
+                    time.sleep(600)  # Wait 10 minutes before trying again
+                    consecutive_errors = 0
+                    
         except Exception as e:
-            print(f"Reminder check failed: {e}")
+            consecutive_errors += 1
+            print(f"Reminder check failed #{consecutive_errors}: {e}")
+            
+            # If we hit max errors, wait longer
+            if consecutive_errors >= max_errors:
+                time.sleep(600)
+                consecutive_errors = 0
         
+        # Standard sleep interval
         time.sleep(120)  # Check every 2 minutes
 
 # --- APP STARTUP ---
 if __name__ == '__main__':
-    # Start background reminder checker only on Railway
-    if os.getenv('RAILWAY_ENVIRONMENT'):
-        checker_thread = threading.Thread(target=reminder_checker, daemon=True)
-        checker_thread.start()
-        print("Telegram reminder checker started")
+    # TEMPORARILY DISABLE background checker to stop spam
+    # We'll enable it after webhook is properly set up
+    print("Telegram reminder checker TEMPORARILY DISABLED to prevent spam")
+    print("Visit /telegram to set up webhook, then manually enable checker")
+    
+    # Uncomment this line ONLY after webhook is working:
+    # if os.getenv('RAILWAY_ENVIRONMENT'):
+    #     checker_thread = threading.Thread(target=safe_reminder_checker, daemon=True)
+    #     checker_thread.start()
+    #     print("Telegram reminder checker started")
     
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
