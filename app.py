@@ -144,6 +144,7 @@ from modules.utils import (
 # Section 6: Main Route with Enhanced Database Functionality
 # Section 6: Main Route with Enhanced Database Functionality
 # Section 6: Main Route with Enhanced Database Functionality
+# Section 6: Main Route with Enhanced Database Functionality
 
 from modules.gmail import process_gmail_command
 from modules.cloze_integration import process_cloze_command, is_cloze_configured
@@ -185,10 +186,12 @@ def handle_reminder_command(user_input, project, use_voices, random_toggle):
         )
         
         if result["success"]:
-            time_str = result["remind_at"].strftime('%I:%M %p on %B %d')
+            # Use display_time from parsing instead of remind_at for correct timezone display
+            display_time = parsed.get("display_time", result["remind_at"].strftime('%I:%M %p on %B %d'))
+            
             response_text = f"✅ **Reminder Created!**\n\n"
             response_text += f"**What:** {parsed['title']}\n"
-            response_text += f"**When:** {time_str}\n"
+            response_text += f"**When:** {display_time}\n"
             response_text += f"**Project:** {project}\n\n"
             response_text += "You'll receive a Telegram notification with action buttons to mark complete or snooze."
             
@@ -283,8 +286,6 @@ def index():
             save_conversation_enhanced(project, user_input, response_data)
 
     return _render_enhanced(selected_project, response_data)
-
-
 
 # Section 7: Brain Building Endpoints and Dashboard
 # Section 7: Brain Building Endpoints and Dashboard
@@ -1505,6 +1506,7 @@ def marketing_assets():
 
 
 # Section 14: Telegram Integration Routes and Background Services
+# Section 14: Telegram Integration Routes and Background Services
 
 # Add this route for manual reminder checking
 @app.route('/reminders/check', methods=['POST'])
@@ -1544,6 +1546,35 @@ def telegram_webhook():
         app.logger.error(f"Telegram webhook failed: {e}")
         return jsonify({"ok": False}), 500
 
+# Add webhook setup route
+@app.route('/telegram/setup_webhook', methods=['POST'])
+def setup_telegram_webhook():
+    """Setup Telegram webhook"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    webhook_url = os.getenv('WEBHOOK_URL')
+    if not webhook_url:
+        return jsonify({"success": False, "error": "WEBHOOK_URL not configured"}), 400
+    
+    try:
+        from modules.telegram_notifications import TelegramBot
+        bot = TelegramBot()
+        response = requests.post(
+            f"https://api.telegram.org/bot{bot.token}/setWebhook",
+            json={"url": webhook_url}
+        )
+        result = response.json()
+        
+        return jsonify({
+            "success": result.get('ok', False),
+            "description": result.get('description', ''),
+            "webhook_url": webhook_url
+        })
+        
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
 # Add Telegram status check
 @app.route('/telegram/status')
 def telegram_status():
@@ -1565,7 +1596,6 @@ def telegram_status():
             bot = TelegramBot()
             
             # Test bot connection
-            import requests
             response = requests.get(f"https://api.telegram.org/bot{bot.token}/getMe")
             result = response.json()
             
@@ -1590,7 +1620,7 @@ def telegram_status():
     
     return jsonify(status)
 
-# Add Telegram dashboard
+# Add Telegram dashboard with webhook setup
 @app.route('/telegram')
 def telegram_dashboard():
     """Telegram integration dashboard"""
@@ -1620,6 +1650,7 @@ def telegram_dashboard():
             .btn:hover { background: #5855eb; }
             .btn.success { background: #059669; }
             .btn.warning { background: #d97706; }
+            .btn.critical { background: #dc2626; }
             .commands-grid {
                 display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
                 gap: 15px; margin: 20px 0;
@@ -1635,10 +1666,15 @@ def telegram_dashboard():
             .success { color: #10b981; }
             .error { color: #ef4444; }
             .warning { color: #f59e0b; }
+            .critical { color: #dc2626; }
             pre { background: #000; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 12px; }
             .setup-steps { background: #1a1a1a; padding: 20px; border-radius: 8px; margin: 15px 0; }
             .setup-steps h4 { color: #6366f1; margin: 0 0 10px 0; }
             .setup-steps ol li { margin: 10px 0; }
+            .webhook-warning {
+                background: #dc2626; color: white; padding: 15px; border-radius: 8px; margin: 15px 0;
+                font-weight: bold; text-align: center;
+            }
         </style>
     </head>
     <body>
@@ -1650,6 +1686,10 @@ def telegram_dashboard():
                 <h3>Bot Status</h3>
                 <div id="status">Loading...</div>
                 
+                <div class="webhook-warning" id="webhook-warning" style="display: none;">
+                    ⚠️ WEBHOOK NOT SET UP - Button clicks won't work! Click "Setup Webhook" below.
+                </div>
+                
                 <div class="setup-steps" id="setup-steps" style="display: none;">
                     <h4>Setup Instructions:</h4>
                     <ol>
@@ -1659,8 +1699,10 @@ def telegram_dashboard():
                         <li>Choose username: "ghostline_yourname_bot"</li>
                         <li>Copy the bot token</li>
                         <li>Add <strong>TELEGRAM_BOT_TOKEN</strong> to Railway environment</li>
+                        <li>Set <strong>WEBHOOK_URL</strong> to your Railway URL + /telegram/webhook</li>
                         <li>Restart Ghostline</li>
                         <li>Message your bot to activate</li>
+                        <li>Click "Setup Webhook" button below</li>
                     </ol>
                 </div>
             </div>
@@ -1669,8 +1711,9 @@ def telegram_dashboard():
                 <h3>Quick Actions</h3>
                 <button class="btn" onclick="checkReminders()">Send Due Reminders Now</button>
                 <button class="btn warning" onclick="testReminder()">Send Test Reminder</button>
+                <button class="btn success" id="webhook-btn" onclick="setupWebhook()" style="display: none;">Setup Webhook</button>
+                <button class="btn critical" onclick="stopSpam()">Stop Reminder Spam</button>
                 <button class="btn" onclick="refreshStatus()">Refresh Status</button>
-                <button class="btn" onclick="showActiveReminders()">Show Active Reminders</button>
             </div>
             
             <div class="status-box">
@@ -1694,7 +1737,7 @@ def telegram_dashboard():
                     
                     <div class="command-card">
                         <div class="command-title">Button Actions</div>
-                        <p>Interactive buttons in Telegram:</p>
+                        <p>Interactive buttons in Telegram (after webhook setup):</p>
                         <div style="margin: 10px 0;">
                             <span style="background: #059669; padding: 5px 10px; border-radius: 15px; margin: 2px;">✅ Done</span>
                             <span style="background: #d97706; padding: 5px 10px; border-radius: 15px; margin: 2px;">⏰ Snooze 15m</span><br>
@@ -1703,11 +1746,6 @@ def telegram_dashboard():
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            <div class="status-box">
-                <h3>Active Reminders</h3>
-                <div id="active-reminders">Loading...</div>
             </div>
             
             <div class="status-box">
@@ -1723,26 +1761,62 @@ def telegram_dashboard():
                     .then(data => {
                         const statusDiv = document.getElementById('status');
                         const setupDiv = document.getElementById('setup-steps');
+                        const webhookWarning = document.getElementById('webhook-warning');
+                        const webhookBtn = document.getElementById('webhook-btn');
                         
                         if (!data.configured) {
                             statusDiv.innerHTML = '<span class="warning">⚠️ Bot Token Not Configured</span>';
                             setupDiv.style.display = 'block';
+                            webhookWarning.style.display = 'none';
+                            webhookBtn.style.display = 'none';
                         } else if (data.connection_working && data.bot_info) {
                             statusDiv.innerHTML = `
                                 <span class="success">✅ Bot Connected</span><br>
                                 <strong>Bot:</strong> @${data.bot_info.username}<br>
                                 <strong>Name:</strong> ${data.bot_info.first_name}<br>
-                                <strong>Chat ID:</strong> ${data.chat_id || 'Auto-detecting...'}
+                                <strong>Chat ID:</strong> ${data.chat_id || 'Auto-detecting...'}<br>
+                                <strong>Webhook:</strong> ${data.webhook_set ? '<span class="success">✅ Set</span>' : '<span class="error">❌ Not Set</span>'}
                             `;
                             setupDiv.style.display = 'none';
+                            
+                            if (data.webhook_set) {
+                                webhookWarning.style.display = 'none';
+                                webhookBtn.style.display = 'none';
+                            } else {
+                                webhookWarning.style.display = 'block';
+                                webhookBtn.style.display = 'inline-block';
+                            }
                         } else {
                             statusDiv.innerHTML = `<span class="error">❌ Connection Failed</span><br>${data.error || 'Unknown error'}`;
                             setupDiv.style.display = 'block';
+                            webhookWarning.style.display = 'none';
+                            webhookBtn.style.display = 'none';
                         }
                     })
                     .catch(e => {
                         document.getElementById('status').innerHTML = '<span class="error">❌ Status Check Failed</span>';
                     });
+            }
+            
+            function setupWebhook() {
+                fetch('/telegram/setup_webhook', { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('✅ Webhook setup successful! Button clicks should now work.');
+                            refreshStatus();
+                        } else {
+                            alert('❌ Webhook setup failed: ' + (data.error || data.description));
+                        }
+                    })
+                    .catch(e => alert('Failed to setup webhook'));
+            }
+            
+            function stopSpam() {
+                if (confirm('This will mark all pending reminders as completed to stop spam. Continue?')) {
+                    // This would need a separate endpoint to bulk update reminders
+                    alert('Contact admin to manually stop reminder spam via database.');
+                }
             }
             
             function checkReminders() {
@@ -1759,7 +1833,6 @@ def telegram_dashboard():
             }
             
             function testReminder() {
-                // Create a test reminder for 1 minute from now
                 const testMessage = "This is a test reminder from Ghostline! 🚀";
                 
                 fetch('/', {
@@ -1777,11 +1850,6 @@ def telegram_dashboard():
                 .catch(e => alert('Failed to create test reminder'));
             }
             
-            function showActiveReminders() {
-                // This would fetch and display active reminders
-                document.getElementById('active-reminders').innerHTML = 'Feature coming soon...';
-            }
-            
             // Auto-refresh every 30 seconds
             refreshStatus();
             setInterval(refreshStatus, 30000);
@@ -1790,7 +1858,7 @@ def telegram_dashboard():
     </html>
     ''')
 
-# Background reminder checker (add at the end of the file, before if __name__ == '__main__':)
+# Background reminder checker function
 def reminder_checker():
     """Background thread to check reminders every 2 minutes"""
     while True:

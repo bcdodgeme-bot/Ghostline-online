@@ -1,5 +1,5 @@
 # modules/telegram_notifications.py
-# Telegram Bot notification system with reminder persistence
+# Telegram Bot notification system with reminder persistence and timezone handling
 
 import os
 import json
@@ -224,8 +224,9 @@ class GhostlineTelegramReminders:
                     if content and content.strip():
                         message_parts.append(f"\n{content}")
                     
-                    # Time info
-                    time_str = remind_at.strftime('%I:%M %p on %b %d')
+                    # Time info - convert UTC to Eastern for display
+                    eastern_time = self._utc_to_eastern(remind_at)
+                    time_str = eastern_time.strftime('%I:%M %p on %b %d')
                     message_parts.append(f"\n⏰ *Scheduled:* {time_str}")
                     
                     # Add quick action buttons
@@ -278,6 +279,23 @@ class GhostlineTelegramReminders:
             except Exception as e:
                 current_app.logger.error(f"Telegram reminder check failed: {e}")
                 return {"sent": 0, "error": str(e)}
+    
+    def _utc_to_eastern(self, utc_time):
+        """Convert UTC time to Eastern time for display"""
+        # Simple timezone conversion - Eastern is UTC-5 (EST) or UTC-4 (EDT)
+        # This is approximate - doesn't handle DST transitions perfectly
+        import calendar
+        
+        # Check if we're in DST period (rough approximation)
+        now = datetime.datetime.now()
+        is_dst = now.month >= 3 and now.month <= 10  # March through October
+        
+        if is_dst:
+            offset = -4  # EDT
+        else:
+            offset = -5  # EST
+        
+        return utc_time + datetime.timedelta(hours=offset)
     
     def _schedule_repeat(self, reminder_id, repeat_pattern, original_time, cursor):
         """Schedule next occurrence for repeating reminders"""
@@ -375,7 +393,9 @@ class GhostlineTelegramReminders:
                     
                     conn.commit()
                     
-                    time_str = snooze_until.strftime('%I:%M %p')
+                    # Convert to Eastern for display
+                    eastern_snooze = self._utc_to_eastern(snooze_until)
+                    time_str = eastern_snooze.strftime('%I:%M %p')
                     self.bot.send_message(f"⏰ *Reminder snoozed until {time_str}*")
                     return {"success": True, "action": "snoozed", "until": snooze_until}
                     
@@ -410,7 +430,9 @@ class GhostlineTelegramReminders:
                         priority_names = {1: "URGENT", 2: "HIGH", 3: "NORMAL"}
                         info_parts.append(f"*Priority:* {priority_names.get(priority, 'NORMAL')}")
                         
-                        created_str = created_at.strftime('%I:%M %p on %b %d')
+                        # Convert created time to Eastern
+                        eastern_created = self._utc_to_eastern(created_at)
+                        created_str = eastern_created.strftime('%I:%M %p on %b %d')
                         info_parts.append(f"*Created:* {created_str}")
                         
                         info_message = "\n".join(info_parts)
@@ -471,7 +493,7 @@ class GhostlineTelegramReminders:
                     return []
 
 def parse_reminder_command(user_input, project=None):
-    """Parse natural language reminder commands"""
+    """Parse natural language reminder commands with Eastern timezone"""
     
     # Clean up the input
     original_input = user_input
@@ -518,14 +540,22 @@ def parse_reminder_command(user_input, project=None):
             "error": "No reminder content found. Try: 'remind me to call John in 30 minutes'"
         }
     
-    remind_at = datetime.datetime.now() + remind_delta
+    # Calculate Eastern time first, then store as UTC
+    eastern_time = datetime.datetime.now() + remind_delta
+    
+    # Convert Eastern to UTC for storage (approximate)
+    now = datetime.datetime.now()
+    is_dst = now.month >= 3 and now.month <= 10  # Rough DST check
+    utc_offset = 4 if is_dst else 5  # EDT is UTC-4, EST is UTC-5
+    utc_time = eastern_time + datetime.timedelta(hours=utc_offset)
     
     return {
         "success": True,
         "title": reminder_text,
-        "remind_at": remind_at,
+        "remind_at": utc_time,  # Store in UTC
         "project": project,
-        "remind_delta": remind_delta
+        "remind_delta": remind_delta,
+        "display_time": eastern_time.strftime('%I:%M %p on %B %d')  # Eastern display
     }
 
 def parse_tomorrow_time(hour, period):
