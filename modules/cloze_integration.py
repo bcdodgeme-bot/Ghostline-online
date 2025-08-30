@@ -18,7 +18,6 @@ class ClozeClient:
         self.api_key = api_key or CLOZE_API_KEY
         self.base_url = CLOZE_API_BASE
         self.headers = {
-            'Authorization': f'Bearer {self.api_key}',
             'Content-Type': 'application/json'
         }
     
@@ -29,13 +28,18 @@ class ClozeClient:
         
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
         
+        # Add API key as query parameter
+        if params is None:
+            params = {}
+        params['api_key'] = self.api_key
+        
         try:
             if method.upper() == 'GET':
                 response = requests.get(url, headers=self.headers, params=params)
             elif method.upper() == 'POST':
-                response = requests.post(url, headers=self.headers, json=data)
+                response = requests.post(url, headers=self.headers, params=params, json=data)
             elif method.upper() == 'PUT':
-                response = requests.put(url, headers=self.headers, json=data)
+                response = requests.put(url, headers=self.headers, params=params, json=data)
             else:
                 raise Exception(f"Unsupported HTTP method: {method}")
             
@@ -48,7 +52,7 @@ class ClozeClient:
 
     def get_profile(self):
         """Get user profile information"""
-        return self._make_request('GET', '/profile')
+        return self._make_request('GET', '/user/profile')
     
     def query_activity(self, days_back=7, activity_types=None):
         """Query user activity data"""
@@ -58,7 +62,7 @@ class ClozeClient:
         if activity_types:
             params['types'] = ','.join(activity_types)
         
-        return self._make_request('GET', '/activity', params=params)
+        return self._make_request('GET', '/user/activity', params=params)
     
     def get_contacts(self, limit=50, segment=None):
         """Retrieve contacts/people"""
