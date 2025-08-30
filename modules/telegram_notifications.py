@@ -7,6 +7,7 @@ import datetime
 import hashlib
 import requests
 import re
+import psycopg2.extras
 from modules.database import get_db_connection
 from flask import current_app
 
@@ -163,7 +164,8 @@ class GhostlineTelegramReminders:
                          project, priority, repeat_pattern, metadata)
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ''', (reminder_id, reminder_type, title, content, remind_at,
-                         project, priority, repeat_pattern, metadata or {}))
+                         project, priority, repeat_pattern, 
+                         psycopg2.extras.Json(metadata or {})))
                     
                     conn.commit()
                     
@@ -377,6 +379,48 @@ class GhostlineTelegramReminders:
                     self.bot.send_message(f"⏰ *Reminder snoozed until {time_str}*")
                     return {"success": True, "action": "snoozed", "until": snooze_until}
                     
+                except Exception as e:
+                    return {"success": False, "error": str(e)}
+    
+    def _handle_info_request(self, reminder_id):
+        """Handle more info request"""
+        with get_db_connection() as conn:
+            if conn:
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        SELECT title, content, project, created_at, priority
+                        FROM telegram_reminders 
+                        WHERE reminder_id = %s
+                    ''', (reminder_id,))
+                    
+                    result = cursor.fetchone()
+                    if result:
+                        title, content, project, created_at, priority = result
+                        
+                        info_parts = [f"📝 *Reminder Details*"]
+                        info_parts.append(f"*Title:* {title}")
+                        
+                        if content:
+                            info_parts.append(f"*Details:* {content}")
+                        
+                        if project:
+                            info_parts.append(f"*Project:* {project}")
+                        
+                        priority_names = {1: "URGENT", 2: "HIGH", 3: "NORMAL"}
+                        info_parts.append(f"*Priority:* {priority_names.get(priority, 'NORMAL')}")
+                        
+                        created_str = created_at.strftime('%I:%M %p on %b %d')
+                        info_parts.append(f"*Created:* {created_str}")
+                        
+                        info_message = "\n".join(info_parts)
+                        self.bot.send_message(info_message)
+                        
+                        return {"success": True, "action": "info_sent"}
+                    else:
+                        self.bot.send_message("❌ *Reminder not found*")
+                        return {"success": False, "error": "Reminder not found"}
+                        
                 except Exception as e:
                     return {"success": False, "error": str(e)}
     
