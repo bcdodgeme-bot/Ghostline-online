@@ -16,6 +16,8 @@ import zipfile
 import tempfile
 import datetime
 import requests  # Add this if not already present
+# Add this with your other function imports
+from modules.marketing_commands import process_marketing_command, is_marketing_configured
 from modules.cloze_integration import process_cloze_command, is_cloze_configured
 
 # OCR/File Parsing
@@ -1022,6 +1024,7 @@ def cloze_dashboard():
     return html_content
 
 # Section 13: Marketing FLUX Integration Routes
+# Section 13: Marketing FLUX Integration Routes
 
 from modules.marketing_flux import (
     MarketingFluxGenerator, 
@@ -1029,6 +1032,74 @@ from modules.marketing_flux import (
     test_campaign_ideas, 
     create_full_campaign
 )
+
+# Marketing command processing for chat interface
+def process_marketing_command(user_input, project, use_voices, random_toggle):
+    """Process marketing-related commands in chat"""
+    
+    lower_input = user_input.lower().strip()
+    
+    # Check if it's a marketing command
+    marketing_triggers = [
+        'generate image', 'create image', 'make image',
+        'marketing asset', 'social post', 'campaign image',
+        'flux generate', 'flux create', 'flux make'
+    ]
+    
+    is_marketing_command = any(trigger in lower_input for trigger in marketing_triggers)
+    
+    if not is_marketing_command:
+        return {}, False
+    
+    try:
+        # Extract concept from command
+        import re
+        concept = None
+        
+        # Pattern matching for different command formats
+        if 'generate image' in lower_input:
+            concept = re.sub(r'generate image (for |of |about )?', '', lower_input, flags=re.IGNORECASE).strip()
+        elif 'create image' in lower_input:
+            concept = re.sub(r'create image (for |of |about )?', '', lower_input, flags=re.IGNORECASE).strip()
+        elif 'marketing asset' in lower_input:
+            concept = re.sub(r'(create |make |generate )?(marketing asset (for |of |about )?)?', '', lower_input, flags=re.IGNORECASE).strip()
+        elif 'social post' in lower_input:
+            concept = re.sub(r'(create |make |generate )?(social post (for |about )?)?', '', lower_input, flags=re.IGNORECASE).strip()
+        elif 'flux' in lower_input:
+            concept = re.sub(r'flux (generate|create|make) ', '', lower_input, flags=re.IGNORECASE).strip()
+        
+        if not concept or len(concept.strip()) < 5:
+            return {
+                "SyntaxPrime": "I need more details about what image you want me to create. Try: 'generate image for summer sale announcement' or 'create social post about new product launch'"
+            }, True
+        
+        # Generate the image
+        generator = MarketingFluxGenerator()
+        result = generator.create_and_wait(
+            prompt=concept,
+            style='corporate',
+            platform='instagram', 
+            quality='standard'
+        )
+        
+        if result['success']:
+            response_text = f"Marketing asset created successfully!\n\n**Concept**: {concept}\n**Format**: {result.get('format', 'Instagram Post')}\n**Cost**: ${result.get('estimated_cost', 0.030):.3f}\n**Generation Time**: {result.get('generation_time', 0):.1f}s\n\n**Image URL**: {result.get('image_url', 'Not available')}\n\nYou can download this from the Marketing Dashboard at /marketing"
+        else:
+            response_text = f"Image generation failed: {result.get('error', 'Unknown error')}\n\nTry rephrasing your request or check the Marketing Dashboard at /marketing"
+        
+        return {"SyntaxPrime": response_text}, True
+        
+    except Exception as e:
+        error_msg = f"Marketing command failed: {str(e)}\n\nYou can still use the Marketing Dashboard at /marketing for image generation."
+        return {"SyntaxPrime": error_msg}, True
+
+def is_marketing_configured():
+    """Check if marketing/FLUX is configured"""
+    try:
+        generator = MarketingFluxGenerator()
+        return True
+    except:
+        return False
 
 @app.route('/marketing')
 def marketing_dashboard():
@@ -1318,7 +1389,6 @@ def marketing_campaigns():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
         
-    # Simple campaigns view
     return render_template_string('''
     <!DOCTYPE html>
     <html>
@@ -1348,6 +1418,112 @@ def marketing_campaigns():
     </body>
     </html>
     ''')
+
+@app.route('/marketing/assets')
+def marketing_assets():
+    """Marketing asset library"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    try:
+        assets_dir = os.path.join("static", "marketing")
+        
+        if not os.path.exists(assets_dir):
+            os.makedirs(assets_dir)
+        
+        # Organize assets by campaign folder
+        campaigns = {}
+        
+        for campaign_folder in os.listdir(assets_dir):
+            campaign_path = os.path.join(assets_dir, campaign_folder)
+            
+            if os.path.isdir(campaign_path):
+                assets = []
+                
+                for file in os.listdir(campaign_path):
+                    if file.lower().endswith(('.png', '.jpg', '.jpeg')):
+                        file_path = os.path.join(campaign_path, file)
+                        assets.append({
+                            'filename': file,
+                            'path': f"/static/marketing/{campaign_folder}/{file}",
+                            'size': os.path.getsize(file_path),
+                            'created': datetime.datetime.fromtimestamp(os.path.getctime(file_path))
+                        })
+                
+                if assets:
+                    campaigns[campaign_folder] = sorted(assets, key=lambda x: x['created'], reverse=True)
+        
+        return render_template_string('''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Marketing Assets</title>
+            <style>
+                body { 
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
+                }
+                .container { max-width: 1200px; margin: 0 auto; }
+                .btn { 
+                    background: #6366f1; color: white; border: none; padding: 12px 24px;
+                    border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
+                    text-decoration: none; display: inline-block;
+                }
+                .btn:hover { background: #5855eb; }
+                .campaign-section {
+                    background: #1a1a1a; border: 1px solid #333; border-radius: 8px;
+                    padding: 20px; margin: 20px 0;
+                }
+                .assets-grid {
+                    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                    gap: 15px; margin: 15px 0;
+                }
+                .asset-card {
+                    background: #2a2a2a; border-radius: 8px; overflow: hidden;
+                }
+                .asset-img {
+                    width: 100%; height: 150px; object-fit: cover;
+                }
+                .asset-info {
+                    padding: 10px; font-size: 12px; color: #ccc;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Marketing Assets Library</h1>
+                
+                {% if campaigns %}
+                    {% for campaign_name, assets in campaigns.items() %}
+                    <div class="campaign-section">
+                        <h3>{{ campaign_name.title() }} ({{ assets|length }} assets)</h3>
+                        <div class="assets-grid">
+                            {% for asset in assets %}
+                            <div class="asset-card">
+                                <img src="{{ asset.path }}" alt="{{ asset.filename }}" class="asset-img">
+                                <div class="asset-info">
+                                    <div>{{ asset.filename }}</div>
+                                    <div>{{ asset.created.strftime('%Y-%m-%d %H:%M') }}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No marketing assets generated yet. <a href="/marketing">Create your first asset!</a></p>
+                {% endif %}
+                
+                <a href="/marketing" class="btn">← Back to Marketing Dashboard</a>
+                <a href="/" class="btn">Chat Interface</a>
+            </div>
+        </body>
+        </html>
+        ''', campaigns=campaigns)
+        
+    except Exception as e:
+        app.logger.error(f"Assets library error: {e}")
+        return f"Assets library error: {str(e)}", 500
 
 
 # Section 10: Debug Routes, Authentication, and App Startup
