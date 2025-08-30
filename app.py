@@ -704,6 +704,7 @@ def reports_dashboard():
 
 # Section 12: Cloze CRM Integration
 # Section 12: CRM Integration and Enhanced Command Processing
+# Section 12: CRM Integration and Enhanced Command Processing
 
 from modules.cloze_integration import (
     process_cloze_command,
@@ -714,82 +715,6 @@ from modules.cloze_integration import (
     is_cloze_configured
 )
 
-# Enhanced index route with all command integrations
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-
-    response_data = {}
-    selected_project = PROJECTS[0]
-
-    if request.method == 'POST':
-        user_input = request.form['user_input'].strip()
-        app.logger.info(f"POST request received with input: {user_input}")
-        project = request.form['project']
-        selected_project = project
-        use_voices = request.form.getlist('voices') or ['SyntaxPrime']
-        random_toggle = 'random' in request.form
-
-        # Try Gmail/calendar commands first
-        response_data, handled = process_gmail_command(user_input, project, use_voices, random_toggle)
-        if handled:
-            return _render_enhanced(project, response_data)
-
-        # Try Cloze commands
-        if is_cloze_configured():
-            response_data, handled = process_cloze_command(user_input, project, use_voices, random_toggle)
-            if handled:
-                save_conversation_enhanced(project, user_input, response_data)
-                return _render_enhanced(project, response_data)
-
-        # Try Marketing commands
-        if is_marketing_configured():
-            response_data, handled = process_marketing_command(user_input, project, use_voices, random_toggle)
-            if handled:
-                save_conversation_enhanced(project, user_input, response_data)
-                return _render_enhanced(project, response_data)
-
-        # ---- Command: scrape <url> ----
-        if user_input.lower().startswith("scrape "):
-            url = user_input.split(" ", 1)[1].strip()
-            try:
-                result = scrape_url(url)
-                if not result["ok"]:
-                    response_data = {"SyntaxPrime": f"Could not fetch/extract content: {result['error']}"}
-                else:
-                    summary_prompt = (
-                        "Summarize the key points from the following webpage for Carl. "
-                        "Use bullets and keep it tight and actionable.\n\n"
-                        f"--- SCRAPED CONTENT START ---\n{result['text']}\n--- SCRAPED CONTENT END ---"
-                    )
-                    retrieval_ctx = enhanced_retrieve(summary_prompt, k=5) if is_ready() else []
-                    response_data = generate_response(
-                        summary_prompt, use_voices, random_toggle,
-                        project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
-                    )
-            except Exception as e:
-                app.logger.error(f"Scrape command failed: {e}")
-                response_data = {"SyntaxPrime": f"Scrape failed: {e}"}
-            
-            save_conversation_enhanced(project, user_input, response_data)
-            return _render_enhanced(project, response_data)
-
-        # ---- Normal flow ----
-        try:
-            retrieval_ctx = enhanced_retrieve(user_input, k=5) if is_ready() else []
-            response_data = generate_response(
-                user_input, use_voices, random_toggle,
-                project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
-            )
-            save_conversation_enhanced(project, user_input, response_data)
-        except Exception as e:
-            app.logger.error(f"Normal flow failed: {e}")
-            response_data = {"SyntaxPrime": f"Response generation failed: {e}"}
-            save_conversation_enhanced(project, user_input, response_data)
-
-    return _render_enhanced(selected_project, response_data)
-
 @app.route('/cloze/status')
 def cloze_status():
     """Check Cloze API configuration and connection"""
@@ -829,58 +754,7 @@ def cloze_briefing():
     
     try:
         briefing = get_cloze_morning_briefing()
-        return render_template_string('''
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Cloze Briefing</title>
-            <style>
-                body { 
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    background: #0f0f0f; color: #fff
-
-# ---- Command: scrape <url> ---- (existing code continues...)
-
-@app.route('/cloze/status')
-def cloze_status():
-    """Check Cloze API configuration and connection"""
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
-    status = {
-        "configured": is_cloze_configured(),
-        "api_key_present": bool(os.getenv('CLOZE_API_KEY')),
-        "connection_working": False,
-        "user_info": None
-    }
-    
-    if is_cloze_configured():
-        try:
-            from modules.cloze_integration import ClozeClient
-            client = ClozeClient()
-            profile = client.get_profile()
-            status["connection_working"] = True
-            status["user_info"] = {
-                "name": profile.get('name', 'Unknown'),
-                "email": profile.get('email', 'Unknown')
-            }
-        except Exception as e:
-            status["error"] = str(e)
-    
-    return jsonify(status)
-
-@app.route('/cloze/briefing')
-def cloze_briefing():
-    """Get Cloze morning briefing"""
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    
-    if not is_cloze_configured():
-        return "Cloze API not configured", 400
-    
-    try:
-        briefing = get_cloze_morning_briefing()
-        return render_template_string('''
+        html_template = """
         <!DOCTYPE html>
         <html>
         <head>
@@ -909,7 +783,8 @@ def cloze_briefing():
             </div>
         </body>
         </html>
-        ''', briefing=briefing)
+        """
+        return render_template_string(html_template, briefing=briefing)
         
     except Exception as e:
         return f"Briefing generation failed: {str(e)}", 500
@@ -925,7 +800,7 @@ def cloze_pipeline():
     
     try:
         pipeline = get_cloze_pipeline_summary()
-        return render_template_string('''
+        html_template = """
         <!DOCTYPE html>
         <html>
         <head>
@@ -954,7 +829,8 @@ def cloze_pipeline():
             </div>
         </body>
         </html>
-        ''', pipeline=pipeline)
+        """
+        return render_template_string(html_template, pipeline=pipeline)
         
     except Exception as e:
         return f"Pipeline summary failed: {str(e)}", 500
@@ -965,7 +841,7 @@ def cloze_dashboard():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
     
-    html_content = '''
+    return render_template_string("""
     <!DOCTYPE html>
     <html>
     <head>
@@ -1099,9 +975,9 @@ def cloze_dashboard():
                         if (!data.configured) {
                             statusDiv.innerHTML = '<span class="warning">API Key Not Configured</span><br>Set CLOZE_API_KEY environment variable';
                         } else if (data.connection_working && data.user_info) {
-                            statusDiv.innerHTML = `<span class="success">Connected to Cloze</span><br>User: ${data.user_info.name} (${data.user_info.email})`;
+                            statusDiv.innerHTML = '<span class="success">Connected to Cloze</span><br>User: ' + data.user_info.name + ' (' + data.user_info.email + ')';
                         } else {
-                            statusDiv.innerHTML = `<span class="error">Connection Failed</span><br>${data.error || 'Unknown error'}`;
+                            statusDiv.innerHTML = '<span class="error">Connection Failed</span><br>' + (data.error || 'Unknown error');
                         }
                     })
                     .catch(e => {
@@ -1114,8 +990,7 @@ def cloze_dashboard():
         </script>
     </body>
     </html>
-    '''
-    return html_content
+    """)
 
 # Section 13: Marketing FLUX Integration Routes
 # Section 13: Marketing FLUX Integration Routes
