@@ -703,6 +703,7 @@ def reports_dashboard():
     return render_template_string(html_content, projects=PROJECTS)
 
 # Section 12: Cloze CRM Integration
+# Section 12: CRM Integration and Enhanced Command Processing
 
 from modules.cloze_integration import (
     process_cloze_command,
@@ -713,11 +714,9 @@ from modules.cloze_integration import (
     is_cloze_configured
 )
 
-# Update the main index route to include Cloze command processing
-# Add this to the existing index() function after Gmail command processing:
-
-def index_with_cloze():
-    """Enhanced index route with Cloze integration"""
+# Enhanced index route with all command integrations
+@app.route('/', methods=['GET', 'POST'])
+def index():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
 
@@ -741,11 +740,106 @@ def index_with_cloze():
         if is_cloze_configured():
             response_data, handled = process_cloze_command(user_input, project, use_voices, random_toggle)
             if handled:
-                # Log to Cloze if it's a regular interaction (not a Cloze command itself)
                 save_conversation_enhanced(project, user_input, response_data)
                 return _render_enhanced(project, response_data)
 
-        # ---- Command: scrape <url> ---- (existing code continues...)
+        # Try Marketing commands
+        if is_marketing_configured():
+            response_data, handled = process_marketing_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+
+        # ---- Command: scrape <url> ----
+        if user_input.lower().startswith("scrape "):
+            url = user_input.split(" ", 1)[1].strip()
+            try:
+                result = scrape_url(url)
+                if not result["ok"]:
+                    response_data = {"SyntaxPrime": f"Could not fetch/extract content: {result['error']}"}
+                else:
+                    summary_prompt = (
+                        "Summarize the key points from the following webpage for Carl. "
+                        "Use bullets and keep it tight and actionable.\n\n"
+                        f"--- SCRAPED CONTENT START ---\n{result['text']}\n--- SCRAPED CONTENT END ---"
+                    )
+                    retrieval_ctx = enhanced_retrieve(summary_prompt, k=5) if is_ready() else []
+                    response_data = generate_response(
+                        summary_prompt, use_voices, random_toggle,
+                        project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+                    )
+            except Exception as e:
+                app.logger.error(f"Scrape command failed: {e}")
+                response_data = {"SyntaxPrime": f"Scrape failed: {e}"}
+            
+            save_conversation_enhanced(project, user_input, response_data)
+            return _render_enhanced(project, response_data)
+
+        # ---- Normal flow ----
+        try:
+            retrieval_ctx = enhanced_retrieve(user_input, k=5) if is_ready() else []
+            response_data = generate_response(
+                user_input, use_voices, random_toggle,
+                project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+            )
+            save_conversation_enhanced(project, user_input, response_data)
+        except Exception as e:
+            app.logger.error(f"Normal flow failed: {e}")
+            response_data = {"SyntaxPrime": f"Response generation failed: {e}"}
+            save_conversation_enhanced(project, user_input, response_data)
+
+    return _render_enhanced(selected_project, response_data)
+
+@app.route('/cloze/status')
+def cloze_status():
+    """Check Cloze API configuration and connection"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    status = {
+        "configured": is_cloze_configured(),
+        "api_key_present": bool(os.getenv('CLOZE_API_KEY')),
+        "connection_working": False,
+        "user_info": None
+    }
+    
+    if is_cloze_configured():
+        try:
+            from modules.cloze_integration import ClozeClient
+            client = ClozeClient()
+            profile = client.get_profile()
+            status["connection_working"] = True
+            status["user_info"] = {
+                "name": profile.get('name', 'Unknown'),
+                "email": profile.get('email', 'Unknown')
+            }
+        except Exception as e:
+            status["error"] = str(e)
+    
+    return jsonify(status)
+
+@app.route('/cloze/briefing')
+def cloze_briefing():
+    """Get Cloze morning briefing"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    if not is_cloze_configured():
+        return "Cloze API not configured", 400
+    
+    try:
+        briefing = get_cloze_morning_briefing()
+        return render_template_string('''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Cloze Briefing</title>
+            <style>
+                body { 
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    background: #0f0f0f; color: #fff
+
+# ---- Command: scrape <url> ---- (existing code continues...)
 
 @app.route('/cloze/status')
 def cloze_status():
