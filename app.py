@@ -352,25 +352,109 @@ def upload_file():
     return handle_file_upload()
 
 # Section 9: Other Routes - Streaming, Database Dashboard, and Utilities
-
-# --- STREAMING ---
-@app.route('/stream', methods=['POST'])
-def stream():
+@app.route('/api/chat/stream', methods=['POST'])
+def stream_chat():
+    """Real-time streaming chat endpoint"""
     if not session.get('logged_in'):
-        return "Unauthorized", 401
-    user_input = request.form['user_input'].strip()
-    project = request.form['project']
-    use_voices = request.form.getlist('voices') or ['SyntaxPrime']
-    retrieval_ctx = enhanced_retrieve(user_input, k=5) if is_ready() else []
-
-    def generate():
-        for chunk in stream_generate(
-            user_input, use_voices, project=project,
-            model=CHAT_MODEL, retrieval_context=retrieval_ctx
-        ):
-            yield chunk
-
-    return app.response_class(generate(), mimetype='text/plain')
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        user_input = data.get('user_input', '').strip()
+        project = data.get('project', PROJECTS[0])
+        use_voices = data.get('voices', ['SyntaxPrime'])
+        random_toggle = data.get('random', False)
+        
+        if not user_input:
+            return jsonify({'error': 'No input provided'}), 400
+        
+        def generate_stream():
+            try:
+                # Send initial message
+                yield f"data: {json.dumps({'type': 'start', 'message': 'Processing...'})}\n\n"
+                
+                # Try smart commands first
+                response_data, handled = process_smart_command(user_input, project, use_voices, random_toggle)
+                
+                if not handled:
+                    # Try other command processors
+                    response_data, handled = process_gmail_command(user_input, project, use_voices, random_toggle)
+                
+                if not handled:
+                    response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
+                
+                if not handled and is_clickup_configured():
+                    response_data, handled = process_clickup_command(user_input, project, use_voices, random_toggle)
+                
+                if not handled and is_marketing_configured():
+                    response_data, handled = process_marketing_command(user_input, project, use_voices, random_toggle)
+                
+                if not handled and is_cloze_configured():
+                    response_data, handled = process_cloze_command(user_input, project, use_voices, random_toggle)
+                
+                # Scrape command
+                if not handled and user_input.lower().startswith("scrape "):
+                    url = user_input.split(" ", 1)[1].strip()
+                    try:
+                        result = scrape_url(url)
+                        if not result["ok"]:
+                            response_data = {"SyntaxPrime": f"Could not fetch/extract content: {result['error']}"}
+                        else:
+                            summary_prompt = (
+                                "Summarize the key points from the following webpage for Carl. "
+                                "Use bullets and keep it tight and actionable.\n\n"
+                                f"--- SCRAPED CONTENT START ---\n{result['text']}\n--- SCRAPED CONTENT END ---"
+                            )
+                            retrieval_ctx = enhanced_retrieve(summary_prompt, k=5) if is_ready() else []
+                            response_data = generate_response(
+                                summary_prompt, use_voices, random_toggle,
+                                project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+                            )
+                        handled = True
+                    except Exception as e:
+                        response_data = {"SyntaxPrime": f"Scrape failed: {e}"}
+                        handled = True
+                
+                # Normal AI response
+                if not handled:
+                    retrieval_ctx = enhanced_retrieve(user_input, k=5) if is_ready() else []
+                    response_data = generate_response(
+                        user_input, use_voices, random_toggle,
+                        project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+                    )
+                
+                # Save conversation
+                save_conversation_enhanced(project, user_input, response_data)
+                
+                # Stream each response
+                for voice, content in response_data.items():
+                    # Send content in chunks for streaming effect
+                    chunk_size = 50
+                    for i in range(0, len(content), chunk_size):
+                        chunk = content[i:i+chunk_size]
+                        yield f"data: {json.dumps({'type': 'content', 'voice': voice, 'chunk': chunk, 'is_final': i+chunk_size >= len(content)})}\n\n"
+                        time.sleep(0.05)  # Small delay for streaming effect
+                
+                # Send completion signal
+                yield f"data: {json.dumps({'type': 'complete', 'responses': response_data})}\n\n"
+                
+            except Exception as e:
+                app.logger.error(f"Stream generation failed: {e}")
+                yield f"data: {json.dumps({'type': 'error', 'message': f'Generation failed: {str(e)}'})}\n\n"
+        
+        return Response(
+            generate_stream(),
+            mimetype='text/event-stream',
+            headers={
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+                'X-Accel-Buffering': 'no'
+            }
+        )
+        
+    except Exception as e:
+        app.logger.error(f"Stream endpoint failed: {e}")
+        return jsonify({'error': str(e)}), 500
 
 # --- DATABASE DASHBOARD - NEW ---
 @app.route('/database_status')
@@ -2680,15 +2764,278 @@ def clickup_dashboard():
     </body>
     </html>
     """)
+# Section 16: ElevenLabs Text-to-Speech Integration
+# Section 16: ElevenLabs Text-to-Speech Integration
+# Section 16: ElevenLabs Text-to-Speech Integration
 
-# Section 10: Debug Routes, Authentication, and App Startup
-# Section 10: Debug Routes, Authentication, and App Startup
-# Section 10: Debug Routes, Authentication, and App Startup
-# Section 10: Debug Routes, Authentication, and App Startup
+import os
+import requests
+import tempfile
+import base64
 
-# Section 10: Debug Routes, Authentication, and App Startup (FIXED)
-# Section 10: Debug Routes, Authentication, and App Startup (FIXED)
-# Section 10: Debug Routes, Authentication, and App Startup (FIXED)
+@app.route('/api/tts', methods=['POST'])
+def text_to_speech():
+    """Convert text to speech using ElevenLabs API"""
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        text = data.get('text', '').strip()
+        
+        if not text:
+            return jsonify({'success': False, 'error': 'Text required'}), 400
+        
+        if len(text) > 2500:  # ElevenLabs character limit
+            text = text[:2500] + "..."
+        
+        # ElevenLabs API configuration
+        api_key = os.getenv('ELEVENLABS_API_KEY')
+        if not api_key:
+            return jsonify({'success': False, 'error': 'ElevenLabs API key not configured'}), 400
+        
+        # Default voice ID - you can change this to your preferred voice
+        voice_id = "21m00Tcm4TlvDq8ikWAM"  # Rachel voice
+        
+        url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
+        
+        headers = {
+            "Accept": "audio/mpeg",
+            "Content-Type": "application/json",
+            "xi-api-key": api_key
+        }
+        
+        payload = {
+            "text": text,
+            "model_id": "eleven_monolingual_v1",
+            "voice_settings": {
+                "stability": 0.5,
+                "similarity_boost": 0.5
+            }
+        }
+        
+        response = requests.post(url, json=payload, headers=headers, timeout=30)
+        
+        if response.status_code == 200:
+            # Return audio as base64 for frontend playback
+            audio_base64 = base64.b64encode(response.content).decode('utf-8')
+            
+            return jsonify({
+                'success': True,
+                'audio': audio_base64,
+                'format': 'mp3'
+            })
+        else:
+            error_msg = f"ElevenLabs API error: {response.status_code}"
+            if response.text:
+                error_msg += f" - {response.text}"
+            
+            return jsonify({'success': False, 'error': error_msg}), 500
+    
+    except requests.exceptions.Timeout:
+        return jsonify({'success': False, 'error': 'Speech generation timed out'}), 500
+    except Exception as e:
+        app.logger.error(f"TTS generation failed: {e}")
+        return jsonify({'success': False, 'error': f'Speech generation failed: {str(e)}'}), 500
+
+@app.route('/api/tts/status')
+def tts_status():
+    """Check ElevenLabs TTS configuration"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    status = {
+        "configured": bool(os.getenv('ELEVENLABS_API_KEY')),
+        "api_key_present": bool(os.getenv('ELEVENLABS_API_KEY')),
+        "connection_working": False
+    }
+    
+    if status["configured"]:
+        try:
+            # Test API connection
+            api_key = os.getenv('ELEVENLABS_API_KEY')
+            headers = {"xi-api-key": api_key}
+            
+            response = requests.get(
+                "https://api.elevenlabs.io/v1/user",
+                headers=headers,
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                user_info = response.json()
+                status["connection_working"] = True
+                status["character_count"] = user_info.get("character_count", 0)
+                status["character_limit"] = user_info.get("character_limit", 10000)
+                
+        except Exception as e:
+            status["error"] = str(e)
+    
+    return jsonify(status)
+
+@app.route('/tts')
+def tts_dashboard():
+    """ElevenLabs TTS dashboard"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    return render_template_string('''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>ElevenLabs Text-to-Speech</title>
+        <style>
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
+            }
+            .container { max-width: 800px; margin: 0 auto; }
+            .status-box { 
+                background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
+                padding: 20px; margin: 20px 0; 
+            }
+            .btn { 
+                background: #6366f1; color: white; border: none; padding: 12px 24px;
+                border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
+                text-decoration: none; display: inline-block;
+            }
+            .btn:hover { background: #5855eb; }
+            .btn:disabled { background: #666; cursor: not-allowed; opacity: 0.5; }
+            .success { color: #10b981; }
+            .error { color: #ef4444; }
+            .warning { color: #f59e0b; }
+            textarea { 
+                width: 100%; min-height: 100px; background: #000; color: #fff; 
+                border: 1px solid #333; border-radius: 8px; padding: 12px; 
+                font-family: inherit; resize: vertical;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🔊 ElevenLabs Text-to-Speech</h1>
+            
+            <div class="status-box">
+                <h3>API Status</h3>
+                <div id="status">Loading...</div>
+            </div>
+            
+            <div class="status-box">
+                <h3>Test TTS</h3>
+                <textarea id="testText" placeholder="Enter text to convert to speech...">Hello from Ghostline! This is a test of the ElevenLabs text-to-speech integration.</textarea>
+                <br><br>
+                <button class="btn" id="generateBtn" onclick="generateSpeech()">🔊 Generate Speech</button>
+                <button class="btn" id="playBtn" onclick="playAudio()" disabled>▶️ Play Audio</button>
+                <audio id="audioPlayer" controls style="display: none; width: 100%; margin-top: 10px;"></audio>
+            </div>
+            
+            <div class="status-box">
+                <h3>Setup Instructions</h3>
+                <ol>
+                    <li>Sign up at <strong>elevenlabs.io</strong></li>
+                    <li>Get your API key from account settings</li>
+                    <li>Set <strong>ELEVENLABS_API_KEY</strong> environment variable</li>
+                    <li>Restart Ghostline to activate TTS</li>
+                </ol>
+                <p><strong>Free tier:</strong> 10,000 characters per month</p>
+            </div>
+            
+            <div class="status-box">
+                <button class="btn" onclick="window.location.href='/'">&larr; Back to Chat</button>
+            </div>
+        </div>
+        
+        <script>
+            let currentAudioData = null;
+            
+            function refreshStatus() {
+                fetch('/api/tts/status')
+                    .then(r => r.json())
+                    .then(data => {
+                        const statusDiv = document.getElementById('status');
+                        
+                        if (!data.configured) {
+                            statusDiv.innerHTML = '<span class="warning">API Key Not Configured</span>';
+                        } else if (data.connection_working) {
+                            statusDiv.innerHTML = `
+                                <span class="success">✅ Connected to ElevenLabs</span><br>
+                                Characters used: ${data.character_count || 0} / ${data.character_limit || 10000}
+                            `;
+                        } else {
+                            statusDiv.innerHTML = '<span class="error">Connection Failed</span><br>' + (data.error || 'Unknown error');
+                        }
+                    })
+                    .catch(e => {
+                        document.getElementById('status').innerHTML = '<span class="error">Status Check Failed</span>';
+                    });
+            }
+            
+            async function generateSpeech() {
+                const textArea = document.getElementById('testText');
+                const generateBtn = document.getElementById('generateBtn');
+                const playBtn = document.getElementById('playBtn');
+                
+                const text = textArea.value.trim();
+                if (!text) {
+                    alert('Please enter some text');
+                    return;
+                }
+                
+                generateBtn.disabled = true;
+                generateBtn.textContent = '🔄 Generating...';
+                
+                try {
+                    const response = await fetch('/api/tts', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: text })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        currentAudioData = result.audio;
+                        playBtn.disabled = false;
+                        setupAudioPlayer();
+                        alert('Speech generated successfully! Click Play to hear it.');
+                    } else {
+                        alert('Generation failed: ' + result.error);
+                    }
+                } catch (error) {
+                    alert('Generation failed: ' + error.message);
+                } finally {
+                    generateBtn.disabled = false;
+                    generateBtn.textContent = '🔊 Generate Speech';
+                }
+            }
+            
+            function setupAudioPlayer() {
+                if (!currentAudioData) return;
+                
+                const audioPlayer = document.getElementById('audioPlayer');
+                const audioBlob = new Blob([Uint8Array.from(atob(currentAudioData), c => c.charCodeAt(0))], { type: 'audio/mpeg' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                
+                audioPlayer.src = audioUrl;
+                audioPlayer.style.display = 'block';
+            }
+            
+            function playAudio() {
+                const audioPlayer = document.getElementById('audioPlayer');
+                if (audioPlayer) {
+                    audioPlayer.play();
+                }
+            }
+            
+            refreshStatus();
+        </script>
+    </body>
+    </html>
+    ''')
+# Section 10: Debug Routes, Authentication, and App Startup
+# Section 10: Debug Routes, Authentication, and App Startup
+# Section 10: Debug Routes, Authentication, and App Startup
+# Section 10: Debug Routes, Authentication, and App Startup
 
 # --- DEBUG ROUTES ---
 @app.route('/debug/rag')

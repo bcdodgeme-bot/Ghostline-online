@@ -227,19 +227,68 @@
     .message { display: flex; margin-bottom: 4px; animation: slideIn 0.3s ease-out; }
     @keyframes slideIn { from {opacity:0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);} }
     .message.user { justify-content: flex-end; }
-    .message-bubble { max-width: 70%; padding: 12px 16px; border-radius: var(--radius-xl); position: relative; word-wrap: break-word; line-height: 1.4; }
+    .message-bubble { 
+      max-width: 70%; padding: 12px 16px; border-radius: var(--radius-xl); 
+      position: relative; word-wrap: break-word; line-height: 1.4; 
+    }
     .message-bubble.user { background: var(--primary); color: white; border-bottom-right-radius: var(--radius-sm); }
-    .message-bubble.bot { background: var(--surface); border: 1px solid var(--border); color: var(--text-primary); border-bottom-left-radius: var(--radius-sm); }
-    .message-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.8rem; font-weight: 500; opacity: 0.8; }
+    .message-bubble.bot { 
+      background: var(--surface); border: 1px solid var(--border); 
+      color: var(--text-primary); border-bottom-left-radius: var(--radius-sm); 
+    }
+    .message-header { 
+      display: flex; align-items: center; gap: 8px; margin-bottom: 6px; 
+      font-size: 0.8rem; font-weight: 500; opacity: 0.8; 
+    }
     .message-header .logo { width: 20px; height: 20px; border-radius: 4px; }
     .message-content { font-size: 0.95rem; white-space: pre-line; }
 
+    /* Speaker button for TTS */
+    .speaker-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      margin-left: auto;
+      font-size: 14px;
+    }
+    
+    .speaker-btn:hover {
+      color: var(--text-primary);
+      background: var(--surface-hover);
+    }
+    
+    .speaker-btn.playing {
+      color: var(--primary);
+      animation: speakerPulse 1.5s infinite;
+    }
+    
+    @keyframes speakerPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
     /* Typing indicator */
-    .typing-indicator { display:flex; align-items:center; gap:8px; padding:12px 16px; background: var(--surface); border:1px solid var(--border); border-radius:var(--radius-xl); border-bottom-left-radius:var(--radius-sm); max-width:70%; margin-bottom:16px; }
+    .typing-indicator { 
+      display:flex; align-items:center; gap:8px; padding:12px 16px; 
+      background: var(--surface); border:1px solid var(--border); 
+      border-radius:var(--radius-xl); border-bottom-left-radius:var(--radius-sm); 
+      max-width:70%; margin-bottom:16px; 
+    }
     .typing-dots { display:flex; gap:4px; }
-    .typing-dot { width:8px; height:8px; background:var(--text-muted); border-radius:50%; animation: typing 1.4s infinite ease-in-out; }
-    .typing-dot:nth-child(1){animation-delay:-0.32s;} .typing-dot:nth-child(2){animation-delay:-0.16s;}
-    @keyframes typing { 0%,80%,100%{opacity:.3; transform:scale(.8);} 40%{opacity:1; transform:scale(1);} }
+    .typing-dot { 
+      width:8px; height:8px; background:var(--text-muted); 
+      border-radius:50%; animation: typing 1.4s infinite ease-in-out; 
+    }
+    .typing-dot:nth-child(1){animation-delay:-0.32s;} 
+    .typing-dot:nth-child(2){animation-delay:-0.16s;}
+    @keyframes typing { 
+      0%,80%,100%{opacity:.3; transform:scale(.8);} 
+      40%{opacity:1; transform:scale(1);} 
+    }
 
     /* Composer */
     .composer { background: var(--surface); border-top:1px solid var(--border); padding:16px 20px; backdrop-filter: blur(10px); }
@@ -260,7 +309,8 @@
       width:100%; min-height:44px; max-height:120px;
       background:var(--background); color:var(--text-primary);
       border:1px solid var(--border); border-radius:var(--radius-lg);
-      padding:12px 50px 12px 16px; font-size:.95rem; resize:vertical; font-family:inherit; line-height:1.4;
+      padding:12px 50px 12px 16px; font-size:.95rem; resize:vertical; 
+      font-family:inherit; line-height:1.4;
       transition: border-color .2s ease, box-shadow .2s ease;
     }
     .prompt-input:focus { outline:none; border-color: var(--primary); box-shadow:0 0 0 3px rgb(99 102 241 / 0.1); }
@@ -283,14 +333,19 @@
     .advanced-controls { border-top:1px solid var(--border); padding-top:12px; margin-top:12px; }
     .advanced-toggle {
       background:var(--background); color:var(--text-secondary); border:1px solid var(--border);
-      border-radius:var(--radius-md); padding:8px 12px; cursor:pointer; font-size:.85rem; transition:all .2s ease; display:flex; align-items:center; gap:6px;
+      border-radius:var(--radius-md); padding:8px 12px; cursor:pointer; font-size:.85rem; 
+      transition:all .2s ease; display:flex; align-items:center; gap:6px;
     }
     .advanced-toggle:hover { background:var(--surface-hover); color:var(--text-primary); }
     .advanced-content { margin-top:12px; display:flex; flex-direction:column; gap:12px; }
     .controls-row { display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
 
     .voice-controls { display:flex; gap:12px; flex-wrap:wrap; }
-    .voice-checkbox { display:flex; align-items:center; gap:6px; font-size:.85rem; color:var(--text-secondary); cursor:pointer; padding:4px 8px; border-radius:var(--radius-sm); transition: background .2s ease; }
+    .voice-checkbox { 
+      display:flex; align-items:center; gap:6px; font-size:.85rem; 
+      color:var(--text-secondary); cursor:pointer; padding:4px 8px; 
+      border-radius:var(--radius-sm); transition: background .2s ease; 
+    }
     .voice-checkbox:hover { background:var(--surface-hover); }
     .voice-checkbox input { margin:0; }
 
@@ -302,7 +357,8 @@
     }
     .secondary-btn {
       background:var(--surface-hover); color:var(--text-primary); border:1px solid var(--border);
-      border-radius:var(--radius-md); padding:8px 16px; cursor:pointer; font-size:.85rem; text-decoration:none; display:inline-block; transition:all .2s ease;
+      border-radius:var(--radius-md); padding:8px 16px; cursor:pointer; font-size:.85rem; 
+      text-decoration:none; display:inline-block; transition:all .2s ease;
       user-select: none;
     }
     .secondary-btn:hover:not(:disabled) { background:var(--border); transform: translateY(-1px); }
@@ -324,6 +380,28 @@
     .menu-overlay.show {
       opacity: 1;
       visibility: visible;
+    }
+
+    /* Streaming status */
+    .streaming-status {
+      padding: 8px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .streaming-indicator {
+      width: 8px;
+      height: 8px;
+      background: var(--primary);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
     }
 
     /* Mobile */
@@ -417,9 +495,21 @@
               <span class="menu-icon">🗄️</span>
               <span>Database Status</span>
             </a>
+            <a href="/telegram" class="menu-item">
+              <span class="menu-icon">📱</span>
+              <span>Telegram Reminders</span>
+            </a>
+            <a href="/clickup" class="menu-item">
+              <span class="menu-icon">✅</span>
+              <span>ClickUp Tasks</span>
+            </a>
             <a href="/cloze" class="menu-item">
-              <span class="menu-icon">👥</span>
+              <span class="menu-icon">💼</span>
               <span>CRM Integration</span>
+            </a>
+            <a href="/tts" class="menu-item">
+              <span class="menu-icon">🔊</span>
+              <span>Text-to-Speech</span>
             </a>
           </div>
 
@@ -449,12 +539,16 @@
               <span class="menu-icon">📄</span>
               <span>Download PDF</span>
             </a>
+            <a href="/clickup/briefing" class="menu-item">
+              <span class="menu-icon">📋</span>
+              <span>Task Briefing</span>
+            </a>
             <a href="/cloze/briefing" class="menu-item">
               <span class="menu-icon">☀️</span>
               <span>CRM Morning Brief</span>
             </a>
             <a href="/cloze/pipeline" class="menu-item">
-              <span class="menu-icon">💼</span>
+              <span class="menu-icon">💰</span>
               <span>Sales Pipeline</span>
             </a>
           </div>
@@ -477,17 +571,17 @@
 
           <div class="menu-section">
             <div class="menu-section-title">Quick Actions</div>
-            <button onclick="document.getElementById('promptInput').value='good morning'; document.getElementById('mainForm').submit();" class="menu-item">
+            <button onclick="sendQuickCommand('good morning')" class="menu-item">
               <span class="menu-icon">☀️</span>
               <span>Morning Briefing</span>
               <span class="menu-shortcut">Alt+M</span>
             </button>
-            <button onclick="document.getElementById('promptInput').value='overnight'; document.getElementById('mainForm').submit();" class="menu-item">
+            <button onclick="sendQuickCommand('overnight')" class="menu-item">
               <span class="menu-icon">📧</span>
               <span>Check Email</span>
               <span class="menu-shortcut">Alt+E</span>
             </button>
-            <button onclick="document.getElementById('promptInput').value='calendar'; document.getElementById('mainForm').submit();" class="menu-item">
+            <button onclick="sendQuickCommand('calendar')" class="menu-item">
               <span class="menu-icon">📅</span>
               <span>Today's Calendar</span>
               <span class="menu-shortcut">Alt+C</span>
@@ -519,6 +613,9 @@
                 <div class="message-header">
                   <img src="/static/syntax-buffering.png" alt="{{ display_names.get(voice, voice) }}" class="logo">
                   {{ display_names.get(voice, voice) }}
+                  <button class="speaker-btn" onclick="speakText(`{{ reply | replace('`', '\\`') | replace('"', '\\"') | replace('\n', ' ') }}`, this)" title="Speak this message">
+                    🔊
+                  </button>
                 </div>
                 <div class="message-content">{{ reply | trim | markdown }}</div>
               </div>
@@ -526,12 +623,15 @@
           {% endfor %}
         {% endfor %}
       {% else %}
-<div class="message bot">
-  <div class="message-bubble bot">
-    <div class="message-header">
-      <img src="/static/syntax-buffering.png" alt="Syntax Prime" class="logo">
-      Syntax Prime
-    </div>
+        <div class="message bot">
+          <div class="message-bubble bot">
+            <div class="message-header">
+              <img src="/static/syntax-buffering.png" alt="Syntax Prime" class="logo">
+              Syntax Prime
+              <button class="speaker-btn" onclick="speakText('Welcome back to Ghostline - now with 38% more sarcasm and full memory sync. I remember your coffee order, your chaos, and that one time you tried to code at 2am. Ask me anything - recipes, regrets, or revenge plots. Syntax Prime is online.', this)" title="Speak this message">
+                🔊
+              </button>
+            </div>
             <div class="message-content">Welcome back to Ghostline - now with 38% more sarcasm and full memory sync. I remember your coffee order, your chaos, and that one time you tried to code at 2am. Ask me anything - recipes, regrets, or revenge plots. Syntax Prime is online.</div>
           </div>
         </div>
@@ -540,7 +640,7 @@
     </div>
 
     <div class="composer">
-      <form method="POST" action="/#bottom-anchor" class="composer-form" id="mainForm">
+      <div class="composer-form" id="composerForm">
         <div class="input-row">
           <div class="input-group">
             <label class="input-label">Project</label>
@@ -594,13 +694,254 @@
             </div>
           </div>
         </details>
-      </form>
+      </div>
     </div>
   </div>
 
   <script>
     // Global variables
     let isSubmitting = false;
+    let currentEventSource = null;
+    let currentStreamingMessage = null;
+
+    // TTS functionality
+    async function speakText(text, buttonElement) {
+      if (!text || text.trim() === '') return;
+      
+      // Remove markdown formatting for speech
+      const cleanText = text
+        .replace(/\*\*(.*?)\*\*/g, '$1')
+        .replace(/\*(.*?)\*/g, '$1')
+        .replace(/`(.*?)`/g, '$1')
+        .replace(/#{1,6}\s*(.*)/g, '$1')
+        .replace(/\n\n+/g, '. ')
+        .replace(/\n/g, ' ')
+        .trim();
+      
+      if (buttonElement) {
+        buttonElement.classList.add('playing');
+      }
+      
+      try {
+        const response = await fetch('/api/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: cleanText })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          // Convert base64 to audio and play
+          const audioBlob = new Blob([
+            Uint8Array.from(atob(result.audio), c => c.charCodeAt(0))
+          ], { type: 'audio/mpeg' });
+          
+          const audioUrl = URL.createObjectURL(audioBlob);
+          const audio = new Audio(audioUrl);
+          
+          audio.onended = () => {
+            if (buttonElement) {
+              buttonElement.classList.remove('playing');
+            }
+            URL.revokeObjectURL(audioUrl);
+          };
+          
+          audio.onerror = () => {
+            if (buttonElement) {
+              buttonElement.classList.remove('playing');
+            }
+            console.error('Audio playback failed');
+          };
+          
+          await audio.play();
+        } else {
+          throw new Error(result.error || 'TTS failed');
+        }
+      } catch (error) {
+        console.error('TTS Error:', error);
+        if (buttonElement) {
+          buttonElement.classList.remove('playing');
+        }
+        
+        // Fallback to browser TTS if available
+        if ('speechSynthesis' in window) {
+          const utterance = new SpeechSynthesisUtterance(cleanText);
+          utterance.rate = 0.9;
+          utterance.pitch = 1;
+          utterance.volume = 0.8;
+          
+          utterance.onend = () => {
+            if (buttonElement) {
+              buttonElement.classList.remove('playing');
+            }
+          };
+          
+          speechSynthesis.speak(utterance);
+        }
+      }
+    }
+
+    // Real-time streaming chat
+    function startStreamingChat(userInput, project, voices, random) {
+      return new Promise((resolve, reject) => {
+        if (currentEventSource) {
+          currentEventSource.close();
+        }
+        
+        const eventSource = new EventSource('/api/chat/stream');
+        currentEventSource = eventSource;
+        
+        // Send the request data
+        fetch('/api/chat/stream', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_input: userInput,
+            project: project,
+            voices: voices,
+            random: random
+          })
+        }).then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+          
+          const responseData = {};
+          let currentVoice = null;
+          
+          function readStream() {
+            return reader.read().then(({ done, value }) => {
+              if (done) {
+                resolve(responseData);
+                return;
+              }
+              
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
+              
+              lines.forEach(line => {
+                if (line.startsWith('data: ')) {
+                  try {
+                    const data = JSON.parse(line.slice(6));
+                    
+                    switch (data.type) {
+                      case 'start':
+                        showStreamingStatus(data.message);
+                        break;
+                        
+                      case 'content':
+                        if (!responseData[data.voice]) {
+                          responseData[data.voice] = '';
+                          addStreamingMessage(data.voice);
+                        }
+                        responseData[data.voice] += data.chunk;
+                        updateStreamingMessage(data.voice, responseData[data.voice]);
+                        break;
+                        
+                      case 'complete':
+                        hideStreamingStatus();
+                        finalizeStreamingMessages();
+                        resolve(data.responses);
+                        break;
+                        
+                      case 'error':
+                        hideStreamingStatus();
+                        reject(new Error(data.message));
+                        break;
+                    }
+                  } catch (e) {
+                    console.error('Failed to parse SSE data:', e);
+                  }
+                }
+              });
+              
+              return readStream();
+            });
+          }
+          
+          return readStream();
+          
+        }).catch(error => {
+          hideStreamingStatus();
+          reject(error);
+        });
+      });
+    }
+
+    function showStreamingStatus(message) {
+      const thread = document.getElementById('thread');
+      const anchor = document.getElementById('bottom-anchor');
+      
+      const statusDiv = document.createElement('div');
+      statusDiv.className = 'streaming-status';
+      statusDiv.id = 'streamingStatus';
+      statusDiv.innerHTML = `
+        <div class="streaming-indicator"></div>
+        <span>${message}</span>
+      `;
+      
+      thread.insertBefore(statusDiv, anchor);
+      scrollToBottom();
+    }
+
+    function hideStreamingStatus() {
+      const status = document.getElementById('streamingStatus');
+      if (status) {
+        status.remove();
+      }
+    }
+
+    function addStreamingMessage(voice) {
+      const thread = document.getElementById('thread');
+      const anchor = document.getElementById('bottom-anchor');
+      
+      const displayNames = {
+        'SyntaxPrime': 'Syntax Prime',
+        'SyntaxBot': 'SyntaxBot',
+        'Nil.exe': 'Nil.exe',
+        'GhadaGPT': 'GhadaGPT'
+      };
+      
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'message bot';
+      messageDiv.innerHTML = `
+        <div class="message-bubble bot">
+          <div class="message-header">
+            <img src="/static/syntax-buffering.png" alt="${displayNames[voice] || voice}" class="logo">
+            ${displayNames[voice] || voice}
+            <button class="speaker-btn" onclick="speakText(this.closest('.message-bubble').querySelector('.message-content').textContent, this)" title="Speak this message">
+              🔊
+            </button>
+          </div>
+          <div class="message-content" id="streaming-${voice}"></div>
+        </div>
+      `;
+      
+      thread.insertBefore(messageDiv, anchor);
+      scrollToBottom();
+    }
+
+    function updateStreamingMessage(voice, content) {
+      const element = document.getElementById(`streaming-${voice}`);
+      if (element) {
+        element.textContent = content;
+        scrollToBottom();
+      }
+    }
+
+    function finalizeStreamingMessages() {
+      // Remove streaming IDs and finalize messages
+      const streamingElements = document.querySelectorAll('[id^="streaming-"]');
+      streamingElements.forEach(el => {
+        el.removeAttribute('id');
+      });
+    }
 
     // Menu handling
     function initializeMenu() {
@@ -699,13 +1040,12 @@
     
     function sendQuickCommand(command) {
       const promptInput = document.getElementById('promptInput');
-      const mainForm = document.getElementById('mainForm');
       
-      if (promptInput && mainForm) {
+      if (promptInput) {
         promptInput.value = command;
         closeMenu();
         setTimeout(() => {
-          mainForm.submit();
+          submitForm();
         }, 100);
       }
     }
@@ -715,7 +1055,6 @@
       initializeMenu();
       
       const promptInput = document.getElementById('promptInput');
-      const mainForm = document.getElementById('mainForm');
       const sendButton = document.getElementById('sendBtn');
       const analyzeButton = document.getElementById('analyzeBtn');
 
@@ -761,10 +1100,6 @@
           e.preventDefault();
           analyzeUpload();
         });
-      }
-
-      if (mainForm) {
-        mainForm.addEventListener('submit', handleFormSubmit);
       }
 
       // Set up project select handler
@@ -831,18 +1166,13 @@
       submitForm();
     }
 
-    function handleFormSubmit(e) {
-      e.preventDefault();
-      submitForm();
-    }
-
-    function submitForm() {
+    async function submitForm() {
       if (isSubmitting) return;
       
       const promptInput = document.getElementById('promptInput');
-      const mainForm = document.getElementById('mainForm');
+      const projectSelect = document.getElementById('projectSelect');
       
-      if (!promptInput || !mainForm) {
+      if (!promptInput || !projectSelect) {
         console.error('Form elements not found');
         return;
       }
@@ -863,50 +1193,75 @@
         sendButton.style.pointerEvents = 'none';
       }
       
-      showTypingIndicator();
-      copyVoiceSelections();
-      mainForm.submit();
-    }
-
-    function copyVoiceSelections() {
-      const mainForm = document.getElementById('mainForm');
+      // Get form data
+      const project = projectSelect.value;
+      const voices = getSelectedVoices();
+      const random = document.querySelector('input[name="random"]').checked;
       
-      // Remove existing voice inputs
-      const existingInputs = mainForm.querySelectorAll('input[name="voices"], input[name="random"]');
-      existingInputs.forEach(input => input.remove());
-
-      // Copy checked voice options
-      const voiceCheckboxes = document.querySelectorAll('.voice-checkbox input[type="checkbox"]');
-      voiceCheckboxes.forEach(checkbox => {
-        if (checkbox.checked) {
-          const hiddenInput = document.createElement('input');
-          hiddenInput.type = 'hidden';
-          hiddenInput.name = checkbox.name;
-          hiddenInput.value = checkbox.value;
-          mainForm.appendChild(hiddenInput);
+      // Add user message to UI immediately
+      addUserMessage(inputValue);
+      promptInput.value = '';
+      autoResize(promptInput);
+      
+      try {
+        // Use streaming chat
+        await startStreamingChat(inputValue, project, voices, random);
+      } catch (error) {
+        console.error('Chat failed:', error);
+        addErrorMessage('Failed to send message: ' + error.message);
+      } finally {
+        // Re-enable send button
+        if (sendButton) {
+          sendButton.disabled = false;
+          sendButton.style.opacity = '';
+          sendButton.style.pointerEvents = '';
         }
-      });
+        isSubmitting = false;
+        promptInput.focus();
+      }
     }
 
-    function showTypingIndicator() {
+    function getSelectedVoices() {
+      const checkboxes = document.querySelectorAll('input[name="voices"]:checked');
+      const voices = Array.from(checkboxes).map(cb => cb.value);
+      return voices.length > 0 ? voices : ['SyntaxPrime'];
+    }
+
+    function addUserMessage(content) {
       const thread = document.getElementById('thread');
       const anchor = document.getElementById('bottom-anchor');
-
-      const typingDiv = document.createElement('div');
-      typingDiv.className = 'typing-indicator';
-      typingDiv.innerHTML = `
-        <div class="typing-dots">
-          <div class="typing-dot"></div>
-          <div class="typing-dot"></div>
-          <div class="typing-dot"></div>
+      
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'message user';
+      messageDiv.innerHTML = `
+        <div class="message-bubble user">
+          <div class="message-header">You</div>
+          <div class="message-content">${content}</div>
         </div>
-        <span style="color: var(--text-muted); font-size: 0.85rem;">Syntax Prime is thinking...</span>
       `;
       
-      if (thread && anchor) {
-        thread.insertBefore(typingDiv, anchor);
-        scrollToBottom();
-      }
+      thread.insertBefore(messageDiv, anchor);
+      scrollToBottom();
+    }
+
+    function addErrorMessage(content) {
+      const thread = document.getElementById('thread');
+      const anchor = document.getElementById('bottom-anchor');
+      
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'message bot';
+      messageDiv.innerHTML = `
+        <div class="message-bubble bot" style="border-color: #ef4444;">
+          <div class="message-header">
+            <img src="/static/syntax-buffering.png" alt="System" class="logo">
+            System Error
+          </div>
+          <div class="message-content">${content}</div>
+        </div>
+      `;
+      
+      thread.insertBefore(messageDiv, anchor);
+      scrollToBottom();
     }
 
     function scrollToBottom() {
