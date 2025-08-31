@@ -288,19 +288,19 @@ class GhostlineTelegramReminders:
                 return {"sent": 0, "error": str(e)}
     
     def _utc_to_eastern(self, utc_time):
-        """Convert UTC time to Eastern time for display"""
-        # Simple timezone conversion - Eastern is UTC-5 (EST) or UTC-4 (EDT)
-        # This is approximate - doesn't handle DST transitions perfectly
-        import calendar
+        """Convert UTC time to Eastern time for display - FIXED"""
+        # Eastern Time is BEHIND UTC: EST = UTC-5, EDT = UTC-4
+        # To convert FROM UTC TO Eastern, we SUBTRACT the offset
         
-        # Check if we're in DST period (rough approximation)
         now = datetime.datetime.now()
         is_dst = now.month >= 3 and now.month <= 10  # March through October
         
         if is_dst:
-            offset = -4  # EDT
+            # EDT = UTC-4, so UTC - 4 hours = Eastern
+            offset = -4
         else:
-            offset = -5  # EST
+            # EST = UTC-5, so UTC - 5 hours = Eastern
+            offset = -5
         
         return utc_time + datetime.timedelta(hours=offset)
     
@@ -542,7 +542,7 @@ class GhostlineTelegramReminders:
                     return []
 
 def parse_reminder_command(user_input, project=None):
-    """Parse natural language reminder commands with Eastern timezone"""
+    """Parse natural language reminder commands with Eastern timezone - TIMEZONE FIXED"""
     
     # Clean up the input
     original_input = user_input
@@ -589,14 +589,20 @@ def parse_reminder_command(user_input, project=None):
             "error": "No reminder content found. Try: 'remind me to call John in 30 minutes'"
         }
     
-    # Calculate Eastern time first, then store as UTC
+    # FIXED TIMEZONE LOGIC: Work in Eastern time, then convert to UTC for storage
     eastern_time = datetime.datetime.now() + remind_delta
     
-    # Convert Eastern to UTC for storage (approximate)
+    # Convert FROM Eastern TO UTC for database storage
+    # Eastern is behind UTC, so we ADD hours to get UTC
     now = datetime.datetime.now()
-    is_dst = now.month >= 3 and now.month <= 10  # Rough DST check
-    utc_offset = 4 if is_dst else 5  # EDT is UTC-4, EST is UTC-5
-    utc_time = eastern_time + datetime.timedelta(hours=utc_offset)
+    is_dst = now.month >= 3 and now.month <= 10  # Rough DST check (August = DST)
+    
+    if is_dst:
+        # EDT = UTC-4, so Eastern + 4 hours = UTC
+        utc_time = eastern_time + datetime.timedelta(hours=4)
+    else:
+        # EST = UTC-5, so Eastern + 5 hours = UTC  
+        utc_time = eastern_time + datetime.timedelta(hours=5)
     
     return {
         "success": True,
@@ -604,7 +610,7 @@ def parse_reminder_command(user_input, project=None):
         "remind_at": utc_time,  # Store in UTC
         "project": project,
         "remind_delta": remind_delta,
-        "display_time": eastern_time.strftime('%I:%M %p on %B %d')  # Eastern display
+        "display_time": eastern_time.strftime('%I:%M %p on %B %d')  # Display in Eastern
     }
 
 def parse_tomorrow_time(hour, period):

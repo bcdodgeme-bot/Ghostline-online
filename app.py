@@ -2140,16 +2140,13 @@ def safe_reminder_checker():
 
 # --- APP STARTUP ---
 if __name__ == '__main__':
-    # TEMPORARILY DISABLE background checker to stop spam
-    # We'll enable it after webhook is properly set up
-    print("Telegram reminder checker TEMPORARILY DISABLED to prevent spam")
-    print("Visit /telegram to set up webhook, then manually enable checker")
-    
-    # Uncomment this line ONLY after webhook is working:
-    # if os.getenv('RAILWAY_ENVIRONMENT'):
-    #     checker_thread = threading.Thread(target=safe_reminder_checker, daemon=True)
-    #     checker_thread.start()
-    #     print("Telegram reminder checker started")
+    # Background checker is now safe to run since webhook is set up
+    if os.getenv('RAILWAY_ENVIRONMENT'):
+        checker_thread = threading.Thread(target=safe_reminder_checker, daemon=True)
+        checker_thread.start()
+        print("Telegram reminder checker started")
+    else:
+        print("Telegram reminder checker disabled (not on Railway)")
     
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
