@@ -2674,6 +2674,10 @@ def clickup_dashboard():
 # Section 10: Debug Routes, Authentication, and App Startup
 # Section 10: Debug Routes, Authentication, and App Startup
 
+# Section 10: Debug Routes, Authentication, and App Startup (FIXED)
+# Section 10: Debug Routes, Authentication, and App Startup (FIXED)
+# Section 10: Debug Routes, Authentication, and App Startup (FIXED)
+
 # --- DEBUG ROUTES ---
 @app.route('/debug/rag')
 def debug_rag():
@@ -2723,20 +2727,34 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# Safe reminder checker function with proper error handling and safety limits
+# Safe reminder checker function with enhanced spam prevention
 def safe_reminder_checker():
-    """Background thread with safety checks to prevent infinite loops and spam"""
+    """Background thread with enhanced safety to prevent spam"""
     consecutive_errors = 0
-    max_errors = 5
+    max_errors = 3
     last_check_time = datetime.datetime.now()
+    daily_send_count = 0
+    last_reset_date = datetime.datetime.now().date()
     
     while True:
         try:
             current_time = datetime.datetime.now()
+            current_date = current_time.date()
             
-            # Safety check: don't run if we just ran (prevent rapid fire)
-            if (current_time - last_check_time).total_seconds() < 100:
+            # Reset daily counter
+            if current_date != last_reset_date:
+                daily_send_count = 0
+                last_reset_date = current_date
+            
+            # Safety check: don't run too frequently
+            if (current_time - last_check_time).total_seconds() < 90:
                 time.sleep(30)
+                continue
+            
+            # Safety check: don't send too many per day
+            if daily_send_count > 50:
+                print(f"Daily send limit reached ({daily_send_count}), pausing until tomorrow")
+                time.sleep(3600)  # Wait 1 hour
                 continue
             
             if is_telegram_configured() and consecutive_errors < max_errors:
@@ -2744,8 +2762,9 @@ def safe_reminder_checker():
                 result = reminders.check_and_send_reminders()
                 
                 if result["sent"] > 0:
-                    print(f"Sent {result['sent']} reminders at {current_time}")
-                    consecutive_errors = 0  # Reset error count on success
+                    daily_send_count += result["sent"]
+                    print(f"Sent {result['sent']} reminders (daily total: {daily_send_count})")
+                    consecutive_errors = 0
                 elif "error" in result:
                     consecutive_errors += 1
                     print(f"Reminder check error #{consecutive_errors}: {result['error']}")
@@ -2754,29 +2773,28 @@ def safe_reminder_checker():
                 
             else:
                 if consecutive_errors >= max_errors:
-                    print(f"Too many consecutive errors ({consecutive_errors}), pausing reminder checker for 10 minutes")
-                    time.sleep(600)  # Wait 10 minutes before trying again
+                    print(f"Too many errors ({consecutive_errors}), pausing for 30 minutes")
+                    time.sleep(1800)
                     consecutive_errors = 0
                     
         except Exception as e:
             consecutive_errors += 1
-            print(f"Reminder check failed #{consecutive_errors}: {e}")
+            print(f"Reminder checker crashed #{consecutive_errors}: {e}")
             
-            # If we hit max errors, wait longer
             if consecutive_errors >= max_errors:
-                time.sleep(600)
+                time.sleep(1800)  # 30 minute pause
                 consecutive_errors = 0
         
-        # Standard sleep interval
-        time.sleep(120)  # Check every 2 minutes
+        # Standard interval - longer to prevent spam
+        time.sleep(180)  # Check every 3 minutes instead of 2
 
 # --- APP STARTUP ---
 if __name__ == '__main__':
-    # Background checker is now safe to run since webhook is set up
+    # Background checker is now safe to run with spam protection
     if os.getenv('RAILWAY_ENVIRONMENT'):
         checker_thread = threading.Thread(target=safe_reminder_checker, daemon=True)
         checker_thread.start()
-        print("Telegram reminder checker started")
+        print("Telegram reminder checker started with spam protection")
     else:
         print("Telegram reminder checker disabled (not on Railway)")
     

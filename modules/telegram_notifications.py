@@ -1,5 +1,6 @@
 # modules/telegram_notifications.py
 # Telegram Bot notification system with reminder persistence and timezone handling
+# FIXED VERSION - PREVENTS SPAM
 
 import os
 import json
@@ -179,7 +180,7 @@ class GhostlineTelegramReminders:
         return {"success": False, "error": "Database not available"}
     
     def check_and_send_reminders(self):
-        """Check for due reminders and send via Telegram - FIXED TO PREVENT SPAM"""
+        """Check for due reminders and send via Telegram - SPAM PREVENTION FIXED"""
         if not self.bot:
             return {"sent": 0, "error": "Telegram not configured"}
         
@@ -190,8 +191,8 @@ class GhostlineTelegramReminders:
             try:
                 cursor = conn.cursor()
                 
-                # Get pending reminders that are due (not snoozed)
-                # CRITICAL FIX: Only get 'pending' status, not 'sent'
+                # CRITICAL FIX: Only get 'pending' status, NEVER 'sent'
+                # This prevents the infinite loop that caused spam
                 cursor.execute('''
                     SELECT reminder_id, reminder_type, title, content, priority, 
                            project, remind_at, repeat_pattern
@@ -200,7 +201,7 @@ class GhostlineTelegramReminders:
                     AND remind_at <= %s
                     AND (snooze_until IS NULL OR snooze_until <= %s)
                     ORDER BY priority ASC, remind_at ASC
-                    LIMIT 10
+                    LIMIT 5
                 ''', (datetime.datetime.now(), datetime.datetime.now()))
                 
                 due_reminders = cursor.fetchall()
@@ -210,15 +211,22 @@ class GhostlineTelegramReminders:
                     (reminder_id, reminder_type, title, content, priority, 
                      project, remind_at, repeat_pattern) = reminder
                     
-                    # CRITICAL FIX: Immediately mark as 'sent' to prevent duplicates
+                    # IMMEDIATELY mark as 'sent' to prevent duplicates
                     cursor.execute('''
                         UPDATE telegram_reminders 
                         SET status = 'sent' 
-                        WHERE reminder_id = %s
+                        WHERE reminder_id = %s AND status = 'pending'
                     ''', (reminder_id,))
                     
+                    # Only proceed if we actually updated a pending reminder
+                    if cursor.rowcount == 0:
+                        continue  # Skip if another process already processed this
+                    
+                    # Commit the status change immediately
+                    conn.commit()
+                    
                     # Format Telegram message with markdown
-                    message_parts = ["🔔 *GHOSTLINE REMINDER*"]
+                    message_parts = ["📱 *GHOSTLINE REMINDER*"]
                     
                     if project:
                         message_parts.append(f"📁 *Project:* {project}")
@@ -271,7 +279,7 @@ class GhostlineTelegramReminders:
                         if repeat_pattern:
                             self._schedule_repeat(reminder_id, repeat_pattern, remind_at, cursor)
                     else:
-                        # If send failed, revert to pending
+                        # If send failed, revert to pending for retry
                         cursor.execute('''
                             UPDATE telegram_reminders 
                             SET status = 'pending' 
@@ -285,6 +293,7 @@ class GhostlineTelegramReminders:
                 
             except Exception as e:
                 current_app.logger.error(f"Telegram reminder check failed: {e}")
+                conn.rollback()
                 return {"sent": 0, "error": str(e)}
     
     def _utc_to_eastern(self, utc_time):
