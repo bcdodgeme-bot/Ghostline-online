@@ -2,6 +2,7 @@
 # Section 1: Imports and Initial Flask Setup
 # Section 1: Imports and Initial Flask Setup
 # Section 1: Imports and Initial Flask Setup
+# Section 1: Imports and Initial Flask Setup
 
 from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify, render_template_string
 from utils.ghostline_engine import generate_response, stream_generate
@@ -30,6 +31,9 @@ from modules.telegram_notifications import (
     parse_reminder_command,
     is_telegram_configured
 )
+
+# NEW IMPORT FOR SMART COMMANDS
+from modules.smart_commands import process_smart_command
 
 # OCR/File Parsing
 from PIL import Image
@@ -148,6 +152,8 @@ from modules.utils import (
 # Section 6: Main Route with Enhanced Database Functionality
 # Section 6: Main Route with Enhanced Database Functionality
 # Section 6: Main Route with Enhanced Database Functionality
+# Section 6: Main Route with Enhanced Database Functionality
+# Section 6: Main Route with Enhanced Database Functionality
 
 from modules.gmail import process_gmail_command
 from modules.cloze_integration import process_cloze_command, is_cloze_configured
@@ -226,7 +232,13 @@ def index():
         use_voices = request.form.getlist('voices') or ['SyntaxPrime']
         random_toggle = 'random' in request.form
 
-        # Try Gmail/calendar commands first
+        # Try smart commands FIRST (before individual system commands)
+        response_data, handled = process_smart_command(user_input, project, use_voices, random_toggle)
+        if handled:
+            save_conversation_enhanced(project, user_input, response_data)
+            return _render_enhanced(project, response_data)
+
+        # Try Gmail/calendar commands (fallback for specific commands)
         response_data, handled = process_gmail_command(user_input, project, use_voices, random_toggle)
         if handled:
             return _render_enhanced(project, response_data)
@@ -237,7 +249,7 @@ def index():
             save_conversation_enhanced(project, user_input, response_data)
             return _render_enhanced(project, response_data)
 
-        # Try ClickUp commands
+        # Try ClickUp commands (with improved detection)
         if is_clickup_configured():
             response_data, handled = process_clickup_command(user_input, project, use_voices, random_toggle)
             if handled:
