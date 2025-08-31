@@ -1511,6 +1511,7 @@ def marketing_assets():
 # Section 14: Telegram Integration Routes and Background Services
 # Section 14: Telegram Integration Routes and Background Services
 # Section 14: Telegram Integration Routes and Background Services
+# Section 14: Telegram Integration Routes and Background Services
 
 # Add this route for manual reminder checking
 @app.route('/reminders/check', methods=['POST'])
@@ -1557,6 +1558,45 @@ def emergency_stop_now():
             return f"<h1>EMERGENCY STOP FAILED</h1><p>{result['error']}</p><a href='/telegram'>Back to Telegram Dashboard</a>"
     except Exception as e:
         return f"<h1>EMERGENCY STOP ERROR</h1><p>{str(e)}</p><a href='/telegram'>Back to Telegram Dashboard</a>"
+
+# Debug route to check what's in the database
+@app.route('/debug/reminders')
+def debug_reminders():
+    """Debug what reminders are in the database"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT reminder_id, title, remind_at, status, snooze_until, created_at
+                    FROM telegram_reminders 
+                    ORDER BY created_at DESC
+                    LIMIT 10
+                ''')
+                
+                results = cursor.fetchall()
+                
+                html = "<h1>Reminder Debug</h1><pre>"
+                html += f"Current server time: {datetime.datetime.now()}\n\n"
+                
+                for row in results:
+                    html += f"ID: {row[0]}\n"
+                    html += f"Title: {row[1]}\n"
+                    html += f"Remind At: {row[2]} (UTC)\n"
+                    html += f"Status: {row[3]}\n"
+                    html += f"Snooze Until: {row[4]}\n"
+                    html += f"Created: {row[5]}\n"
+                    html += f"Due? {row[2] <= datetime.datetime.now()}\n"
+                    html += "---\n"
+                
+                html += "</pre><a href='/telegram'>Back to Telegram Dashboard</a>"
+                return html
+                
+    except Exception as e:
+        return f"Debug failed: {str(e)}"
 
 # Enhanced Telegram webhook endpoint
 @app.route('/telegram/webhook', methods=['POST'])
@@ -1810,6 +1850,7 @@ def telegram_dashboard():
                 <p>If buttons below are grayed out, use these direct links:</p>
                 <a href="/telegram/emergency_stop_now" class="btn critical">🛑 STOP SPAM NOW</a>
                 <a href="/telegram/setup_webhook_now" class="btn success">⚙️ SETUP WEBHOOK NOW</a>
+                <a href="/debug/reminders" class="btn warning">🔍 DEBUG DATABASE</a>
             </div>
             
             <div class="status-box">
@@ -2028,13 +2069,14 @@ def safe_reminder_checker():
         if consecutive_errors < max_errors:
             time.sleep(120)  # Check every 2 minutes
 
-# Start background checker only on Railway - TEMPORARILY DISABLED TO FIX SPAM
-# if os.getenv('RAILWAY_ENVIRONMENT'):
-#     checker_thread = threading.Thread(target=safe_reminder_checker, daemon=True)
-#     checker_thread.start()
-#     print("Telegram reminder checker started")
-# else:
-#     print("Telegram reminder checker disabled (not on Railway)")
+# FIXED: Background checker is NOW ENABLED
+if os.getenv('RAILWAY_ENVIRONMENT'):
+    checker_thread = threading.Thread(target=safe_reminder_checker, daemon=True)
+    checker_thread.start()
+    print("Telegram reminder checker started")
+else:
+    print("Telegram reminder checker disabled (not on Railway)")
+
 
 
 # Section 10: Debug Routes, Authentication, and App Startup
