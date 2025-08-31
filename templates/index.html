@@ -782,19 +782,13 @@
       }
     }
 
-    // Real-time streaming chat
+    // FIXED Real-time streaming chat with credentials
     function startStreamingChat(userInput, project, voices, random) {
       return new Promise((resolve, reject) => {
-        if (currentEventSource) {
-          currentEventSource.close();
-        }
-        
-        const eventSource = new EventSource('/api/chat/stream');
-        currentEventSource = eventSource;
-        
-        // Send the request data
+        // Make POST request with credentials included - CRITICAL FIX
         fetch('/api/chat/stream', {
           method: 'POST',
+          credentials: 'include',  // This fixes the 401 Unauthorized errors
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             user_input: userInput,
@@ -804,7 +798,7 @@
           })
         }).then(response => {
           if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }
           
           const reader = response.body.getReader();
@@ -812,7 +806,6 @@
           let buffer = '';
           
           const responseData = {};
-          let currentVoice = null;
           
           function readStream() {
             return reader.read().then(({ done, value }) => {
@@ -869,6 +862,7 @@
           
         }).catch(error => {
           hideStreamingStatus();
+          console.error('Streaming fetch failed:', error);
           reject(error);
         });
       });

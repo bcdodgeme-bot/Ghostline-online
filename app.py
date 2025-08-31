@@ -8,8 +8,10 @@
 # Section 1: Imports and Initial Flask Setup
 # Section 1: Imports and Initial Flask Setup
 # Section 1: Imports and Initial Flask Setup
+# Section 1: Imports and Initial Flask Setup
 
 from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify, render_template_string, Response
+from flask_cors import CORS
 from utils.ghostline_engine import generate_response, stream_generate
 from utils.rag_basic import retrieve, is_ready, load_corpus, get_build_status
 from utils.scraper import scrape_url
@@ -63,6 +65,18 @@ except Exception:
     pass
 
 app = Flask(__name__)
+
+# Enhanced session and CORS configuration for Railway deployment
+app.config.update(
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SECURE=bool(os.getenv('RAILWAY_ENVIRONMENT')),  # HTTPS on Railway
+    SESSION_COOKIE_DOMAIN=None  # Auto-detect domain
+)
+
+# Enable CORS for streaming with credentials support
+CORS(app, supports_credentials=True, origins=['*'])
+
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'ghostline-default-key')
 PASSWORD = os.getenv('GHOSTLINE_PASSWORD', 'open_the_gate')
 
@@ -92,7 +106,6 @@ if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
     DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
 
 # Section 2: Database Connection and Management Functions
-
 # Section 2: Database Imports and Initialization
 from modules.database import (
     get_db_connection, 
@@ -358,15 +371,35 @@ def upload_file():
 
 # Section 9: Other Routes - Streaming, Database Dashboard, and Utilities
 # Section 9: Other Routes - Streaming, Database Dashboard, and Utilities
+# Section 9: Other Routes - Streaming, Database Dashboard, and Utilities
+# Section 9: Other Routes - Streaming, Database Dashboard, and Utilities
+
 @app.route('/api/chat/stream', methods=['POST'])
 def stream_chat():
-    """Fixed real-time streaming chat endpoint"""
+    """Fixed streaming chat endpoint with enhanced auth debugging"""
+    
+    # Enhanced logging for debugging auth issues
+    app.logger.info(f"Stream request from {request.remote_addr}")
+    app.logger.info(f"Session data: logged_in={session.get('logged_in')}, keys={list(session.keys())}")
+    app.logger.info(f"User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
+    app.logger.info(f"Content-Type: {request.headers.get('Content-Type', 'Unknown')}")
+    
     if not session.get('logged_in'):
-        return jsonify({'error': 'Unauthorized'}), 401
+        app.logger.warning("Stream request REJECTED - authentication failed")
+        return jsonify({
+            'error': 'Unauthorized', 
+            'debug': {
+                'session_exists': bool(session),
+                'logged_in_value': session.get('logged_in'),
+                'session_keys': list(session.keys()),
+                'hint': 'Make sure frontend includes credentials: include in fetch request'
+            }
+        }), 401
     
     try:
         data = request.get_json()
         if not data:
+            app.logger.error("Stream request missing JSON data")
             return jsonify({'error': 'No JSON data provided'}), 400
             
         user_input = data.get('user_input', '').strip()
@@ -377,6 +410,8 @@ def stream_chat():
         if not user_input:
             return jsonify({'error': 'No input provided'}), 400
         
+        app.logger.info(f"Stream processing: '{user_input[:50]}...' for project '{project}'")
+        
         def generate_stream():
             try:
                 # Send initial message
@@ -386,44 +421,32 @@ def stream_chat():
                 response_data = {}
                 handled = False
                 
-                # Try command processors in sequence with error handling
-                try:
-                    # Try smart commands first
-                    response_data, handled = process_smart_command(user_input, project, use_voices, random_toggle)
-                except Exception as e:
-                    app.logger.error(f"Smart command failed: {e}")
+                # Try command processors with better error isolation
+                processors = [
+                    ('smart', lambda: process_smart_command(user_input, project, use_voices, random_toggle)),
+                    ('gmail', lambda: process_gmail_command(user_input, project, use_voices, random_toggle)),
+                    ('reminder', lambda: handle_reminder_command(user_input, project, use_voices, random_toggle)),
+                ]
                 
-                if not handled:
-                    try:
-                        # Try Gmail/calendar commands
-                        response_data, handled = process_gmail_command(user_input, project, use_voices, random_toggle)
-                    except Exception as e:
-                        app.logger.error(f"Gmail command failed: {e}")
+                # Add conditional processors
+                if is_clickup_configured():
+                    processors.append(('clickup', lambda: process_clickup_command(user_input, project, use_voices, random_toggle)))
+                if is_marketing_configured():
+                    processors.append(('marketing', lambda: process_marketing_command(user_input, project, use_voices, random_toggle)))
+                if is_cloze_configured():
+                    processors.append(('cloze', lambda: process_cloze_command(user_input, project, use_voices, random_toggle)))
                 
-                if not handled:
-                    try:
-                        # Try reminder commands
-                        response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
-                    except Exception as e:
-                        app.logger.error(f"Reminder command failed: {e}")
-                
-                if not handled and is_clickup_configured():
-                    try:
-                        response_data, handled = process_clickup_command(user_input, project, use_voices, random_toggle)
-                    except Exception as e:
-                        app.logger.error(f"ClickUp command failed: {e}")
-                
-                if not handled and is_marketing_configured():
-                    try:
-                        response_data, handled = process_marketing_command(user_input, project, use_voices, random_toggle)
-                    except Exception as e:
-                        app.logger.error(f"Marketing command failed: {e}")
-                
-                if not handled and is_cloze_configured():
-                    try:
-                        response_data, handled = process_cloze_command(user_input, project, use_voices, random_toggle)
-                    except Exception as e:
-                        app.logger.error(f"Cloze command failed: {e}")
+                # Try each processor
+                for proc_name, processor in processors:
+                    if not handled:
+                        try:
+                            response_data, handled = processor()
+                            if handled:
+                                app.logger.info(f"Request handled by {proc_name} processor")
+                                break
+                        except Exception as e:
+                            app.logger.error(f"{proc_name} processor failed: {e}")
+                            continue
                 
                 # Scrape command
                 if not handled and user_input.lower().startswith("scrape "):
@@ -468,10 +491,11 @@ def stream_chat():
                 # Save conversation
                 try:
                     save_conversation_enhanced(project, user_input, response_data)
+                    app.logger.info("Conversation saved successfully")
                 except Exception as e:
                     app.logger.error(f"Failed to save conversation: {e}")
                 
-                # Stream each response
+                # Stream each response with proper chunking
                 for voice, content in response_data.items():
                     if not content:
                         continue
@@ -485,6 +509,7 @@ def stream_chat():
                 
                 # Send completion signal
                 yield f"data: {json.dumps({'type': 'complete', 'responses': response_data})}\n\n"
+                app.logger.info("Stream completed successfully")
                 
             except Exception as e:
                 app.logger.error(f"Stream generation failed: {e}", exc_info=True)
@@ -496,13 +521,33 @@ def stream_chat():
             headers={
                 'Cache-Control': 'no-cache',
                 'Connection': 'keep-alive',
-                'X-Accel-Buffering': 'no'
+                'X-Accel-Buffering': 'no',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Credentials': 'true'
             }
         )
         
     except Exception as e:
         app.logger.error(f"Stream endpoint failed: {e}", exc_info=True)
         return jsonify({'error': f'Stream endpoint failed: {str(e)}'}), 500
+
+@app.route('/api/auth/check')
+def check_auth_status():
+    """Debug endpoint to check authentication status"""
+    if not session.get('logged_in'):
+        return jsonify({
+            'authenticated': False,
+            'session_exists': bool(session),
+            'session_keys': list(session.keys()),
+            'remote_addr': request.remote_addr,
+            'user_agent': request.headers.get('User-Agent', 'Unknown')
+        }), 401
+    
+    return jsonify({
+        'authenticated': True,
+        'session_keys': list(session.keys()),
+        'message': 'Authentication working correctly'
+    })
 
 # --- DATABASE DASHBOARD - NEW ---
 @app.route('/database_status')
