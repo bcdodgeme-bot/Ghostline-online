@@ -1512,6 +1512,12 @@ def marketing_assets():
 # Section 14: Telegram Integration Routes and Background Services
 # Section 14: Telegram Integration Routes and Background Services
 # Section 14: Telegram Integration Routes and Background Services
+# Section 14: Telegram Integration Routes and Background Services
+# Section 14: Telegram Integration Routes and Background Services
+# Section 14: Telegram Integration Routes and Background Services
+# Section 14: Telegram Integration Routes and Background Services
+# Section 14: Telegram Integration Routes and Background Services
+# Section 14: Telegram Integration Routes and Background Services
 
 # Add this route for manual reminder checking
 @app.route('/reminders/check', methods=['POST'])
@@ -1598,12 +1604,24 @@ def debug_reminders():
     except Exception as e:
         return f"Debug failed: {str(e)}"
 
-# Enhanced Telegram webhook endpoint
+# Enhanced Telegram webhook endpoint with chat ID capture
 @app.route('/telegram/webhook', methods=['POST'])
 def telegram_webhook():
-    """Enhanced Telegram webhook handler with detailed logging"""
+    """Enhanced Telegram webhook handler with chat ID capture and detailed logging"""
     try:
         data = request.get_json()
+        
+        # EXTRACT CHAT ID FOR DEBUGGING - THIS IS THE KEY FIX
+        chat_id = None
+        if 'message' in data and 'chat' in data['message']:
+            chat_id = data['message']['chat']['id']
+            print(f"=== CHAT ID FOUND: {chat_id} ===")  # This will show in Railway logs
+            app.logger.info(f"CHAT ID FOUND: {chat_id}")
+        elif 'callback_query' in data and 'message' in data['callback_query']:
+            chat_id = data['callback_query']['message']['chat']['id']
+            print(f"=== CHAT ID FOUND FROM CALLBACK: {chat_id} ===")
+            app.logger.info(f"CHAT ID FOUND FROM CALLBACK: {chat_id}")
+        
         app.logger.info(f"Telegram webhook received: {data}")
         
         # Handle callback queries (button presses)
@@ -1630,7 +1648,7 @@ def telegram_webhook():
         
         # Handle regular messages
         if 'message' in data:
-            app.logger.info(f"Received message: {data['message'].get('text', 'no text')}")
+            app.logger.info(f"Received message from chat_id {chat_id}: {data['message'].get('text', 'no text')}")
             return jsonify({"ok": True})
         
         app.logger.info("Webhook received unknown data type")
@@ -1838,12 +1856,23 @@ def telegram_dashboard():
                 background: #7f1d1d; border: 2px solid #dc2626; border-radius: 8px;
                 padding: 20px; margin: 20px 0; text-align: center;
             }
+            .chat-id-panel {
+                background: #1e40af; border: 2px solid #3b82f6; border-radius: 8px;
+                padding: 20px; margin: 20px 0; text-align: center;
+            }
         </style>
     </head>
     <body>
         <div class="container">
             <h1>🤖 Telegram Reminders</h1>
             <p>Reliable push notifications that actually work! No SMS fees, works on all devices.</p>
+            
+            <div class="chat-id-panel">
+                <h3>📱 CHAT ID NEEDED</h3>
+                <p>Send a message to your bot, then check Railway logs for:</p>
+                <code>=== CHAT ID FOUND: [NUMBER] ===</code>
+                <p>Set that number as TELEGRAM_CHAT_ID environment variable</p>
+            </div>
             
             <div class="emergency-panel">
                 <h3>🚨 EMERGENCY CONTROLS</h3>
