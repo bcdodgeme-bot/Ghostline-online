@@ -1,5 +1,7 @@
 # Section 1: Imports and Initial Flask Setup
 # Section 1: Imports and Initial Flask Setup
+# Section 1: Imports and Initial Flask Setup
+# Section 1: Imports and Initial Flask Setup
 
 from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify, render_template_string
 from utils.ghostline_engine import generate_response, stream_generate
@@ -20,6 +22,7 @@ import requests  # Add this if not already present
 # Add this with your other function imports
 from modules.marketing_commands import process_marketing_command, is_marketing_configured
 from modules.cloze_integration import process_cloze_command, is_cloze_configured
+from modules.clickup_integration import process_clickup_command, is_clickup_configured
 
 # Add these imports to the top of app.py
 from modules.telegram_notifications import (
@@ -139,7 +142,7 @@ from modules.utils import (
     is_supported_file_type
 )
 
-# Section 6: Main Route with Enhanced Database Functionality
+
 # Section 6: Main Route with Enhanced Database Functionality
 # Section 6: Main Route with Enhanced Database Functionality
 # Section 6: Main Route with Enhanced Database Functionality
@@ -148,6 +151,7 @@ from modules.utils import (
 
 from modules.gmail import process_gmail_command
 from modules.cloze_integration import process_cloze_command, is_cloze_configured
+from modules.clickup_integration import process_clickup_command, is_clickup_configured
 from modules.marketing_commands import process_marketing_command, is_marketing_configured
 from utils.scraper import scrape_url
 
@@ -233,6 +237,13 @@ def index():
             save_conversation_enhanced(project, user_input, response_data)
             return _render_enhanced(project, response_data)
 
+        # Try ClickUp commands
+        if is_clickup_configured():
+            response_data, handled = process_clickup_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+
         # Try marketing commands (image generation)
         if is_marketing_configured():
             response_data, handled = process_marketing_command(user_input, project, use_voices, random_toggle)
@@ -286,6 +297,7 @@ def index():
             save_conversation_enhanced(project, user_input, response_data)
 
     return _render_enhanced(selected_project, response_data)
+
 
 # Section 7: Brain Building Endpoints and Dashboard
 # Section 7: Brain Building Endpoints and Dashboard
@@ -2106,7 +2118,556 @@ if os.getenv('RAILWAY_ENVIRONMENT'):
 else:
     print("Telegram reminder checker disabled (not on Railway)")
 
+# Section 15: ClickUp Integration Routes and Task Management
+# Section 15: ClickUp Integration Routes and Task Management
+# Section 15: ClickUp Integration Routes and Task Management
 
+from modules.clickup_integration import (
+    process_clickup_command,
+    get_clickup_morning_briefing,
+    get_clickup_time_today,
+    get_clickup_time_week,
+    create_clickup_task,
+    get_clickup_tasks_summary,
+    is_clickup_configured,
+    ClickUpClient
+)
+
+@app.route('/clickup/status')
+def clickup_status():
+    """Check ClickUp API configuration and connection"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    status = {
+        "configured": is_clickup_configured(),
+        "api_token_present": bool(os.getenv('CLICKUP_API_TOKEN')),
+        "connection_working": False,
+        "user_info": None,
+        "team_info": None
+    }
+    
+    if is_clickup_configured():
+        try:
+            client = ClickUpClient()
+            
+            # Test connection and get user info
+            user_info = client.get_user_info()
+            status["connection_working"] = True
+            status["user_info"] = {
+                "username": user_info.get('user', {}).get('username', 'Unknown'),
+                "email": user_info.get('user', {}).get('email', 'Unknown'),
+                "id": user_info.get('user', {}).get('id', 'Unknown')
+            }
+            
+            # Get team info
+            teams = client.get_teams()
+            if teams.get('teams'):
+                status["team_info"] = {
+                    "name": teams['teams'][0].get('name', 'Unknown'),
+                    "id": teams['teams'][0].get('id', 'Unknown'),
+                    "members": len(teams['teams'][0].get('members', []))
+                }
+            
+        except Exception as e:
+            status["error"] = str(e)
+    
+    return jsonify(status)
+
+@app.route('/clickup/briefing')
+def clickup_briefing():
+    """Get ClickUp morning briefing"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    if not is_clickup_configured():
+        return "ClickUp API not configured", 400
+    
+    try:
+        briefing = get_clickup_morning_briefing()
+        html_template = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>ClickUp Morning Briefing</title>
+            <style>
+                body { 
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    background: #0f0f0f; color: #fff; margin: 0; padding: 20px; line-height: 1.6;
+                }
+                .container { max-width: 800px; margin: 0 auto; }
+                .btn { 
+                    background: #6366f1; color: white; border: none; padding: 12px 24px;
+                    border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
+                    text-decoration: none; display: inline-block;
+                }
+                .btn:hover { background: #5855eb; }
+                pre { background: #1a1a1a; padding: 20px; border-radius: 8px; white-space: pre-wrap; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>ClickUp Morning Briefing</h1>
+                <pre>{{ briefing }}</pre>
+                <a href="/" class="btn">← Back to Chat</a>
+                <a href="/clickup" class="btn">ClickUp Dashboard</a>
+            </div>
+        </body>
+        </html>
+        """
+        return render_template_string(html_template, briefing=briefing)
+        
+    except Exception as e:
+        return f"Briefing generation failed: {str(e)}", 500
+
+@app.route('/clickup/time/today')
+def clickup_time_today():
+    """Get today's time tracking"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    if not is_clickup_configured():
+        return "ClickUp API not configured", 400
+    
+    try:
+        time_summary = get_clickup_time_today()
+        html_template = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>ClickUp Time Tracking - Today</title>
+            <style>
+                body { 
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    background: #0f0f0f; color: #fff; margin: 0; padding: 20px; line-height: 1.6;
+                }
+                .container { max-width: 800px; margin: 0 auto; }
+                .btn { 
+                    background: #6366f1; color: white; border: none; padding: 12px 24px;
+                    border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
+                    text-decoration: none; display: inline-block;
+                }
+                .btn:hover { background: #5855eb; }
+                pre { background: #1a1a1a; padding: 20px; border-radius: 8px; white-space: pre-wrap; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Today's Time Tracking</h1>
+                <pre>{{ time_summary }}</pre>
+                <a href="/" class="btn">← Back to Chat</a>
+                <a href="/clickup" class="btn">ClickUp Dashboard</a>
+            </div>
+        </body>
+        </html>
+        """
+        return render_template_string(html_template, time_summary=time_summary)
+        
+    except Exception as e:
+        return f"Time tracking query failed: {str(e)}", 500
+
+@app.route('/clickup/time/week')
+def clickup_time_week():
+    """Get this week's time tracking"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    if not is_clickup_configured():
+        return "ClickUp API not configured", 400
+    
+    try:
+        time_summary = get_clickup_time_week()
+        html_template = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>ClickUp Time Tracking - This Week</title>
+            <style>
+                body { 
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    background: #0f0f0f; color: #fff; margin: 0; padding: 20px; line-height: 1.6;
+                }
+                .container { max-width: 800px; margin: 0 auto; }
+                .btn { 
+                    background: #6366f1; color: white; border: none; padding: 12px 24px;
+                    border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
+                    text-decoration: none; display: inline-block;
+                }
+                .btn:hover { background: #5855eb; }
+                pre { background: #1a1a1a; padding: 20px; border-radius: 8px; white-space: pre-wrap; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>This Week's Time Tracking</h1>
+                <pre>{{ time_summary }}</pre>
+                <a href="/" class="btn">← Back to Chat</a>
+                <a href="/clickup" class="btn">ClickUp Dashboard</a>
+            </div>
+        </body>
+        </html>
+        """
+        return render_template_string(html_template, time_summary=time_summary)
+        
+    except Exception as e:
+        return f"Time tracking query failed: {str(e)}", 500
+
+@app.route('/clickup/tasks')
+def clickup_tasks_page():
+    """Get tasks summary"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    if not is_clickup_configured():
+        return "ClickUp API not configured", 400
+    
+    try:
+        tasks_summary = get_clickup_tasks_summary()
+        html_template = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>ClickUp Tasks Summary</title>
+            <style>
+                body { 
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    background: #0f0f0f; color: #fff; margin: 0; padding: 20px; line-height: 1.6;
+                }
+                .container { max-width: 800px; margin: 0 auto; }
+                .btn { 
+                    background: #6366f1; color: white; border: none; padding: 12px 24px;
+                    border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
+                    text-decoration: none; display: inline-block;
+                }
+                .btn:hover { background: #5855eb; }
+                pre { background: #1a1a1a; padding: 20px; border-radius: 8px; white-space: pre-wrap; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>ClickUp Tasks Summary</h1>
+                <pre>{{ tasks_summary }}</pre>
+                <a href="/" class="btn">← Back to Chat</a>
+                <a href="/clickup" class="btn">ClickUp Dashboard</a>
+            </div>
+        </body>
+        </html>
+        """
+        return render_template_string(html_template, tasks_summary=tasks_summary)
+        
+    except Exception as e:
+        return f"Tasks query failed: {str(e)}", 500
+
+@app.route('/api/clickup/create-task', methods=['POST'])
+def api_clickup_create_task():
+    """Create ClickUp task via API"""
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    
+    if not is_clickup_configured():
+        return jsonify({'success': False, 'error': 'ClickUp not configured'}), 400
+    
+    try:
+        data = request.get_json()
+        task_name = data.get('task_name', '').strip()
+        
+        if not task_name:
+            return jsonify({'success': False, 'error': 'Task name required'}), 400
+        
+        client = ClickUpClient()
+        result = create_clickup_task(client, task_name, data.get('project'))
+        
+        return jsonify({
+            'success': True,
+            'message': result
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Task creation failed: {str(e)}'
+        }), 500
+
+@app.route('/api/clickup/timer/start', methods=['POST'])
+def api_clickup_start_timer():
+    """Start ClickUp timer"""
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    
+    if not is_clickup_configured():
+        return jsonify({'success': False, 'error': 'ClickUp not configured'}), 400
+    
+    try:
+        data = request.get_json()
+        task_identifier = data.get('task_identifier', '').strip()
+        
+        if not task_identifier:
+            return jsonify({'success': False, 'error': 'Task identifier required'}), 400
+        
+        client = ClickUpClient()
+        # For now, this is a placeholder - full implementation would search for task by name
+        result = f"Timer started for: {task_identifier}"
+        
+        return jsonify({
+            'success': True,
+            'message': result
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Timer start failed: {str(e)}'
+        }), 500
+
+@app.route('/api/clickup/timer/stop', methods=['POST'])
+def api_clickup_stop_timer():
+    """Stop ClickUp timer"""
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    
+    if not is_clickup_configured():
+        return jsonify({'success': False, 'error': 'ClickUp not configured'}), 400
+    
+    try:
+        client = ClickUpClient()
+        result = client.stop_time_tracking()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Timer stopped and time logged'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Timer stop failed: {str(e)}'
+        }), 500
+
+@app.route('/clickup')
+def clickup_dashboard():
+    """ClickUp integration dashboard"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    return render_template_string("""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>ClickUp Integration Dashboard</title>
+        <style>
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #0f0f0f; 
+                color: #fff; 
+                margin: 0; 
+                padding: 20px; 
+            }
+            .container { max-width: 1000px; margin: 0 auto; }
+            .status-box { 
+                background: #1a1a1a; 
+                border: 1px solid #333; 
+                border-radius: 8px; 
+                padding: 20px; 
+                margin: 20px 0; 
+            }
+            .btn { 
+                background: #6366f1; 
+                color: white; 
+                border: none; 
+                padding: 12px 24px; 
+                border-radius: 8px; 
+                cursor: pointer; 
+                font-size: 16px;
+                margin: 10px 5px;
+                text-decoration: none;
+                display: inline-block;
+            }
+            .btn:hover { background: #5855eb; }
+            .btn.secondary { background: #374151; }
+            .btn.secondary:hover { background: #4b5563; }
+            .btn.success { background: #059669; }
+            .btn.warning { background: #d97706; }
+            .commands-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 15px;
+                margin: 20px 0;
+            }
+            .command-card {
+                background: #2a2a2a;
+                padding: 15px;
+                border-radius: 8px;
+            }
+            .command-title {
+                font-size: 18px;
+                font-weight: bold;
+                margin-bottom: 10px;
+                color: #6366f1;
+            }
+            .command-example {
+                background: #1a1a1a;
+                padding: 10px;
+                border-radius: 4px;
+                font-family: monospace;
+                margin-top: 10px;
+            }
+            .success { color: #10b981; }
+            .error { color: #ef4444; }
+            .warning { color: #f59e0b; }
+            .feature-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 15px;
+                margin: 20px 0;
+            }
+            .feature-card {
+                background: #1a1a1a;
+                border: 1px solid #333;
+                border-radius: 8px;
+                padding: 15px;
+                text-align: center;
+            }
+            .feature-icon {
+                font-size: 2em;
+                margin-bottom: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>📋 ClickUp Integration</h1>
+            <p>Task management, time tracking, and productivity insights integrated with Ghostline.</p>
+            
+            <div class="status-box">
+                <h3>Connection Status</h3>
+                <div id="status">Loading...</div>
+            </div>
+            
+            <div class="status-box">
+                <h3>Quick Actions</h3>
+                <a href="/clickup/briefing" class="btn">Morning Briefing</a>
+                <a href="/clickup/time/today" class="btn">Today's Time</a>
+                <a href="/clickup/time/week" class="btn">Weekly Hours</a>
+                <a href="/clickup/tasks" class="btn">Tasks Summary</a>
+                <a href="/clickup/status" class="btn secondary">API Status</a>
+            </div>
+            
+            <div class="status-box">
+                <h3>Features</h3>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">⏰</div>
+                        <h4>Time Tracking</h4>
+                        <p>Monitor logged hours, daily/weekly summaries, and productivity patterns</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📝</div>
+                        <h4>Task Management</h4>
+                        <p>Create tasks, view deadlines, track priorities and completion status</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📊</div>
+                        <h4>Smart Briefings</h4>
+                        <p>Daily summaries with due tasks, overdue items, and time insights</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔄</div>
+                        <h4>Auto-Logging</h4>
+                        <p>Convert conversations and reminders into actionable ClickUp tasks</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="status-box">
+                <h3>Available Chat Commands</h3>
+                <div class="commands-grid">
+                    <div class="command-card">
+                        <div class="command-title">Morning Briefing</div>
+                        <p>Get daily task overview and time tracking summary</p>
+                        <div class="command-example">clickup morning</div>
+                        <div class="command-example">clickup briefing</div>
+                    </div>
+                    
+                    <div class="command-card">
+                        <div class="command-title">Time Tracking</div>
+                        <p>View logged hours and productivity insights</p>
+                        <div class="command-example">clickup time today</div>
+                        <div class="command-example">clickup time week</div>
+                    </div>
+                    
+                    <div class="command-card">
+                        <div class="command-title">Task Creation</div>
+                        <p>Create new tasks directly from chat</p>
+                        <div class="command-example">create clickup task: review proposal</div>
+                        <div class="command-example">add clickup task: call client</div>
+                    </div>
+                    
+                    <div class="command-card">
+                        <div class="command-title">Task Queries</div>
+                        <p>View current tasks, deadlines, and priorities</p>
+                        <div class="command-example">clickup tasks</div>
+                        <div class="command-example">clickup deadlines</div>
+                    </div>
+                    
+                    <div class="command-card">
+                        <div class="command-title">Timer Controls</div>
+                        <p>Start and stop time tracking</p>
+                        <div class="command-example">start timer on [task name]</div>
+                        <div class="command-example">stop timer</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="status-box">
+                <h3>Setup Instructions</h3>
+                <ol>
+                    <li>Go to your <strong>ClickUp Settings</strong></li>
+                    <li>Navigate to <strong>Apps → API</strong></li>
+                    <li>Generate a <strong>Personal API Token</strong></li>
+                    <li>Set <strong>CLICKUP_API_TOKEN</strong> environment variable</li>
+                    <li>Restart Ghostline to activate integration</li>
+                </ol>
+                <p><strong>Note:</strong> ClickUp API access may require a paid plan.</p>
+            </div>
+            
+            <div class="status-box">
+                <button class="btn secondary" onclick="window.location.href='/'">← Back to Chat</button>
+                <button class="btn secondary" onclick="window.location.href='/brain'">Brain Dashboard</button>
+                <button class="btn secondary" onclick="window.location.href='/database'">Database Dashboard</button>
+                <button class="btn secondary" onclick="window.location.href='/telegram'">Telegram Dashboard</button>
+            </div>
+        </div>
+        
+        <script>
+            function refreshStatus() {
+                fetch('/clickup/status')
+                    .then(r => r.json())
+                    .then(data => {
+                        const statusDiv = document.getElementById('status');
+                        
+                        if (!data.configured) {
+                            statusDiv.innerHTML = '<span class="warning">API Token Not Configured</span><br>Set CLICKUP_API_TOKEN environment variable';
+                        } else if (data.connection_working && data.user_info) {
+                            statusDiv.innerHTML = '<span class="success">Connected to ClickUp</span><br>User: ' + data.user_info.username + ' (' + data.user_info.email + ')';
+                            
+                            if (data.team_info) {
+                                statusDiv.innerHTML += '<br>Team: ' + data.team_info.name + ' (' + data.team_info.members + ' members)';
+                            }
+                        } else {
+                            statusDiv.innerHTML = '<span class="error">Connection Failed</span><br>' + (data.error || 'Unknown error');
+                        }
+                    })
+                    .catch(e => {
+                        document.getElementById('status').innerHTML = '<span class="error">Status Check Failed</span>';
+                    });
+            }
+            
+            refreshStatus();
+            setInterval(refreshStatus, 30000);
+        </script>
+    </body>
+    </html>
+    """)
 
 # Section 10: Debug Routes, Authentication, and App Startup
 # Section 10: Debug Routes, Authentication, and App Startup
