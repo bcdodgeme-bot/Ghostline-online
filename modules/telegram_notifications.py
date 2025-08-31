@@ -246,7 +246,7 @@ class GhostlineTelegramReminders:
                             ],
                             [
                                 {"text": "⏰ Snooze 1h", "callback_data": f"snooze60_{reminder_id}"},
-                                {"text": "🔍 More Info", "callback_data": f"info_{reminder_id}"}
+                                {"text": "📝 More Info", "callback_data": f"info_{reminder_id}"}
                             ]
                         ]
                     }
@@ -437,7 +437,7 @@ class GhostlineTelegramReminders:
                     if result:
                         title, content, project, created_at, priority = result
                         
-                        info_parts = [f"🔍 *Reminder Details*"]
+                        info_parts = [f"📝 *Reminder Details*"]
                         info_parts.append(f"*Title:* {title}")
                         
                         if content:
@@ -542,7 +542,7 @@ class GhostlineTelegramReminders:
                     return []
 
 def parse_reminder_command(user_input, project=None):
-    """Parse natural language reminder commands with Eastern timezone - TIMEZONE FIXED"""
+    """Parse natural language reminder commands with correct timezone handling"""
     
     # Clean up the input
     original_input = user_input
@@ -589,28 +589,29 @@ def parse_reminder_command(user_input, project=None):
             "error": "No reminder content found. Try: 'remind me to call John in 30 minutes'"
         }
     
-    # FIXED TIMEZONE LOGIC: Work in Eastern time, then convert to UTC for storage
-    eastern_time = datetime.datetime.now() + remind_delta
+    # CORRECTED TIMEZONE LOGIC:
+    # Work entirely in UTC (server time), only convert to Eastern for display
+    utc_now = datetime.datetime.now()  # Server runs in UTC
+    utc_remind_time = utc_now + remind_delta  # Target time in UTC
     
-    # Convert FROM Eastern TO UTC for database storage
-    # Eastern is behind UTC, so we ADD hours to get UTC
+    # Convert UTC to Eastern for display only - SUBTRACT hours because Eastern is behind UTC
     now = datetime.datetime.now()
-    is_dst = now.month >= 3 and now.month <= 10  # Rough DST check (August = DST)
+    is_dst = now.month >= 3 and now.month <= 10  # March through October (rough DST check)
     
     if is_dst:
-        # EDT = UTC-4, so Eastern + 4 hours = UTC
-        utc_time = eastern_time + datetime.timedelta(hours=4)
+        # EDT = UTC-4, so UTC - 4 hours = Eastern
+        eastern_display_time = utc_remind_time - datetime.timedelta(hours=4)
     else:
-        # EST = UTC-5, so Eastern + 5 hours = UTC  
-        utc_time = eastern_time + datetime.timedelta(hours=5)
+        # EST = UTC-5, so UTC - 5 hours = Eastern  
+        eastern_display_time = utc_remind_time - datetime.timedelta(hours=5)
     
     return {
         "success": True,
         "title": reminder_text,
-        "remind_at": utc_time,  # Store in UTC
+        "remind_at": utc_remind_time,  # Store in UTC
         "project": project,
         "remind_delta": remind_delta,
-        "display_time": eastern_time.strftime('%I:%M %p on %B %d')  # Display in Eastern
+        "display_time": eastern_display_time.strftime('%I:%M %p on %B %d')  # Display in Eastern
     }
 
 def parse_tomorrow_time(hour, period):
