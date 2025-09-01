@@ -1,4 +1,5 @@
-# modules/database.py - Database Operations Module
+# modules/database.py - Enhanced Database Operations Module
+# Complete replacement file with brain health monitoring and context management
 
 import os
 import datetime
@@ -114,6 +115,20 @@ def init_database():
             # Create indexes for brain_documents
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_brain_docs_id ON brain_documents (document_id)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_brain_docs_title ON brain_documents (title)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_brain_docs_content_fts ON brain_documents USING gin(to_tsvector(\'english\', content))')
+            
+            # Create brain_health table for monitoring
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS brain_health (
+                    id SERIAL PRIMARY KEY,
+                    last_refresh TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    total_documents INTEGER DEFAULT 0,
+                    last_search_query TEXT,
+                    last_search_results INTEGER DEFAULT 0,
+                    health_status VARCHAR(50) DEFAULT 'healthy',
+                    error_log TEXT
+                )
+            ''')
             
             conn.commit()
             print("Database tables initialized successfully")
@@ -123,15 +138,21 @@ def init_database():
             print(f"Database initialization failed: {e}")
 
 def search_brain_database(query_text, k=5):
-    """Search brain documents in database using PostgreSQL full-text search"""
+    """Enhanced search with debugging and fallback strategies"""
     with get_db_connection() as conn:
         if not conn:
+            print(f"No DB connection for query: '{query_text}'")
             return []
         
         try:
             cursor = conn.cursor(cursor_factory=RealDictCursor)
             
-            # Use PostgreSQL's full-text search with ranking
+            print(f"Searching database for: '{query_text}'")
+            
+            # Try multiple search strategies
+            results = []
+            
+            # Strategy 1: Full-text search with ranking
             search_sql = '''
                 SELECT document_id, title, content, metadata,
                        ts_rank(to_tsvector('english', content || ' ' || COALESCE(title, '')), 
@@ -146,23 +167,120 @@ def search_brain_database(query_text, k=5):
             cursor.execute(search_sql, (query_text, query_text, k))
             rows = cursor.fetchall()
             
+            if rows:
+                print(f"Full-text search returned {len(rows)} results")
+                print(f"Top result: {rows[0]['title']} (rank: {rows[0]['rank']:.4f})")
+            else:
+                print("Full-text search found no results")
+                
+                # Strategy 2: Fallback to LIKE search for partial matches
+                fallback_sql = '''
+                    SELECT document_id, title, content, metadata, 1.0 as rank
+                    FROM brain_documents 
+                    WHERE LOWER(content) LIKE %s OR LOWER(title) LIKE %s
+                    ORDER BY LENGTH(title) ASC
+                    LIMIT %s
+                '''
+                
+                like_pattern = f'%{query_text.lower()}%'
+                cursor.execute(fallback_sql, (like_pattern, like_pattern, k))
+                rows = cursor.fetchall()
+                
+                if rows:
+                    print(f"Fallback LIKE search returned {len(rows)} results")
+                else:
+                    print("No results found with any search strategy")
+            
             # Convert to format expected by RAG system
-            results = []
             for row in rows:
                 results.append({
-                    'text': row['content'][:1000],  # Limit chunk size
+                    'text': row['content'][:1500],  # Increased chunk size
                     'source': row['title'] or f"Document {row['document_id']}",
                     'id': row['document_id'],
                     'score': float(row['rank']),
                     'metadata': row['metadata'] or {}
                 })
             
-            print(f"Database search found {len(results)} results for: {query_text}")
+            # Log search results for monitoring
+            update_brain_health(query_text, len(results))
+            
             return results
             
         except Exception as e:
             print(f"Database search failed: {e}")
+            update_brain_health(query_text, 0, error=str(e))
             return []
+
+def update_brain_health(query=None, results_count=0, error=None):
+    """Update brain health monitoring"""
+    with get_db_connection() as conn:
+        if not conn:
+            return
+        
+        try:
+            cursor = conn.cursor()
+            
+            # Get current document count
+            cursor.execute('SELECT COUNT(*) FROM brain_documents')
+            doc_count = cursor.fetchone()[0]
+            
+            # Update or insert health record
+            cursor.execute('''
+                INSERT INTO brain_health (last_refresh, total_documents, last_search_query, 
+                                        last_search_results, health_status, error_log)
+                VALUES (CURRENT_TIMESTAMP, %s, %s, %s, %s, %s)
+                ON CONFLICT DO NOTHING
+            ''', (doc_count, query, results_count, 'healthy' if not error else 'error', error))
+            
+            # Also update the most recent record
+            cursor.execute('''
+                UPDATE brain_health 
+                SET last_refresh = CURRENT_TIMESTAMP,
+                    total_documents = %s,
+                    last_search_query = %s,
+                    last_search_results = %s,
+                    health_status = %s,
+                    error_log = %s
+                WHERE id = (SELECT MAX(id) FROM brain_health)
+            ''', (doc_count, query, results_count, 'healthy' if not error else 'error', error))
+            
+            conn.commit()
+            
+        except Exception as e:
+            print(f"Failed to update brain health: {e}")
+
+def get_brain_health_status():
+    """Get current brain health status"""
+    with get_db_connection() as conn:
+        if not conn:
+            return {"status": "no_database", "message": "No database connection"}
+        
+        try:
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            
+            # Get latest health record
+            cursor.execute('''
+                SELECT * FROM brain_health 
+                ORDER BY last_refresh DESC 
+                LIMIT 1
+            ''')
+            
+            health_record = cursor.fetchone()
+            
+            if not health_record:
+                return {"status": "unknown", "message": "No health records found"}
+            
+            return {
+                "status": health_record['health_status'],
+                "last_refresh": health_record['last_refresh'].isoformat(),
+                "total_documents": health_record['total_documents'],
+                "last_search_query": health_record['last_search_query'],
+                "last_search_results": health_record['last_search_results'],
+                "error_log": health_record['error_log']
+            }
+            
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
 
 def load_conversation_enhanced(project: str, limit: int = 50):
     """Load conversation history from database first, then fallback to file"""
@@ -197,9 +315,7 @@ def load_conversation_enhanced(project: str, limit: int = 50):
             except Exception as e:
                 print(f"Failed to load conversations from database: {e}")
     
-    # Fallback to file system - need to import this function from utils
-    print(f"Falling back to file system for {project} conversations")
-    # Import will be handled when this module is properly integrated
+    # Fallback to file system will be handled by calling function
     return []
 
 def save_conversation_enhanced(project: str, user_input: str, response_data: dict):
@@ -221,9 +337,6 @@ def save_conversation_enhanced(project: str, user_input: str, response_data: dic
             except Exception as e:
                 print(f"Failed to save conversation to database: {e}")
                 conn.rollback()
-    
-    # File backup will be handled when module is integrated
-    # _append_session(project, user_input, response_data)
 
 def save_daily_log_enhanced(sync_type: str, content: str):
     """Save daily log to both database and file"""
@@ -247,9 +360,6 @@ def save_daily_log_enhanced(sync_type: str, content: str):
             except Exception as e:
                 print(f"Failed to save daily log to database: {e}")
                 conn.rollback()
-    
-    # File backup will be handled when module is integrated
-    # _save_daily_log(sync_type, content)
 
 def track_uploaded_file(filename: str, file_type: str, project: str, content_preview: str = ""):
     """Track uploaded files in database"""
@@ -260,7 +370,7 @@ def track_uploaded_file(filename: str, file_type: str, project: str, content_pre
                 cursor.execute('''
                     INSERT INTO uploaded_files (filename, file_type, project, content_preview)
                     VALUES (%s, %s, %s, %s)
-                ''', (filename, file_type, project, content_preview[:500]))  # Limit preview length
+                ''', (filename, file_type, project, content_preview[:500]))
                 
                 conn.commit()
                 print(f"File upload tracked: {filename}")
@@ -270,7 +380,7 @@ def track_uploaded_file(filename: str, file_type: str, project: str, content_pre
                 conn.rollback()
 
 def save_brain_to_database(corpus_data):
-    """Save processed brain corpus to database"""
+    """Save processed brain corpus to database with progress tracking"""
     with get_db_connection() as conn:
         if not conn:
             print("No database connection - brain will only be saved to file")
@@ -283,28 +393,40 @@ def save_brain_to_database(corpus_data):
             cursor.execute('DELETE FROM brain_documents')
             print("Cleared existing brain documents from database")
             
-            # Insert new brain data
+            # Insert new brain data in batches
             saved_count = 0
-            for item in corpus_data:
-                cursor.execute('''
-                    INSERT INTO brain_documents (document_id, title, content, chunk_index, metadata)
-                    VALUES (%s, %s, %s, %s, %s)
-                ''', (
-                    item.get('id', 'unknown'),
-                    item.get('title', '')[:500],  # Limit title length
-                    item.get('content', ''),
-                    item.get('chunk_index', 0),
-                    psycopg2.extras.Json(item.get('metadata', {}))
-                ))
-                saved_count += 1
+            batch_size = 100
             
-            conn.commit()
-            print(f"Saved {saved_count} brain documents to database")
+            for i in range(0, len(corpus_data), batch_size):
+                batch = corpus_data[i:i + batch_size]
+                
+                for item in batch:
+                    cursor.execute('''
+                        INSERT INTO brain_documents (document_id, title, content, chunk_index, metadata)
+                        VALUES (%s, %s, %s, %s, %s)
+                    ''', (
+                        item.get('id', 'unknown'),
+                        item.get('title', '')[:500],
+                        item.get('content', ''),
+                        item.get('chunk_index', 0),
+                        psycopg2.extras.Json(item.get('metadata', {}))
+                    ))
+                    saved_count += 1
+                
+                # Commit each batch
+                conn.commit()
+                print(f"Saved batch {i//batch_size + 1}: {saved_count} total documents")
+            
+            # Update brain health
+            update_brain_health(results_count=saved_count)
+            
+            print(f"Successfully saved {saved_count} brain documents to database")
             return True
             
         except Exception as e:
             print(f"Failed to save brain to database: {e}")
             conn.rollback()
+            update_brain_health(error=str(e))
             return False
 
 def load_brain_from_database():
@@ -341,14 +463,16 @@ def load_brain_from_database():
             return None
 
 def get_database_status():
-    """Check database connection and table status"""
+    """Check database connection and table status with enhanced info"""
     status = {
         "database_url_configured": bool(DATABASE_URL),
         "connection_working": False,
         "tables_exist": False,
         "conversation_count": 0,
         "uploaded_files_count": 0,
-        "daily_logs_count": 0
+        "daily_logs_count": 0,
+        "brain_documents_count": 0,
+        "brain_health": None
     }
     
     with get_db_connection() as conn:
@@ -360,10 +484,10 @@ def get_database_status():
                 # Check if tables exist
                 cursor.execute('''
                     SELECT COUNT(*) FROM information_schema.tables 
-                    WHERE table_name IN ('chat_threads', 'uploaded_files', 'daily_logs', 'user_settings')
+                    WHERE table_name IN ('chat_threads', 'uploaded_files', 'daily_logs', 'user_settings', 'brain_documents', 'brain_health')
                 ''')
                 table_count = cursor.fetchone()[0]
-                status["tables_exist"] = table_count == 4
+                status["tables_exist"] = table_count >= 4
                 
                 if status["tables_exist"]:
                     # Get record counts
@@ -375,6 +499,16 @@ def get_database_status():
                     
                     cursor.execute('SELECT COUNT(*) FROM daily_logs')
                     status["daily_logs_count"] = cursor.fetchone()[0]
+                    
+                    # Brain-specific counts
+                    try:
+                        cursor.execute('SELECT COUNT(*) FROM brain_documents')
+                        status["brain_documents_count"] = cursor.fetchone()[0]
+                    except:
+                        status["brain_documents_count"] = 0
+                
+                # Get brain health status
+                status["brain_health"] = get_brain_health_status()
                 
             except Exception as e:
                 print(f"Database status check failed: {e}")

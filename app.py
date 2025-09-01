@@ -105,6 +105,9 @@ if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
     # Railway provides postgres:// but psycopg2 needs postgresql://
     DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
 
+# Add this after your existing imports in Section 1
+import datetime
+
 # Section 2: Database Connection and Management Functions
 # Section 2: Database Imports and Initialization
 from modules.database import (
@@ -166,18 +169,22 @@ from modules.utils import (
 
 
 # Section 6: Main Route with Enhanced Database Functionality
-# Section 6: Main Route with Enhanced Database Functionality
-# Section 6: Main Route with Enhanced Database Functionality
-# Section 6: Main Route with Enhanced Database Functionality
-# Section 6: Main Route with Enhanced Database Functionality
-# Section 6: Main Route with Enhanced Database Functionality
-# Section 6: Main Route with Enhanced Database Functionality
+# Section 6: Main Route with Enhanced Database Functionality and Auto-Refresh
+# Section 6: Main Route with Enhanced Database Functionality and Auto-Refresh
+# Section 6: Main Route with Enhanced Database Functionality and Auto-Refresh
+# Section 6: Main Route with Enhanced Database Functionality and Auto-Refresh
+# Section 6: Main Route with Enhanced Database Functionality and Auto-Refresh
+# Section 6: Main Route with Enhanced Database Functionality and Auto-Refresh
+# Section 6: Main Route with Enhanced Database Functionality and Auto-Refresh
 
 from modules.gmail import process_gmail_command
 from modules.cloze_integration import process_cloze_command, is_cloze_configured
 from modules.clickup_integration import process_clickup_command, is_clickup_configured
 from modules.marketing_commands import process_marketing_command, is_marketing_configured
 from utils.scraper import scrape_url
+
+# Import the enhanced brain functions
+from modules.brain import enhanced_retrieve, refresh_brain_context
 
 def handle_reminder_command(user_input, project, use_voices, random_toggle):
     """Handle reminder creation commands"""
@@ -234,6 +241,90 @@ def handle_reminder_command(user_input, project, use_voices, random_toggle):
         response_data = {"SyntaxPrime": f"Reminder creation failed: {str(e)}"}
         return response_data, True
 
+def generate_response_with_context_check(user_input, use_voices, random_toggle, project, model, retrieval_context):
+    """Enhanced response generation with context validation and debugging"""
+    
+    # Check if we have sufficient context for specific queries
+    context_quality = len(retrieval_context) if retrieval_context else 0
+    is_specific_query = any(term in user_input.lower() for term in [
+        'what does', 'what is', 'tell me about', 'explain', 'describe',
+        'who is', 'where is', 'when is', 'how does', 'why does'
+    ])
+    
+    print(f"Context check: {context_quality} results for query: '{user_input}' (specific: {is_specific_query})")
+    
+    # If context is weak for specific queries, try enhanced search
+    if context_quality < 2 and is_specific_query:
+        print(f"Weak context for specific query, trying enhanced search approaches")
+        
+        # Try multiple search approaches
+        enhanced_context = []
+        search_terms = user_input.lower().replace('?', '').split()
+        
+        # Extract important words (longer than 3 chars, not common words)
+        important_words = [w for w in search_terms 
+                          if len(w) > 3 and w not in [
+                              'what', 'does', 'tell', 'about', 'explain', 'describe',
+                              'where', 'when', 'who', 'how', 'why', 'the', 'and', 'are',
+                              'this', 'that', 'with', 'from', 'they', 'have', 'been'
+                          ]]
+        
+        print(f"Trying search with important words: {important_words}")
+        
+        for word in important_words[:3]:  # Try up to 3 important words
+            try:
+                additional_context = enhanced_retrieve(word, k=3)
+                if additional_context:
+                    enhanced_context.extend(additional_context)
+                    print(f"Found {len(additional_context)} results for '{word}'")
+            except Exception as e:
+                print(f"Enhanced search failed for '{word}': {e}")
+        
+        # Also try the full query one more time
+        try:
+            final_attempt = enhanced_retrieve(user_input, k=5)
+            if final_attempt:
+                enhanced_context.extend(final_attempt)
+                print(f"Final attempt found {len(final_attempt)} additional results")
+        except Exception as e:
+            print(f"Final enhanced search attempt failed: {e}")
+        
+        # Remove duplicates and use enhanced context if better
+        if enhanced_context:
+            # Simple deduplication by content
+            seen_content = set()
+            unique_context = []
+            for item in enhanced_context:
+                content_key = item.get('text', '')[:100]  # First 100 chars as key
+                if content_key not in seen_content:
+                    seen_content.add(content_key)
+                    unique_context.append(item)
+            
+            if len(unique_context) > context_quality:
+                retrieval_context = unique_context[:10]  # Limit to 10 best results
+                print(f"Using enhanced context: {len(retrieval_context)} unique results")
+    
+    # Add instruction to be less overly cautious about knowledge
+    if is_specific_query and len(retrieval_context) < 2:
+        # Modify the prompt to encourage using general knowledge
+        enhanced_prompt = f"""User question: {user_input}
+
+Context from database: {len(retrieval_context)} results found.
+
+Important: Even if database context is limited, please answer using your general knowledge when appropriate. Don't claim you lack information if you actually know about the topic from your training. Only defer to "I don't have information" for very specific or recent topics that genuinely require external sources.
+
+If this is about popular culture, TV shows, movies, books, or well-known topics, please provide a helpful response based on your training knowledge."""
+        
+        return generate_response(
+            enhanced_prompt, use_voices, random_toggle,
+            project=project, model=model, retrieval_context=retrieval_context
+        )
+    
+    return generate_response(
+        user_input, use_voices, random_toggle,
+        project=project, model=model, retrieval_context=retrieval_context
+    )
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if not session.get('logged_in'):
@@ -249,6 +340,12 @@ def index():
         selected_project = project
         use_voices = request.form.getlist('voices') or ['SyntaxPrime']
         random_toggle = 'random' in request.form
+
+        # Auto-refresh brain context periodically
+        try:
+            refresh_brain_context()
+        except Exception as e:
+            print(f"Brain context refresh failed: {e}")
 
         # Try smart commands FIRST (before individual system commands)
         response_data, handled = process_smart_command(user_input, project, use_voices, random_toggle)
@@ -313,13 +410,16 @@ def index():
             save_conversation_enhanced(project, user_input, response_data)
             return _render_enhanced(project, response_data)
 
-        # ---- Normal flow ----
+        # ---- Normal flow with enhanced context checking ----
         try:
             retrieval_ctx = enhanced_retrieve(user_input, k=5) if is_ready() else []
-            response_data = generate_response(
+            
+            # Use enhanced response generation with context validation
+            response_data = generate_response_with_context_check(
                 user_input, use_voices, random_toggle,
-                project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+                project, CHAT_MODEL, retrieval_ctx
             )
+            
             save_conversation_enhanced(project, user_input, response_data)
         except Exception as e:
             app.logger.error(f"Normal flow failed: {e}")
@@ -769,6 +869,242 @@ def export_session(project):
         )
     except FileNotFoundError:
         return f"No session data found for project: {project}", 404
+
+# Section 9A: Enhanced Debug Routes for Brain Health Monitoring
+# Section 9A: Enhanced Debug Routes for Brain Health Monitoring
+
+@app.route('/debug/brain_diagnostics')
+def debug_brain_diagnostics():
+    """Comprehensive brain system diagnostics"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    try:
+        from modules.brain import get_brain_diagnostics
+        diagnostics = get_brain_diagnostics()
+        return jsonify(diagnostics)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/debug/brain_health')
+def debug_brain_health():
+    """Check brain health status with detailed reporting"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    health_report = []
+    
+    # Check file-based RAG
+    try:
+        from utils.rag_basic import _rag_system
+        if _rag_system and hasattr(_rag_system, 'chunks'):
+            health_report.append(f"✅ File RAG: {len(_rag_system.chunks)} chunks loaded")
+        else:
+            health_report.append("❌ File RAG: Not loaded or no chunks")
+    except Exception as e:
+        health_report.append(f"❌ File RAG: Error - {e}")
+    
+    # Check database
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT COUNT(*) FROM brain_documents")
+                count = cursor.fetchone()[0]
+                health_report.append(f"✅ Database: {count:,} documents")
+                
+                # Check recent activity
+                cursor.execute("""
+                    SELECT COUNT(*) FROM brain_health 
+                    WHERE last_refresh > NOW() - INTERVAL '24 hours'
+                """)
+                recent_activity = cursor.fetchone()[0]
+                health_report.append(f"📊 Recent Activity: {recent_activity} health checks in 24h")
+                
+            else:
+                health_report.append("❌ Database: No connection")
+    except Exception as e:
+        health_report.append(f"❌ Database: Error - {e}")
+    
+    # Test search with problematic queries
+    test_queries = [
+        "Dead Like Me", "Happy Time", "tv show", "television series",
+        "Carl", "project management", "marketing", "ghostline"
+    ]
+    
+    health_report.append("\n--- SEARCH TESTS ---")
+    
+    for query in test_queries:
+        try:
+            from modules.brain import enhanced_retrieve
+            results = enhanced_retrieve(query, k=3)
+            if results:
+                health_report.append(f"✅ '{query}': {len(results)} results")
+                # Show first result preview
+                if results[0].get('text'):
+                    preview = results[0]['text'][:100].replace('\n', ' ')
+                    health_report.append(f"   Preview: {preview}...")
+            else:
+                health_report.append(f"❌ '{query}': No results")
+        except Exception as e:
+            health_report.append(f"❌ '{query}': Error - {e}")
+    
+    # Test context refresh
+    health_report.append("\n--- CONTEXT REFRESH TEST ---")
+    try:
+        from modules.brain import refresh_brain_context, _last_brain_refresh
+        refresh_brain_context()
+        if _last_brain_refresh:
+            health_report.append(f"✅ Brain refresh: {_last_brain_refresh.strftime('%Y-%m-%d %H:%M:%S')}")
+        else:
+            health_report.append("⚠️ Brain refresh: No refresh timestamp")
+    except Exception as e:
+        health_report.append(f"❌ Brain refresh: Error - {e}")
+    
+    # Generate HTML report
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Brain Health Report</title>
+        <style>
+            body {{ 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
+            }}
+            .container {{ max-width: 1000px; margin: 0 auto; }}
+            .btn {{ 
+                background: #6366f1; color: white; border: none; padding: 12px 24px;
+                border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
+                text-decoration: none; display: inline-block;
+            }}
+            .btn:hover {{ background: #5855eb; }}
+            pre {{ 
+                background: #1a1a1a; padding: 20px; border-radius: 8px; 
+                white-space: pre-wrap; line-height: 1.4; border: 1px solid #333;
+                overflow-x: auto;
+            }}
+            .timestamp {{
+                color: #888; font-size: 12px; margin-bottom: 20px;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🧠 Brain Health Report</h1>
+            <div class="timestamp">Generated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
+            
+            <pre>{"<br>".join(health_report)}</pre>
+            
+            <a href="/brain" class="btn">🧠 Brain Dashboard</a>
+            <a href="/database" class="btn">💾 Database Dashboard</a>
+            <a href="/" class="btn">💬 Back to Chat</a>
+            <button class="btn" onclick="window.location.reload()">🔄 Refresh Report</button>
+        </div>
+    </body>
+    </html>
+    """
+    
+    return html_content
+
+@app.route('/debug/search_test')
+def debug_search_test():
+    """Interactive search testing tool"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    query = request.args.get('q', '').strip()
+    k = int(request.args.get('k', 5))
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Search Test Tool</title>
+        <style>
+            body {{ 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
+            }}
+            .container {{ max-width: 1000px; margin: 0 auto; }}
+            input {{ 
+                background: #1a1a1a; color: #fff; border: 1px solid #333; 
+                padding: 10px; border-radius: 8px; margin: 5px; width: 300px;
+            }}
+            .btn {{ 
+                background: #6366f1; color: white; border: none; padding: 10px 20px;
+                border-radius: 8px; cursor: pointer; margin: 5px;
+            }}
+            .result {{ 
+                background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
+                padding: 15px; margin: 10px 0;
+            }}
+            .result-header {{ color: #6366f1; font-weight: bold; }}
+            .result-content {{ margin: 10px 0; line-height: 1.4; }}
+            .result-meta {{ color: #888; font-size: 12px; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🔍 Search Test Tool</h1>
+            
+            <form method="GET">
+                <input type="text" name="q" placeholder="Enter search query..." value="{query}">
+                <input type="number" name="k" placeholder="Results" value="{k}" min="1" max="20">
+                <button type="submit" class="btn">Search</button>
+            </form>
+            
+            <div style="margin: 20px 0;">
+                <strong>Quick Tests:</strong>
+                <a href="?q=Dead Like Me&k=5" class="btn">Dead Like Me</a>
+                <a href="?q=Happy Time&k=5" class="btn">Happy Time</a>
+                <a href="?q=television show&k=5" class="btn">TV Show</a>
+                <a href="?q=Carl&k=5" class="btn">Carl</a>
+                <a href="?q=marketing&k=5" class="btn">Marketing</a>
+            </div>
+    """
+    
+    if query:
+        html_content += f"<h2>Results for: '{query}'</h2>"
+        
+        try:
+            from modules.brain import enhanced_retrieve
+            results = enhanced_retrieve(query, k)
+            
+            if results:
+                html_content += f"<p>Found {len(results)} results:</p>"
+                
+                for i, result in enumerate(results, 1):
+                    source = result.get('source', 'Unknown')
+                    text = result.get('text', 'No content')
+                    score = result.get('score', 0)
+                    
+                    html_content += f"""
+                    <div class="result">
+                        <div class="result-header">Result {i}: {source}</div>
+                        <div class="result-content">{text[:500]}{'...' if len(text) > 500 else ''}</div>
+                        <div class="result-meta">Score: {score:.4f} | Length: {len(text)} chars</div>
+                    </div>
+                    """
+            else:
+                html_content += "<p>❌ No results found</p>"
+                
+        except Exception as e:
+            html_content += f"<p>❌ Search failed: {e}</p>"
+    
+    html_content += """
+            <div style="margin-top: 30px;">
+                <a href="/debug/brain_health" class="btn">🩺 Health Check</a>
+                <a href="/brain" class="btn">🧠 Brain Dashboard</a>
+                <a href="/" class="btn">💬 Back to Chat</a>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    return html_content
+
 
 # Section 11: PDF Generation Routes
 # Section 11: PDF Generation Routes

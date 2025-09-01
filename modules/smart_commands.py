@@ -1,10 +1,9 @@
-# modules/smart_commands.py
-# Intelligent command routing that aggregates multiple data sources
+# modules/smart_commands.py - Enhanced Smart Commands with Better Context Management
+# Complete replacement file with improved brain integration
 
 import os
 from utils.ghostline_engine import generate_response
 from utils.rag_basic import is_ready
-from modules.brain import enhanced_retrieve
 from modules.database import save_conversation_enhanced, save_daily_log_enhanced
 
 # Import existing handlers
@@ -24,39 +23,50 @@ from modules.cloze_integration import (
 CHAT_MODEL = os.getenv("CHAT_MODEL", os.getenv("OPENROUTER_MODEL", "openrouter/auto"))
 
 def detect_intent(user_input):
-    """Detect user intent from natural language"""
+    """Detect user intent from natural language with enhanced patterns"""
     lower_input = user_input.lower().strip()
     
     # Morning briefing intent - comprehensive patterns
     morning_patterns = [
         "good morning", "morning", "gm", "start my day", "daily briefing",
         "what's on tap", "what do i need to know", "morning update", 
-        "daily summary", "what's today", "brief me", "catch me up"
+        "daily summary", "what's today", "brief me", "catch me up",
+        "morning sync", "daily intel", "what's happening"
     ]
     
     # Task/productivity intent
     productivity_patterns = [
         "what should i work on", "priorities", "what's due", "deadlines",
         "my tasks", "task summary", "work focus", "productivity",
-        "what's urgent", "time tracking", "hours logged"
+        "what's urgent", "time tracking", "hours logged", "focus time",
+        "work plan", "today's work"
     ]
     
     # People/relationship/CRM intent
     relationship_patterns = [
         "who should i follow up with", "pipeline", "deals", "contacts",
-        "relationships", "crm", "sales", "follow ups", "client work"
+        "relationships", "crm", "sales", "follow ups", "client work",
+        "networking", "outreach", "relationship management"
     ]
     
     # Status check intent
     status_patterns = [
         "how are things", "status check", "overview", "dashboard",
-        "systems status", "what's connected", "integrations"
+        "systems status", "what's connected", "integrations",
+        "health check", "system health"
     ]
     
     # Quick email/calendar check
     email_patterns = [
         "overnight", "emails", "inbox", "mail check", "messages",
-        "calendar", "meetings", "schedule", "next meeting"
+        "calendar", "meetings", "schedule", "next meeting",
+        "what's in my inbox", "any emails"
+    ]
+    
+    # Specific questions that need enhanced context
+    specific_patterns = [
+        "what is", "what does", "tell me about", "explain", "describe",
+        "who is", "where is", "when is", "how does", "why does"
     ]
     
     if any(pattern in lower_input for pattern in morning_patterns):
@@ -69,8 +79,52 @@ def detect_intent(user_input):
         return "status_overview"
     elif any(pattern in lower_input for pattern in email_patterns):
         return "quick_check"
+    elif any(pattern in lower_input for pattern in specific_patterns):
+        return "specific_question"
     
     return "general"
+
+def enhanced_retrieve_with_fallbacks(query_text, k=5):
+    """Enhanced retrieval with multiple fallback strategies"""
+    try:
+        # Import here to avoid circular imports
+        from modules.brain import enhanced_retrieve
+        return enhanced_retrieve(query_text, k)
+    except ImportError:
+        # Fallback if brain module isn't available
+        try:
+            from utils.rag_basic import retrieve
+            if is_ready():
+                return retrieve(query_text, k)
+        except:
+            pass
+    except Exception as e:
+        print(f"Enhanced retrieve failed: {e}")
+    
+    return []
+
+def handle_specific_question(user_input, project, use_voices, random_toggle):
+    """Handle specific questions with enhanced context and better prompting"""
+    print(f"Handling specific question: {user_input}")
+    
+    # Get enhanced context
+    retrieval_ctx = enhanced_retrieve_with_fallbacks(user_input, k=8)
+    
+    # Create enhanced prompt that encourages using general knowledge
+    enhanced_prompt = f"""User question: {user_input}
+
+Context information available: {len(retrieval_ctx)} relevant documents found.
+
+Instructions: Please provide a helpful and accurate answer to the user's question. Use the context information if relevant, but also feel free to use your general knowledge when appropriate. Don't be overly cautious about claiming you lack information if you actually know about the topic from your training.
+
+For questions about popular culture, TV shows, movies, books, historical events, or other well-established topics, provide informative responses based on your knowledge even if the context is limited.
+
+Only state that you don't have information if the question is about very specific, recent, or specialized topics that genuinely require external sources."""
+    
+    return generate_response(
+        enhanced_prompt, use_voices, random_toggle,
+        project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+    )
 
 def handle_morning_briefing(project, use_voices, random_toggle):
     """Comprehensive morning briefing from all available sources"""
@@ -130,7 +184,7 @@ Please synthesize this into a concise executive summary focusing on:
 Keep it actionable and prioritized. Format with clear headers and bullet points."""
     
     # Get retrieval context for better responses
-    retrieval_ctx = enhanced_retrieve(synthesis_prompt, k=5) if is_ready() else []
+    retrieval_ctx = enhanced_retrieve_with_fallbacks(synthesis_prompt, k=5)
     
     return generate_response(
         synthesis_prompt, use_voices, random_toggle,
@@ -175,7 +229,7 @@ Please help me prioritize my work today by identifying:
 
 Give me a practical work plan that maximizes productivity."""
     
-    retrieval_ctx = enhanced_retrieve(productivity_prompt, k=5) if is_ready() else []
+    retrieval_ctx = enhanced_retrieve_with_fallbacks(productivity_prompt, k=5)
     
     return generate_response(
         productivity_prompt, use_voices, random_toggle,
@@ -219,7 +273,7 @@ Please help me with relationship management by identifying:
 
 Focus on actionable relationship and business development steps."""
     
-    retrieval_ctx = enhanced_retrieve(relationship_prompt, k=5) if is_ready() else []
+    retrieval_ctx = enhanced_retrieve_with_fallbacks(relationship_prompt, k=5)
     
     return generate_response(
         relationship_prompt, use_voices, random_toggle,
@@ -244,7 +298,7 @@ NEXT MEETING: {next_meeting_result.get('SyntaxPrime', 'No immediate meetings')}
 
 Give me a 2-sentence summary of what needs my immediate attention."""
         
-        retrieval_ctx = enhanced_retrieve(quick_prompt, k=3) if is_ready() else []
+        retrieval_ctx = enhanced_retrieve_with_fallbacks(quick_prompt, k=3)
         
         return generate_response(
             quick_prompt, use_voices, random_toggle,
@@ -255,7 +309,7 @@ Give me a 2-sentence summary of what needs my immediate attention."""
         return {"SyntaxPrime": f"Quick check encountered an issue: {str(e)}"}
 
 def handle_status_overview(project, use_voices, random_toggle):
-    """System status and integration overview"""
+    """System status and integration overview with health check"""
     status_sections = []
     
     # Check which integrations are working
@@ -263,10 +317,21 @@ def handle_status_overview(project, use_voices, random_toggle):
     clickup_status = "Connected" if is_clickup_configured() else "Not configured"
     cloze_status = "Connected (waiting for API endpoints)" if is_cloze_configured() else "Not configured"
     
+    # Check brain health
+    try:
+        from modules.database import get_brain_health_status
+        brain_health = get_brain_health_status()
+        brain_status = f"Status: {brain_health.get('status', 'unknown').title()}"
+        if brain_health.get('total_documents'):
+            brain_status += f" | Documents: {brain_health['total_documents']:,}"
+    except Exception:
+        brain_status = "Status check failed"
+    
     status_sections.append(f"""=== SYSTEM STATUS ===
-📧 Gmail/Calendar: {gmail_status}
+🔧 Gmail/Calendar: {gmail_status}
 📋 ClickUp: {clickup_status}
 🏢 Cloze CRM: {cloze_status}
+🧠 Brain/RAG System: {brain_status}
 
 === QUICK SYSTEM TEST ===""")
     
@@ -278,14 +343,22 @@ def handle_status_overview(project, use_voices, random_toggle):
         except Exception:
             status_sections.append("ClickUp: Connection issue")
     
+    # Test brain search
+    try:
+        test_results = enhanced_retrieve_with_fallbacks("system test", k=1)
+        status_sections.append(f"Brain Search: {len(test_results)} results for test query")
+    except Exception:
+        status_sections.append("Brain Search: Not responding")
+    
     status_overview = "\n".join(status_sections)
     
     return {"SyntaxPrime": status_overview}
 
 def process_smart_command(user_input, project, use_voices, random_toggle):
-    """Main smart command processor - returns (response_data, handled)"""
+    """Main smart command processor with enhanced intent detection"""
     
     intent = detect_intent(user_input)
+    print(f"Detected intent: {intent} for input: '{user_input}'")
     
     if intent == "morning_briefing":
         response_data = handle_morning_briefing(project, use_voices, random_toggle)
@@ -305,6 +378,10 @@ def process_smart_command(user_input, project, use_voices, random_toggle):
     
     elif intent == "status_overview":
         response_data = handle_status_overview(project, use_voices, random_toggle)
+        return response_data, True
+    
+    elif intent == "specific_question":
+        response_data = handle_specific_question(user_input, project, use_voices, random_toggle)
         return response_data, True
     
     # If no smart command detected, return unhandled
