@@ -3194,20 +3194,26 @@ def clickup_dashboard():
     </html>
     """)
 # Section 16: ElevenLabs Text-to-Speech Integration
-# Section 16: ElevenLabs Text-to-Speech Integration
-# Section 16: ElevenLabs Text-to-Speech Integration
-# Section 16: ElevenLabs Text-to-Speech Integration
-# Section 16: ElevenLabs Text-to-Speech Integration
-# Section 16: ElevenLabs Text-to-Speech Integration
+# COMPLETE REPLACEMENT FOR YOUR ELEVENLABS SECTION IN app.py
+# Replace Section 16: ElevenLabs Text-to-Speech Integration with this:
 
 import os
 import requests
 import tempfile
 import base64
+import json
+
+# Add this to your imports at the top of app.py
+try:
+    from elevenlabs import ElevenLabs, Voice, VoiceSettings
+    ELEVENLABS_SDK_AVAILABLE = True
+except ImportError:
+    print("ElevenLabs SDK not available, falling back to HTTP requests")
+    ELEVENLABS_SDK_AVAILABLE = False
 
 @app.route('/api/tts', methods=['POST'])
 def text_to_speech():
-    """Convert text to speech using ElevenLabs API with better error handling"""
+    """Convert text to speech using ElevenLabs with proper SDK or fallback"""
     if not session.get('logged_in'):
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     
@@ -3227,26 +3233,69 @@ def text_to_speech():
             app.logger.error("ELEVENLABS_API_KEY not configured")
             return jsonify({'success': False, 'error': 'ElevenLabs API key not configured'}), 400
         
-        # Voice selection - you can change this to your preferred voice ID
-        # Common voice IDs:
-        # "21m00Tcm4TlvDq8ikWAM" - Rachel (default)
-        # "AZnzlk1XvdvUeBnXmlld" - Domi  
-        # "EXAVITQu4vr4xnSDxMaL" - Bella
-        # "ErXwobaYiN019PkySvjV" - Antoni
-        # "MF3mGyEYCl7XYWbV9V6O" - Elli
-        # "TxGEqnHWrfWFTfGW9XjX" - Josh
-        # "VR6AewLTigWG4xSOukaG" - Arnold
-        # "pNInz6obpgDQGcFmaJgB" - Adam
-        # "yoZ06aMxZJJ28mfd3POQ" - Sam
-        
+        # Voice ID - use your configured voice
         voice_id = os.getenv('ELEVENLABS_VOICE_ID', "21m00Tcm4TlvDq8ikWAM")  # Default to Rachel
         
+        app.logger.info(f"Using ElevenLabs voice: {voice_id}")
+        
+        # Try SDK first, fallback to HTTP if SDK not available
+        if ELEVENLABS_SDK_AVAILABLE:
+            return _tts_with_sdk(text, api_key, voice_id)
+        else:
+            return _tts_with_http(text, api_key, voice_id)
+            
+    except Exception as e:
+        app.logger.error(f"TTS generation failed: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': f'Speech generation failed: {str(e)}'}), 500
+
+def _tts_with_sdk(text, api_key, voice_id):
+    """TTS using official ElevenLabs SDK"""
+    try:
+        # Initialize ElevenLabs client
+        client = ElevenLabs(api_key=api_key)
+        
+        # Generate audio with proper voice settings
+        audio = client.text_to_speech.convert(
+            text=text,
+            voice_id=voice_id,
+            model_id="eleven_monolingual_v1",  # or "eleven_multilingual_v2"
+            voice_settings=VoiceSettings(
+                stability=0.5,
+                similarity_boost=0.5,
+                style=0.0,
+                use_speaker_boost=True
+            ),
+            output_format="mp3_44100_128"
+        )
+        
+        # Convert audio to base64
+        audio_bytes = b''.join(audio)  # SDK returns generator
+        audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
+        
+        app.logger.info(f"Successfully generated {len(audio_bytes)} bytes of audio using SDK")
+        
+        return jsonify({
+            'success': True,
+            'audio': audio_base64,
+            'format': 'mp3',
+            'voice_used': voice_id,
+            'method': 'SDK'
+        })
+        
+    except Exception as e:
+        app.logger.error(f"SDK TTS failed: {e}")
+        # Fallback to HTTP if SDK fails
+        return _tts_with_http(text, api_key, voice_id)
+
+def _tts_with_http(text, api_key, voice_id):
+    """TTS using HTTP requests (fallback)"""
+    try:
         url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
         
         headers = {
             "Accept": "audio/mpeg",
             "Content-Type": "application/json",
-            "xi-api-key": api_key
+            "xi-api-key": api_key  # Correct header name
         }
         
         payload = {
@@ -3260,50 +3309,63 @@ def text_to_speech():
             }
         }
         
-        app.logger.info(f"Making ElevenLabs request to {url} with voice {voice_id}")
+        app.logger.info(f"Making HTTP request to {url}")
+        app.logger.info(f"Using voice ID: {voice_id}")
+        app.logger.info(f"API key length: {len(api_key)} characters")
         
         response = requests.post(url, json=payload, headers=headers, timeout=30)
         
-        app.logger.info(f"ElevenLabs response status: {response.status_code}")
+        app.logger.info(f"ElevenLabs HTTP response status: {response.status_code}")
         
         if response.status_code == 200:
-            # Return audio as base64 for frontend playback
+            # Return audio as base64
             audio_base64 = base64.b64encode(response.content).decode('utf-8')
             
-            app.logger.info(f"Successfully generated {len(response.content)} bytes of audio")
+            app.logger.info(f"Successfully generated {len(response.content)} bytes of audio using HTTP")
             
             return jsonify({
                 'success': True,
                 'audio': audio_base64,
                 'format': 'mp3',
-                'voice_used': voice_id
+                'voice_used': voice_id,
+                'method': 'HTTP'
             })
         else:
-            error_msg = f"ElevenLabs API error: {response.status_code}"
-            if response.text:
-                try:
-                    error_detail = response.json()
+            error_msg = f"ElevenLabs HTTP API error: {response.status_code}"
+            
+            try:
+                error_detail = response.json()
+                app.logger.error(f"API error details: {error_detail}")
+                
+                # Handle common errors
+                if response.status_code == 401:
+                    error_msg = "Invalid API key - check your ELEVENLABS_API_KEY"
+                elif response.status_code == 422:
+                    error_msg = f"Invalid request: {error_detail.get('detail', {}).get('msg', 'Unknown validation error')}"
+                elif response.status_code == 400:
+                    error_msg = f"Bad request: {error_detail.get('detail', {}).get('msg', 'Invalid parameters')}"
+                else:
                     error_msg += f" - {error_detail}"
-                    app.logger.error(f"ElevenLabs API error details: {error_detail}")
-                except:
-                    error_msg += f" - {response.text}"
-                    app.logger.error(f"ElevenLabs API error text: {response.text}")
+                    
+            except:
+                error_msg += f" - {response.text}"
+                app.logger.error(f"Non-JSON error response: {response.text}")
             
             return jsonify({'success': False, 'error': error_msg}), 500
-    
+            
     except requests.exceptions.Timeout:
-        app.logger.error("ElevenLabs request timed out")
+        app.logger.error("ElevenLabs HTTP request timed out")
         return jsonify({'success': False, 'error': 'Speech generation timed out'}), 500
     except requests.exceptions.ConnectionError:
-        app.logger.error("ElevenLabs connection failed")
+        app.logger.error("ElevenLabs HTTP connection failed")
         return jsonify({'success': False, 'error': 'Connection to ElevenLabs failed'}), 500
     except Exception as e:
-        app.logger.error(f"TTS generation failed: {e}", exc_info=True)
-        return jsonify({'success': False, 'error': f'Speech generation failed: {str(e)}'}), 500
+        app.logger.error(f"HTTP TTS failed: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/tts/voices')
 def get_available_voices():
-    """Get list of available ElevenLabs voices"""
+    """Get list of available ElevenLabs voices with better error handling"""
     if not session.get('logged_in'):
         return "Unauthorized", 401
     
@@ -3312,32 +3374,54 @@ def get_available_voices():
         return jsonify({'success': False, 'error': 'API key not configured'}), 400
     
     try:
-        headers = {"xi-api-key": api_key}
-        response = requests.get("https://api.elevenlabs.io/v1/voices", headers=headers, timeout=10)
-        
-        if response.status_code == 200:
-            voices_data = response.json()
-            voices = []
+        if ELEVENLABS_SDK_AVAILABLE:
+            # Use SDK if available
+            client = ElevenLabs(api_key=api_key)
+            response = client.voices.get_all()
             
-            for voice in voices_data.get('voices', []):
+            voices = []
+            for voice in response.voices:
                 voices.append({
-                    'voice_id': voice['voice_id'],
-                    'name': voice['name'],
-                    'category': voice.get('category', 'Unknown'),
-                    'description': voice.get('description', ''),
-                    'preview_url': voice.get('preview_url', '')
+                    'voice_id': voice.voice_id,
+                    'name': voice.name,
+                    'category': voice.category,
+                    'description': getattr(voice, 'description', ''),
+                    'preview_url': getattr(voice, 'preview_url', '')
                 })
             
-            return jsonify({'success': True, 'voices': voices})
+            return jsonify({'success': True, 'voices': voices, 'method': 'SDK'})
         else:
-            return jsonify({'success': False, 'error': f'API error: {response.status_code}'}), 500
+            # Use HTTP fallback
+            headers = {"xi-api-key": api_key}
+            response = requests.get("https://api.elevenlabs.io/v1/voices", headers=headers, timeout=10)
             
+            if response.status_code == 200:
+                voices_data = response.json()
+                voices = []
+                
+                for voice in voices_data.get('voices', []):
+                    voices.append({
+                        'voice_id': voice['voice_id'],
+                        'name': voice['name'],
+                        'category': voice.get('category', 'Unknown'),
+                        'description': voice.get('description', ''),
+                        'preview_url': voice.get('preview_url', '')
+                    })
+                
+                return jsonify({'success': True, 'voices': voices, 'method': 'HTTP'})
+            else:
+                error_msg = f"Failed to fetch voices: {response.status_code}"
+                if response.status_code == 401:
+                    error_msg = "Invalid API key"
+                return jsonify({'success': False, 'error': error_msg}), 500
+                
     except Exception as e:
+        app.logger.error(f"Voice list fetch failed: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/tts/status')
 def tts_status():
-    """Check ElevenLabs TTS configuration with enhanced diagnostics"""
+    """Enhanced TTS status with better diagnostics"""
     if not session.get('logged_in'):
         return "Unauthorized", 401
     
@@ -3346,262 +3430,78 @@ def tts_status():
         "api_key_present": bool(os.getenv('ELEVENLABS_API_KEY')),
         "voice_id_set": bool(os.getenv('ELEVENLABS_VOICE_ID')),
         "current_voice_id": os.getenv('ELEVENLABS_VOICE_ID', "21m00Tcm4TlvDq8ikWAM"),
+        "sdk_available": ELEVENLABS_SDK_AVAILABLE,
         "connection_working": False
     }
     
-    if status["configured"]:
+    api_key = os.getenv('ELEVENLABS_API_KEY')
+    if status["configured"] and api_key:
         try:
-            # Test API connection
-            api_key = os.getenv('ELEVENLABS_API_KEY')
-            headers = {"xi-api-key": api_key}
-            
-            response = requests.get(
-                "https://api.elevenlabs.io/v1/user",
-                headers=headers,
-                timeout=10
-            )
-            
-            if response.status_code == 200:
-                user_info = response.json()
-                status["connection_working"] = True
-                status["character_count"] = user_info.get("character_count", 0)
-                status["character_limit"] = user_info.get("character_limit", 10000)
-                status["subscription_tier"] = user_info.get("subscription", {}).get("tier", "free")
+            # Test API connection with user info endpoint
+            if ELEVENLABS_SDK_AVAILABLE:
+                try:
+                    client = ElevenLabs(api_key=api_key)
+                    user_info = client.user.get_subscription_info()
+                    
+                    status["connection_working"] = True
+                    status["character_count"] = getattr(user_info, 'character_count', 0)
+                    status["character_limit"] = getattr(user_info, 'character_limit', 10000)
+                    status["tier"] = getattr(user_info, 'tier', 'unknown')
+                    status["method"] = "SDK"
+                    
+                except Exception as sdk_error:
+                    app.logger.warning(f"SDK connection failed, trying HTTP: {sdk_error}")
+                    # Fallback to HTTP
+                    raise Exception("SDK failed, trying HTTP")
+                    
+            else:
+                raise Exception("SDK not available, using HTTP")
                 
-        except Exception as e:
-            status["error"] = str(e)
+        except Exception:
+            # HTTP fallback for connection test
+            try:
+                headers = {"xi-api-key": api_key}
+                response = requests.get("https://api.elevenlabs.io/v1/user", headers=headers, timeout=10)
+                
+                if response.status_code == 200:
+                    user_info = response.json()
+                    status["connection_working"] = True
+                    status["character_count"] = user_info.get("character_count", 0)
+                    status["character_limit"] = user_info.get("character_limit", 10000)
+                    
+                    subscription = user_info.get("subscription", {})
+                    status["subscription_tier"] = subscription.get("tier", "free")
+                    status["method"] = "HTTP"
+                    
+                elif response.status_code == 401:
+                    status["error"] = "Invalid API key - check ELEVENLABS_API_KEY"
+                else:
+                    status["error"] = f"API returned {response.status_code}: {response.text}"
+                    
+            except Exception as e:
+                status["error"] = f"Connection test failed: {str(e)}"
     
     return jsonify(status)
 
-@app.route('/tts')
-def tts_dashboard():
-    """Enhanced ElevenLabs TTS dashboard with voice selection"""
+# Test endpoint for debugging
+@app.route('/api/tts/test')
+def tts_test():
+    """Test TTS with debug information"""
     if not session.get('logged_in'):
-        return redirect(url_for('login'))
+        return "Unauthorized", 401
     
-    return render_template_string('''
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>ElevenLabs Text-to-Speech</title>
-        <style>
-            body { 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
-            }
-            .container { max-width: 900px; margin: 0 auto; }
-            .status-box { 
-                background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
-                padding: 20px; margin: 20px 0; 
-            }
-            .btn { 
-                background: #6366f1; color: white; border: none; padding: 12px 24px;
-                border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
-                text-decoration: none; display: inline-block;
-            }
-            .btn:hover { background: #5855eb; }
-            .btn:disabled { background: #666; cursor: not-allowed; opacity: 0.5; }
-            .btn.success { background: #059669; }
-            .btn.warning { background: #d97706; }
-            .success { color: #10b981; }
-            .error { color: #ef4444; }
-            .warning { color: #f59e0b; }
-            textarea { 
-                width: 100%; min-height: 100px; background: #000; color: #fff; 
-                border: 1px solid #333; border-radius: 8px; padding: 12px; 
-                font-family: inherit; resize: vertical;
-            }
-            .voice-grid {
-                display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                gap: 15px; margin: 20px 0;
-            }
-            .voice-card {
-                background: #2a2a2a; padding: 15px; border-radius: 8px;
-                border: 2px solid transparent; cursor: pointer; transition: all 0.2s;
-            }
-            .voice-card:hover { border-color: #6366f1; }
-            .voice-card.selected { border-color: #10b981; background: #1a2e1a; }
-            .voice-name { font-weight: bold; margin-bottom: 5px; }
-            .voice-id { font-family: monospace; font-size: 12px; color: #888; }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>ElevenLabs Text-to-Speech</h1>
-            
-            <div class="status-box">
-                <h3>Configuration Status</h3>
-                <div id="status">Loading...</div>
-            </div>
-            
-            <div class="status-box">
-                <h3>Available Voices</h3>
-                <button class="btn" onclick="loadVoices()">Load Available Voices</button>
-                <div id="voicesGrid" class="voice-grid"></div>
-            </div>
-            
-            <div class="status-box">
-                <h3>Test TTS</h3>
-                <textarea id="testText" placeholder="Enter text to convert to speech...">Hello from Ghostline! This is a test of the ElevenLabs text-to-speech integration using your selected voice.</textarea>
-                <br><br>
-                <button class="btn" id="generateBtn" onclick="generateSpeech()">Generate Speech</button>
-                <button class="btn success" id="playBtn" onclick="playAudio()" disabled>Play Audio</button>
-                <audio id="audioPlayer" controls style="display: none; width: 100%; margin-top: 10px;"></audio>
-            </div>
-            
-            <div class="status-box">
-                <h3>Setup Instructions</h3>
-                <ol>
-                    <li>Sign up at <strong>elevenlabs.io</strong></li>
-                    <li>Get your API key from account settings</li>
-                    <li>Set <strong>ELEVENLABS_API_KEY</strong> environment variable</li>
-                    <li>Optional: Set <strong>ELEVENLABS_VOICE_ID</strong> to your preferred voice</li>
-                    <li>Restart Ghostline to activate TTS</li>
-                </ol>
-                <p><strong>Current Voice ID:</strong> <code id="currentVoiceId">Loading...</code></p>
-                <p><strong>Free tier:</strong> 10,000 characters per month</p>
-            </div>
-            
-            <div class="status-box">
-                <button class="btn" onclick="window.location.href='/'">Back to Chat</button>
-                <button class="btn" onclick="refreshStatus()">Refresh Status</button>
-            </div>
-        </div>
-        
-        <script>
-            let currentAudioData = null;
-            let availableVoices = [];
-            
-            function refreshStatus() {
-                fetch('/api/tts/status')
-                    .then(r => r.json())
-                    .then(data => {
-                        const statusDiv = document.getElementById('status');
-                        const voiceIdSpan = document.getElementById('currentVoiceId');
-                        
-                        if (voiceIdSpan) {
-                            voiceIdSpan.textContent = data.current_voice_id || 'Not set';
-                        }
-                        
-                        if (!data.configured) {
-                            statusDiv.innerHTML = '<span class="warning">API Key Not Configured</span>';
-                        } else if (data.connection_working) {
-                            statusDiv.innerHTML = `
-                                <span class="success">Connected to ElevenLabs</span><br>
-                                <strong>Subscription:</strong> ${data.subscription_tier || 'Unknown'}<br>
-                                <strong>Characters used:</strong> ${data.character_count || 0} / ${data.character_limit || 10000}<br>
-                                <strong>Voice ID:</strong> ${data.current_voice_id}<br>
-                                <strong>Custom Voice:</strong> ${data.voice_id_set ? 'Yes' : 'No (using default)'}
-                            `;
-                        } else {
-                            statusDiv.innerHTML = '<span class="error">Connection Failed</span><br>' + (data.error || 'Unknown error');
-                        }
-                    })
-                    .catch(e => {
-                        document.getElementById('status').innerHTML = '<span class="error">Status Check Failed</span>';
-                    });
-            }
-            
-            function loadVoices() {
-                fetch('/api/tts/voices')
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.success) {
-                            availableVoices = data.voices;
-                            displayVoices(data.voices);
-                        } else {
-                            alert('Failed to load voices: ' + data.error);
-                        }
-                    })
-                    .catch(e => alert('Failed to load voices'));
-            }
-            
-            function displayVoices(voices) {
-                const grid = document.getElementById('voicesGrid');
-                grid.innerHTML = voices.map(voice => `
-                    <div class="voice-card" onclick="selectVoice('${voice.voice_id}', this)">
-                        <div class="voice-name">${voice.name}</div>
-                        <div class="voice-id">${voice.voice_id}</div>
-                        <div style="font-size: 12px; margin-top: 5px;">${voice.category}</div>
-                    </div>
-                `).join('');
-            }
-            
-            function selectVoice(voiceId, element) {
-                // Remove previous selection
-                document.querySelectorAll('.voice-card').forEach(card => {
-                    card.classList.remove('selected');
-                });
-                
-                // Select current voice
-                element.classList.add('selected');
-                
-                alert(`Voice selected: ${voiceId}\\n\\nTo make this permanent, set environment variable:\\nELEVENLABS_VOICE_ID=${voiceId}\\n\\nThen restart Ghostline.`);
-            }
-            
-            async function generateSpeech() {
-                const textArea = document.getElementById('testText');
-                const generateBtn = document.getElementById('generateBtn');
-                const playBtn = document.getElementById('playBtn');
-                
-                const text = textArea.value.trim();
-                if (!text) {
-                    alert('Please enter some text');
-                    return;
-                }
-                
-                generateBtn.disabled = true;
-                generateBtn.textContent = 'Generating...';
-                
-                try {
-                    const response = await fetch('/api/tts', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ text: text })
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        currentAudioData = result.audio;
-                        playBtn.disabled = false;
-                        setupAudioPlayer();
-                        alert(`Speech generated successfully using voice: ${result.voice_used}\\nClick Play to hear it.`);
-                    } else {
-                        alert('Generation failed: ' + result.error);
-                    }
-                } catch (error) {
-                    alert('Generation failed: ' + error.message);
-                } finally {
-                    generateBtn.disabled = false;
-                    generateBtn.textContent = 'Generate Speech';
-                }
-            }
-            
-            function setupAudioPlayer() {
-                if (!currentAudioData) return;
-                
-                const audioPlayer = document.getElementById('audioPlayer');
-                const audioBlob = new Blob([Uint8Array.from(atob(currentAudioData), c => c.charCodeAt(0))], { type: 'audio/mpeg' });
-                const audioUrl = URL.createObjectURL(audioBlob);
-                
-                audioPlayer.src = audioUrl;
-                audioPlayer.style.display = 'block';
-            }
-            
-            function playAudio() {
-                const audioPlayer = document.getElementById('audioPlayer');
-                if (audioPlayer) {
-                    audioPlayer.play();
-                }
-            }
-            
-            // Initialize
-            refreshStatus();
-        </script>
-    </body>
-    </html>
-    ''')
+    api_key = os.getenv('ELEVENLABS_API_KEY')
+    voice_id = os.getenv('ELEVENLABS_VOICE_ID', "21m00Tcm4TlvDq8ikWAM")
+    
+    debug_info = {
+        "api_key_configured": bool(api_key),
+        "api_key_length": len(api_key) if api_key else 0,
+        "api_key_preview": f"{api_key[:10]}..." if api_key and len(api_key) > 10 else "Not set",
+        "voice_id": voice_id,
+        "sdk_available": ELEVENLABS_SDK_AVAILABLE
+    }
+    
+    return jsonify(debug_info)
 
 # Section 10: Debug Routes, Authentication, and App Startup
 # Section 10: Debug Routes, Authentication, and App Startup

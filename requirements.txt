@@ -50,3 +50,4 @@ weasyprint==60.2
 requests>=2.31.0
 Pillow>=10.0.0
 Flask-CORS
+elevenlabs==2.13.0
