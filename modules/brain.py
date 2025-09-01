@@ -1,5 +1,5 @@
 # modules/brain.py - Enhanced Brain and RAG System Module
-# Complete replacement file with auto-refresh and debugging
+# Complete replacement file with smart context routing and auto-refresh
 
 import os
 import datetime
@@ -8,7 +8,8 @@ from flask import jsonify, redirect, url_for
 from utils.rag_basic import retrieve, is_ready, load_corpus, get_build_status
 from modules.database import (
     save_brain_to_database, search_brain_database, 
-    get_brain_health_status, update_brain_health
+    get_brain_health_status, update_brain_health,
+    smart_context_search, get_conversation_context
 )
 
 # Global RAG system state
@@ -20,46 +21,55 @@ _last_brain_refresh = None
 
 CORPUS_PATH = "data/cleaned/ghostline_sources.jsonl.gz"
 
-def enhanced_retrieve(query_text, k=5):
-    """Enhanced retrieve with multiple fallback strategies and debugging"""
-    print(f"Starting enhanced retrieve for: '{query_text}'")
+def enhanced_retrieve(query_text, k=5, project=None):
+    """Enhanced retrieve with smart context routing and recency prioritization"""
+    print(f"Starting enhanced retrieve with smart routing for: '{query_text}'")
     
-    # Strategy 1: Try database first
+    # Get conversation context for intent classification
+    conversation_context = []
+    if project:
+        try:
+            conversation_context = get_conversation_context(project, limit=5)
+        except Exception as e:
+            print(f"Failed to get conversation context: {e}")
+    
+    # Use smart context search
+    try:
+        results = smart_context_search(query_text, k=k, conversation_context=conversation_context)
+        
+        if results:
+            print(f"Smart context search returned {len(results)} results")
+            # Log the types of results for debugging
+            result_types = [r['metadata'].get('type', 'unknown') for r in results]
+            print(f"Result types: {result_types}")
+            return results
+        else:
+            print("Smart context search returned no results")
+    except Exception as e:
+        print(f"Smart context search failed: {e}")
+    
+    # Fallback to original enhanced retrieve logic
+    print("Falling back to original enhanced retrieve")
+    
+    # Strategy 1: Try database search with original logic
     db_results = search_brain_database(query_text, k)
     
     if db_results and len(db_results) >= 2:
-        print(f"Using {len(db_results)} database results for query: {query_text}")
+        print(f"Using {len(db_results)} database results (fallback)")
         return db_results
-    
-    print(f"Database returned {len(db_results)} results, trying file-based search")
     
     # Strategy 2: Fallback to file-based RAG system
     try:
         file_results = retrieve(query_text, k)
-        if file_results and len(file_results) >= 2:
-            print(f"File-based search returned {len(file_results)} results")
+        if file_results:
+            print(f"File-based search returned {len(file_results)} results (fallback)")
             return file_results
-        else:
-            print(f"File-based search returned only {len(file_results)} results")
     except Exception as e:
         print(f"File-based retrieve failed: {e}")
     
-    # Strategy 3: Try alternative search terms if original query failed
-    if len(query_text.split()) > 1:
-        # Try individual terms from the query
-        words = query_text.lower().split()
-        important_words = [w for w in words if len(w) > 3 and w not in ['what', 'does', 'the', 'and', 'are']]
-        
-        for word in important_words:
-            print(f"Trying alternative search with: '{word}'")
-            alt_results = search_brain_database(word, k)
-            if alt_results:
-                print(f"Alternative search found {len(alt_results)} results")
-                return alt_results
-    
-    # Strategy 4: Return whatever we got, even if minimal
+    # Strategy 3: Return whatever we got
     all_results = db_results if db_results else []
-    print(f"Returning {len(all_results)} results total for query: {query_text}")
+    print(f"Returning {len(all_results)} results total (final fallback)")
     return all_results
 
 def refresh_brain_context():
@@ -411,7 +421,7 @@ def get_brain_control_dashboard():
     <!DOCTYPE html>
     <html>
     <head>
-        <title>Ghostline Brain Control v0.3.0</title>
+        <title>Ghostline Brain Control v0.4.0</title>
         <style>
             body { 
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -560,12 +570,23 @@ def get_brain_control_dashboard():
             @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
             
             .hidden { display: none; }
+            
+            .feature-badge {
+                display: inline-block;
+                background: #059669;
+                color: white;
+                padding: 4px 8px;
+                border-radius: 12px;
+                font-size: 11px;
+                font-weight: bold;
+                margin-left: 8px;
+            }
         </style>
     </head>
     <body>
         <div class="container">
-            <h1>Brain Control v0.3.0</h1>
-            <p>Enhanced RAG system with auto-refresh, health monitoring, and comprehensive diagnostics.</p>
+            <h1>Brain Control v0.4.0 <span class="feature-badge">SMART ROUTING</span></h1>
+            <p>Enhanced RAG system with smart context routing, auto-refresh, and comprehensive diagnostics.</p>
             
             <div class="status-box">
                 <h3>Brain Status</h3>
@@ -604,6 +625,10 @@ def get_brain_control_dashboard():
                         <div class="diagnostic-title">Last Refresh</div>
                         <div id="last-refresh">Loading...</div>
                     </div>
+                    <div class="diagnostic-card">
+                        <div class="diagnostic-title">Smart Routing</div>
+                        <div>Personal vs Knowledge Base context separation enabled</div>
+                    </div>
                 </div>
             </div>
             
@@ -636,7 +661,7 @@ def get_brain_control_dashboard():
                         
                         // Update basic status
                         if (data.ready) {
-                            statusDiv.innerHTML = '<span class="success">✅ Brain Ready & Loaded</span>';
+                            statusDiv.innerHTML = '<span class="success">✅ Brain Ready & Loaded</span><br><small>Smart context routing active</small>';
                             buildBtn.disabled = true;
                             serverBuildBtn.disabled = true;
                             progressContainer.classList.add('hidden');

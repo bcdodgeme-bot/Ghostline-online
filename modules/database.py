@@ -1,11 +1,12 @@
 # modules/database.py - Enhanced Database Operations Module
-# Complete replacement file with brain health monitoring and context management
+# Complete replacement file with smart context routing and brain health monitoring
 
 import os
 import datetime
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
+from typing import List, Dict, Any
 
 # Database configuration
 DATABASE_URL = os.getenv('DATABASE_URL')
@@ -136,6 +137,275 @@ def init_database():
         except Exception as e:
             conn.rollback()
             print(f"Database initialization failed: {e}")
+
+def classify_search_intent(query_text: str, conversation_context: List[str] = None) -> str:
+    """Classify whether a search needs personal context vs knowledge base"""
+    
+    query_lower = query_text.lower().strip()
+    
+    # Personal context indicators (recent conversation continuation)
+    personal_patterns = [
+        # Conversational continuity
+        "we were talking about", "you mentioned", "earlier you said", "as we discussed",
+        "my situation", "my project", "our conversation", "what i told you",
+        
+        # Current status/updates
+        "update me", "catch me up", "where are we", "current status", "latest on",
+        "how are things", "what's happening with", 
+        
+        # Recent activities (contextual)
+        "today", "yesterday", "this week", "recently", "just now", "right now",
+        "currently", "at the moment", "these days",
+        
+        # Personal references
+        "my family", "my daughter", "my work", "my company", "shazeen", "ghada", 
+        "amcf", "my mom", "my projects"
+    ]
+    
+    # Knowledge base indicators (factual/reference information)
+    knowledge_patterns = [
+        # Factual queries
+        "what is", "what does", "tell me about", "explain", "describe", "define",
+        "how does", "why does", "when was", "where is", "who is", "who was",
+        
+        # TV shows, entertainment, general knowledge
+        "dead like me", "happy time", "tv show", "television", "movie", "book",
+        "actor", "character", "episode", "season", "plot",
+        
+        # Technical/procedural
+        "how to", "tutorial", "instructions", "guide", "documentation",
+        "best practices", "examples of", "tips for",
+        
+        # General topics (not personal)
+        "marketing strategy", "seo", "algorithm", "technology", "history of"
+    ]
+    
+    # Greeting/casual patterns (minimal context needed)
+    casual_patterns = [
+        "hello", "hi", "good morning", "good afternoon", "hey", "what's up",
+        "how are you", "thanks", "thank you", "ok", "okay", "cool", "great"
+    ]
+    
+    # Check patterns in order of specificity
+    if any(pattern in query_lower for pattern in casual_patterns):
+        return "casual"
+    elif any(pattern in query_lower for pattern in personal_patterns):
+        return "personal_context"
+    elif any(pattern in query_lower for pattern in knowledge_patterns):
+        return "knowledge_base"
+    
+    # Context-based classification
+    if conversation_context:
+        recent_topics = " ".join(conversation_context[-3:]).lower()  # Last 3 exchanges
+        
+        # If recent conversation mentioned personal topics, lean personal
+        if any(term in recent_topics for term in ["shazeen", "ghada", "amcf", "daughter", "project"]):
+            return "personal_context"
+    
+    # Default to knowledge base for specific questions, personal for general
+    if len(query_text.split()) <= 3:
+        return "personal_context"  # Short queries often reference ongoing conversation
+    else:
+        return "knowledge_base"   # Longer queries often seek information
+
+def search_recent_conversations(query_text: str, k: int = 3, days: int = 7) -> List[Dict[str, Any]]:
+    """Search only recent conversation history"""
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return []
+        
+        try:
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            
+            # Search conversations from last N days only
+            cutoff_date = datetime.datetime.now() - datetime.timedelta(days=days)
+            
+            search_sql = '''
+                SELECT user_input, response_data, created_at, project,
+                       ts_rank(to_tsvector('english', user_input || ' ' || 
+                               COALESCE(response_data->>'SyntaxPrime', '')), 
+                               plainto_tsquery('english', %s)) as rank
+                FROM chat_threads 
+                WHERE created_at >= %s
+                AND to_tsvector('english', user_input || ' ' || 
+                    COALESCE(response_data->>'SyntaxPrime', '')) 
+                    @@ plainto_tsquery('english', %s)
+                ORDER BY rank DESC, created_at DESC
+                LIMIT %s
+            '''
+            
+            cursor.execute(search_sql, (query_text, cutoff_date, query_text, k))
+            rows = cursor.fetchall()
+            
+            print(f"Recent conversation search found {len(rows)} results from last {days} days")
+            
+            # Convert to RAG format
+            results = []
+            for row in rows:
+                # Combine user input and AI response for context
+                combined_text = f"User: {row['user_input']}\nResponse: {row['response_data'].get('SyntaxPrime', '')}"
+                
+                results.append({
+                    'text': combined_text[:1200],  # Reasonable chunk size
+                    'source': f"Recent conversation - {row['project']} ({row['created_at'].strftime('%m/%d')})",
+                    'id': f"conversation_{row['created_at'].timestamp()}",
+                    'score': float(row['rank']),
+                    'metadata': {
+                        'type': 'recent_conversation',
+                        'project': row['project'],
+                        'date': row['created_at'].isoformat()
+                    }
+                })
+            
+            return results
+            
+        except Exception as e:
+            print(f"Recent conversation search failed: {e}")
+            return []
+
+def search_knowledge_base_only(query_text: str, k: int = 5) -> List[Dict[str, Any]]:
+    """Search only knowledge base documents (exclude conversations)"""
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return []
+        
+        try:
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            
+            # Search brain documents, excluding conversation-like content
+            search_sql = '''
+                SELECT document_id, title, content, metadata,
+                       ts_rank(to_tsvector('english', content || ' ' || COALESCE(title, '')), 
+                               plainto_tsquery('english', %s)) as rank
+                FROM brain_documents 
+                WHERE to_tsvector('english', content || ' ' || COALESCE(title, '')) 
+                      @@ plainto_tsquery('english', %s)
+                -- Exclude conversation-like content
+                AND NOT (content LIKE '%User:%' OR content LIKE '%Assistant:%' OR content LIKE '%Response:%')
+                -- Prioritize longer, informational content
+                AND LENGTH(content) > 100
+                ORDER BY rank DESC
+                LIMIT %s
+            '''
+            
+            cursor.execute(search_sql, (query_text, query_text, k))
+            rows = cursor.fetchall()
+            
+            if not rows:
+                # Fallback: try simpler search without conversation filtering
+                fallback_sql = '''
+                    SELECT document_id, title, content, metadata, 1.0 as rank
+                    FROM brain_documents 
+                    WHERE LOWER(content) LIKE %s OR LOWER(title) LIKE %s
+                    AND LENGTH(content) > 100
+                    ORDER BY LENGTH(content) DESC
+                    LIMIT %s
+                '''
+                
+                like_pattern = f'%{query_text.lower()}%'
+                cursor.execute(fallback_sql, (like_pattern, like_pattern, k))
+                rows = cursor.fetchall()
+                
+                print(f"Knowledge base fallback search found {len(rows)} results")
+            else:
+                print(f"Knowledge base search found {len(rows)} results")
+            
+            # Convert to RAG format
+            results = []
+            for row in rows:
+                results.append({
+                    'text': row['content'][:1500],
+                    'source': row['title'] or f"Document {row['document_id']}",
+                    'id': row['document_id'],
+                    'score': float(row['rank']),
+                    'metadata': {
+                        'type': 'knowledge_base',
+                        **(row['metadata'] or {})
+                    }
+                })
+            
+            return results
+            
+        except Exception as e:
+            print(f"Knowledge base search failed: {e}")
+            return []
+
+def smart_context_search(query_text: str, k: int = 5, conversation_context: List[str] = None) -> List[Dict[str, Any]]:
+    """Intelligent search routing based on query intent and context"""
+    
+    # Classify the search intent
+    intent = classify_search_intent(query_text, conversation_context)
+    print(f"Smart search classified query '{query_text}' as: {intent}")
+    
+    if intent == "casual":
+        # For greetings and casual chat, minimal or no context needed
+        return []
+    
+    elif intent == "personal_context":
+        # Search recent conversations first, then add some knowledge base if needed
+        recent_results = search_recent_conversations(query_text, k=max(3, k//2), days=7)
+        
+        if len(recent_results) < 2:
+            # If not enough recent context, add some knowledge base results
+            kb_results = search_knowledge_base_only(query_text, k=2)
+            recent_results.extend(kb_results)
+            print(f"Personal context search: {len(recent_results)} total results (recent + knowledge)")
+        
+        return recent_results[:k]
+    
+    elif intent == "knowledge_base":
+        # Search knowledge base primarily, minimal recent context
+        kb_results = search_knowledge_base_only(query_text, k=k)
+        
+        # Add one recent conversation result for continuity if available
+        recent_results = search_recent_conversations(query_text, k=1, days=3)
+        if recent_results:
+            kb_results.insert(0, recent_results[0])  # Put recent context first
+        
+        print(f"Knowledge base search: {len(kb_results)} results")
+        return kb_results[:k]
+    
+    else:
+        # Default balanced approach
+        recent_results = search_recent_conversations(query_text, k=2, days=7)
+        kb_results = search_knowledge_base_only(query_text, k=3)
+        
+        combined = recent_results + kb_results
+        print(f"Balanced search: {len(combined)} results (recent + knowledge)")
+        return combined[:k]
+
+def get_conversation_context(project: str, limit: int = 5) -> List[str]:
+    """Get recent conversation context for intent classification"""
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return []
+        
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT user_input, response_data 
+                FROM chat_threads 
+                WHERE project = %s 
+                ORDER BY created_at DESC 
+                LIMIT %s
+            ''', (project, limit))
+            
+            rows = cursor.fetchall()
+            context = []
+            
+            for row in rows:
+                context.append(row[0])  # user input
+                if row[1] and 'SyntaxPrime' in row[1]:
+                    context.append(row[1]['SyntaxPrime'][:200])  # truncated response
+            
+            return context
+            
+        except Exception as e:
+            print(f"Failed to get conversation context: {e}")
+            return []
 
 def search_brain_database(query_text, k=5):
     """Enhanced search with debugging and fallback strategies"""

@@ -176,6 +176,8 @@ from modules.utils import (
 # Section 6: Main Route with Enhanced Database Functionality and Auto-Refresh
 # Section 6: Main Route with Enhanced Database Functionality and Auto-Refresh
 # Section 6: Main Route with Enhanced Database Functionality and Auto-Refresh
+# Section 6: Main Route with Enhanced Database Functionality and Auto-Refresh
+# Section 6: Main Route with Enhanced Database Functionality and Auto-Refresh
 
 from modules.gmail import process_gmail_command
 from modules.cloze_integration import process_cloze_command, is_cloze_configured
@@ -190,7 +192,7 @@ def handle_reminder_command(user_input, project, use_voices, random_toggle):
     """Handle reminder creation commands"""
     # Check if this looks like a reminder command
     reminder_keywords = [
-        'remind me', 'reminder', 'set reminder', 'alert me', 
+        'remind me', 'reminder', 'set reminder', 'alert me',
         'don\'t forget', 'remember to', 'remind'
     ]
     
@@ -262,7 +264,7 @@ def generate_response_with_context_check(user_input, use_voices, random_toggle, 
         search_terms = user_input.lower().replace('?', '').split()
         
         # Extract important words (longer than 3 chars, not common words)
-        important_words = [w for w in search_terms 
+        important_words = [w for w in search_terms
                           if len(w) > 3 and w not in [
                               'what', 'does', 'tell', 'about', 'explain', 'describe',
                               'where', 'when', 'who', 'how', 'why', 'the', 'and', 'are',
@@ -273,7 +275,7 @@ def generate_response_with_context_check(user_input, use_voices, random_toggle, 
         
         for word in important_words[:3]:  # Try up to 3 important words
             try:
-                additional_context = enhanced_retrieve(word, k=3)
+                additional_context = enhanced_retrieve(word, k=3, project=project)
                 if additional_context:
                     enhanced_context.extend(additional_context)
                     print(f"Found {len(additional_context)} results for '{word}'")
@@ -282,7 +284,7 @@ def generate_response_with_context_check(user_input, use_voices, random_toggle, 
         
         # Also try the full query one more time
         try:
-            final_attempt = enhanced_retrieve(user_input, k=5)
+            final_attempt = enhanced_retrieve(user_input, k=5, project=project)
             if final_attempt:
                 enhanced_context.extend(final_attempt)
                 print(f"Final attempt found {len(final_attempt)} additional results")
@@ -398,7 +400,7 @@ def index():
                         "Use bullets and keep it tight and actionable.\n\n"
                         f"--- SCRAPED CONTENT START ---\n{result['text']}\n--- SCRAPED CONTENT END ---"
                     )
-                    retrieval_ctx = enhanced_retrieve(summary_prompt, k=5) if is_ready() else []
+                    retrieval_ctx = enhanced_retrieve(summary_prompt, k=5, project=project) if is_ready() else []
                     response_data = generate_response(
                         summary_prompt, use_voices, random_toggle,
                         project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
@@ -412,7 +414,7 @@ def index():
 
         # ---- Normal flow with enhanced context checking ----
         try:
-            retrieval_ctx = enhanced_retrieve(user_input, k=5) if is_ready() else []
+            retrieval_ctx = enhanced_retrieve(user_input, k=5, project=project) if is_ready() else []
             
             # Use enhanced response generation with context validation
             response_data = generate_response_with_context_check(
@@ -427,8 +429,6 @@ def index():
             save_conversation_enhanced(project, user_input, response_data)
 
     return _render_enhanced(selected_project, response_data)
-
-
 # Section 7: Brain Building Endpoints and Dashboard
 # Section 7: Brain Building Endpoints and Dashboard
 
@@ -3502,6 +3502,146 @@ def tts_test():
     }
     
     return jsonify(debug_info)
+
+
+# Section 17: Mobile API Endpoints
+@app.route('/api/mobile/auth', methods=['POST'])
+def mobile_auth():
+    """JWT authentication for mobile clients"""
+    if not session.get('logged_in'):
+        data = request.get_json()
+        password = data.get('password')
+        
+        if password == PASSWORD:
+            # Generate JWT token here (you'll need to install PyJWT)
+            import jwt
+            import time
+            
+            payload = {
+                'authenticated': True,
+                'exp': int(time.time()) + (24 * 60 * 60)  # 24 hours
+            }
+            token = jwt.encode(payload, app.secret_key, algorithm='HS256')
+            
+            return jsonify({
+                'success': True,
+                'token': token,
+                'expires_in': 24 * 60 * 60
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Invalid password'}), 401
+    else:
+        # Already authenticated via session
+        return jsonify({'success': True, 'message': 'Already authenticated'})
+
+@app.route('/api/mobile/projects')
+def mobile_projects():
+    """Get projects with conversation counts for mobile"""
+    if not is_mobile_authenticated():
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    projects_with_counts = []
+    
+    with get_db_connection() as conn:
+        if conn:
+            cursor = conn.cursor()
+            for project in PROJECTS:
+                cursor.execute('''
+                    SELECT COUNT(*) as count,
+                           MAX(created_at) as last_activity
+                    FROM chat_threads 
+                    WHERE project = %s
+                ''', (project,))
+                
+                result = cursor.fetchone()
+                projects_with_counts.append({
+                    'name': project,
+                    'conversation_count': result[0] if result else 0,
+                    'last_activity': result[1].isoformat() if result and result[1] else None
+                })
+        else:
+            # Fallback to file system count
+            for project in PROJECTS:
+                projects_with_counts.append({
+                    'name': project,
+                    'conversation_count': 0,
+                    'last_activity': None
+                })
+    
+    return jsonify({
+        'success': True,
+        'projects': projects_with_counts
+    })
+
+@app.route('/api/mobile/conversations/<project>')
+def mobile_conversations(project):
+    """Get conversation history for a project (paginated)"""
+    if not is_mobile_authenticated():
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    page = request.args.get('page', 1, type=int)
+    limit = request.args.get('limit', 20, type=int)
+    offset = (page - 1) * limit
+    
+    conversations = []
+    total_count = 0
+    
+    with get_db_connection() as conn:
+        if conn:
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            
+            # Get total count
+            cursor.execute('SELECT COUNT(*) FROM chat_threads WHERE project = %s', (project,))
+            total_count = cursor.fetchone()[0]
+            
+            # Get paginated conversations
+            cursor.execute('''
+                SELECT user_input, response_data, created_at 
+                FROM chat_threads 
+                WHERE project = %s 
+                ORDER BY created_at DESC 
+                LIMIT %s OFFSET %s
+            ''', (project, limit, offset))
+            
+            rows = cursor.fetchall()
+            for row in rows:
+                conversations.append({
+                    'user_input': row['user_input'],
+                    'responses': row['response_data'],
+                    'timestamp': row['created_at'].isoformat(),
+                    'preview': row['user_input'][:100] + '...' if len(row['user_input']) > 100 else row['user_input']
+                })
+    
+    return jsonify({
+        'success': True,
+        'conversations': conversations,
+        'pagination': {
+            'page': page,
+            'limit': limit,
+            'total': total_count,
+            'has_more': (offset + limit) < total_count
+        }
+    })
+
+# Helper function for mobile auth
+def is_mobile_authenticated():
+    """Check if mobile client is authenticated via JWT or session"""
+    # Check session first (for web clients)
+    if session.get('logged_in'):
+        return True
+    
+    # Check JWT token in Authorization header
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith('Bearer '):
+        try:
+            import jwt
+            token = auth_header.split(' ')[1]
+            payload = jwt.decode(token, app.secret_key, algorithms=['HS256'])
+            return payload.get('authenticated', False)
+        except:
+            return False
+    
+    return False
 
 # Section 10: Debug Routes, Authentication, and App Startup
 # Section 10: Debug Routes, Authentication, and App Startup
