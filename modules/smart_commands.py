@@ -1,5 +1,5 @@
 # modules/smart_commands.py - Enhanced Smart Commands with Better Context Management
-# Complete replacement file with improved brain integration
+# Complete replacement file with improved brain integration and proper casual handling
 
 import os
 from utils.ghostline_engine import generate_response
@@ -8,7 +8,7 @@ from modules.database import save_conversation_enhanced, save_daily_log_enhanced
 
 # Import existing handlers
 from modules.gmail import (
-    handle_good_morning_command, handle_overnight_command, 
+    handle_good_morning_command, handle_overnight_command,
     handle_calendar_today_command, handle_next_meeting_command
 )
 from modules.clickup_integration import (
@@ -16,22 +16,40 @@ from modules.clickup_integration import (
     get_clickup_tasks_summary, is_clickup_configured
 )
 from modules.cloze_integration import (
-    get_cloze_morning_briefing, get_cloze_pipeline_summary, 
+    get_cloze_morning_briefing, get_cloze_pipeline_summary,
     is_cloze_configured
 )
 
 CHAT_MODEL = os.getenv("CHAT_MODEL", os.getenv("OPENROUTER_MODEL", "openrouter/auto"))
 
 def detect_intent(user_input):
-    """Detect user intent from natural language with enhanced patterns"""
+    """Detect user intent from natural language with enhanced patterns - FIXED VERSION"""
     lower_input = user_input.lower().strip()
     
-    # Morning briefing intent - comprehensive patterns
+    # CASUAL/GREETING patterns - CHECK THESE FIRST!
+    casual_patterns = [
+        "hello", "hi", "hey", "good afternoon", "good evening",
+        "how are you", "what's up", "thanks", "thank you", "ok", "okay",
+        "cool", "great", "nice", "got it", "understood", "perfect",
+        "hello syntax", "hi syntax", "hey syntax", "syntax",
+        "how are you doing", "how's it going", "what's happening",
+        "sup", "yo", "wassup", "how you doing"
+    ]
+    
+    # Check casual patterns FIRST - if it's just a greeting, don't over-analyze
+    if any(pattern in lower_input for pattern in casual_patterns):
+        # BUT make sure it's not actually asking for briefing info
+        briefing_keywords = ["briefing", "brief me", "what do i need to know", "catch me up", "update me", "start my day", "daily"]
+        if not any(keyword in lower_input for keyword in briefing_keywords):
+            print(f"Detected casual greeting: '{lower_input}'")
+            return "casual"
+    
+    # Morning briefing intent - VERY specific patterns only (removed "good morning" to avoid conflicts)
     morning_patterns = [
-        "good morning", "morning", "gm", "start my day", "daily briefing",
-        "what's on tap", "what do i need to know", "morning update", 
-        "daily summary", "what's today", "brief me", "catch me up",
-        "morning sync", "daily intel", "what's happening"
+        "daily briefing", "brief me", "catch me up", "morning update",
+        "daily summary", "what's today", "what do i need to know",
+        "morning sync", "daily intel", "what's happening today",
+        "start my day", "what's on tap today", "morning brief"
     ]
     
     # Task/productivity intent
@@ -51,9 +69,8 @@ def detect_intent(user_input):
     
     # Status check intent
     status_patterns = [
-        "how are things", "status check", "overview", "dashboard",
-        "systems status", "what's connected", "integrations",
-        "health check", "system health"
+        "status check", "overview", "dashboard", "systems status",
+        "what's connected", "integrations", "health check", "system health"
     ]
     
     # Quick email/calendar check
@@ -69,6 +86,7 @@ def detect_intent(user_input):
         "who is", "where is", "when is", "how does", "why does"
     ]
     
+    # Check patterns in priority order
     if any(pattern in lower_input for pattern in morning_patterns):
         return "morning_briefing"
     elif any(pattern in lower_input for pattern in productivity_patterns):
@@ -84,12 +102,12 @@ def detect_intent(user_input):
     
     return "general"
 
-def enhanced_retrieve_with_fallbacks(query_text, k=5):
-    """Enhanced retrieval with multiple fallback strategies"""
+def enhanced_retrieve_with_fallbacks(query_text, k=5, project=None):
+    """Enhanced retrieval with multiple fallback strategies and project context"""
     try:
         # Import here to avoid circular imports
         from modules.brain import enhanced_retrieve
-        return enhanced_retrieve(query_text, k)
+        return enhanced_retrieve(query_text, k, project=project)
     except ImportError:
         # Fallback if brain module isn't available
         try:
@@ -103,12 +121,30 @@ def enhanced_retrieve_with_fallbacks(query_text, k=5):
     
     return []
 
+def handle_casual_greeting(user_input, project, use_voices, random_toggle):
+    """Handle casual greetings with Syntax's personality"""
+    
+    # Get minimal context for personality (not extensive briefings)
+    retrieval_ctx = enhanced_retrieve_with_fallbacks("syntax personality greeting", k=2, project=project)
+    
+    # Create a personality-focused prompt
+    casual_prompt = f"""User said: {user_input}
+
+This is a casual greeting. Respond as Syntax Prime with your characteristic personality - direct, slightly sarcastic, efficient, but helpful. Keep it brief and conversational. Don't provide briefings or extensive context unless specifically asked.
+
+Be yourself - the AI assistant with attitude who gets things done."""
+    
+    return generate_response(
+        casual_prompt, use_voices, random_toggle,
+        project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+    )
+
 def handle_specific_question(user_input, project, use_voices, random_toggle):
     """Handle specific questions with enhanced context and better prompting"""
     print(f"Handling specific question: {user_input}")
     
     # Get enhanced context
-    retrieval_ctx = enhanced_retrieve_with_fallbacks(user_input, k=8)
+    retrieval_ctx = enhanced_retrieve_with_fallbacks(user_input, k=8, project=project)
     
     # Create enhanced prompt that encourages using general knowledge
     enhanced_prompt = f"""User question: {user_input}
@@ -159,9 +195,9 @@ def handle_morning_briefing(project, use_voices, random_toggle):
             if cloze_briefing and "error" not in cloze_briefing.lower():
                 briefing_sections.append(f"=== CRM & PIPELINE ===\n{cloze_briefing}")
             else:
-                briefing_sections.append("=== CRM & PIPELINE ===\nCloze data temporarily unavailable (waiting for API endpoint updates)")
+                briefing_sections.append("=== CRM & PIPELINE ===\nCloze data temporarily unavailable")
         except Exception as e:
-            briefing_sections.append("=== CRM & PIPELINE ===\nCloze integration waiting for API endpoint updates from support")
+            briefing_sections.append("=== CRM & PIPELINE ===\nCloze integration waiting for API updates")
     
     # Combine all sections
     full_briefing = "\n\n".join(briefing_sections)
@@ -184,7 +220,7 @@ Please synthesize this into a concise executive summary focusing on:
 Keep it actionable and prioritized. Format with clear headers and bullet points."""
     
     # Get retrieval context for better responses
-    retrieval_ctx = enhanced_retrieve_with_fallbacks(synthesis_prompt, k=5)
+    retrieval_ctx = enhanced_retrieve_with_fallbacks(synthesis_prompt, k=5, project=project)
     
     return generate_response(
         synthesis_prompt, use_voices, random_toggle,
@@ -229,7 +265,7 @@ Please help me prioritize my work today by identifying:
 
 Give me a practical work plan that maximizes productivity."""
     
-    retrieval_ctx = enhanced_retrieve_with_fallbacks(productivity_prompt, k=5)
+    retrieval_ctx = enhanced_retrieve_with_fallbacks(productivity_prompt, k=5, project=project)
     
     return generate_response(
         productivity_prompt, use_voices, random_toggle,
@@ -273,7 +309,7 @@ Please help me with relationship management by identifying:
 
 Focus on actionable relationship and business development steps."""
     
-    retrieval_ctx = enhanced_retrieve_with_fallbacks(relationship_prompt, k=5)
+    retrieval_ctx = enhanced_retrieve_with_fallbacks(relationship_prompt, k=5, project=project)
     
     return generate_response(
         relationship_prompt, use_voices, random_toggle,
@@ -298,7 +334,7 @@ NEXT MEETING: {next_meeting_result.get('SyntaxPrime', 'No immediate meetings')}
 
 Give me a 2-sentence summary of what needs my immediate attention."""
         
-        retrieval_ctx = enhanced_retrieve_with_fallbacks(quick_prompt, k=3)
+        retrieval_ctx = enhanced_retrieve_with_fallbacks(quick_prompt, k=3, project=project)
         
         return generate_response(
             quick_prompt, use_voices, random_toggle,
@@ -313,7 +349,7 @@ def handle_status_overview(project, use_voices, random_toggle):
     status_sections = []
     
     # Check which integrations are working
-    gmail_status = "Connected" 
+    gmail_status = "Connected"
     clickup_status = "Connected" if is_clickup_configured() else "Not configured"
     cloze_status = "Connected (waiting for API endpoints)" if is_cloze_configured() else "Not configured"
     
@@ -328,7 +364,7 @@ def handle_status_overview(project, use_voices, random_toggle):
         brain_status = "Status check failed"
     
     status_sections.append(f"""=== SYSTEM STATUS ===
-🔧 Gmail/Calendar: {gmail_status}
+📧 Gmail/Calendar: {gmail_status}
 📋 ClickUp: {clickup_status}
 🏢 Cloze CRM: {cloze_status}
 🧠 Brain/RAG System: {brain_status}
@@ -345,7 +381,7 @@ def handle_status_overview(project, use_voices, random_toggle):
     
     # Test brain search
     try:
-        test_results = enhanced_retrieve_with_fallbacks("system test", k=1)
+        test_results = enhanced_retrieve_with_fallbacks("system test", k=1, project=project)
         status_sections.append(f"Brain Search: {len(test_results)} results for test query")
     except Exception:
         status_sections.append("Brain Search: Not responding")
@@ -355,12 +391,16 @@ def handle_status_overview(project, use_voices, random_toggle):
     return {"SyntaxPrime": status_overview}
 
 def process_smart_command(user_input, project, use_voices, random_toggle):
-    """Main smart command processor with enhanced intent detection"""
+    """Main smart command processor with enhanced intent detection and casual handling"""
     
     intent = detect_intent(user_input)
     print(f"Detected intent: {intent} for input: '{user_input}'")
     
-    if intent == "morning_briefing":
+    if intent == "casual":
+        response_data = handle_casual_greeting(user_input, project, use_voices, random_toggle)
+        return response_data, True
+    
+    elif intent == "morning_briefing":
         response_data = handle_morning_briefing(project, use_voices, random_toggle)
         return response_data, True
     
