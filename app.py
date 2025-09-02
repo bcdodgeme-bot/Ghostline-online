@@ -1,14 +1,15 @@
 # Section 1: Imports and Initial Flask Setup
-# Section 1: Imports and Initial Flask Setup
-# Section 1: Imports and Initial Flask Setup
-# Section 1: Imports and Initial Flask Setup
-# Section 1: Imports and Initial Flask Setup
-# Section 1: Imports and Initial Flask Setup
-# Section 1: Imports and Initial Flask Setup
-# Section 1: Imports and Initial Flask Setup
-# Section 1: Imports and Initial Flask Setup
-# Section 1: Imports and Initial Flask Setup
-# Section 1: Imports and Initial Flask Setup
+# Section 1: Imports and Initial Flask Setup with Personality System
+# Section 1: Imports and Initial Flask Setup with Personality System
+# Section 1: Imports and Initial Flask Setup with Personality System
+# Section 1: Imports and Initial Flask Setup with Personality System
+# Section 1: Imports and Initial Flask Setup with Personality System
+# Section 1: Imports and Initial Flask Setup with Personality System
+# Section 1: Imports and Initial Flask Setup with Personality System
+# Section 1: Imports and Initial Flask Setup with Personality System
+# Section 1: Imports and Initial Flask Setup with Personality System
+# Section 1: Imports and Initial Flask Setup with Personality System
+# Section 1: Imports and Initial Flask Setup with Personality System
 
 from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify, render_template_string, Response
 from flask_cors import CORS
@@ -17,7 +18,7 @@ from utils.rag_basic import retrieve, is_ready, load_corpus, get_build_status
 from utils.scraper import scrape_url
 from utils.gmail_client import (
     list_overnight, search as gmail_search,
-    list_today_events, list_tomorrow_events, search_calendar, 
+    list_today_events, list_tomorrow_events, search_calendar,
     get_next_meeting, format_calendar_summary
 )
 import os, json, io
@@ -27,6 +28,7 @@ import zipfile
 import tempfile
 import datetime
 import requests  # Add this if not already present
+
 # Add this with your other function imports
 from modules.marketing_commands import process_marketing_command, is_marketing_configured
 from modules.cloze_integration import process_cloze_command, is_cloze_configured
@@ -34,13 +36,16 @@ from modules.clickup_integration import process_clickup_command, is_clickup_conf
 
 # Add these imports to the top of app.py
 from modules.telegram_notifications import (
-    GhostlineTelegramReminders, 
+    GhostlineTelegramReminders,
     parse_reminder_command,
     is_telegram_configured
 )
 
 # NEW IMPORT FOR SMART COMMANDS
 from modules.smart_commands import process_smart_command
+
+# NEW IMPORT FOR PERSONALITY SYSTEM
+from modules.personalities import GhostlinePersonalities, PersonalityIntegration
 
 # OCR/File Parsing
 from PIL import Image
@@ -53,9 +58,17 @@ from markupsafe import Markup
 
 # Database imports - NEW
 import psycopg2
-from psycopg2.extras import RealDictCursor
+from psycopg2.extras import RealDictCursor  # Fixed import for mobile API
 from contextlib import contextmanager
 import urllib.parse
+
+# JWT for mobile API
+try:
+    import jwt
+    JWT_AVAILABLE = True
+except ImportError:
+    JWT_AVAILABLE = False
+    print("PyJWT not available - mobile API authentication disabled")
 
 # .env support
 try:
@@ -104,6 +117,9 @@ DATABASE_URL = os.getenv('DATABASE_URL')
 if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
     # Railway provides postgres:// but psycopg2 needs postgresql://
     DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+
+# Initialize personality system - NEW
+personality_integration = PersonalityIntegration()
 
 # Add this after your existing imports in Section 1
 import datetime
@@ -3505,6 +3521,7 @@ def tts_test():
 
 
 # Section 17: Mobile API Endpoints
+# Section 17: Mobile API Endpoints
 @app.route('/api/mobile/auth', methods=['POST'])
 def mobile_auth():
     """JWT authentication for mobile clients"""
@@ -3513,21 +3530,26 @@ def mobile_auth():
         password = data.get('password')
         
         if password == PASSWORD:
-            # Generate JWT token here (you'll need to install PyJWT)
-            import jwt
-            import time
-            
-            payload = {
-                'authenticated': True,
-                'exp': int(time.time()) + (24 * 60 * 60)  # 24 hours
-            }
-            token = jwt.encode(payload, app.secret_key, algorithm='HS256')
-            
-            return jsonify({
-                'success': True,
-                'token': token,
-                'expires_in': 24 * 60 * 60
-            })
+            # Generate JWT token here (requires PyJWT)
+            if JWT_AVAILABLE:
+                import time
+                
+                payload = {
+                    'authenticated': True,
+                    'exp': int(time.time()) + (24 * 60 * 60)  # 24 hours
+                }
+                token = jwt.encode(payload, app.secret_key, algorithm='HS256')
+                
+                return jsonify({
+                    'success': True,
+                    'token': token,
+                    'expires_in': 24 * 60 * 60
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'JWT not available - install PyJWT'
+                }), 500
         else:
             return jsonify({'success': False, 'error': 'Invalid password'}), 401
     else:
@@ -3575,7 +3597,7 @@ def mobile_projects():
 
 @app.route('/api/mobile/conversations/<project>')
 def mobile_conversations(project):
-    """Get conversation history for a project (paginated)"""
+    """Get conversation history for a project (paginated) - FIXED VERSION"""
     if not is_mobile_authenticated():
         return jsonify({'error': 'Unauthorized'}), 401
     
@@ -3588,7 +3610,7 @@ def mobile_conversations(project):
     
     with get_db_connection() as conn:
         if conn:
-            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            cursor = conn.cursor()
             
             # Get total count
             cursor.execute('SELECT COUNT(*) FROM chat_threads WHERE project = %s', (project,))
@@ -3606,10 +3628,10 @@ def mobile_conversations(project):
             rows = cursor.fetchall()
             for row in rows:
                 conversations.append({
-                    'user_input': row['user_input'],
-                    'responses': row['response_data'],
-                    'timestamp': row['created_at'].isoformat(),
-                    'preview': row['user_input'][:100] + '...' if len(row['user_input']) > 100 else row['user_input']
+                    'user_input': row[0],
+                    'responses': row[1],
+                    'timestamp': row[2].isoformat(),
+                    'preview': row[0][:100] + '...' if len(row[0]) > 100 else row[0]
                 })
     
     return jsonify({
@@ -3631,15 +3653,15 @@ def is_mobile_authenticated():
         return True
     
     # Check JWT token in Authorization header
-    auth_header = request.headers.get('Authorization')
-    if auth_header and auth_header.startswith('Bearer '):
-        try:
-            import jwt
-            token = auth_header.split(' ')[1]
-            payload = jwt.decode(token, app.secret_key, algorithms=['HS256'])
-            return payload.get('authenticated', False)
-        except:
-            return False
+    if JWT_AVAILABLE:
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            try:
+                token = auth_header.split(' ')[1]
+                payload = jwt.decode(token, app.secret_key, algorithms=['HS256'])
+                return payload.get('authenticated', False)
+            except:
+                return False
     
     return False
 
