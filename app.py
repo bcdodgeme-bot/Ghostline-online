@@ -888,6 +888,54 @@ def export_session(project):
 
 # Section 9A: Enhanced Debug Routes for Brain Health Monitoring
 # Section 9A: Enhanced Debug Routes for Brain Health Monitoring
+# Section 9A: Enhanced Debug Routes for Brain Health Monitoring
+# Section 9A: Enhanced Debug Routes for Brain Health Monitoring
+
+@app.route('/debug/google_auth_test')
+def debug_google_auth_test():
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    try:
+        # Test the credential building process directly
+        from utils.gmail_client import _build_creds, _gmail_service, _calendar_service
+        
+        debug_info = []
+        debug_info.append(f"=== GOOGLE AUTH DEBUG ===")
+        debug_info.append(f"TOKEN_PATH: {os.getenv('GOOGLE_TOKEN_PATH', 'token.json')}")
+        debug_info.append(f"CREDENTIALS_PATH: {os.getenv('GOOGLE_CREDENTIALS_PATH', 'credentials.json')}")
+        debug_info.append(f"Token file exists: {os.path.exists('token.json')}")
+        debug_info.append(f"Credentials file exists: {os.path.exists('credentials.json')}")
+        
+        # Test credential building
+        try:
+            creds = _build_creds()
+            debug_info.append(f"✅ Credentials built successfully")
+            debug_info.append(f"Valid: {creds.valid}")
+            debug_info.append(f"Scopes: {creds.scopes}")
+            debug_info.append(f"Has refresh token: {bool(creds.refresh_token)}")
+        except Exception as e:
+            debug_info.append(f"❌ Credential building failed: {e}")
+            return "<pre>" + "\n".join(debug_info) + "</pre>"
+        
+        # Test Gmail service
+        try:
+            gmail_svc = _gmail_service()
+            debug_info.append(f"✅ Gmail service created")
+        except Exception as e:
+            debug_info.append(f"❌ Gmail service failed: {e}")
+        
+        # Test Calendar service
+        try:
+            cal_svc = _calendar_service()
+            debug_info.append(f"✅ Calendar service created")
+        except Exception as e:
+            debug_info.append(f"❌ Calendar service failed: {e}")
+        
+        return "<pre>" + "\n".join(debug_info) + "</pre><a href='/'>Back to Chat</a>"
+        
+    except Exception as e:
+        return f"<h1>Auth Debug Failed</h1><pre>{str(e)}</pre>"
 
 @app.route('/debug/brain_diagnostics')
 def debug_brain_diagnostics():
@@ -916,7 +964,7 @@ def debug_brain_health():
         if _rag_system and hasattr(_rag_system, 'chunks'):
             health_report.append(f"✅ File RAG: {len(_rag_system.chunks)} chunks loaded")
         else:
-            health_report.append("❌ File RAG: Not loaded or no chunks")
+            health_report.append("⚠ File RAG: Not loaded or no chunks")
     except Exception as e:
         health_report.append(f"❌ File RAG: Error - {e}")
     
@@ -1015,6 +1063,7 @@ def debug_brain_health():
             <a href="/brain" class="btn">🧠 Brain Dashboard</a>
             <a href="/database" class="btn">💾 Database Dashboard</a>
             <a href="/" class="btn">💬 Back to Chat</a>
+            <a href="/debug/google_auth_test" class="btn">🔐 Test Google Auth</a>
             <button class="btn" onclick="window.location.reload()">🔄 Refresh Report</button>
         </div>
     </body>
@@ -3664,6 +3713,42 @@ def is_mobile_authenticated():
                 return False
     
     return False
+
+# Add this route to Section 17: Mobile API Endpoints in your app.py
+
+@app.route('/api/mobile/chat', methods=['POST'])
+def mobile_chat():
+    """Simple chat endpoint for mobile app"""
+    if not is_mobile_authenticated():
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    data = request.get_json()
+    user_input = data.get('user_input', '').strip()
+    project = data.get('project', 'Personal Operating Manual')
+    use_voices = data.get('voices', ['SyntaxPrime'])
+    random_toggle = data.get('random', False)
+    
+    if not user_input:
+        return jsonify({'error': 'No input provided'}), 400
+    
+    try:
+        # Use your existing response generation
+        retrieval_ctx = enhanced_retrieve(user_input, k=5) if is_ready() else []
+        response_data = generate_response(
+            user_input, use_voices, random_toggle,
+            project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+        )
+        
+        # Save to database
+        save_conversation_enhanced(project, user_input, response_data)
+        
+        return jsonify({
+            'success': True,
+            'responses': response_data
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # Section 10: Debug Routes, Authentication, and App Startup
 # Section 10: Debug Routes, Authentication, and App Startup

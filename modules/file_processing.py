@@ -62,7 +62,7 @@ def process_image_ocr(file_stream, filename):
         try:
             # Try to create reader with custom model path
             reader = easyocr.Reader(
-                ['en'], 
+                ['en'],
                 gpu=False,  # Disable GPU for server compatibility
                 download_enabled=True,  # Allow model downloads
                 model_storage_directory=os.environ.get('EASYOCR_MODULE_PATH')
@@ -127,11 +127,11 @@ def analyze_image_with_vision(file_stream, filename):
                     "role": "user",
                     "content": [
                         {
-                            "type": "text", 
+                            "type": "text",
                             "text": "Analyze this image in detail. If it contains charts, graphs, screenshots, or data visualizations, describe the key insights, trends, and important information. If it's a photo, describe what you see. Be specific and actionable in your analysis."
                         },
                         {
-                            "type": "image_url", 
+                            "type": "image_url",
                             "image_url": {
                                 "url": f"data:{mime_type};base64,{image_data}",
                                 "detail": "high"
@@ -269,8 +269,37 @@ def handle_file_upload():
         text_words = len(text.split()) if text else 0
         is_image_file = filename.endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp'))
         
-        # Create analysis prompt based on OCR quality
-        if is_image_file and text_words < 5:
+        # UPDATED TASK EXTRACTION LOGIC - Phase 2 fix
+        if filename.endswith(('.pdf', '.docx')):
+            analysis_prompt = f"""EXTRACT ACTIONABLE TASKS from this document: '{file.filename}'
+
+DOCUMENT CONTENT:
+{text}
+
+REQUIRED OUTPUT FORMAT:
+
+## 📋 EXTRACTED TASKS TABLE
+| Task | Due Date | Priority | Status |
+|------|----------|----------|---------|
+| [Extract specific tasks here] | [Any mentioned dates] | [High/Medium/Low] | [Pending] |
+
+## 📅 CRITICAL DEADLINES
+- List any time-sensitive items with specific dates
+- Note any recurring deadlines or milestones
+
+## 💡 KEY INSIGHTS
+- Summarize main objectives
+- Identify stakeholders mentioned  
+- Note any dependencies or requirements
+
+## ⚡ IMMEDIATE NEXT STEPS
+1. [Most urgent action needed]
+2. [Second priority action]
+3. [Third priority action]
+
+Focus on creating structured, scannable output that transforms document content into actionable work items."""
+
+        elif is_image_file and text_words < 5:
             # Poor OCR results - switch to GPT-4 Vision analysis
             print(f"OCR extracted only {text_words} words, switching to vision analysis")
             
@@ -292,7 +321,7 @@ Since the text was minimal, I analyzed the image visually instead:
 Please provide insights based on this visual analysis."""
 
         else:
-            # Good OCR results - proceed with text analysis
+            # Good OCR results or other file types - proceed with generic analysis
             analysis_prompt = f"""I've uploaded and processed the file '{file.filename}'. Here's what was extracted:
 
 === EXTRACTED CONTENT ===
