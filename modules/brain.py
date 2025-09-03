@@ -1,12 +1,13 @@
-# modules/brain.py - Enhanced Brain System with Database-Only Retrieval
-# Complete rewrite eliminating file-based RAG system dependencies
+# modules/brain.py - Enhanced Brain System with Conversation History + Database Retrieval
+# Complete replacement with dual-table search functionality
 
 import os
 import datetime
 import threading
 from flask import jsonify
+from psycopg2.extras import RealDictCursor
 from modules.database import (
-    save_brain_to_database, search_brain_database,
+    get_db_connection, save_brain_to_database, search_brain_database,
     get_brain_health_status, update_brain_health,
     smart_context_search, get_conversation_context,
     get_database_status
@@ -20,104 +21,187 @@ _last_brain_refresh = None
 CORPUS_PATH = "data/cleaned/ghostline_sources.jsonl.gz"
 
 class DatabaseBrainSystem:
-    """Database-only brain system - no file-based RAG dependencies"""
+    """Database-only brain system with dual-table search capability"""
     
     def __init__(self):
         self.ready = False
         self.document_count = 0
+        self.conversation_count = 0
         self._check_brain_status()
     
     def _check_brain_status(self):
-        """Check if brain documents are available in database"""
+        """Check if brain documents and conversations are available"""
         try:
             db_status = get_database_status()
             self.document_count = db_status.get('brain_documents', 0)
-            self.ready = self.document_count > 0
+            
+            # Also check conversation threads
+            with get_db_connection() as conn:
+                if conn:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT COUNT(*) FROM chat_threads WHERE user_input IS NOT NULL")
+                    self.conversation_count = cursor.fetchone()[0]
+            
+            self.ready = (self.document_count > 0) or (self.conversation_count > 0)
             
             if self.ready:
-                print(f"Database brain system ready with {self.document_count} documents")
+                print(f"Database brain system ready: {self.document_count} documents, {self.conversation_count} conversations")
             else:
-                print("Database brain system: No documents found")
+                print("Database brain system: No documents or conversations found")
                 
         except Exception as e:
             print(f"Failed to check brain status: {e}")
             self.ready = False
-    
-    def search(self, query_text, k=5, project=None):
-        """Enhanced search with smart context routing"""
-        if not self.ready:
-            return []
-        
-        print(f"Database brain search: '{query_text}'")
-        
-        # Get conversation context for intent classification
-        conversation_context = []
-        if project:
-            try:
-                conversation_context = get_conversation_context(project, limit=5)
-            except Exception as e:
-                print(f"Failed to get conversation context: {e}")
-        
-        # Primary: Smart context search
-        try:
-            results = smart_context_search(
-                query_text,
-                k=k,
-                conversation_context=conversation_context
-            )
-            
-            if results:
-                print(f"Smart context search returned {len(results)} results")
-                return results
-            else:
-                print("Smart context search returned no results")
-        except Exception as e:
-            print(f"Smart context search failed: {e}")
-        
-        # Fallback: Basic database search
-        try:
-            results = search_brain_database(query_text, k)
-            print(f"Database search returned {len(results)} results")
-            return results
-        except Exception as e:
-            print(f"Database search failed: {e}")
-            return []
     
     def get_status(self):
         """Get brain system status"""
         return {
             "ready": self.ready,
             "document_count": self.document_count,
+            "conversation_count": self.conversation_count,
             "status": "complete" if self.ready else "empty",
-            "method": "database"
+            "method": "database_dual"
         }
 
 # Global brain system instance
 _brain_system = DatabaseBrainSystem()
 
 def enhanced_retrieve(query_text, k=5, project=None):
-    """Enhanced retrieve using database-only brain system"""
-    global _brain_system
+    """Enhanced retrieve with conversation history + brain documents search"""
+    print(f"Enhanced retrieve: searching for '{query_text}'")
     
+    all_results = []
+    
+    # PRIORITY 1: Search conversation history in chat_threads
+    # This is where personal context lives (like who Ghada is)
     try:
-        results = _brain_system.search(query_text, k=k, project=project)
-        
-        # Update health tracking
-        update_brain_health(
-            query=query_text[:100],
-            results_count=len(results)
-        )
-        
-        return results
-        
+        with get_db_connection() as conn:
+            if conn:
+                cursor = conn.cursor(cursor_factory=RealDictCursor)
+                
+                # Search user inputs AND responses for personal context
+                conversation_sql = """
+                SELECT 
+                    'conversation_' || id as source_id,
+                    'Conversation History' as title,
+                    user_input as content,
+                    'conversation_history' as source_type,
+                    created_at::text as timestamp,
+                    project,
+                    1.0 as base_relevance
+                FROM chat_threads 
+                WHERE (user_input ILIKE %s OR response_data::text ILIKE %s)
+                    AND user_input IS NOT NULL
+                    AND LENGTH(user_input) > 20
+                ORDER BY created_at DESC
+                LIMIT %s
+                """
+                
+                search_pattern = f"%{query_text}%"
+                cursor.execute(conversation_sql, (search_pattern, search_pattern, k))
+                
+                conversation_results = cursor.fetchall()
+                
+                if conversation_results:
+                    print(f"Found {len(conversation_results)} conversation history results")
+                    
+                    for row in conversation_results:
+                        # Extract relevant section around the query match
+                        content = row['content']
+                        query_lower = query_text.lower()
+                        content_lower = content.lower()
+                        
+                        # Find the position of the match and extract context
+                        match_pos = content_lower.find(query_lower)
+                        if match_pos != -1:
+                            # Extract 500 chars around the match for context
+                            start = max(0, match_pos - 250)
+                            end = min(len(content), match_pos + 250)
+                            context_snippet = content[start:end]
+                            
+                            if start > 0:
+                                context_snippet = "..." + context_snippet
+                            if end < len(content):
+                                context_snippet = context_snippet + "..."
+                        else:
+                            # Fallback: take first 500 chars
+                            context_snippet = content[:500] + ("..." if len(content) > 500 else "")
+                        
+                        result = {
+                            'text': context_snippet,
+                            'source': f"Conversation ({row['project']}) - {row['timestamp'][:10]}",
+                            'title': 'Personal Conversation History',
+                            'source_type': 'conversation',
+                            'similarity': 0.95  # High relevance for personal context
+                        }
+                        all_results.append(result)
+                
     except Exception as e:
-        print(f"Enhanced retrieve failed: {e}")
+        print(f"Conversation history search failed: {e}")
+    
+    # PRIORITY 2: Search brain documents for knowledge base content
+    try:
+        brain_results = search_brain_database(query_text, k)
+        if brain_results:
+            print(f"Found {len(brain_results)} brain document results")
+            
+            for result in brain_results:
+                result['source_type'] = 'knowledge_base'
+                # Lower similarity score than conversation history
+                if 'similarity' in result:
+                    result['similarity'] = result['similarity'] * 0.8
+                else:
+                    result['similarity'] = 0.7
+                
+                all_results.append(result)
+    except Exception as e:
+        print(f"Brain documents search failed: {e}")
+    
+    # PRIORITY 3: Smart context search as fallback
+    if len(all_results) < k:
+        try:
+            conversation_context = []
+            if project:
+                conversation_context = get_conversation_context(project, limit=5)
+            
+            smart_results = smart_context_search(query_text, k=k-len(all_results),
+                                               conversation_context=conversation_context)
+            
+            if smart_results:
+                print(f"Found {len(smart_results)} smart context results")
+                for result in smart_results:
+                    result['source_type'] = 'smart_context'
+                    if 'similarity' not in result:
+                        result['similarity'] = 0.6
+                    all_results.append(result)
+        except Exception as e:
+            print(f"Smart context search failed: {e}")
+    
+    # Sort by relevance: conversation history first, then by similarity
+    all_results.sort(key=lambda x: (
+        0 if x.get('source_type') == 'conversation' else 1,  # Conversation first
+        -x.get('similarity', 0)  # Then by similarity descending
+    ))
+    
+    # Return top results
+    final_results = all_results[:k]
+    
+    print(f"Enhanced retrieve returning {len(final_results)} total results:")
+    for i, result in enumerate(final_results):
+        source_type = result.get('source_type', 'unknown')
+        similarity = result.get('similarity', 0)
+        print(f"  {i+1}. {source_type} (similarity: {similarity:.2f})")
+    
+    # Update health tracking
+    try:
         update_brain_health(
             query=query_text[:100],
-            results_count=0,
-            error=str(e)
+            results_count=len(final_results)
         )
-        return []
+    except Exception as e:
+        print(f"Health tracking update failed: {e}")
+    
+    return final_results
 
 def refresh_brain_context():
     """Refresh brain context by checking database status"""
@@ -136,12 +220,12 @@ def refresh_brain_context():
             _brain_system._check_brain_status()
             _last_brain_refresh = current_time
             
-            print(f"Brain context refreshed: {_brain_system.document_count} documents available")
+            print(f"Brain context refreshed: {_brain_system.document_count} documents, {_brain_system.conversation_count} conversations")
             
             # Update health status
             update_brain_health(
                 query="refresh_context",
-                results_count=_brain_system.document_count
+                results_count=_brain_system.document_count + _brain_system.conversation_count
             )
                 
         except Exception as e:
@@ -318,7 +402,8 @@ def get_brain_diagnostics():
         "brain_system": {},
         "health_status": {},
         "file_system": {},
-        "test_searches": {}
+        "test_searches": {},
+        "conversation_search": {}
     }
     
     # Check database
@@ -350,14 +435,30 @@ def get_brain_diagnostics():
     except Exception as e:
         diagnostics["health_status"]["error"] = str(e)
     
-    # Test searches
-    test_queries = ["Dead Like Me", "Happy Time", "tv show", "television series", "project management"]
+    # Test conversation search specifically
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT COUNT(*) FROM chat_threads WHERE user_input ILIKE %s", ('%ghada%',))
+                ghada_conversations = cursor.fetchone()[0]
+                
+                diagnostics["conversation_search"] = {
+                    "ghada_mentions": ghada_conversations,
+                    "search_working": ghada_conversations > 0
+                }
+    except Exception as e:
+        diagnostics["conversation_search"]["error"] = str(e)
+    
+    # Test searches with focus on personal queries
+    test_queries = ["Ghada", "who is ghada", "Dead Like Me", "tv show", "personal"]
     for query in test_queries:
         try:
             results = enhanced_retrieve(query, k=3)
             diagnostics["test_searches"][query] = {
                 "results_count": len(results),
                 "has_content": len(results) > 0,
+                "source_types": [r.get('source_type', 'unknown') for r in results],
                 "sample_sources": [r.get('source', 'unknown')[:50] for r in results[:2]]
             }
         except Exception as e:
@@ -417,13 +518,14 @@ def get_brain_status():
         "ready": brain_status["ready"],
         "building": _brain_building,
         "progress": "Building brain..." if _brain_building else (
-            f"Ready with {brain_status['document_count']} documents" if brain_status["ready"]
+            f"Ready: {brain_status['document_count']} documents, {brain_status['conversation_count']} conversations" if brain_status["ready"]
             else "Brain not built"
         ),
         "error": _brain_build_error,
         "percentage": 100 if brain_status["ready"] else (50 if _brain_building else 0),
         "chunks": brain_status["document_count"],
-        "method": "database",
+        "conversations": brain_status.get("conversation_count", 0),
+        "method": "database_dual_search",
         "health": health_status,
         "last_refresh": _last_brain_refresh.isoformat() if _last_brain_refresh else None
     }
@@ -436,7 +538,7 @@ def get_brain_control_dashboard():
     <!DOCTYPE html>
     <html>
     <head>
-        <title>Ghostline Brain Control - Database Edition</title>
+        <title>Ghostline Brain Control - Dual Search Edition</title>
         <style>
             body { 
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -553,8 +655,8 @@ def get_brain_control_dashboard():
     </head>
     <body>
         <div class="container">
-            <h1>Brain Control - Database Edition <span class="feature-badge">DATABASE</span></h1>
-            <p>Streamlined brain system using direct database access. No file-based RAG dependencies.</p>
+            <h1>Brain Control - Dual Search <span class="feature-badge">FIXED</span></h1>
+            <p>Enhanced brain system with conversation history + knowledge base dual search. Personal context restored.</p>
             
             <div class="status-box">
                 <h3>Brain Status</h3>
@@ -570,7 +672,11 @@ def get_brain_control_dashboard():
                         <div class="stat-label">Documents</div>
                     </div>
                     <div class="stat-box">
-                        <div class="stat-number" id="method">Database</div>
+                        <div class="stat-number" id="conversation-count">0</div>
+                        <div class="stat-label">Conversations</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="method">Dual Search</div>
                         <div class="stat-label">Method</div>
                     </div>
                     <div class="stat-box">
@@ -611,7 +717,7 @@ def get_brain_control_dashboard():
                         const statsDiv = document.getElementById('stats');
                         
                         if (data.ready) {
-                            statusDiv.innerHTML = '<span class="success">Database Brain Ready</span><br><small>Direct database access active</small>';
+                            statusDiv.innerHTML = '<span class="success">Dual Search Brain Ready</span><br><small>Conversation history + knowledge base search active</small>';
                             buildBtn.disabled = false;  // Allow rebuilds
                             serverBuildBtn.disabled = false;
                             progressDiv.classList.add('hidden');
@@ -645,7 +751,8 @@ def get_brain_control_dashboard():
             
             function updateStats(data) {
                 document.getElementById('document-count').textContent = data.chunks || 0;
-                document.getElementById('method').textContent = data.method || 'Database';
+                document.getElementById('conversation-count').textContent = data.conversations || 0;
+                document.getElementById('method').textContent = data.method || 'Dual Search';
                 
                 const healthElement = document.getElementById('health-status');
                 if (data.health && data.health.status) {
@@ -733,9 +840,10 @@ def get_build_status():
     
     return {
         "status": "building" if _brain_building else brain_status["status"],
-        "progress": "Building..." if _brain_building else f"{brain_status['document_count']} documents ready",
+        "progress": "Building..." if _brain_building else f"{brain_status['document_count']} documents, {brain_status['conversation_count']} conversations ready",
         "percentage": 50 if _brain_building else (100 if brain_status["ready"] else 0),
         "chunks_processed": brain_status["document_count"],
         "embeddings_created": brain_status["document_count"],
-        "method": "database"
+        "conversations_available": brain_status["conversation_count"],
+        "method": "database_dual_search"
     }
