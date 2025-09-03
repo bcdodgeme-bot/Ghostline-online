@@ -1,293 +1,338 @@
-# modules/brain.py - Enhanced Brain and RAG System Module
-# Complete replacement file with smart context routing and auto-refresh
+# modules/brain.py - Enhanced Brain System with Database-Only Retrieval
+# Complete rewrite eliminating file-based RAG system dependencies
 
 import os
 import datetime
 import threading
-from flask import jsonify, redirect, url_for
-from utils.rag_basic import retrieve, is_ready, load_corpus, get_build_status
+from flask import jsonify
 from modules.database import (
-    save_brain_to_database, search_brain_database, 
+    save_brain_to_database, search_brain_database,
     get_brain_health_status, update_brain_health,
-    smart_context_search, get_conversation_context
+    smart_context_search, get_conversation_context,
+    get_database_status
 )
 
-# Global RAG system state
-_rag_building = False
-_rag_build_error = None
+# Global brain system state
 _brain_building = False
 _brain_build_error = None
 _last_brain_refresh = None
 
 CORPUS_PATH = "data/cleaned/ghostline_sources.jsonl.gz"
 
-def enhanced_retrieve(query_text, k=5, project=None):
-    """Enhanced retrieve with smart context routing and recency prioritization"""
-    print(f"Starting enhanced retrieve with smart routing for: '{query_text}'")
+class DatabaseBrainSystem:
+    """Database-only brain system - no file-based RAG dependencies"""
     
-    # Get conversation context for intent classification
-    conversation_context = []
-    if project:
+    def __init__(self):
+        self.ready = False
+        self.document_count = 0
+        self._check_brain_status()
+    
+    def _check_brain_status(self):
+        """Check if brain documents are available in database"""
         try:
-            conversation_context = get_conversation_context(project, limit=5)
+            db_status = get_database_status()
+            self.document_count = db_status.get('brain_documents', 0)
+            self.ready = self.document_count > 0
+            
+            if self.ready:
+                print(f"Database brain system ready with {self.document_count} documents")
+            else:
+                print("Database brain system: No documents found")
+                
         except Exception as e:
-            print(f"Failed to get conversation context: {e}")
+            print(f"Failed to check brain status: {e}")
+            self.ready = False
     
-    # Use smart context search
-    try:
-        results = smart_context_search(query_text, k=k, conversation_context=conversation_context)
+    def search(self, query_text, k=5, project=None):
+        """Enhanced search with smart context routing"""
+        if not self.ready:
+            return []
         
-        if results:
-            print(f"Smart context search returned {len(results)} results")
-            # Log the types of results for debugging
-            result_types = [r['metadata'].get('type', 'unknown') for r in results]
-            print(f"Result types: {result_types}")
+        print(f"Database brain search: '{query_text}'")
+        
+        # Get conversation context for intent classification
+        conversation_context = []
+        if project:
+            try:
+                conversation_context = get_conversation_context(project, limit=5)
+            except Exception as e:
+                print(f"Failed to get conversation context: {e}")
+        
+        # Primary: Smart context search
+        try:
+            results = smart_context_search(
+                query_text,
+                k=k,
+                conversation_context=conversation_context
+            )
+            
+            if results:
+                print(f"Smart context search returned {len(results)} results")
+                return results
+            else:
+                print("Smart context search returned no results")
+        except Exception as e:
+            print(f"Smart context search failed: {e}")
+        
+        # Fallback: Basic database search
+        try:
+            results = search_brain_database(query_text, k)
+            print(f"Database search returned {len(results)} results")
             return results
-        else:
-            print("Smart context search returned no results")
-    except Exception as e:
-        print(f"Smart context search failed: {e}")
+        except Exception as e:
+            print(f"Database search failed: {e}")
+            return []
     
-    # Fallback to original enhanced retrieve logic
-    print("Falling back to original enhanced retrieve")
+    def get_status(self):
+        """Get brain system status"""
+        return {
+            "ready": self.ready,
+            "document_count": self.document_count,
+            "status": "complete" if self.ready else "empty",
+            "method": "database"
+        }
+
+# Global brain system instance
+_brain_system = DatabaseBrainSystem()
+
+def enhanced_retrieve(query_text, k=5, project=None):
+    """Enhanced retrieve using database-only brain system"""
+    global _brain_system
     
-    # Strategy 1: Try database search with original logic
-    db_results = search_brain_database(query_text, k)
-    
-    if db_results and len(db_results) >= 2:
-        print(f"Using {len(db_results)} database results (fallback)")
-        return db_results
-    
-    # Strategy 2: Fallback to file-based RAG system
     try:
-        file_results = retrieve(query_text, k)
-        if file_results:
-            print(f"File-based search returned {len(file_results)} results (fallback)")
-            return file_results
+        results = _brain_system.search(query_text, k=k, project=project)
+        
+        # Update health tracking
+        update_brain_health(
+            query=query_text[:100],
+            results_count=len(results)
+        )
+        
+        return results
+        
     except Exception as e:
-        print(f"File-based retrieve failed: {e}")
-    
-    # Strategy 3: Return whatever we got
-    all_results = db_results if db_results else []
-    print(f"Returning {len(all_results)} results total (final fallback)")
-    return all_results
+        print(f"Enhanced retrieve failed: {e}")
+        update_brain_health(
+            query=query_text[:100],
+            results_count=0,
+            error=str(e)
+        )
+        return []
 
 def refresh_brain_context():
-    """Refresh brain context periodically to maintain performance"""
-    global _last_brain_refresh
+    """Refresh brain context by checking database status"""
+    global _last_brain_refresh, _brain_system
     
     current_time = datetime.datetime.now()
     
     # Check if we need to refresh (every 4 hours or first time)
-    if (_last_brain_refresh is None or 
+    if (_last_brain_refresh is None or
         (current_time - _last_brain_refresh).total_seconds() > 14400):
         
         try:
             print("Refreshing brain context...")
             
-            # Only refresh if the corpus file exists and RAG is ready
-            if os.path.exists(CORPUS_PATH) and is_ready():
-                load_corpus(CORPUS_PATH)
-                _last_brain_refresh = current_time
-                print("Brain context refreshed successfully")
-                
-                # Update health status
-                update_brain_health(query="refresh_context", results_count=1)
-                
-            else:
-                print("Brain corpus not available for refresh")
+            # Refresh database status
+            _brain_system._check_brain_status()
+            _last_brain_refresh = current_time
+            
+            print(f"Brain context refreshed: {_brain_system.document_count} documents available")
+            
+            # Update health status
+            update_brain_health(
+                query="refresh_context",
+                results_count=_brain_system.document_count
+            )
                 
         except Exception as e:
             print(f"Brain refresh failed: {e}")
-            update_brain_health(query="refresh_context", results_count=0, error=str(e))
+            update_brain_health(
+                query="refresh_context",
+                results_count=0,
+                error=str(e)
+            )
 
-def enhanced_build_brain_background():
-    """Enhanced brain building with database storage and health monitoring"""
-    global _rag_building, _rag_build_error
+def build_brain_from_corpus():
+    """Build brain by processing corpus file and saving to database"""
+    global _brain_building, _brain_build_error
     
     try:
-        _rag_building = True
-        _rag_build_error = None
-        print("Starting enhanced brain build with database integration...")
+        _brain_building = True
+        _brain_build_error = None
+        print("Starting brain build from corpus file...")
         
-        # Build the brain using existing corpus
-        load_corpus(CORPUS_PATH)
-        print("RAG system loaded from corpus file")
+        # Check if corpus file exists
+        if not os.path.exists(CORPUS_PATH):
+            raise FileNotFoundError(f"Corpus file not found: {CORPUS_PATH}")
         
-        # Now save to database by extracting data from the loaded RAG system
+        # Import the corpus processing logic
         try:
-            from utils.rag_basic import _rag_system
+            import gzip
+            import json
             
-            if _rag_system and hasattr(_rag_system, 'chunks') and _rag_system.chunks:
-                print(f"Found {len(_rag_system.chunks)} chunks in loaded RAG system")
-                
-                # Convert RAG chunks to database format
-                corpus_data = []
-                for i, chunk in enumerate(_rag_system.chunks):
-                    corpus_item = {
-                        'id': str(chunk.get('id', f'chunk_{i}')),
-                        'title': chunk.get('source', f'chunk_{i}'),
-                        'content': chunk.get('text', ''),
-                        'chunk_index': i,
-                        'metadata': {
-                            'created_at': chunk.get('created_at', ''),
-                            'source': chunk.get('source', ''),
-                            'batch': chunk.get('batch', 0),
-                            'build_timestamp': datetime.datetime.now().isoformat()
-                        }
-                    }
-                    corpus_data.append(corpus_item)
-                
-                # Save to database with progress tracking
-                if save_brain_to_database(corpus_data):
-                    print("Brain successfully saved to database from RAG system")
-                    update_brain_health(results_count=len(corpus_data))
-                else:
-                    print("Brain build completed but database save failed")
-                    update_brain_health(error="Database save failed")
+            print(f"Processing corpus file: {CORPUS_PATH}")
+            
+            corpus_data = []
+            chunk_id = 0
+            
+            with gzip.open(CORPUS_PATH, 'rt', encoding='utf-8') as f:
+                for line_num, line in enumerate(f):
+                    line = line.strip()
+                    if not line:
+                        continue
                     
-            else:
-                print("No chunks found in RAG system - skipping database save")
-                update_brain_health(error="No chunks in RAG system")
-        
-        except Exception as db_error:
-            print(f"Database save failed during brain build: {db_error}")
-            update_brain_health(error=str(db_error))
-        
-        _rag_building = False
-        print("Enhanced brain build complete!")
-        
-    except Exception as e:
-        _rag_building = False
-        _rag_build_error = str(e)
-        print(f"Enhanced brain build failed: {e}")
-        update_brain_health(error=str(e))
-
-def enhanced_build_new_brain_background():
-    """Enhanced new brain building from sources with database storage"""
-    global _brain_building, _brain_build_error
-    
-    try:
-        _brain_building = True
-        _brain_build_error = None
-        print("Starting enhanced new brain build from raw sources...")
-        
-        from build_brain_fixed2 import build_new_brain
-        result_path = build_new_brain()
-        
-        print(f"New brain built with result path: {result_path}")
-        
-        # Load the new brain into the RAG system
-        load_corpus(CORPUS_PATH)
-        
-        # Save to database
-        try:
-            from utils.rag_basic import _rag_system
+                    try:
+                        data = json.loads(line)
+                        
+                        # Extract text content from JSON structure
+                        text_content = extract_text_from_json(data)
+                        
+                        if text_content and len(text_content.strip()) > 50:
+                            # Create chunks if text is long
+                            chunks = chunk_text(text_content, max_words=500)
+                            
+                            for chunk_index, chunk_text in enumerate(chunks):
+                                corpus_item = {
+                                    'id': f'corpus_{chunk_id}',
+                                    'title': f'line_{line_num + 1}_{chunk_index}',
+                                    'content': chunk_text,
+                                    'chunk_index': chunk_index,
+                                    'metadata': {
+                                        'source': f'line_{line_num + 1}',
+                                        'created_at': datetime.datetime.now().isoformat(),
+                                        'build_timestamp': datetime.datetime.now().isoformat(),
+                                        'chunk_index': chunk_index
+                                    }
+                                }
+                                corpus_data.append(corpus_item)
+                                chunk_id += 1
+                    
+                    except json.JSONDecodeError:
+                        continue
+                    
+                    # Progress update
+                    if line_num % 1000 == 0 and line_num > 0:
+                        print(f"Processed {line_num} lines, created {len(corpus_data)} chunks")
             
-            if _rag_system and hasattr(_rag_system, 'chunks') and _rag_system.chunks:
-                print(f"Found {len(_rag_system.chunks)} chunks in newly built RAG system")
-                
-                corpus_data = []
-                for i, chunk in enumerate(_rag_system.chunks):
-                    corpus_item = {
-                        'id': str(chunk.get('id', f'new_chunk_{i}')),
-                        'title': chunk.get('source', f'new_chunk_{i}'),
-                        'content': chunk.get('text', ''),
-                        'chunk_index': i,
-                        'metadata': {
-                            'created_at': chunk.get('created_at', ''),
-                            'source': chunk.get('source', ''),
-                            'batch': chunk.get('batch', 0),
-                            'rebuild_timestamp': datetime.datetime.now().isoformat()
-                        }
-                    }
-                    corpus_data.append(corpus_item)
-                
+            print(f"Corpus processing complete: {len(corpus_data)} total chunks")
+            
+            # Save to database
+            if corpus_data:
                 if save_brain_to_database(corpus_data):
-                    print("New brain successfully saved to database")
+                    print("Brain successfully saved to database")
                     update_brain_health(results_count=len(corpus_data))
+                    
+                    # Refresh brain system status
+                    _brain_system._check_brain_status()
                 else:
-                    print("New brain build completed but database save failed")
-                    update_brain_health(error="New brain database save failed")
+                    raise Exception("Database save failed")
             else:
-                print("No chunks found in newly built RAG system")
-                update_brain_health(error="No chunks in rebuilt RAG system")
-        
-        except Exception as db_error:
-            print(f"Database save failed during new brain build: {db_error}")
-            update_brain_health(error=str(db_error))
+                raise Exception("No valid chunks created from corpus")
+                
+        except Exception as process_error:
+            raise Exception(f"Corpus processing failed: {process_error}")
         
         _brain_building = False
-        print("Enhanced new brain build complete!")
+        print("Brain build from corpus complete!")
         
     except Exception as e:
         _brain_building = False
         _brain_build_error = str(e)
-        print(f"Enhanced new brain build failed: {e}")
+        print(f"Brain build from corpus failed: {e}")
         update_brain_health(error=str(e))
 
-def build_brain_background():
-    """Build the RAG system using batched processing with progress tracking"""
-    global _rag_building, _rag_build_error
-    
-    try:
-        _rag_building = True
-        _rag_build_error = None
-        print("Starting batched brain build with progress tracking...")
-        
-        # Load corpus with progress tracking
-        load_corpus(CORPUS_PATH)
-        
-        _rag_building = False
-        print("Batched brain build complete!")
-        
-        # Update health status
-        update_brain_health(query="build_complete", results_count=1)
-        
-    except Exception as e:
-        _rag_building = False
-        _rag_build_error = str(e)
-        print(f"Batched brain build failed: {e}")
-        update_brain_health(error=str(e))
-
-def build_new_brain_background():
-    """Build new brain from raw sources on server"""
+def build_brain_from_sources():
+    """Build new brain from raw sources"""
     global _brain_building, _brain_build_error
     
     try:
         _brain_building = True
         _brain_build_error = None
-        print("Starting server-side brain building from raw sources...")
+        print("Starting brain build from raw sources...")
         
-        from build_brain_fixed2 import build_new_brain
-        result_path = build_new_brain()
+        # Import the brain building module
+        try:
+            from build_brain_fixed2 import build_new_brain
+            result_path = build_new_brain()
+            print(f"New brain built at: {result_path}")
+            
+            # Copy to expected location if different
+            if str(result_path) != CORPUS_PATH:
+                import shutil
+                shutil.copy(str(result_path), CORPUS_PATH)
+                print(f"New brain copied to {CORPUS_PATH}")
+            
+        except ImportError:
+            raise Exception("build_brain_fixed2 module not available")
+        except Exception as e:
+            raise Exception(f"Brain building from sources failed: {e}")
         
-        # Copy the new brain to the expected location
-        import shutil
-        shutil.copy(str(result_path), CORPUS_PATH)
-        print(f"New brain saved to {CORPUS_PATH}")
-        
-        _brain_building = False
-        print("Server-side brain build complete!")
-        
-        # Update health status
-        update_brain_health(query="rebuild_complete", results_count=1)
+        # Now process the new corpus file
+        build_brain_from_corpus()
         
     except Exception as e:
         _brain_building = False
         _brain_build_error = str(e)
-        print(f"Server-side brain build failed: {e}")
+        print(f"Brain build from sources failed: {e}")
         update_brain_health(error=str(e))
+
+def extract_text_from_json(json_obj):
+    """Extract meaningful text from a JSON object"""
+    texts = []
+    text_fields = ['text', 'content', 'message', 'body', 'description', 'title', 'question', 'answer']
+    
+    def extract_recursive(obj, prefix=""):
+        if isinstance(obj, dict):
+            for key, value in obj.items():
+                if key.lower() in text_fields and isinstance(value, str) and len(value.strip()) > 20:
+                    context = f"[{prefix}{key}] " if prefix or key != 'text' else ""
+                    texts.append(context + value.strip())
+                elif isinstance(value, (dict, list)):
+                    extract_recursive(value, f"{prefix}{key}.")
+        elif isinstance(obj, list):
+            for i, item in enumerate(obj):
+                if isinstance(item, (dict, list)):
+                    extract_recursive(item, f"{prefix}[{i}].")
+                elif isinstance(item, str) and len(item.strip()) > 20:
+                    texts.append(item.strip())
+    
+    extract_recursive(json_obj)
+    return " ".join(texts) if texts else ""
+
+def chunk_text(text, max_words=500):
+    """Break text into smaller chunks"""
+    words = text.split()
+    chunks = []
+    
+    for i in range(0, len(words), max_words):
+        chunk = " ".join(words[i:i + max_words])
+        if len(chunk.strip()) > 50:
+            chunks.append(chunk.strip())
+    
+    return chunks if chunks else [text]
 
 def get_brain_diagnostics():
     """Get comprehensive brain system diagnostics"""
     diagnostics = {
-        "file_system": {},
         "database": {},
-        "rag_system": {},
+        "brain_system": {},
         "health_status": {},
+        "file_system": {},
         "test_searches": {}
     }
+    
+    # Check database
+    try:
+        diagnostics["database"] = get_database_status()
+    except Exception as e:
+        diagnostics["database"]["error"] = str(e)
+    
+    # Check brain system
+    try:
+        global _brain_system
+        diagnostics["brain_system"] = _brain_system.get_status()
+    except Exception as e:
+        diagnostics["brain_system"]["error"] = str(e)
     
     # Check file system
     try:
@@ -299,67 +344,30 @@ def get_brain_diagnostics():
     except Exception as e:
         diagnostics["file_system"]["error"] = str(e)
     
-    # Check RAG system
-    try:
-        from utils.rag_basic import _rag_system
-        diagnostics["rag_system"]["ready"] = is_ready()
-        if _rag_system and hasattr(_rag_system, 'chunks'):
-            diagnostics["rag_system"]["chunks_loaded"] = len(_rag_system.chunks)
-        else:
-            diagnostics["rag_system"]["chunks_loaded"] = 0
-    except Exception as e:
-        diagnostics["rag_system"]["error"] = str(e)
-    
-    # Check database
-    try:
-        from modules.database import get_database_status
-        diagnostics["database"] = get_database_status()
-    except Exception as e:
-        diagnostics["database"]["error"] = str(e)
-    
     # Get health status
     try:
         diagnostics["health_status"] = get_brain_health_status()
     except Exception as e:
         diagnostics["health_status"]["error"] = str(e)
     
-    # Test searches with known problematic queries
-    test_queries = ["Dead Like Me", "Happy Time", "tv show", "television series"]
+    # Test searches
+    test_queries = ["Dead Like Me", "Happy Time", "tv show", "television series", "project management"]
     for query in test_queries:
         try:
             results = enhanced_retrieve(query, k=3)
             diagnostics["test_searches"][query] = {
                 "results_count": len(results),
-                "has_content": len(results) > 0
+                "has_content": len(results) > 0,
+                "sample_sources": [r.get('source', 'unknown')[:50] for r in results[:2]]
             }
         except Exception as e:
             diagnostics["test_searches"][query] = {"error": str(e)}
     
     return diagnostics
 
-# Brain control endpoints
+# Control endpoints
 def handle_build_brain(session):
-    """Handle brain building endpoint"""
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
-    global _rag_building
-    
-    if _rag_building:
-        return jsonify({"ok": False, "error": "Brain is already building"}), 400
-    
-    if is_ready():
-        return jsonify({"ok": False, "error": "Brain is already built"}), 400
-    
-    # Start enhanced building in background
-    thread = threading.Thread(target=enhanced_build_brain_background)
-    thread.daemon = True
-    thread.start()
-    
-    return jsonify({"ok": True, "message": "Enhanced brain building with database storage started"})
-
-def handle_build_new_brain(session):
-    """Handle new brain building endpoint"""
+    """Handle brain building from corpus file"""
     if not session.get('logged_in'):
         return "Unauthorized", 401
     
@@ -368,60 +376,67 @@ def handle_build_new_brain(session):
     if _brain_building:
         return jsonify({"ok": False, "error": "Brain is already building"}), 400
     
-    # Start enhanced building in background
-    thread = threading.Thread(target=enhanced_build_new_brain_background)
+    # Start building in background
+    thread = threading.Thread(target=build_brain_from_corpus)
     thread.daemon = True
     thread.start()
     
-    return jsonify({"ok": True, "message": "Enhanced new brain building with database storage started"})
+    return jsonify({"ok": True, "message": "Brain building from corpus started"})
+
+def handle_build_new_brain(session):
+    """Handle building new brain from raw sources"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    global _brain_building
+    
+    if _brain_building:
+        return jsonify({"ok": False, "error": "Brain is already building"}), 400
+    
+    # Start building in background
+    thread = threading.Thread(target=build_brain_from_sources)
+    thread.daemon = True
+    thread.start()
+    
+    return jsonify({"ok": True, "message": "Brain building from sources started"})
 
 def get_brain_status():
-    """Get brain status with enhanced diagnostics"""
-    global _rag_building, _rag_build_error, _brain_building, _brain_build_error
-    
-    # Get detailed build status from the batched system
-    build_status = get_build_status()
+    """Get comprehensive brain status"""
+    global _brain_building, _brain_build_error, _brain_system
     
     # Get health information
-    health_status = get_brain_health_status()
+    try:
+        health_status = get_brain_health_status()
+    except Exception as e:
+        health_status = {"error": str(e)}
     
-    # Check if server-side building is in progress
-    if _brain_building:
-        status = {
-            "ready": build_status["status"] == "complete",
-            "building": True,
-            "progress": "Building brain from raw sources on server...",
-            "error": _brain_build_error,
-            "percentage": 50,
-            "chunks": 0,
-            "batches_completed": 0,
-            "total_batches": 1,
-            "health": health_status,
-            "last_refresh": _last_brain_refresh.isoformat() if _last_brain_refresh else None
-        }
-    else:
-        status = {
-            "ready": build_status["status"] == "complete",
-            "building": _rag_building or build_status["status"] == "building", 
-            "progress": build_status["progress"],
-            "error": _rag_build_error or _brain_build_error,
-            "percentage": build_status["percentage"],
-            "chunks": build_status.get("chunks_processed", 0),
-            "batches_completed": build_status.get("batches_completed", 0),
-            "total_batches": build_status.get("total_batches", 0),
-            "health": health_status,
-            "last_refresh": _last_brain_refresh.isoformat() if _last_brain_refresh else None
-        }
+    # Get brain system status
+    brain_status = _brain_system.get_status()
+    
+    status = {
+        "ready": brain_status["ready"],
+        "building": _brain_building,
+        "progress": "Building brain..." if _brain_building else (
+            f"Ready with {brain_status['document_count']} documents" if brain_status["ready"]
+            else "Brain not built"
+        ),
+        "error": _brain_build_error,
+        "percentage": 100 if brain_status["ready"] else (50 if _brain_building else 0),
+        "chunks": brain_status["document_count"],
+        "method": "database",
+        "health": health_status,
+        "last_refresh": _last_brain_refresh.isoformat() if _last_brain_refresh else None
+    }
     
     return status
 
 def get_brain_control_dashboard():
-    """Generate enhanced brain control dashboard HTML with diagnostics"""
+    """Generate brain control dashboard HTML"""
     html_content = '''
     <!DOCTYPE html>
     <html>
     <head>
-        <title>Ghostline Brain Control v0.4.0</title>
+        <title>Ghostline Brain Control - Database Edition</title>
         <style>
             body { 
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -456,107 +471,35 @@ def get_brain_control_dashboard():
             .btn.diagnostic { background: #dc2626; }
             .btn.diagnostic:hover { background: #b91c1c; }
             
-            .progress-container { 
-                margin: 20px 0;
-                background: #333; 
-                border: 2px solid #444;
-                height: 50px; 
-                border-radius: 12px;
-                position: relative;
-                overflow: hidden;
-                box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
-            }
-            .progress-bar { 
-                background: linear-gradient(90deg, #10b981 0%, #34d399 30%, #6ee7b7 60%, #34d399 100%);
-                height: 100%; 
-                transition: width 0.8s ease;
-                position: relative;
-                min-width: 0;
-                border-radius: 10px;
-                box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
-            }
-            
-            .progress-bar::after {
-                content: '';
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
-                animation: shimmer 2s infinite;
-            }
-            
-            @keyframes shimmer {
-                0% { transform: translateX(-100%); }
-                100% { transform: translateX(100%); }
-            }
-            
-            .progress-text {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                font-weight: bold;
-                color: #fff;
-                text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-                z-index: 1;
-            }
-            
-            .diagnostics-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                gap: 15px;
-                margin: 20px 0;
-            }
-            
-            .diagnostic-card {
-                background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
-                padding: 15px;
-                border-radius: 8px;
-                border: 1px solid #333;
-            }
-            
-            .diagnostic-title {
-                font-size: 16px;
-                font-weight: bold;
-                color: #6366f1;
-                margin-bottom: 10px;
-            }
-            
-            .batch-info {
+            .stats-grid {
                 display: grid;
                 grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
                 gap: 15px;
                 margin: 20px 0;
             }
-            .batch-stat {
+            .stat-box {
                 background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
                 padding: 15px;
                 border-radius: 8px;
                 text-align: center;
                 border: 1px solid #333;
-                transition: transform 0.2s ease;
             }
-            .batch-stat:hover { transform: translateY(-2px); }
-            
-            .batch-stat .number {
-                font-size: 28px;
+            .stat-number {
+                font-size: 24px;
                 font-weight: bold;
                 color: #10b981;
                 margin-bottom: 5px;
             }
-            .batch-stat .label {
+            .stat-label {
                 font-size: 12px;
                 color: #888;
                 text-transform: uppercase;
-                letter-spacing: 1px;
             }
             
             #status { 
                 font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace; 
                 font-size: 16px;
-                padding: 10px;
+                padding: 15px;
                 border-radius: 6px;
                 background: #000;
                 border: 1px solid #333;
@@ -573,7 +516,7 @@ def get_brain_control_dashboard():
             
             .feature-badge {
                 display: inline-block;
-                background: #059669;
+                background: #dc2626;
                 color: white;
                 padding: 4px 8px;
                 border-radius: 12px;
@@ -581,63 +524,72 @@ def get_brain_control_dashboard():
                 font-weight: bold;
                 margin-left: 8px;
             }
+            
+            .progress-simple {
+                background: #333;
+                height: 30px;
+                border-radius: 15px;
+                overflow: hidden;
+                margin: 15px 0;
+                position: relative;
+            }
+            .progress-simple.building {
+                background: linear-gradient(90deg, #333 25%, #444 50%, #333 75%);
+                animation: shimmer 1.5s infinite;
+            }
+            @keyframes shimmer {
+                0% { background-position: -200% 0; }
+                100% { background-position: 200% 0; }
+            }
+            .progress-text {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-weight: bold;
+                z-index: 1;
+            }
         </style>
     </head>
     <body>
         <div class="container">
-            <h1>Brain Control v0.4.0 <span class="feature-badge">SMART ROUTING</span></h1>
-            <p>Enhanced RAG system with smart context routing, auto-refresh, and comprehensive diagnostics.</p>
+            <h1>Brain Control - Database Edition <span class="feature-badge">DATABASE</span></h1>
+            <p>Streamlined brain system using direct database access. No file-based RAG dependencies.</p>
             
             <div class="status-box">
                 <h3>Brain Status</h3>
                 <div id="status">Loading brain status...</div>
                 
-                <div id="progress-container" class="progress-container hidden">
-                    <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
-                    <div class="progress-text" id="progress-text">0%</div>
+                <div id="progress-simple" class="progress-simple hidden">
+                    <div class="progress-text">Building...</div>
                 </div>
                 
-                <div id="batch-info" class="batch-info hidden">
-                    <div class="batch-stat">
-                        <div class="number" id="chunks-processed">0</div>
-                        <div class="label">Chunks Processed</div>
+                <div id="stats" class="stats-grid hidden">
+                    <div class="stat-box">
+                        <div class="stat-number" id="document-count">0</div>
+                        <div class="stat-label">Documents</div>
                     </div>
-                    <div class="batch-stat">
-                        <div class="number" id="batches-completed">0</div>
-                        <div class="label">Batches Complete</div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="method">Database</div>
+                        <div class="stat-label">Method</div>
                     </div>
-                    <div class="batch-stat">
-                        <div class="number" id="total-batches">0</div>
-                        <div class="label">Total Batches</div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="health-status">Unknown</div>
+                        <div class="stat-label">Health</div>
                     </div>
-                    <div class="batch-stat">
-                        <div class="number" id="percentage">0%</div>
-                        <div class="label">Progress</div>
-                    </div>
-                </div>
-                
-                <div id="health-info" class="diagnostics-grid hidden">
-                    <div class="diagnostic-card">
-                        <div class="diagnostic-title">Health Status</div>
-                        <div id="health-status">Loading...</div>
-                    </div>
-                    <div class="diagnostic-card">
-                        <div class="diagnostic-title">Last Refresh</div>
-                        <div id="last-refresh">Loading...</div>
-                    </div>
-                    <div class="diagnostic-card">
-                        <div class="diagnostic-title">Smart Routing</div>
-                        <div>Personal vs Knowledge Base context separation enabled</div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="last-refresh">Never</div>
+                        <div class="stat-label">Last Refresh</div>
                     </div>
                 </div>
             </div>
             
             <div class="status-box">
                 <h3>Controls</h3>
-                <button class="btn" id="build-btn" onclick="buildBrain()">Build Brain (from file)</button>
-                <button class="btn server-build" id="server-build-btn" onclick="buildNewBrain()">Build Brain (from sources)</button>
+                <button class="btn" id="build-btn" onclick="buildBrain()">Build from Corpus File</button>
+                <button class="btn server-build" id="server-build-btn" onclick="buildNewBrain()">Build from Raw Sources</button>
                 <button class="btn" onclick="refreshStatus()">Refresh Status</button>
-                <button class="btn diagnostic" onclick="showDiagnostics()">Full Diagnostics</button>
+                <button class="btn diagnostic" onclick="showDiagnostics()">System Diagnostics</button>
                 <button class="btn" onclick="window.location.href='/'">&larr; Back to Chat</button>
             </div>
             
@@ -655,107 +607,82 @@ def get_brain_control_dashboard():
                         const statusDiv = document.getElementById('status');
                         const buildBtn = document.getElementById('build-btn');
                         const serverBuildBtn = document.getElementById('server-build-btn');
-                        const progressContainer = document.getElementById('progress-container');
-                        const batchInfo = document.getElementById('batch-info');
-                        const healthInfo = document.getElementById('health-info');
+                        const progressDiv = document.getElementById('progress-simple');
+                        const statsDiv = document.getElementById('stats');
                         
-                        // Update basic status
                         if (data.ready) {
-                            statusDiv.innerHTML = '<span class="success">✅ Brain Ready & Loaded</span><br><small>Smart context routing active</small>';
-                            buildBtn.disabled = true;
-                            serverBuildBtn.disabled = true;
-                            progressContainer.classList.add('hidden');
-                            batchInfo.classList.add('hidden');
-                            healthInfo.classList.remove('hidden');
-                            updateHealthInfo(data);
+                            statusDiv.innerHTML = '<span class="success">Database Brain Ready</span><br><small>Direct database access active</small>';
+                            buildBtn.disabled = false;  // Allow rebuilds
+                            serverBuildBtn.disabled = false;
+                            progressDiv.classList.add('hidden');
+                            statsDiv.classList.remove('hidden');
+                            updateStats(data);
                         } else if (data.building) {
-                            statusDiv.innerHTML = '<span class="building pulse">⚡ Building Brain...</span>';
+                            statusDiv.innerHTML = '<span class="building pulse">Building Brain...</span>';
                             buildBtn.disabled = true;
                             serverBuildBtn.disabled = true;
-                            showProgress(data);
+                            progressDiv.classList.remove('hidden');
+                            progressDiv.classList.add('building');
+                            statsDiv.classList.add('hidden');
                         } else if (data.error) {
-                            statusDiv.innerHTML = '<span class="error">❌ Build Error: ' + data.error + '</span>';
+                            statusDiv.innerHTML = '<span class="error">Build Error: ' + data.error + '</span>';
                             buildBtn.disabled = false;
                             serverBuildBtn.disabled = false;
-                            progressContainer.classList.add('hidden');
-                            batchInfo.classList.add('hidden');
-                            healthInfo.classList.add('hidden');
+                            progressDiv.classList.add('hidden');
+                            statsDiv.classList.add('hidden');
                         } else {
-                            statusDiv.innerHTML = '<span class="warning">⚠️ Brain Not Built</span>';
+                            statusDiv.innerHTML = '<span class="warning">Brain Not Built</span><br><small>No documents found in database</small>';
                             buildBtn.disabled = false;
                             serverBuildBtn.disabled = false;
-                            progressContainer.classList.add('hidden');
-                            batchInfo.classList.add('hidden');
-                            healthInfo.classList.add('hidden');
+                            progressDiv.classList.add('hidden');
+                            statsDiv.classList.add('hidden');
                         }
                     })
                     .catch(e => {
-                        document.getElementById('status').innerHTML = '<span class="error">❌ Connection Error</span>';
+                        document.getElementById('status').innerHTML = '<span class="error">Connection Error</span>';
                     });
             }
             
-            function updateHealthInfo(data) {
-                const healthStatus = document.getElementById('health-status');
-                const lastRefresh = document.getElementById('last-refresh');
+            function updateStats(data) {
+                document.getElementById('document-count').textContent = data.chunks || 0;
+                document.getElementById('method').textContent = data.method || 'Database';
                 
-                if (data.health) {
-                    const status = data.health.status || 'unknown';
-                    healthStatus.innerHTML = status === 'healthy' ? 
-                        '<span class="success">✅ Healthy</span>' : 
-                        '<span class="error">❌ ' + status + '</span>';
-                    
-                    if (data.health.last_refresh) {
-                        const refreshTime = new Date(data.health.last_refresh).toLocaleString();
-                        lastRefresh.innerHTML = refreshTime;
-                    }
+                const healthElement = document.getElementById('health-status');
+                if (data.health && data.health.status) {
+                    healthElement.textContent = data.health.status === 'healthy' ? 'Healthy' : 'Issues';
+                } else {
+                    healthElement.textContent = 'Unknown';
                 }
                 
+                const refreshElement = document.getElementById('last-refresh');
                 if (data.last_refresh) {
-                    const autoRefresh = new Date(data.last_refresh).toLocaleString();
-                    lastRefresh.innerHTML += '<br><small>Auto-refresh: ' + autoRefresh + '</small>';
+                    const refreshTime = new Date(data.last_refresh);
+                    refreshElement.textContent = refreshTime.toLocaleTimeString();
+                } else {
+                    refreshElement.textContent = 'Never';
                 }
-            }
-            
-            function showProgress(data) {
-                const progressContainer = document.getElementById('progress-container');
-                const batchInfo = document.getElementById('batch-info');
-                const healthInfo = document.getElementById('health-info');
-                const progressBar = document.getElementById('progress-bar');
-                const progressText = document.getElementById('progress-text');
-                
-                // Show progress elements
-                progressContainer.classList.remove('hidden');
-                batchInfo.classList.remove('hidden');
-                healthInfo.classList.add('hidden');
-                
-                // Update progress bar
-                const percentage = Math.max(0, Math.min(100, data.percentage || 0));
-                progressBar.style.width = percentage + '%';
-                progressText.textContent = percentage + '%';
-                
-                // Update batch info
-                document.getElementById('chunks-processed').textContent = data.chunks || 0;
-                document.getElementById('batches-completed').textContent = data.batches_completed || 0;
-                document.getElementById('total-batches').textContent = data.total_batches || 0;
-                document.getElementById('percentage').textContent = percentage + '%';
             }
             
             function buildBrain() {
-                fetch('/build_brain', { method: 'POST' })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (!data.ok) alert('Build failed: ' + data.error);
-                    })
-                    .catch(e => alert('Request failed: ' + e));
+                if (confirm('Build brain from corpus file? This will process the existing corpus.')) {
+                    fetch('/build_brain', { method: 'POST' })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (!data.ok) alert('Build failed: ' + data.error);
+                        })
+                        .catch(e => alert('Request failed: ' + e));
+                }
             }
             
             function buildNewBrain() {
-                fetch('/build_new_brain', { method: 'POST' })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (!data.ok) alert('Build failed: ' + data.error);
-                    })
-                    .catch(e => alert('Request failed: ' + e));
+                if (confirm('Build new brain from raw sources? This will take longer.')) {
+                    fetch('/build_new_brain', { method: 'POST' })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (!data.ok) alert('Build failed: ' + data.error);
+                        })
+                        .catch(e => alert('Request failed: ' + e));
+                }
             }
             
             function showDiagnostics() {
@@ -763,12 +690,13 @@ def get_brain_control_dashboard():
                 const content = document.getElementById('diagnostics-content');
                 
                 panel.classList.remove('hidden');
-                content.innerHTML = 'Loading comprehensive diagnostics...';
+                content.innerHTML = 'Loading diagnostics...';
                 
                 fetch('/debug/brain_diagnostics')
                     .then(r => r.json())
                     .then(data => {
-                        let html = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                        let html = '<pre style="white-space: pre-wrap; word-wrap: break-word;">' + 
+                                  JSON.stringify(data, null, 2) + '</pre>';
                         content.innerHTML = html;
                     })
                     .catch(e => {
@@ -776,11 +704,38 @@ def get_brain_control_dashboard():
                     });
             }
             
-            // Auto-refresh every 2 seconds
+            // Auto-refresh every 3 seconds
             refreshStatus();
-            setInterval(refreshStatus, 2000);
+            setInterval(refreshStatus, 3000);
         </script>
     </body>
     </html>
     '''
     return html_content
+
+# Compatibility functions for existing code
+def is_ready():
+    """Check if brain system is ready"""
+    global _brain_system
+    return _brain_system.ready
+
+def load_corpus(path):
+    """Compatibility function - triggers database status refresh"""
+    global _brain_system
+    print("Database brain system: Refreshing status instead of loading corpus")
+    _brain_system._check_brain_status()
+
+def get_build_status():
+    """Get build status in expected format"""
+    global _brain_building, _brain_system
+    
+    brain_status = _brain_system.get_status()
+    
+    return {
+        "status": "building" if _brain_building else brain_status["status"],
+        "progress": "Building..." if _brain_building else f"{brain_status['document_count']} documents ready",
+        "percentage": 50 if _brain_building else (100 if brain_status["ready"] else 0),
+        "chunks_processed": brain_status["document_count"],
+        "embeddings_created": brain_status["document_count"],
+        "method": "database"
+    }
