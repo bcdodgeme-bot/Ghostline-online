@@ -1,16 +1,4 @@
-# Section 1: Imports and Initial Flask Setup
-# Section 1: Imports and Initial Flask Setup with Personality System
-# Section 1: Imports and Initial Flask Setup with Personality System
-# Section 1: Imports and Initial Flask Setup with Personality System
-# Section 1: Imports and Initial Flask Setup with Personality System
-# Section 1: Imports and Initial Flask Setup with Personality System
-# Section 1: Imports and Initial Flask Setup with Personality System
-# Section 1: Imports and Initial Flask Setup with Personality System
-# Section 1: Imports and Initial Flask Setup with Personality System
-# Section 1: Imports and Initial Flask Setup with Personality System
-# Section 1: Imports and Initial Flask Setup with Personality System
-# Section 1: Imports and Initial Flask Setup with Personality System
-
+# Section 1: Imports and Flask Setup
 from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify, render_template_string, Response
 from flask_cors import CORS
 from utils.ghostline_engine import generate_response, stream_generate
@@ -27,24 +15,18 @@ import time
 import zipfile
 import tempfile
 import datetime
-import requests  # Add this if not already present
+import requests
 
-# Add this with your other function imports
+# Module imports for integrated systems
 from modules.marketing_commands import process_marketing_command, is_marketing_configured
 from modules.cloze_integration import process_cloze_command, is_cloze_configured
 from modules.clickup_integration import process_clickup_command, is_clickup_configured
-
-# Add these imports to the top of app.py
 from modules.telegram_notifications import (
     GhostlineTelegramReminders,
     parse_reminder_command,
     is_telegram_configured
 )
-
-# NEW IMPORT FOR SMART COMMANDS
 from modules.smart_commands import process_smart_command
-
-# NEW IMPORT FOR PERSONALITY SYSTEM
 from modules.personalities import GhostlinePersonalities, PersonalityIntegration
 
 # OCR/File Parsing
@@ -56,9 +38,9 @@ import docx
 import markdown
 from markupsafe import Markup
 
-# Database imports - NEW
+# Database imports
 import psycopg2
-from psycopg2.extras import RealDictCursor  # Fixed import for mobile API
+from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
 import urllib.parse
 
@@ -83,8 +65,8 @@ app = Flask(__name__)
 app.config.update(
     SESSION_COOKIE_SAMESITE='Lax',
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SECURE=bool(os.getenv('RAILWAY_ENVIRONMENT')),  # HTTPS on Railway
-    SESSION_COOKIE_DOMAIN=None  # Auto-detect domain
+    SESSION_COOKIE_SECURE=bool(os.getenv('RAILWAY_ENVIRONMENT')),
+    SESSION_COOKIE_DOMAIN=None
 )
 
 # Enable CORS for streaming with credentials support
@@ -93,10 +75,10 @@ CORS(app, supports_credentials=True, origins=['*'])
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'ghostline-default-key')
 PASSWORD = os.getenv('GHOSTLINE_PASSWORD', 'open_the_gate')
 
-# Choose model via env; override on Render with CHAT_MODEL
+# Choose model via env
 CHAT_MODEL = os.getenv("CHAT_MODEL", os.getenv("OPENROUTER_MODEL", "openrouter/auto"))
 
-# sessions dir
+# Sessions directory
 os.makedirs("sessions", exist_ok=True)
 
 PROJECTS = [
@@ -112,61 +94,27 @@ _rag_build_error = None
 _brain_building = False
 _brain_build_error = None
 
-# Database configuration - NEW
+# Database configuration
 DATABASE_URL = os.getenv('DATABASE_URL')
 if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
-    # Railway provides postgres:// but psycopg2 needs postgresql://
     DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
 
-# Initialize personality system - NEW
+# Initialize personality system
 personality_integration = PersonalityIntegration()
 
-# Add this after your existing imports in Section 1
-import datetime
-
-# ADD THIS TO THE APP STARTUP SECTION IN app.py (at the end)
-# Only start automated backups on Railway
-if os.getenv('RAILWAY_ENVIRONMENT') and not os.getenv('DISABLE_AUTO_BACKUPS'):
-    # Start automated backups after a 5-minute delay to allow app to fully initialize
-    def delayed_backup_start():
-        import time
-        time.sleep(300)  # 5 minute delay
-        try:
-            start_automated_backups()
-            print("✅ Automated backups started successfully")
-        except Exception as e:
-            print(f"❌ Failed to start automated backups: {e}")
-    
-    backup_startup_thread = threading.Thread(target=delayed_backup_start, daemon=True)
-    backup_startup_thread.start()
-    print("🔄 Scheduled automated backup startup in 5 minutes")
-else:
-    print("⚠️ Automated backups disabled (set RAILWAY_ENVIRONMENT to enable)")
-
-# Section 2: Database Connection and Management Functions
-# Section 2: Database Imports and Initialization
+# Section 2: Database and Module Initialization
 from modules.database import (
-    get_db_connection, 
+    get_db_connection,
     init_database,
     search_brain_database,
-    load_conversation_enhanced, 
+    load_conversation_enhanced,
     save_conversation_enhanced,
-    save_daily_log_enhanced, 
+    save_daily_log_enhanced,
     track_uploaded_file,
-    save_brain_to_database, 
+    save_brain_to_database,
     load_brain_from_database,
     get_database_status
 )
-
-# Initialize database when app starts
-with app.app_context():
-    init_database()
-
-# Section 3: Brain and RAG System Functions
-
-# Section 3: Brain and RAG System Functions
-# Section 3: Brain and RAG System Functions
-# Section 3: Brain and RAG System Functions
 
 from modules.brain import (
     enhanced_retrieve,
@@ -176,23 +124,11 @@ from modules.brain import (
     build_new_brain_background
 )
 
-# Section 4: OCR and File Processing Functions
-# Section 4: OCR and File Processing Functions
-
 from modules.file_processing import setup_easyocr_environment, markdown_filter
-
-# Call this right after creating the Flask app
-setup_easyocr_environment()
-
-# Register markdown filter
-app.jinja_env.filters['markdown'] = markdown_filter
-
-# Section 5: Utility Functions
-# Section 5: Utility Functions
 
 from modules.utils import (
     load_conversation,
-    _append_session, 
+    _append_session,
     _save_daily_log,
     _render_enhanced,
     ensure_directories,
@@ -202,30 +138,22 @@ from modules.utils import (
     is_supported_file_type
 )
 
-
-# Section 6: Main Route with Enhanced Database Functionality
-# Section 6: Main Route with Enhanced Database Functionality and Auto-Refresh
-# Section 6: Main Route with Enhanced Database Functionality and Auto-Refresh
-# Section 6: Main Route with Enhanced Database Functionality and Auto-Refresh
-# Section 6: Main Route with Enhanced Database Functionality and Auto-Refresh
-# Section 6: Main Route with Enhanced Database Functionality and Auto-Refresh
-# Section 6: Main Route with Enhanced Database Functionality and Auto-Refresh
-# Section 6: Main Route with Enhanced Database Functionality and Auto-Refresh
-# Section 6: Main Route with Enhanced Database Functionality and Auto-Refresh
-# Section 6: Main Route with Enhanced Database Functionality and Auto-Refresh
-
 from modules.gmail import process_gmail_command
-from modules.cloze_integration import process_cloze_command, is_cloze_configured
-from modules.clickup_integration import process_clickup_command, is_clickup_configured
-from modules.marketing_commands import process_marketing_command, is_marketing_configured
-from utils.scraper import scrape_url
-
-# Import the enhanced brain functions
 from modules.brain import enhanced_retrieve, refresh_brain_context
 
+# Initialize database when app starts
+with app.app_context():
+    init_database()
+
+# Setup EasyOCR environment
+setup_easyocr_environment()
+
+# Register markdown filter
+app.jinja_env.filters['markdown'] = markdown_filter
+
+# Section 3: Helper Functions for Chat Processing
 def handle_reminder_command(user_input, project, use_voices, random_toggle):
     """Handle reminder creation commands"""
-    # Check if this looks like a reminder command
     reminder_keywords = [
         'remind me', 'reminder', 'set reminder', 'alert me',
         'don\'t forget', 'remember to', 'remind'
@@ -236,19 +164,17 @@ def handle_reminder_command(user_input, project, use_voices, random_toggle):
     
     if not is_telegram_configured():
         response_data = {
-            "SyntaxPrime": "Telegram reminders not configured. Visit /telegram to set up your bot."
+            "SyntaxPrime": "Telegram reminders not configured. Visit /integrations to set up your bot."
         }
         return response_data, True
     
     try:
-        # Parse the reminder command
         parsed = parse_reminder_command(user_input, project)
         
         if not parsed["success"]:
             response_data = {"SyntaxPrime": parsed["error"]}
             return response_data, True
         
-        # Create the reminder
         reminders = GhostlineTelegramReminders()
         result = reminders.create_reminder(
             title=parsed["title"],
@@ -258,10 +184,9 @@ def handle_reminder_command(user_input, project, use_voices, random_toggle):
         )
         
         if result["success"]:
-            # Use display_time from parsing instead of remind_at for correct timezone display
             display_time = parsed.get("display_time", result["remind_at"].strftime('%I:%M %p on %B %d'))
             
-            response_text = f"✅ **Reminder Created!**\n\n"
+            response_text = f"Reminder Created!\n\n"
             response_text += f"**What:** {parsed['title']}\n"
             response_text += f"**When:** {display_time}\n"
             response_text += f"**Project:** {project}\n\n"
@@ -279,9 +204,7 @@ def handle_reminder_command(user_input, project, use_voices, random_toggle):
         return response_data, True
 
 def generate_response_with_context_check(user_input, use_voices, random_toggle, project, model, retrieval_context):
-    """Enhanced response generation with context validation and debugging"""
-    
-    # Check if we have sufficient context for specific queries
+    """Enhanced response generation with context validation"""
     context_quality = len(retrieval_context) if retrieval_context else 0
     is_specific_query = any(term in user_input.lower() for term in [
         'what does', 'what is', 'tell me about', 'explain', 'describe',
@@ -294,7 +217,6 @@ def generate_response_with_context_check(user_input, use_voices, random_toggle, 
     if context_quality < 2 and is_specific_query:
         print(f"Weak context for specific query, trying enhanced search approaches")
         
-        # Try multiple search approaches
         enhanced_context = []
         search_terms = user_input.lower().replace('?', '').split()
         
@@ -328,22 +250,20 @@ def generate_response_with_context_check(user_input, use_voices, random_toggle, 
         
         # Remove duplicates and use enhanced context if better
         if enhanced_context:
-            # Simple deduplication by content
             seen_content = set()
             unique_context = []
             for item in enhanced_context:
-                content_key = item.get('text', '')[:100]  # First 100 chars as key
+                content_key = item.get('text', '')[:100]
                 if content_key not in seen_content:
                     seen_content.add(content_key)
                     unique_context.append(item)
             
             if len(unique_context) > context_quality:
-                retrieval_context = unique_context[:10]  # Limit to 10 best results
+                retrieval_context = unique_context[:10]
                 print(f"Using enhanced context: {len(retrieval_context)} unique results")
     
     # Add instruction to be less overly cautious about knowledge
     if is_specific_query and len(retrieval_context) < 2:
-        # Modify the prompt to encourage using general knowledge
         enhanced_prompt = f"""User question: {user_input}
 
 Context from database: {len(retrieval_context)} results found.
@@ -361,7 +281,9 @@ If this is about popular culture, TV shows, movies, books, or well-known topics,
         user_input, use_voices, random_toggle,
         project=project, model=model, retrieval_context=retrieval_context
     )
-
+    
+    
+# Section 4: Main Chat Route
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if not session.get('logged_in'):
@@ -464,9 +386,8 @@ def index():
             save_conversation_enhanced(project, user_input, response_data)
 
     return _render_enhanced(selected_project, response_data)
-# Section 7: Brain Building Endpoints and Dashboard
-# Section 7: Brain Building Endpoints and Dashboard
-
+    
+# Section 5: Brain Building Routes
 from modules.brain import handle_build_brain, handle_build_new_brain, get_brain_status, get_brain_control_dashboard
 
 @app.route('/build_brain', methods=['POST'])
@@ -487,36 +408,29 @@ def brain_status():
     
     return jsonify(get_brain_status())
 
-@app.route('/brain')
-def brain_control():
-    """Enhanced brain control dashboard with batch progress"""
+@app.route('/reload_corpus')
+def reload_corpus():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
-    
-    return get_brain_control_dashboard()
-# Section 8: File Upload and Processing Route
-# Section 8: File Upload and Processing Route
-# Section 8: File Upload and Processing Route
-# Section 8: File Upload and Processing Route
-
+    try:
+        load_corpus(CORPUS_PATH)
+        return "Brain reloaded successfully", 200
+    except Exception as e:
+        app.logger.error(f"Corpus reload failed: {e}")
+        return f"Reload failed: {e}", 500
+        
+# Section 6: File Upload Processing
 from modules.file_processing import handle_file_upload
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
     """Updated upload handler for integrated chat flow"""
-    # Check authentication
     if not session.get('logged_in'):
         return jsonify({'error': 'Authentication required'}), 401
     
-    # Use the updated file processing handler
-    return handle_file_upload()  # This now returns JSON response
-
-
-# Section 9: Other Routes - Streaming, Database Dashboard, and Utilities
-# Section 9: Other Routes - Streaming, Database Dashboard, and Utilities
-# Section 9: Other Routes - Streaming, Database Dashboard, and Utilities
-# Section 9: Other Routes - Streaming, Database Dashboard, and Utilities
-
+    return handle_file_upload()
+    
+# Section 7: Streaming Chat API
 @app.route('/api/chat/stream', methods=['POST'])
 def stream_chat():
     """Fixed streaming chat endpoint with enhanced auth debugging"""
@@ -525,12 +439,11 @@ def stream_chat():
     app.logger.info(f"Stream request from {request.remote_addr}")
     app.logger.info(f"Session data: logged_in={session.get('logged_in')}, keys={list(session.keys())}")
     app.logger.info(f"User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
-    app.logger.info(f"Content-Type: {request.headers.get('Content-Type', 'Unknown')}")
     
     if not session.get('logged_in'):
         app.logger.warning("Stream request REJECTED - authentication failed")
         return jsonify({
-            'error': 'Unauthorized', 
+            'error': 'Unauthorized',
             'debug': {
                 'session_exists': bool(session),
                 'logged_in_value': session.get('logged_in'),
@@ -691,523 +604,24 @@ def check_auth_status():
         'session_keys': list(session.keys()),
         'message': 'Authentication working correctly'
     })
+    
+# Section 8: Dashboard Routes (Modular)
+from modules.dashboard_system import setup_system_routes
+from modules.dashboard_diagnostics import setup_diagnostics_routes
+from modules.dashboard_integrations import setup_integrations_routes
 
-# --- DATABASE DASHBOARD - NEW ---
-@app.route('/database_status')
-def database_status():
-    """Check database connection and table status"""
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
-    status = {
-        "database_url_configured": bool(DATABASE_URL),
-        "connection_working": False,
-        "tables_exist": False,
-        "conversation_count": 0,
-        "uploaded_files_count": 0,
-        "daily_logs_count": 0
-    }
-    
-    with get_db_connection() as conn:
-        if conn:
-            try:
-                cursor = conn.cursor()
-                status["connection_working"] = True
-                
-                # Check if tables exist
-                cursor.execute('''
-                    SELECT COUNT(*) FROM information_schema.tables 
-                    WHERE table_name IN ('chat_threads', 'uploaded_files', 'daily_logs', 'user_settings')
-                ''')
-                table_count = cursor.fetchone()[0]
-                status["tables_exist"] = table_count == 4
-                
-                if status["tables_exist"]:
-                    # Get record counts
-                    cursor.execute('SELECT COUNT(*) FROM chat_threads')
-                    status["conversation_count"] = cursor.fetchone()[0]
-                    
-                    cursor.execute('SELECT COUNT(*) FROM uploaded_files')
-                    status["uploaded_files_count"] = cursor.fetchone()[0]
-                    
-                    cursor.execute('SELECT COUNT(*) FROM daily_logs')
-                    status["daily_logs_count"] = cursor.fetchone()[0]
-                
-            except Exception as e:
-                app.logger.error(f"Database status check failed: {e}")
-    
-    return jsonify(status)
+# Register dashboard routes
+setup_system_routes(app)
+setup_diagnostics_routes(app)
+setup_integrations_routes(app)
 
-@app.route('/database')
-def database_dashboard():
-    """Simple database dashboard"""
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    
-    html_content = '''
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Ghostline Database Dashboard</title>
-        <style>
-            body { 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: #0f0f0f; 
-                color: #fff; 
-                margin: 0; 
-                padding: 20px; 
-            }
-            .container { max-width: 900px; margin: 0 auto; }
-            .status-box { 
-                background: #1a1a1a; 
-                border: 1px solid #333; 
-                border-radius: 8px; 
-                padding: 20px; 
-                margin: 20px 0; 
-            }
-            .btn { 
-                background: #6366f1; 
-                color: white; 
-                border: none; 
-                padding: 12px 24px; 
-                border-radius: 8px; 
-                cursor: pointer; 
-                font-size: 16px;
-                margin: 10px 5px;
-            }
-            .btn:hover { background: #5855eb; }
-            .stats-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 15px;
-                margin: 20px 0;
-            }
-            .stat-box {
-                background: #2a2a2a;
-                padding: 15px;
-                border-radius: 8px;
-                text-align: center;
-            }
-            .stat-number {
-                font-size: 28px;
-                font-weight: bold;
-                color: #10b981;
-            }
-            .success { color: #10b981; }
-            .error { color: #ef4444; }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>Database Dashboard</h1>
-            
-            <div class="status-box">
-                <h3>Connection Status</h3>
-                <div id="status">Loading...</div>
-            </div>
-            
-            <div class="status-box">
-                <h3>Statistics</h3>
-                <div id="stats" class="stats-grid">Loading...</div>
-            </div>
-            
-            <div class="status-box">
-                <button class="btn" onclick="refreshStatus()">Refresh</button>
-                <button class="btn" onclick="window.location.href='/'">&larr; Back to Chat</button>
-            </div>
-        </div>
-        
-        <script>
-            function refreshStatus() {
-                fetch('/database_status')
-                    .then(r => r.json())
-                    .then(data => {
-                        const statusDiv = document.getElementById('status');
-                        const statsDiv = document.getElementById('stats');
-                        
-                        // Update status
-                        if (data.database_url_configured && data.connection_working && data.tables_exist) {
-                            statusDiv.innerHTML = '<span class="success">Database Connected &amp; Ready</span>';
-                        } else {
-                            statusDiv.innerHTML = '<span class="error">Database Issues Detected</span>';
-                        }
-                        
-                        // Update stats
-                        statsDiv.innerHTML = `
-                            <div class="stat-box">
-                                <div class="stat-number">${data.conversation_count}</div>
-                                <div>Conversations</div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-number">${data.uploaded_files_count}</div>
-                                <div>Files Uploaded</div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-number">${data.daily_logs_count}</div>
-                                <div>Daily Logs</div>
-                            </div>
-                        `;
-                    })
-                    .catch(e => {
-                        document.getElementById('status').innerHTML = '<span class="error">Connection Error</span>';
-                    });
-            }
-            
-            refreshStatus();
-            setInterval(refreshStatus, 5000);
-        </script>
-    </body>
-    </html>
-    '''
-    return html_content
-
-# --- UTILITY ROUTES ---
-@app.route('/reload_corpus')
-def reload_corpus():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    try:
-        load_corpus(CORPUS_PATH)
-        return "Brain reloaded successfully", 200
-    except Exception as e:
-        app.logger.error(f"Corpus reload failed: {e}")
-        return f"Reload failed: {e}", 500
-
-@app.route('/healthz')
-def healthz():
-    build_status = get_build_status()
-    status = {
-        "status": "ok",
-        "brain_ready": build_status["status"] == "complete",
-        "brain_building": _rag_building or build_status["status"] == "building",
-        "brain_progress": build_status["progress"],
-        "brain_chunks": build_status.get("chunks_processed", 0)
-    }
-    return jsonify(status)
-
-@app.route('/export/<project>')
-def export_session(project):
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-        
-    session_path = f'sessions/{project.lower().replace(" ", "_")}.json'
-    try:
-        with open(session_path, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-        content = ""
-        for line in lines:
-            entry = json.loads(line)
-            content += f"### Prompt:\n{entry['prompt']}\n"
-            for voice, reply in entry['response'].items():
-                content += f"- **{voice}**: {reply}\n"
-            content += "\n---\n\n"
-        file_stream = io.BytesIO()
-        file_stream.write(content.encode('utf-8'))
-        file_stream.seek(0)
-        return send_file(
-            file_stream,
-            mimetype='text/markdown',
-            as_attachment=True,
-            download_name=f"{project}_session.md"
-        )
-    except FileNotFoundError:
-        return f"No session data found for project: {project}", 404
-
-# Section 9A: Enhanced Debug Routes for Brain Health Monitoring
-# Section 9A: Enhanced Debug Routes for Brain Health Monitoring
-# Section 9A: Enhanced Debug Routes for Brain Health Monitoring
-# Section 9A: Enhanced Debug Routes for Brain Health Monitoring
-
-@app.route('/debug/google_auth_test')
-def debug_google_auth_test():
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
-    try:
-        # Test the credential building process directly
-        from utils.gmail_client import _build_creds, _gmail_service, _calendar_service
-        
-        debug_info = []
-        debug_info.append(f"=== GOOGLE AUTH DEBUG ===")
-        debug_info.append(f"TOKEN_PATH: {os.getenv('GOOGLE_TOKEN_PATH', 'token.json')}")
-        debug_info.append(f"CREDENTIALS_PATH: {os.getenv('GOOGLE_CREDENTIALS_PATH', 'credentials.json')}")
-        debug_info.append(f"Token file exists: {os.path.exists('token.json')}")
-        debug_info.append(f"Credentials file exists: {os.path.exists('credentials.json')}")
-        
-        # Test credential building
-        try:
-            creds = _build_creds()
-            debug_info.append(f"✅ Credentials built successfully")
-            debug_info.append(f"Valid: {creds.valid}")
-            debug_info.append(f"Scopes: {creds.scopes}")
-            debug_info.append(f"Has refresh token: {bool(creds.refresh_token)}")
-        except Exception as e:
-            debug_info.append(f"❌ Credential building failed: {e}")
-            return "<pre>" + "\n".join(debug_info) + "</pre>"
-        
-        # Test Gmail service
-        try:
-            gmail_svc = _gmail_service()
-            debug_info.append(f"✅ Gmail service created")
-        except Exception as e:
-            debug_info.append(f"❌ Gmail service failed: {e}")
-        
-        # Test Calendar service
-        try:
-            cal_svc = _calendar_service()
-            debug_info.append(f"✅ Calendar service created")
-        except Exception as e:
-            debug_info.append(f"❌ Calendar service failed: {e}")
-        
-        return "<pre>" + "\n".join(debug_info) + "</pre><a href='/'>Back to Chat</a>"
-        
-    except Exception as e:
-        return f"<h1>Auth Debug Failed</h1><pre>{str(e)}</pre>"
-
-@app.route('/debug/brain_diagnostics')
-def debug_brain_diagnostics():
-    """Comprehensive brain system diagnostics"""
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
-    try:
-        from modules.brain import get_brain_diagnostics
-        diagnostics = get_brain_diagnostics()
-        return jsonify(diagnostics)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/debug/brain_health')
-def debug_brain_health():
-    """Check brain health status with detailed reporting"""
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
-    health_report = []
-    
-    # Check file-based RAG
-    try:
-        from utils.rag_basic import _rag_system
-        if _rag_system and hasattr(_rag_system, 'chunks'):
-            health_report.append(f"✅ File RAG: {len(_rag_system.chunks)} chunks loaded")
-        else:
-            health_report.append("⚠ File RAG: Not loaded or no chunks")
-    except Exception as e:
-        health_report.append(f"❌ File RAG: Error - {e}")
-    
-    # Check database
-    try:
-        with get_db_connection() as conn:
-            if conn:
-                cursor = conn.cursor()
-                cursor.execute("SELECT COUNT(*) FROM brain_documents")
-                count = cursor.fetchone()[0]
-                health_report.append(f"✅ Database: {count:,} documents")
-                
-                # Check recent activity
-                cursor.execute("""
-                    SELECT COUNT(*) FROM brain_health 
-                    WHERE last_refresh > NOW() - INTERVAL '24 hours'
-                """)
-                recent_activity = cursor.fetchone()[0]
-                health_report.append(f"📊 Recent Activity: {recent_activity} health checks in 24h")
-                
-            else:
-                health_report.append("❌ Database: No connection")
-    except Exception as e:
-        health_report.append(f"❌ Database: Error - {e}")
-    
-    # Test search with problematic queries
-    test_queries = [
-        "Dead Like Me", "Happy Time", "tv show", "television series",
-        "Carl", "project management", "marketing", "ghostline"
-    ]
-    
-    health_report.append("\n--- SEARCH TESTS ---")
-    
-    for query in test_queries:
-        try:
-            from modules.brain import enhanced_retrieve
-            results = enhanced_retrieve(query, k=3)
-            if results:
-                health_report.append(f"✅ '{query}': {len(results)} results")
-                # Show first result preview
-                if results[0].get('text'):
-                    preview = results[0]['text'][:100].replace('\n', ' ')
-                    health_report.append(f"   Preview: {preview}...")
-            else:
-                health_report.append(f"❌ '{query}': No results")
-        except Exception as e:
-            health_report.append(f"❌ '{query}': Error - {e}")
-    
-    # Test context refresh
-    health_report.append("\n--- CONTEXT REFRESH TEST ---")
-    try:
-        from modules.brain import refresh_brain_context, _last_brain_refresh
-        refresh_brain_context()
-        if _last_brain_refresh:
-            health_report.append(f"✅ Brain refresh: {_last_brain_refresh.strftime('%Y-%m-%d %H:%M:%S')}")
-        else:
-            health_report.append("⚠️ Brain refresh: No refresh timestamp")
-    except Exception as e:
-        health_report.append(f"❌ Brain refresh: Error - {e}")
-    
-    # Generate HTML report
-    html_content = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Brain Health Report</title>
-        <style>
-            body {{ 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
-            }}
-            .container {{ max-width: 1000px; margin: 0 auto; }}
-            .btn {{ 
-                background: #6366f1; color: white; border: none; padding: 12px 24px;
-                border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
-                text-decoration: none; display: inline-block;
-            }}
-            .btn:hover {{ background: #5855eb; }}
-            pre {{ 
-                background: #1a1a1a; padding: 20px; border-radius: 8px; 
-                white-space: pre-wrap; line-height: 1.4; border: 1px solid #333;
-                overflow-x: auto;
-            }}
-            .timestamp {{
-                color: #888; font-size: 12px; margin-bottom: 20px;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>🧠 Brain Health Report</h1>
-            <div class="timestamp">Generated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
-            
-            <pre>{"<br>".join(health_report)}</pre>
-            
-            <a href="/brain" class="btn">🧠 Brain Dashboard</a>
-            <a href="/database" class="btn">💾 Database Dashboard</a>
-            <a href="/" class="btn">💬 Back to Chat</a>
-            <a href="/debug/google_auth_test" class="btn">🔐 Test Google Auth</a>
-            <button class="btn" onclick="window.location.reload()">🔄 Refresh Report</button>
-        </div>
-    </body>
-    </html>
-    """
-    
-    return html_content
-
-@app.route('/debug/search_test')
-def debug_search_test():
-    """Interactive search testing tool"""
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
-    query = request.args.get('q', '').strip()
-    k = int(request.args.get('k', 5))
-    
-    html_content = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Search Test Tool</title>
-        <style>
-            body {{ 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
-            }}
-            .container {{ max-width: 1000px; margin: 0 auto; }}
-            input {{ 
-                background: #1a1a1a; color: #fff; border: 1px solid #333; 
-                padding: 10px; border-radius: 8px; margin: 5px; width: 300px;
-            }}
-            .btn {{ 
-                background: #6366f1; color: white; border: none; padding: 10px 20px;
-                border-radius: 8px; cursor: pointer; margin: 5px;
-            }}
-            .result {{ 
-                background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
-                padding: 15px; margin: 10px 0;
-            }}
-            .result-header {{ color: #6366f1; font-weight: bold; }}
-            .result-content {{ margin: 10px 0; line-height: 1.4; }}
-            .result-meta {{ color: #888; font-size: 12px; }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>🔍 Search Test Tool</h1>
-            
-            <form method="GET">
-                <input type="text" name="q" placeholder="Enter search query..." value="{query}">
-                <input type="number" name="k" placeholder="Results" value="{k}" min="1" max="20">
-                <button type="submit" class="btn">Search</button>
-            </form>
-            
-            <div style="margin: 20px 0;">
-                <strong>Quick Tests:</strong>
-                <a href="?q=Dead Like Me&k=5" class="btn">Dead Like Me</a>
-                <a href="?q=Happy Time&k=5" class="btn">Happy Time</a>
-                <a href="?q=television show&k=5" class="btn">TV Show</a>
-                <a href="?q=Carl&k=5" class="btn">Carl</a>
-                <a href="?q=marketing&k=5" class="btn">Marketing</a>
-            </div>
-    """
-    
-    if query:
-        html_content += f"<h2>Results for: '{query}'</h2>"
-        
-        try:
-            from modules.brain import enhanced_retrieve
-            results = enhanced_retrieve(query, k)
-            
-            if results:
-                html_content += f"<p>Found {len(results)} results:</p>"
-                
-                for i, result in enumerate(results, 1):
-                    source = result.get('source', 'Unknown')
-                    text = result.get('text', 'No content')
-                    score = result.get('score', 0)
-                    
-                    html_content += f"""
-                    <div class="result">
-                        <div class="result-header">Result {i}: {source}</div>
-                        <div class="result-content">{text[:500]}{'...' if len(text) > 500 else ''}</div>
-                        <div class="result-meta">Score: {score:.4f} | Length: {len(text)} chars</div>
-                    </div>
-                    """
-            else:
-                html_content += "<p>❌ No results found</p>"
-                
-        except Exception as e:
-            html_content += f"<p>❌ Search failed: {e}</p>"
-    
-    html_content += """
-            <div style="margin-top: 30px;">
-                <a href="/debug/brain_health" class="btn">🩺 Health Check</a>
-                <a href="/brain" class="btn">🧠 Brain Dashboard</a>
-                <a href="/" class="btn">💬 Back to Chat</a>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-    
-    return html_content
-
-
-# Section 11: PDF Generation Routes
-# Section 11: PDF Generation Routes
-
+# Section 9: PDF Report Generation
 from modules.pdf_generation import (
     generate_project_pdf,
     generate_daily_briefing_pdf,
     generate_project_report,
     generate_daily_briefing_report
 )
-import datetime
 
 @app.route('/reports/<project_name>.pdf')
 def project_report_pdf(project_name):
@@ -1216,14 +630,11 @@ def project_report_pdf(project_name):
         return redirect(url_for('login'))
     
     try:
-        # Get optional date range parameter
         days = request.args.get('days', 30, type=int)
         days = min(days, 365)  # Limit to 1 year max
         
-        # Generate PDF
         pdf_bytes, temp_path = generate_project_pdf(project_name, days)
         
-        # Safe filename for download
         safe_name = f"{project_name.replace(' ', '_')}_report_{datetime.datetime.now().strftime('%Y%m%d')}.pdf"
         
         return send_file(
@@ -1244,13 +655,8 @@ def daily_briefing_pdf(date):
         return redirect(url_for('login'))
     
     try:
-        # Parse date
         report_date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
-        
-        # Generate PDF
         pdf_bytes, temp_path = generate_daily_briefing_pdf(report_date)
-        
-        # Safe filename for download
         safe_name = f"daily_briefing_{date}.pdf"
         
         return send_file(
@@ -1283,7 +689,7 @@ def project_report_preview(project_name):
     
     try:
         days = request.args.get('days', 30, type=int)
-        days = min(days, 365)  # Limit to 1 year max
+        days = min(days, 365)
         
         html_content = generate_project_report(project_name, days)
         return html_content
@@ -1299,9 +705,7 @@ def daily_briefing_preview(date):
         return redirect(url_for('login'))
     
     try:
-        # Parse date
         report_date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
-        
         html_content = generate_daily_briefing_report(report_date)
         return html_content
         
@@ -1398,8 +802,8 @@ def reports_dashboard():
             
             <div class="report-section">
                 <button class="btn secondary" onclick="window.location.href='/'">← Back to Chat</button>
-                <button class="btn secondary" onclick="window.location.href='/brain'">Brain Dashboard</button>
-                <button class="btn secondary" onclick="window.location.href='/database'">Database Dashboard</button>
+                <button class="btn secondary" onclick="window.location.href='/system'">System Dashboard</button>
+                <button class="btn secondary" onclick="window.location.href='/integrations'">Integrations</button>
             </div>
         </div>
     </body>
@@ -1407,748 +811,8 @@ def reports_dashboard():
     '''
     
     return render_template_string(html_content, projects=PROJECTS)
-
-# Section 12: Cloze CRM Integration
-# Section 12: CRM Integration and Enhanced Command Processing
-# Section 12: CRM Integration and Enhanced Command Processing
-
-from modules.cloze_integration import (
-    process_cloze_command,
-    get_cloze_morning_briefing,
-    get_cloze_pipeline_summary,
-    search_cloze_contacts,
-    log_ghostline_interaction_to_cloze,
-    is_cloze_configured
-)
-
-@app.route('/cloze/status')
-def cloze_status():
-    """Check Cloze API configuration and connection"""
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
     
-    status = {
-        "configured": is_cloze_configured(),
-        "api_key_present": bool(os.getenv('CLOZE_API_KEY')),
-        "connection_working": False,
-        "user_info": None
-    }
-    
-    if is_cloze_configured():
-        try:
-            from modules.cloze_integration import ClozeClient
-            client = ClozeClient()
-            profile = client.get_profile()
-            status["connection_working"] = True
-            status["user_info"] = {
-                "name": profile.get('name', 'Unknown'),
-                "email": profile.get('email', 'Unknown')
-            }
-        except Exception as e:
-            status["error"] = str(e)
-    
-    return jsonify(status)
-
-@app.route('/cloze/briefing')
-def cloze_briefing():
-    """Get Cloze morning briefing"""
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    
-    if not is_cloze_configured():
-        return "Cloze API not configured", 400
-    
-    try:
-        briefing = get_cloze_morning_briefing()
-        html_template = """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Cloze Briefing</title>
-            <style>
-                body { 
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    background: #0f0f0f; color: #fff; margin: 0; padding: 20px; line-height: 1.6;
-                }
-                .container { max-width: 800px; margin: 0 auto; }
-                .btn { 
-                    background: #6366f1; color: white; border: none; padding: 12px 24px;
-                    border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
-                    text-decoration: none; display: inline-block;
-                }
-                .btn:hover { background: #5855eb; }
-                pre { background: #1a1a1a; padding: 20px; border-radius: 8px; white-space: pre-wrap; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>Cloze Morning Briefing</h1>
-                <pre>{{ briefing }}</pre>
-                <a href="/" class="btn">← Back to Chat</a>
-                <a href="/cloze" class="btn">Cloze Dashboard</a>
-            </div>
-        </body>
-        </html>
-        """
-        return render_template_string(html_template, briefing=briefing)
-        
-    except Exception as e:
-        return f"Briefing generation failed: {str(e)}", 500
-
-@app.route('/cloze/pipeline')
-def cloze_pipeline():
-    """Get Cloze pipeline summary"""
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    
-    if not is_cloze_configured():
-        return "Cloze API not configured", 400
-    
-    try:
-        pipeline = get_cloze_pipeline_summary()
-        html_template = """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Cloze Pipeline</title>
-            <style>
-                body { 
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    background: #0f0f0f; color: #fff; margin: 0; padding: 20px; line-height: 1.6;
-                }
-                .container { max-width: 800px; margin: 0 auto; }
-                .btn { 
-                    background: #6366f1; color: white; border: none; padding: 12px 24px;
-                    border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
-                    text-decoration: none; display: inline-block;
-                }
-                .btn:hover { background: #5855eb; }
-                pre { background: #1a1a1a; padding: 20px; border-radius: 8px; white-space: pre-wrap; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>Cloze Pipeline Summary</h1>
-                <pre>{{ pipeline }}</pre>
-                <a href="/" class="btn">← Back to Chat</a>
-                <a href="/cloze" class="btn">Cloze Dashboard</a>
-            </div>
-        </body>
-        </html>
-        """
-        return render_template_string(html_template, pipeline=pipeline)
-        
-    except Exception as e:
-        return f"Pipeline summary failed: {str(e)}", 500
-
-@app.route('/cloze')
-def cloze_dashboard():
-    """Cloze integration dashboard"""
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    
-    return render_template_string("""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Cloze Integration Dashboard</title>
-        <style>
-            body { 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: #0f0f0f; 
-                color: #fff; 
-                margin: 0; 
-                padding: 20px; 
-            }
-            .container { max-width: 1000px; margin: 0 auto; }
-            .status-box { 
-                background: #1a1a1a; 
-                border: 1px solid #333; 
-                border-radius: 8px; 
-                padding: 20px; 
-                margin: 20px 0; 
-            }
-            .btn { 
-                background: #6366f1; 
-                color: white; 
-                border: none; 
-                padding: 12px 24px; 
-                border-radius: 8px; 
-                cursor: pointer; 
-                font-size: 16px;
-                margin: 10px 5px;
-                text-decoration: none;
-                display: inline-block;
-            }
-            .btn:hover { background: #5855eb; }
-            .btn.secondary { background: #374151; }
-            .btn.secondary:hover { background: #4b5563; }
-            .commands-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                gap: 15px;
-                margin: 20px 0;
-            }
-            .command-card {
-                background: #2a2a2a;
-                padding: 15px;
-                border-radius: 8px;
-            }
-            .command-title {
-                font-size: 18px;
-                font-weight: bold;
-                margin-bottom: 10px;
-                color: #6366f1;
-            }
-            .command-example {
-                background: #1a1a1a;
-                padding: 10px;
-                border-radius: 4px;
-                font-family: monospace;
-                margin-top: 10px;
-            }
-            .success { color: #10b981; }
-            .error { color: #ef4444; }
-            .warning { color: #f59e0b; }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>Cloze CRM Integration</h1>
-            
-            <div class="status-box">
-                <h3>Connection Status</h3>
-                <div id="status">Loading...</div>
-            </div>
-            
-            <div class="status-box">
-                <h3>Quick Actions</h3>
-                <a href="/cloze/briefing" class="btn">Morning Briefing</a>
-                <a href="/cloze/pipeline" class="btn">Pipeline Summary</a>
-                <a href="/cloze/status" class="btn secondary">API Status</a>
-            </div>
-            
-            <div class="status-box">
-                <h3>Available Chat Commands</h3>
-                <div class="commands-grid">
-                    <div class="command-card">
-                        <div class="command-title">Morning Briefing</div>
-                        <p>Get daily activity summary and active projects from Cloze</p>
-                        <div class="command-example">cloze morning</div>
-                        <div class="command-example">morning cloze</div>
-                    </div>
-                    
-                    <div class="command-card">
-                        <div class="command-title">Pipeline Summary</div>
-                        <p>View deals and pipeline status by stage</p>
-                        <div class="command-example">cloze pipeline</div>
-                        <div class="command-example">cloze deals</div>
-                    </div>
-                    
-                    <div class="command-card">
-                        <div class="command-title">Contact Search</div>
-                        <p>Search for contacts in your Cloze database</p>
-                        <div class="command-example">cloze search john smith</div>
-                        <div class="command-example">cloze search acme corp</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="status-box">
-                <h3>Setup Instructions</h3>
-                <ol>
-                    <li>Email <strong>support@cloze.com</strong> to request API access</li>
-                    <li>Get your API key from Cloze Pro settings</li>
-                    <li>Set <strong>CLOZE_API_KEY</strong> environment variable</li>
-                    <li>Restart Ghostline to activate integration</li>
-                </ol>
-            </div>
-            
-            <div class="status-box">
-                <button class="btn secondary" onclick="window.location.href='/'">← Back to Chat</button>
-                <button class="btn secondary" onclick="window.location.href='/brain'">Brain Dashboard</button>
-                <button class="btn secondary" onclick="window.location.href='/database'">Database Dashboard</button>
-            </div>
-        </div>
-        
-        <script>
-            function refreshStatus() {
-                fetch('/cloze/status')
-                    .then(r => r.json())
-                    .then(data => {
-                        const statusDiv = document.getElementById('status');
-                        
-                        if (!data.configured) {
-                            statusDiv.innerHTML = '<span class="warning">API Key Not Configured</span><br>Set CLOZE_API_KEY environment variable';
-                        } else if (data.connection_working && data.user_info) {
-                            statusDiv.innerHTML = '<span class="success">Connected to Cloze</span><br>User: ' + data.user_info.name + ' (' + data.user_info.email + ')';
-                        } else {
-                            statusDiv.innerHTML = '<span class="error">Connection Failed</span><br>' + (data.error || 'Unknown error');
-                        }
-                    })
-                    .catch(e => {
-                        document.getElementById('status').innerHTML = '<span class="error">Status Check Failed</span>';
-                    });
-            }
-            
-            refreshStatus();
-            setInterval(refreshStatus, 30000);
-        </script>
-    </body>
-    </html>
-    """)
-
-# Section 13: Marketing FLUX Integration Routes
-# Section 13: Marketing FLUX Integration Routes
-# Section 13: Marketing FLUX Integration Routes
-
-from modules.marketing_flux import (
-    MarketingFluxGenerator, 
-    quick_social_post, 
-    test_campaign_ideas, 
-    create_full_campaign
-)
-
-@app.route('/marketing')
-def marketing_dashboard():
-    """Main marketing asset creation dashboard"""
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    return render_template('marketing_dashboard.html')
-
-@app.route('/api/marketing/quick-asset', methods=['POST'])
-def api_marketing_quick_asset():
-    """Generate single marketing asset quickly"""
-    if not session.get('logged_in'):
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-        
-    try:
-        data = request.get_json()
-        
-        # Required fields
-        concept = data.get('concept')
-        if not concept:
-            return jsonify({'success': False, 'error': 'Concept description required'}), 400
-        
-        # Optional parameters with smart defaults
-        style = data.get('style', 'corporate')
-        platform = data.get('platform', 'instagram')
-        quality = data.get('quality', 'standard')
-        format_name = data.get('format_name')
-        
-        generator = MarketingFluxGenerator()
-        result = generator.create_and_wait(
-            prompt=concept,
-            style=style,
-            platform=platform,
-            quality=quality,
-            format_name=format_name
-        )
-        
-        # Store in database if available
-        if result['success'] and 'database' in globals():
-            try:
-                save_conversation_enhanced('marketing_assets', concept, {
-                    'marketing_asset': {
-                        'concept': concept,
-                        'style': style,
-                        'platform': platform,
-                        'quality': quality,
-                        'format_name': format_name,
-                        'image_url': result.get('image_url'),
-                        'cost': result.get('estimated_cost'),
-                        'success': result['success']
-                    }
-                })
-            except Exception as e:
-                app.logger.error(f"Database storage failed: {e}")
-        
-        return jsonify(result)
-        
-    except Exception as e:
-        app.logger.error(f"Marketing asset generation failed: {e}")
-        return jsonify({
-            'success': False,
-            'error': f'Asset generation failed: {str(e)}'
-        }), 500
-
-@app.route('/api/marketing/campaign', methods=['POST'])
-def api_marketing_campaign():
-    """Create complete campaign asset set"""
-    if not session.get('logged_in'):
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-        
-    try:
-        data = request.get_json()
-        
-        campaign_name = data.get('campaign_name')
-        concept = data.get('concept')
-        
-        if not campaign_name or not concept:
-            return jsonify({
-                'success': False, 
-                'error': 'Campaign name and concept required'
-            }), 400
-        
-        platforms = data.get('platforms', ['instagram', 'facebook', 'linkedin', 'twitter'])
-        style = data.get('style', 'corporate')
-        quality = data.get('quality', 'standard')
-        
-        generator = MarketingFluxGenerator()
-        result = generator.create_campaign_assets(
-            campaign_name=campaign_name,
-            base_prompt=concept,
-            platforms=platforms,
-            style=style,
-            quality=quality
-        )
-        
-        # Store campaign in database
-        if result['success']:
-            try:
-                save_conversation_enhanced('marketing_campaigns', f"Campaign: {campaign_name}", {
-                    'campaign_results': result
-                })
-            except Exception as e:
-                app.logger.error(f"Campaign storage failed: {e}")
-        
-        return jsonify(result)
-        
-    except Exception as e:
-        app.logger.error(f"Campaign creation failed: {e}")
-        return jsonify({
-            'success': False,
-            'error': f'Campaign creation failed: {str(e)}'
-        }), 500
-
-@app.route('/api/marketing/test-concepts', methods=['POST'])
-def api_marketing_test_concepts():
-    """Rapidly test multiple creative concepts"""
-    if not session.get('logged_in'):
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-        
-    try:
-        data = request.get_json()
-        
-        concepts = data.get('concepts', [])
-        if not concepts or not isinstance(concepts, list):
-            return jsonify({
-                'success': False, 
-                'error': 'Concepts array required'
-            }), 400
-        
-        if len(concepts) > 10:
-            return jsonify({
-                'success': False,
-                'error': 'Maximum 10 concepts per test batch'
-            }), 400
-        
-        style = data.get('style', 'corporate')
-        
-        generator = MarketingFluxGenerator()
-        result = generator.test_concepts(concepts, style)
-        
-        return jsonify(result)
-        
-    except Exception as e:
-        app.logger.error(f"Concept testing failed: {e}")
-        return jsonify({
-            'success': False,
-            'error': f'Concept testing failed: {str(e)}'
-        }), 500
-
-@app.route('/api/marketing/social-set', methods=['POST'])
-def api_marketing_social_set():
-    """Create social media asset set"""
-    if not session.get('logged_in'):
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-        
-    try:
-        data = request.get_json()
-        
-        concept = data.get('concept')
-        if not concept:
-            return jsonify({'success': False, 'error': 'Post concept required'}), 400
-        
-        platforms = data.get('platforms', ['instagram', 'facebook', 'linkedin', 'twitter'])
-        style = data.get('style', 'corporate')
-        
-        generator = MarketingFluxGenerator()
-        result = generator.create_social_media_set(concept, platforms, style)
-        
-        return jsonify(result)
-        
-    except Exception as e:
-        app.logger.error(f"Social media set creation failed: {e}")
-        return jsonify({
-            'success': False,
-            'error': f'Social media set creation failed: {str(e)}'
-        }), 500
-
-@app.route('/api/marketing/formats')
-def api_marketing_formats():
-    """Get available formats and specifications"""
-    if not session.get('logged_in'):
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-        
-    try:
-        generator = MarketingFluxGenerator()
-        
-        return jsonify({
-            'success': True,
-            'social_formats': generator.social_specs,
-            'styles': generator.marketing_styles,
-            'models': generator.models,
-            'recommendations': generator.get_marketing_recommendations()
-        })
-        
-    except Exception as e:
-        app.logger.error(f"Formats fetch failed: {e}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/marketing/download', methods=['POST'])
-def api_marketing_download():
-    """Download generated marketing asset"""
-    if not session.get('logged_in'):
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-        
-    try:
-        data = request.get_json()
-        image_url = data.get('image_url')
-        filename = data.get('filename', 'marketing_asset')
-        campaign_name = data.get('campaign_name', 'general')
-        
-        if not image_url:
-            return jsonify({'success': False, 'error': 'Image URL required'}), 400
-        
-        # Create organized folder structure
-        import re
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        safe_campaign = re.sub(r'[^a-zA-Z0-9_-]', '_', campaign_name)
-        safe_filename = re.sub(r'[^a-zA-Z0-9_-]', '_', filename)
-        
-        folder_path = os.path.join("static", "marketing", safe_campaign)
-        file_path = os.path.join(folder_path, f"{safe_filename}_{timestamp}.png")
-        
-        # Download image
-        response = requests.get(image_url)
-        response.raise_for_status()
-        
-        # Ensure directory exists
-        os.makedirs(folder_path, exist_ok=True)
-        
-        with open(file_path, 'wb') as f:
-            f.write(response.content)
-        
-        # Return web-accessible path
-        web_path = f"/static/marketing/{safe_campaign}/{os.path.basename(file_path)}"
-        
-        return jsonify({
-            'success': True,
-            'local_path': file_path,
-            'web_path': web_path,
-            'filename': os.path.basename(file_path),
-            'campaign_folder': safe_campaign
-        })
-        
-    except Exception as e:
-        app.logger.error(f"Download failed: {e}")
-        return jsonify({
-            'success': False,
-            'error': f'Download failed: {str(e)}'
-        }), 500
-
-@app.route('/api/marketing/status')
-def api_marketing_status():
-    """Check marketing tools status"""
-    if not session.get('logged_in'):
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-        
-    try:
-        generator = MarketingFluxGenerator()
-        
-        return jsonify({
-            'success': True,
-            'status': 'operational',
-            'api_connected': True,
-            'available_models': len(generator.models),
-            'available_formats': len(generator.social_specs),
-            'cost_estimate': {
-                'rapid_generation': '$0.003 per image',
-                'standard_quality': '$0.030 per image', 
-                'professional_quality': '$0.055 per image'
-            }
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'status': 'error',
-            'error': str(e),
-            'setup_required': 'REPLICATE_API_TOKEN' in str(e)
-        })
-
-@app.route('/marketing/campaigns')
-def marketing_campaigns():
-    """Campaign management page"""
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-        
-    return render_template_string('''
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Marketing Campaigns</title>
-        <style>
-            body { 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
-            }
-            .container { max-width: 1000px; margin: 0 auto; }
-            .btn { 
-                background: #6366f1; color: white; border: none; padding: 12px 24px;
-                border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
-                text-decoration: none; display: inline-block;
-            }
-            .btn:hover { background: #5855eb; }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>Marketing Campaigns</h1>
-            <p>Campaign history and management coming soon!</p>
-            <a href="/marketing" class="btn">← Back to Marketing Dashboard</a>
-            <a href="/" class="btn">Chat Interface</a>
-        </div>
-    </body>
-    </html>
-    ''')
-
-@app.route('/marketing/assets')
-def marketing_assets():
-    """Marketing asset library"""
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    
-    try:
-        assets_dir = os.path.join("static", "marketing")
-        
-        if not os.path.exists(assets_dir):
-            os.makedirs(assets_dir)
-        
-        # Organize assets by campaign folder
-        campaigns = {}
-        
-        for campaign_folder in os.listdir(assets_dir):
-            campaign_path = os.path.join(assets_dir, campaign_folder)
-            
-            if os.path.isdir(campaign_path):
-                assets = []
-                
-                for file in os.listdir(campaign_path):
-                    if file.lower().endswith(('.png', '.jpg', '.jpeg')):
-                        file_path = os.path.join(campaign_path, file)
-                        assets.append({
-                            'filename': file,
-                            'path': f"/static/marketing/{campaign_folder}/{file}",
-                            'size': os.path.getsize(file_path),
-                            'created': datetime.datetime.fromtimestamp(os.path.getctime(file_path))
-                        })
-                
-                if assets:
-                    campaigns[campaign_folder] = sorted(assets, key=lambda x: x['created'], reverse=True)
-        
-        return render_template_string('''
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Marketing Assets</title>
-            <style>
-                body { 
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
-                }
-                .container { max-width: 1200px; margin: 0 auto; }
-                .btn { 
-                    background: #6366f1; color: white; border: none; padding: 12px 24px;
-                    border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
-                    text-decoration: none; display: inline-block;
-                }
-                .btn:hover { background: #5855eb; }
-                .campaign-section {
-                    background: #1a1a1a; border: 1px solid #333; border-radius: 8px;
-                    padding: 20px; margin: 20px 0;
-                }
-                .assets-grid {
-                    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-                    gap: 15px; margin: 15px 0;
-                }
-                .asset-card {
-                    background: #2a2a2a; border-radius: 8px; overflow: hidden;
-                }
-                .asset-img {
-                    width: 100%; height: 150px; object-fit: cover;
-                }
-                .asset-info {
-                    padding: 10px; font-size: 12px; color: #ccc;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>Marketing Assets Library</h1>
-                
-                {% if campaigns %}
-                    {% for campaign_name, assets in campaigns.items() %}
-                    <div class="campaign-section">
-                        <h3>{{ campaign_name.title() }} ({{ assets|length }} assets)</h3>
-                        <div class="assets-grid">
-                            {% for asset in assets %}
-                            <div class="asset-card">
-                                <img src="{{ asset.path }}" alt="{{ asset.filename }}" class="asset-img">
-                                <div class="asset-info">
-                                    <div>{{ asset.filename }}</div>
-                                    <div>{{ asset.created.strftime('%Y-%m-%d %H:%M') }}</div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <p>No marketing assets generated yet. <a href="/marketing">Create your first asset!</a></p>
-                {% endif %}
-                
-                <a href="/marketing" class="btn">← Back to Marketing Dashboard</a>
-                <a href="/" class="btn">Chat Interface</a>
-            </div>
-        </body>
-        </html>
-        ''', campaigns=campaigns)
-        
-    except Exception as e:
-        app.logger.error(f"Assets library error: {e}")
-        return f"Assets library error: {str(e)}", 500
-
-
-# Section 14: Telegram Integration Routes and Background Services
-# Section 14: Telegram Integration Routes and Background Services
-# Section 14: Telegram Integration Routes and Background Services
-# Section 14: Telegram Integration Routes and Background Services
-# Section 14: Telegram Integration Routes and Background Services
-# Section 14: Telegram Integration Routes and Background Services
-# Section 14: Telegram Integration Routes and Background Services
-# Section 14: Telegram Integration Routes and Background Services
-# Section 14: Telegram Integration Routes and Background Services
-# Section 14: Telegram Integration Routes and Background Services
-# Section 14: Telegram Integration Routes and Background Services
-# Section 14: Telegram Integration Routes and Background Services
-# Section 14: Telegram Integration Routes and Background Services
-
-# Add this route for manual reminder checking
+# Section 10: Telegram Integration Routes
 @app.route('/reminders/check', methods=['POST'])
 def check_telegram_reminders():
     """Manual trigger for reminder checking"""
@@ -2162,7 +826,6 @@ def check_telegram_reminders():
     result = reminders.check_and_send_reminders()
     return jsonify(result)
 
-# Emergency stop routes - BOTH GET AND POST
 @app.route('/telegram/emergency_stop', methods=['POST'])
 def emergency_stop_reminders():
     """EMERGENCY: Stop all pending reminders to prevent spam"""
@@ -2188,63 +851,23 @@ def emergency_stop_now():
         result = reminders.emergency_stop_all()
         
         if result["success"]:
-            return f"<h1>EMERGENCY STOP SUCCESS</h1><p>Stopped {result['stopped_count']} reminders</p><a href='/telegram'>Back to Telegram Dashboard</a>"
+            return f"<h1>EMERGENCY STOP SUCCESS</h1><p>Stopped {result['stopped_count']} reminders</p><a href='/integrations'>Back to Integrations</a>"
         else:
-            return f"<h1>EMERGENCY STOP FAILED</h1><p>{result['error']}</p><a href='/telegram'>Back to Telegram Dashboard</a>"
+            return f"<h1>EMERGENCY STOP FAILED</h1><p>{result['error']}</p><a href='/integrations'>Back to Integrations</a>"
     except Exception as e:
-        return f"<h1>EMERGENCY STOP ERROR</h1><p>{str(e)}</p><a href='/telegram'>Back to Telegram Dashboard</a>"
+        return f"<h1>EMERGENCY STOP ERROR</h1><p>{str(e)}</p><a href='/integrations'>Back to Integrations</a>"
 
-# Debug route to check what's in the database
-@app.route('/debug/reminders')
-def debug_reminders():
-    """Debug what reminders are in the database"""
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
-    try:
-        with get_db_connection() as conn:
-            if conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT reminder_id, title, remind_at, status, snooze_until, created_at
-                    FROM telegram_reminders 
-                    ORDER BY created_at DESC
-                    LIMIT 10
-                ''')
-                
-                results = cursor.fetchall()
-                
-                html = "<h1>Reminder Debug</h1><pre>"
-                html += f"Current server time: {datetime.datetime.now()}\n\n"
-                
-                for row in results:
-                    html += f"ID: {row[0]}\n"
-                    html += f"Title: {row[1]}\n"
-                    html += f"Remind At: {row[2]} (UTC)\n"
-                    html += f"Status: {row[3]}\n"
-                    html += f"Snooze Until: {row[4]}\n"
-                    html += f"Created: {row[5]}\n"
-                    html += f"Due? {row[2] <= datetime.datetime.now()}\n"
-                    html += "---\n"
-                
-                html += "</pre><a href='/telegram'>Back to Telegram Dashboard</a>"
-                return html
-                
-    except Exception as e:
-        return f"Debug failed: {str(e)}"
-
-# Enhanced Telegram webhook endpoint with chat ID capture
 @app.route('/telegram/webhook', methods=['POST'])
 def telegram_webhook():
     """Enhanced Telegram webhook handler with chat ID capture and detailed logging"""
     try:
         data = request.get_json()
         
-        # EXTRACT CHAT ID FOR DEBUGGING - THIS IS THE KEY FIX
+        # EXTRACT CHAT ID FOR DEBUGGING
         chat_id = None
         if 'message' in data and 'chat' in data['message']:
             chat_id = data['message']['chat']['id']
-            print(f"=== CHAT ID FOUND: {chat_id} ===")  # This will show in Railway logs
+            print(f"=== CHAT ID FOUND: {chat_id} ===")
             app.logger.info(f"CHAT ID FOUND: {chat_id}")
         elif 'callback_query' in data and 'message' in data['callback_query']:
             chat_id = data['callback_query']['message']['chat']['id']
@@ -2287,24 +910,21 @@ def telegram_webhook():
         app.logger.error(f"Telegram webhook failed: {e}", exc_info=True)
         return jsonify({"ok": False, "error": str(e)}), 500
 
-# Enhanced webhook setup routes - BOTH GET AND POST
 @app.route('/telegram/setup_webhook', methods=['POST'])
 def setup_telegram_webhook():
-    """Setup Telegram webhook - FIXED VERSION"""
+    """Setup Telegram webhook"""
     if not session.get('logged_in'):
         return "Unauthorized", 401
     
-    # Get webhook URL from environment or construct it
     webhook_url = os.getenv('WEBHOOK_URL')
     
     if not webhook_url:
-        # Construct from Railway URL if available
         railway_url = os.getenv('RAILWAY_STATIC_URL')
         if railway_url:
             webhook_url = f"https://{railway_url}/telegram/webhook"
         else:
             return jsonify({
-                "success": False, 
+                "success": False,
                 "error": "WEBHOOK_URL not configured and RAILWAY_STATIC_URL not found"
             }), 400
     
@@ -2312,7 +932,6 @@ def setup_telegram_webhook():
         from modules.telegram_notifications import TelegramBot
         bot = TelegramBot()
         
-        # Set the webhook
         response = requests.post(
             f"https://api.telegram.org/bot{bot.token}/setWebhook",
             json={
@@ -2335,35 +954,6 @@ def setup_telegram_webhook():
         app.logger.error(f"Webhook setup failed: {e}")
         return jsonify({"success": False, "error": str(e)})
 
-@app.route('/telegram/setup_webhook_now')
-def setup_webhook_now():
-    """GET version for webhook setup when buttons fail"""
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
-    webhook_url = os.getenv('WEBHOOK_URL')
-    if not webhook_url:
-        return "<h1>WEBHOOK SETUP FAILED</h1><p>WEBHOOK_URL not configured</p><a href='/telegram'>Back</a>"
-    
-    try:
-        from modules.telegram_notifications import TelegramBot
-        bot = TelegramBot()
-        
-        response = requests.post(
-            f"https://api.telegram.org/bot{bot.token}/setWebhook",
-            json={"url": webhook_url, "allowed_updates": ["callback_query", "message"]}
-        )
-        result = response.json()
-        
-        if result.get('ok'):
-            return f"<h1>WEBHOOK SETUP SUCCESS</h1><p>Webhook set to: {webhook_url}</p><a href='/telegram'>Back to Telegram Dashboard</a>"
-        else:
-            return f"<h1>WEBHOOK SETUP FAILED</h1><p>{result.get('description', 'Unknown error')}</p><a href='/telegram'>Back</a>"
-            
-    except Exception as e:
-        return f"<h1>WEBHOOK SETUP ERROR</h1><p>{str(e)}</p><a href='/telegram'>Back</a>"
-
-# Add webhook info route
 @app.route('/telegram/webhook_info')
 def telegram_webhook_info():
     """Get current webhook information"""
@@ -2381,921 +971,159 @@ def telegram_webhook_info():
         
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
-
-# Add Telegram status check
-@app.route('/telegram/status')
-def telegram_status():
-    """Check Telegram bot configuration and connection"""
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
-    status = {
-        "configured": is_telegram_configured(),
-        "bot_token_present": bool(os.getenv('TELEGRAM_BOT_TOKEN')),
-        "connection_working": False,
-        "bot_info": None,
-        "webhook_set": False
-    }
-    
-    if is_telegram_configured():
-        try:
-            from modules.telegram_notifications import TelegramBot
-            bot = TelegramBot()
-            
-            # Test bot connection
-            response = requests.get(f"https://api.telegram.org/bot{bot.token}/getMe")
-            result = response.json()
-            
-            if result['ok']:
-                status["connection_working"] = True
-                status["bot_info"] = {
-                    "username": result['result']['username'],
-                    "first_name": result['result']['first_name'],
-                    "id": result['result']['id']
-                }
-                status["chat_id"] = bot.chat_id
-            
-            # Check webhook status
-            webhook_response = requests.get(f"https://api.telegram.org/bot{bot.token}/getWebhookInfo")
-            webhook_result = webhook_response.json()
-            if webhook_result['ok']:
-                status["webhook_info"] = webhook_result['result']
-                status["webhook_set"] = bool(webhook_result['result'].get('url'))
-            
-        except Exception as e:
-            status["error"] = str(e)
-    
-    return jsonify(status)
-
-# Add Telegram dashboard with webhook setup and emergency stop
-@app.route('/telegram')
-def telegram_dashboard():
-    """Telegram integration dashboard"""
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    
-    return render_template_string('''
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Telegram Reminders</title>
-        <style>
-            body { 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
-            }
-            .container { max-width: 1000px; margin: 0 auto; }
-            .status-box { 
-                background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
-                padding: 20px; margin: 20px 0; 
-            }
-            .btn { 
-                background: #6366f1; color: white; border: none; padding: 12px 24px;
-                border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
-                text-decoration: none; display: inline-block;
-            }
-            .btn:hover { background: #5855eb; }
-            .btn.success { background: #059669; }
-            .btn.warning { background: #d97706; }
-            .btn.critical { background: #dc2626; }
-            .commands-grid {
-                display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                gap: 15px; margin: 20px 0;
-            }
-            .command-card {
-                background: #2a2a2a; padding: 15px; border-radius: 8px;
-            }
-            .command-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #6366f1; }
-            .command-example { 
-                background: #1a1a1a; padding: 10px; border-radius: 4px; 
-                font-family: monospace; margin-top: 10px; 
-            }
-            .success { color: #10b981; }
-            .error { color: #ef4444; }
-            .warning { color: #f59e0b; }
-            .critical { color: #dc2626; }
-            .setup-steps { background: #1a1a1a; padding: 20px; border-radius: 8px; margin: 15px 0; }
-            .setup-steps h4 { color: #6366f1; margin: 0 0 10px 0; }
-            .setup-steps ol li { margin: 10px 0; }
-            .webhook-warning {
-                background: #dc2626; color: white; padding: 15px; border-radius: 8px; margin: 15px 0;
-                font-weight: bold; text-align: center;
-            }
-            .emergency-panel {
-                background: #7f1d1d; border: 2px solid #dc2626; border-radius: 8px;
-                padding: 20px; margin: 20px 0; text-align: center;
-            }
-            .chat-id-panel {
-                background: #1e40af; border: 2px solid #3b82f6; border-radius: 8px;
-                padding: 20px; margin: 20px 0; text-align: center;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>🤖 Telegram Reminders</h1>
-            <p>Reliable push notifications that actually work! No SMS fees, works on all devices.</p>
-            
-            <div class="chat-id-panel">
-                <h3>📱 CHAT ID NEEDED</h3>
-                <p>Send a message to your bot, then check Railway logs for:</p>
-                <code>=== CHAT ID FOUND: [NUMBER] ===</code>
-                <p>Set that number as TELEGRAM_CHAT_ID environment variable</p>
-            </div>
-            
-            <div class="emergency-panel">
-                <h3>🚨 EMERGENCY CONTROLS</h3>
-                <p>If buttons below are grayed out, use these direct links:</p>
-                <a href="/telegram/emergency_stop_now" class="btn critical">🛑 STOP SPAM NOW</a>
-                <a href="/telegram/setup_webhook_now" class="btn success">⚙️ SETUP WEBHOOK NOW</a>
-                <a href="/debug/reminders" class="btn warning">🔍 DEBUG DATABASE</a>
-            </div>
-            
-            <div class="status-box">
-                <h3>Bot Status</h3>
-                <div id="status">Loading...</div>
-                
-                <div class="webhook-warning" id="webhook-warning" style="display: none;">
-                    ⚠️ WEBHOOK NOT SET UP - Button clicks won't work! Click "Setup Webhook" below.
-                </div>
-                
-                <div class="setup-steps" id="setup-steps" style="display: none;">
-                    <h4>Setup Instructions:</h4>
-                    <ol>
-                        <li>Message <strong>@BotFather</strong> on Telegram</li>
-                        <li>Send <code>/newbot</code></li>
-                        <li>Choose name: "Ghostline Assistant"</li>
-                        <li>Choose username: "ghostline_yourname_bot"</li>
-                        <li>Copy the bot token</li>
-                        <li>Add <strong>TELEGRAM_BOT_TOKEN</strong> to Railway environment</li>
-                        <li>Set <strong>WEBHOOK_URL</strong> to your Railway URL + /telegram/webhook</li>
-                        <li>Restart Ghostline</li>
-                        <li>Message your bot to activate</li>
-                        <li>Click "Setup Webhook" button below</li>
-                    </ol>
-                </div>
-            </div>
-            
-            <div class="status-box">
-                <h3>Quick Actions</h3>
-                <button class="btn" onclick="checkReminders()">Send Due Reminders Now</button>
-                <button class="btn warning" onclick="testReminder()">Send Test Reminder</button>
-                <button class="btn success" id="webhook-btn" onclick="setupWebhook()" style="display: none;">Setup Webhook</button>
-                <button class="btn critical" onclick="emergencyStop()">🚨 EMERGENCY STOP SPAM</button>
-                <button class="btn" onclick="refreshStatus()">Refresh Status</button>
-            </div>
-            
-            <div class="status-box">
-                <h3>Chat Commands</h3>
-                <div class="commands-grid">
-                    <div class="command-card">
-                        <div class="command-title">Basic Reminders</div>
-                        <p>Set reminders that will actually be sent!</p>
-                        <div class="command-example">remind me to call John in 30 minutes</div>
-                        <div class="command-example">reminder: meeting prep in 2 hours</div>
-                        <div class="command-example">remind me to review proposal tomorrow at 9am</div>
-                    </div>
-                    
-                    <div class="command-card">
-                        <div class="command-title">Quick Shortcuts</div>
-                        <p>Fast reminder creation</p>
-                        <div class="command-example">remind me to follow up in 1h</div>
-                        <div class="command-example">alert me to check email in 15m</div>
-                        <div class="command-example">don't forget to call client at 3pm</div>
-                    </div>
-                    
-                    <div class="command-card">
-                        <div class="command-title">Button Actions</div>
-                        <p>Interactive buttons in Telegram (after webhook setup):</p>
-                        <div style="margin: 10px 0;">
-                            <span style="background: #059669; padding: 5px 10px; border-radius: 15px; margin: 2px;">✅ Done</span>
-                            <span style="background: #d97706; padding: 5px 10px; border-radius: 15px; margin: 2px;">⏰ Snooze 15m</span><br>
-                            <span style="background: #d97706; padding: 5px 10px; border-radius: 15px; margin: 2px;">⏰ Snooze 1h</span>
-                            <span style="background: #6366f1; padding: 5px 10px; border-radius: 15px; margin: 2px;">🔍 More Info</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="status-box">
-                <button class="btn" onclick="window.location.href='/'">← Back to Chat</button>
-                <button class="btn" onclick="window.location.href='/brain'">Brain Dashboard</button>
-            </div>
-        </div>
         
-        <script>
-            function refreshStatus() {
-                fetch('/telegram/status')
-                    .then(r => r.json())
-                    .then(data => {
-                        const statusDiv = document.getElementById('status');
-                        const setupDiv = document.getElementById('setup-steps');
-                        const webhookWarning = document.getElementById('webhook-warning');
-                        const webhookBtn = document.getElementById('webhook-btn');
-                        
-                        if (!data.configured) {
-                            statusDiv.innerHTML = '<span class="warning">⚠️ Bot Token Not Configured</span>';
-                            setupDiv.style.display = 'block';
-                            webhookWarning.style.display = 'none';
-                            webhookBtn.style.display = 'none';
-                        } else if (data.connection_working && data.bot_info) {
-                            statusDiv.innerHTML = `
-                                <span class="success">✅ Bot Connected</span><br>
-                                <strong>Bot:</strong> @${data.bot_info.username}<br>
-                                <strong>Name:</strong> ${data.bot_info.first_name}<br>
-                                <strong>Chat ID:</strong> ${data.chat_id || 'Auto-detecting...'}<br>
-                                <strong>Webhook:</strong> ${data.webhook_set ? '<span class="success">✅ Set</span>' : '<span class="error">❌ Not Set</span>'}
-                            `;
-                            setupDiv.style.display = 'none';
-                            
-                            if (data.webhook_set) {
-                                webhookWarning.style.display = 'none';
-                                webhookBtn.style.display = 'none';
-                            } else {
-                                webhookWarning.style.display = 'block';
-                                webhookBtn.style.display = 'inline-block';
-                            }
-                        } else {
-                            statusDiv.innerHTML = `<span class="error">❌ Connection Failed</span><br>${data.error || 'Unknown error'}`;
-                            setupDiv.style.display = 'block';
-                            webhookWarning.style.display = 'none';
-                            webhookBtn.style.display = 'none';
-                        }
-                    })
-                    .catch(e => {
-                        document.getElementById('status').innerHTML = '<span class="error">❌ Status Check Failed</span>';
-                    });
-            }
-            
-            function setupWebhook() {
-                fetch('/telegram/setup_webhook', { method: 'POST' })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert('✅ Webhook setup successful! Button clicks should now work.');
-                            refreshStatus();
-                        } else {
-                            alert('❌ Webhook setup failed: ' + (data.error || data.description));
-                        }
-                    })
-                    .catch(e => alert('Failed to setup webhook'));
-            }
-            
-            function emergencyStop() {
-                if (confirm('🚨 EMERGENCY STOP: This will mark all pending reminders as completed to stop spam. Continue?')) {
-                    fetch('/telegram/emergency_stop', { method: 'POST' })
-                        .then(r => r.json())
-                        .then(data => {
-                            if (data.success) {
-                                alert(`🛑 Emergency stop successful! Stopped ${data.stopped_count} reminders.`);
-                            } else {
-                                alert('Emergency stop failed: ' + data.error);
-                            }
-                        })
-                        .catch(e => alert('Emergency stop request failed'));
-                }
-            }
-            
-            function checkReminders() {
-                fetch('/reminders/check', { method: 'POST' })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.sent > 0) {
-                            alert(`✅ Sent ${data.sent} reminder(s)`);
-                        } else {
-                            alert('No reminders due right now');
-                        }
-                    })
-                    .catch(e => alert('Failed to check reminders'));
-            }
-            
-            function testReminder() {
-                const testMessage = "This is a test reminder from Ghostline! 🚀";
-                
-                fetch('/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({
-                        'user_input': `remind me that ${testMessage} in 1 minute`,
-                        'project': 'Personal Operating Manual',
-                        'voices': 'SyntaxPrime'
-                    })
-                })
-                .then(() => {
-                    alert('Test reminder created! You should receive it in 1 minute.');
-                })
-                .catch(e => alert('Failed to create test reminder'));
-            }
-            
-            // Auto-refresh every 30 seconds
-            refreshStatus();
-            setInterval(refreshStatus, 30000);
-        </script>
-    </body>
-    </html>
-    ''')
-
-# Safe reminder checker function with error handling
-def safe_reminder_checker():
-    """Background thread with safety checks to prevent infinite loops"""
-    consecutive_errors = 0
-    max_errors = 5
-    
-    while True:
-        try:
-            if is_telegram_configured() and consecutive_errors < max_errors:
-                reminders = GhostlineTelegramReminders()
-                result = reminders.check_and_send_reminders()
-                
-                if result["sent"] > 0:
-                    print(f"Sent {result['sent']} reminders")
-                    consecutive_errors = 0  # Reset error count on success
-                elif "error" in result:
-                    consecutive_errors += 1
-                    print(f"Reminder check error #{consecutive_errors}: {result['error']}")
-            else:
-                if consecutive_errors >= max_errors:
-                    print(f"Too many consecutive errors ({consecutive_errors}), pausing reminder checker for 10 minutes")
-                    time.sleep(600)  # Wait 10 minutes before trying again
-                    consecutive_errors = 0
-                    
-        except Exception as e:
-            consecutive_errors += 1
-            print(f"Reminder check failed #{consecutive_errors}: {e}")
-        
-        # Only sleep if we're not in error recovery mode
-        if consecutive_errors < max_errors:
-            time.sleep(120)  # Check every 2 minutes
-
-# FIXED: Background checker is NOW ENABLED
-if os.getenv('RAILWAY_ENVIRONMENT'):
-    checker_thread = threading.Thread(target=safe_reminder_checker, daemon=True)
-    checker_thread.start()
-    print("Telegram reminder checker started")
-else:
-    print("Telegram reminder checker disabled (not on Railway)")
-
-# Section 15: ClickUp Integration Routes and Task Management
-# Section 15: ClickUp Integration Routes and Task Management
-# Section 15: ClickUp Integration Routes and Task Management
-
-from modules.clickup_integration import (
-    process_clickup_command,
-    get_clickup_morning_briefing,
-    get_clickup_time_today,
-    get_clickup_time_week,
-    create_clickup_task,
-    get_clickup_tasks_summary,
-    is_clickup_configured,
-    ClickUpClient
+# Section 11: Marketing Dashboard Routes
+from modules.marketing_flux import (
+    MarketingFluxGenerator,
+    quick_social_post,
+    test_campaign_ideas,
+    create_full_campaign
 )
 
-@app.route('/clickup/status')
-def clickup_status():
-    """Check ClickUp API configuration and connection"""
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
-    status = {
-        "configured": is_clickup_configured(),
-        "api_token_present": bool(os.getenv('CLICKUP_API_TOKEN')),
-        "connection_working": False,
-        "user_info": None,
-        "team_info": None
-    }
-    
-    if is_clickup_configured():
-        try:
-            client = ClickUpClient()
-            
-            # Test connection and get user info
-            user_info = client.get_user_info()
-            status["connection_working"] = True
-            status["user_info"] = {
-                "username": user_info.get('user', {}).get('username', 'Unknown'),
-                "email": user_info.get('user', {}).get('email', 'Unknown'),
-                "id": user_info.get('user', {}).get('id', 'Unknown')
-            }
-            
-            # Get team info
-            teams = client.get_teams()
-            if teams.get('teams'):
-                status["team_info"] = {
-                    "name": teams['teams'][0].get('name', 'Unknown'),
-                    "id": teams['teams'][0].get('id', 'Unknown'),
-                    "members": len(teams['teams'][0].get('members', []))
-                }
-            
-        except Exception as e:
-            status["error"] = str(e)
-    
-    return jsonify(status)
-
-@app.route('/clickup/briefing')
-def clickup_briefing():
-    """Get ClickUp morning briefing"""
+@app.route('/marketing')
+def marketing_dashboard():
+    """Main marketing asset creation dashboard"""
     if not session.get('logged_in'):
         return redirect(url_for('login'))
-    
-    if not is_clickup_configured():
-        return "ClickUp API not configured", 400
-    
-    try:
-        briefing = get_clickup_morning_briefing()
-        html_template = """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>ClickUp Morning Briefing</title>
-            <style>
-                body { 
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    background: #0f0f0f; color: #fff; margin: 0; padding: 20px; line-height: 1.6;
-                }
-                .container { max-width: 800px; margin: 0 auto; }
-                .btn { 
-                    background: #6366f1; color: white; border: none; padding: 12px 24px;
-                    border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
-                    text-decoration: none; display: inline-block;
-                }
-                .btn:hover { background: #5855eb; }
-                pre { background: #1a1a1a; padding: 20px; border-radius: 8px; white-space: pre-wrap; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>ClickUp Morning Briefing</h1>
-                <pre>{{ briefing }}</pre>
-                <a href="/" class="btn">← Back to Chat</a>
-                <a href="/clickup" class="btn">ClickUp Dashboard</a>
-            </div>
-        </body>
-        </html>
-        """
-        return render_template_string(html_template, briefing=briefing)
-        
-    except Exception as e:
-        return f"Briefing generation failed: {str(e)}", 500
+    return render_template('marketing_dashboard.html')
 
-@app.route('/clickup/time/today')
-def clickup_time_today():
-    """Get today's time tracking"""
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    
-    if not is_clickup_configured():
-        return "ClickUp API not configured", 400
-    
-    try:
-        time_summary = get_clickup_time_today()
-        html_template = """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>ClickUp Time Tracking - Today</title>
-            <style>
-                body { 
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    background: #0f0f0f; color: #fff; margin: 0; padding: 20px; line-height: 1.6;
-                }
-                .container { max-width: 800px; margin: 0 auto; }
-                .btn { 
-                    background: #6366f1; color: white; border: none; padding: 12px 24px;
-                    border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
-                    text-decoration: none; display: inline-block;
-                }
-                .btn:hover { background: #5855eb; }
-                pre { background: #1a1a1a; padding: 20px; border-radius: 8px; white-space: pre-wrap; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>Today's Time Tracking</h1>
-                <pre>{{ time_summary }}</pre>
-                <a href="/" class="btn">← Back to Chat</a>
-                <a href="/clickup" class="btn">ClickUp Dashboard</a>
-            </div>
-        </body>
-        </html>
-        """
-        return render_template_string(html_template, time_summary=time_summary)
-        
-    except Exception as e:
-        return f"Time tracking query failed: {str(e)}", 500
-
-@app.route('/clickup/time/week')
-def clickup_time_week():
-    """Get this week's time tracking"""
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    
-    if not is_clickup_configured():
-        return "ClickUp API not configured", 400
-    
-    try:
-        time_summary = get_clickup_time_week()
-        html_template = """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>ClickUp Time Tracking - This Week</title>
-            <style>
-                body { 
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    background: #0f0f0f; color: #fff; margin: 0; padding: 20px; line-height: 1.6;
-                }
-                .container { max-width: 800px; margin: 0 auto; }
-                .btn { 
-                    background: #6366f1; color: white; border: none; padding: 12px 24px;
-                    border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
-                    text-decoration: none; display: inline-block;
-                }
-                .btn:hover { background: #5855eb; }
-                pre { background: #1a1a1a; padding: 20px; border-radius: 8px; white-space: pre-wrap; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>This Week's Time Tracking</h1>
-                <pre>{{ time_summary }}</pre>
-                <a href="/" class="btn">← Back to Chat</a>
-                <a href="/clickup" class="btn">ClickUp Dashboard</a>
-            </div>
-        </body>
-        </html>
-        """
-        return render_template_string(html_template, time_summary=time_summary)
-        
-    except Exception as e:
-        return f"Time tracking query failed: {str(e)}", 500
-
-@app.route('/clickup/tasks')
-def clickup_tasks_page():
-    """Get tasks summary"""
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    
-    if not is_clickup_configured():
-        return "ClickUp API not configured", 400
-    
-    try:
-        tasks_summary = get_clickup_tasks_summary()
-        html_template = """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>ClickUp Tasks Summary</title>
-            <style>
-                body { 
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    background: #0f0f0f; color: #fff; margin: 0; padding: 20px; line-height: 1.6;
-                }
-                .container { max-width: 800px; margin: 0 auto; }
-                .btn { 
-                    background: #6366f1; color: white; border: none; padding: 12px 24px;
-                    border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
-                    text-decoration: none; display: inline-block;
-                }
-                .btn:hover { background: #5855eb; }
-                pre { background: #1a1a1a; padding: 20px; border-radius: 8px; white-space: pre-wrap; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>ClickUp Tasks Summary</h1>
-                <pre>{{ tasks_summary }}</pre>
-                <a href="/" class="btn">← Back to Chat</a>
-                <a href="/clickup" class="btn">ClickUp Dashboard</a>
-            </div>
-        </body>
-        </html>
-        """
-        return render_template_string(html_template, tasks_summary=tasks_summary)
-        
-    except Exception as e:
-        return f"Tasks query failed: {str(e)}", 500
-
-@app.route('/api/clickup/create-task', methods=['POST'])
-def api_clickup_create_task():
-    """Create ClickUp task via API"""
+@app.route('/api/marketing/quick-asset', methods=['POST'])
+def api_marketing_quick_asset():
+    """Generate single marketing asset quickly"""
     if not session.get('logged_in'):
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    
-    if not is_clickup_configured():
-        return jsonify({'success': False, 'error': 'ClickUp not configured'}), 400
-    
+        
     try:
         data = request.get_json()
-        task_name = data.get('task_name', '').strip()
         
-        if not task_name:
-            return jsonify({'success': False, 'error': 'Task name required'}), 400
+        concept = data.get('concept')
+        if not concept:
+            return jsonify({'success': False, 'error': 'Concept description required'}), 400
         
-        client = ClickUpClient()
-        result = create_clickup_task(client, task_name, data.get('project'))
+        style = data.get('style', 'corporate')
+        platform = data.get('platform', 'instagram')
+        quality = data.get('quality', 'standard')
+        format_name = data.get('format_name')
         
-        return jsonify({
-            'success': True,
-            'message': result
-        })
+        generator = MarketingFluxGenerator()
+        result = generator.create_and_wait(
+            prompt=concept,
+            style=style,
+            platform=platform,
+            quality=quality,
+            format_name=format_name
+        )
+        
+        # Store in database if available
+        if result['success']:
+            try:
+                save_conversation_enhanced('marketing_assets', concept, {
+                    'marketing_asset': {
+                        'concept': concept,
+                        'style': style,
+                        'platform': platform,
+                        'quality': quality,
+                        'format_name': format_name,
+                        'image_url': result.get('image_url'),
+                        'cost': result.get('estimated_cost'),
+                        'success': result['success']
+                    }
+                })
+            except Exception as e:
+                app.logger.error(f"Database storage failed: {e}")
+        
+        return jsonify(result)
         
     except Exception as e:
+        app.logger.error(f"Marketing asset generation failed: {e}")
         return jsonify({
             'success': False,
-            'error': f'Task creation failed: {str(e)}'
+            'error': f'Asset generation failed: {str(e)}'
         }), 500
 
-@app.route('/api/clickup/timer/start', methods=['POST'])
-def api_clickup_start_timer():
-    """Start ClickUp timer"""
+@app.route('/api/marketing/campaign', methods=['POST'])
+def api_marketing_campaign():
+    """Create complete campaign asset set"""
     if not session.get('logged_in'):
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    
-    if not is_clickup_configured():
-        return jsonify({'success': False, 'error': 'ClickUp not configured'}), 400
-    
+        
     try:
         data = request.get_json()
-        task_identifier = data.get('task_identifier', '').strip()
         
-        if not task_identifier:
-            return jsonify({'success': False, 'error': 'Task identifier required'}), 400
+        campaign_name = data.get('campaign_name')
+        concept = data.get('concept')
         
-        client = ClickUpClient()
-        # For now, this is a placeholder - full implementation would search for task by name
-        result = f"Timer started for: {task_identifier}"
+        if not campaign_name or not concept:
+            return jsonify({
+                'success': False,
+                'error': 'Campaign name and concept required'
+            }), 400
         
-        return jsonify({
-            'success': True,
-            'message': result
-        })
+        platforms = data.get('platforms', ['instagram', 'facebook', 'linkedin', 'twitter'])
+        style = data.get('style', 'corporate')
+        quality = data.get('quality', 'standard')
+        
+        generator = MarketingFluxGenerator()
+        result = generator.create_campaign_assets(
+            campaign_name=campaign_name,
+            base_prompt=concept,
+            platforms=platforms,
+            style=style,
+            quality=quality
+        )
+        
+        # Store campaign in database
+        if result['success']:
+            try:
+                save_conversation_enhanced('marketing_campaigns', f"Campaign: {campaign_name}", {
+                    'campaign_results': result
+                })
+            except Exception as e:
+                app.logger.error(f"Campaign storage failed: {e}")
+        
+        return jsonify(result)
         
     except Exception as e:
+        app.logger.error(f"Campaign creation failed: {e}")
         return jsonify({
             'success': False,
-            'error': f'Timer start failed: {str(e)}'
+            'error': f'Campaign creation failed: {str(e)}'
         }), 500
 
-@app.route('/api/clickup/timer/stop', methods=['POST'])
-def api_clickup_stop_timer():
-    """Stop ClickUp timer"""
+@app.route('/api/marketing/status')
+def api_marketing_status():
+    """Check marketing tools status"""
     if not session.get('logged_in'):
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    
-    if not is_clickup_configured():
-        return jsonify({'success': False, 'error': 'ClickUp not configured'}), 400
-    
+        
     try:
-        client = ClickUpClient()
-        result = client.stop_time_tracking()
+        generator = MarketingFluxGenerator()
         
         return jsonify({
             'success': True,
-            'message': 'Timer stopped and time logged'
+            'status': 'operational',
+            'api_connected': True,
+            'available_models': len(generator.models),
+            'available_formats': len(generator.social_specs),
+            'cost_estimate': {
+                'rapid_generation': '$0.003 per image',
+                'standard_quality': '$0.030 per image',
+                'professional_quality': '$0.055 per image'
+            }
         })
         
     except Exception as e:
         return jsonify({
             'success': False,
-            'error': f'Timer stop failed: {str(e)}'
-        }), 500
-
-@app.route('/clickup')
-def clickup_dashboard():
-    """ClickUp integration dashboard"""
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    
-    return render_template_string("""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>ClickUp Integration Dashboard</title>
-        <style>
-            body { 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: #0f0f0f; 
-                color: #fff; 
-                margin: 0; 
-                padding: 20px; 
-            }
-            .container { max-width: 1000px; margin: 0 auto; }
-            .status-box { 
-                background: #1a1a1a; 
-                border: 1px solid #333; 
-                border-radius: 8px; 
-                padding: 20px; 
-                margin: 20px 0; 
-            }
-            .btn { 
-                background: #6366f1; 
-                color: white; 
-                border: none; 
-                padding: 12px 24px; 
-                border-radius: 8px; 
-                cursor: pointer; 
-                font-size: 16px;
-                margin: 10px 5px;
-                text-decoration: none;
-                display: inline-block;
-            }
-            .btn:hover { background: #5855eb; }
-            .btn.secondary { background: #374151; }
-            .btn.secondary:hover { background: #4b5563; }
-            .btn.success { background: #059669; }
-            .btn.warning { background: #d97706; }
-            .commands-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                gap: 15px;
-                margin: 20px 0;
-            }
-            .command-card {
-                background: #2a2a2a;
-                padding: 15px;
-                border-radius: 8px;
-            }
-            .command-title {
-                font-size: 18px;
-                font-weight: bold;
-                margin-bottom: 10px;
-                color: #6366f1;
-            }
-            .command-example {
-                background: #1a1a1a;
-                padding: 10px;
-                border-radius: 4px;
-                font-family: monospace;
-                margin-top: 10px;
-            }
-            .success { color: #10b981; }
-            .error { color: #ef4444; }
-            .warning { color: #f59e0b; }
-            .feature-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                gap: 15px;
-                margin: 20px 0;
-            }
-            .feature-card {
-                background: #1a1a1a;
-                border: 1px solid #333;
-                border-radius: 8px;
-                padding: 15px;
-                text-align: center;
-            }
-            .feature-icon {
-                font-size: 2em;
-                margin-bottom: 10px;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>📋 ClickUp Integration</h1>
-            <p>Task management, time tracking, and productivity insights integrated with Ghostline.</p>
-            
-            <div class="status-box">
-                <h3>Connection Status</h3>
-                <div id="status">Loading...</div>
-            </div>
-            
-            <div class="status-box">
-                <h3>Quick Actions</h3>
-                <a href="/clickup/briefing" class="btn">Morning Briefing</a>
-                <a href="/clickup/time/today" class="btn">Today's Time</a>
-                <a href="/clickup/time/week" class="btn">Weekly Hours</a>
-                <a href="/clickup/tasks" class="btn">Tasks Summary</a>
-                <a href="/clickup/status" class="btn secondary">API Status</a>
-            </div>
-            
-            <div class="status-box">
-                <h3>Features</h3>
-                <div class="feature-grid">
-                    <div class="feature-card">
-                        <div class="feature-icon">⏰</div>
-                        <h4>Time Tracking</h4>
-                        <p>Monitor logged hours, daily/weekly summaries, and productivity patterns</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">📝</div>
-                        <h4>Task Management</h4>
-                        <p>Create tasks, view deadlines, track priorities and completion status</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">📊</div>
-                        <h4>Smart Briefings</h4>
-                        <p>Daily summaries with due tasks, overdue items, and time insights</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">🔄</div>
-                        <h4>Auto-Logging</h4>
-                        <p>Convert conversations and reminders into actionable ClickUp tasks</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="status-box">
-                <h3>Available Chat Commands</h3>
-                <div class="commands-grid">
-                    <div class="command-card">
-                        <div class="command-title">Morning Briefing</div>
-                        <p>Get daily task overview and time tracking summary</p>
-                        <div class="command-example">clickup morning</div>
-                        <div class="command-example">clickup briefing</div>
-                    </div>
-                    
-                    <div class="command-card">
-                        <div class="command-title">Time Tracking</div>
-                        <p>View logged hours and productivity insights</p>
-                        <div class="command-example">clickup time today</div>
-                        <div class="command-example">clickup time week</div>
-                    </div>
-                    
-                    <div class="command-card">
-                        <div class="command-title">Task Creation</div>
-                        <p>Create new tasks directly from chat</p>
-                        <div class="command-example">create clickup task: review proposal</div>
-                        <div class="command-example">add clickup task: call client</div>
-                    </div>
-                    
-                    <div class="command-card">
-                        <div class="command-title">Task Queries</div>
-                        <p>View current tasks, deadlines, and priorities</p>
-                        <div class="command-example">clickup tasks</div>
-                        <div class="command-example">clickup deadlines</div>
-                    </div>
-                    
-                    <div class="command-card">
-                        <div class="command-title">Timer Controls</div>
-                        <p>Start and stop time tracking</p>
-                        <div class="command-example">start timer on [task name]</div>
-                        <div class="command-example">stop timer</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="status-box">
-                <h3>Setup Instructions</h3>
-                <ol>
-                    <li>Go to your <strong>ClickUp Settings</strong></li>
-                    <li>Navigate to <strong>Apps → API</strong></li>
-                    <li>Generate a <strong>Personal API Token</strong></li>
-                    <li>Set <strong>CLICKUP_API_TOKEN</strong> environment variable</li>
-                    <li>Restart Ghostline to activate integration</li>
-                </ol>
-                <p><strong>Note:</strong> ClickUp API access may require a paid plan.</p>
-            </div>
-            
-            <div class="status-box">
-                <button class="btn secondary" onclick="window.location.href='/'">← Back to Chat</button>
-                <button class="btn secondary" onclick="window.location.href='/brain'">Brain Dashboard</button>
-                <button class="btn secondary" onclick="window.location.href='/database'">Database Dashboard</button>
-                <button class="btn secondary" onclick="window.location.href='/telegram'">Telegram Dashboard</button>
-            </div>
-        </div>
+            'status': 'error',
+            'error': str(e),
+            'setup_required': 'REPLICATE_API_TOKEN' in str(e)
+        })
         
-        <script>
-            function refreshStatus() {
-                fetch('/clickup/status')
-                    .then(r => r.json())
-                    .then(data => {
-                        const statusDiv = document.getElementById('status');
-                        
-                        if (!data.configured) {
-                            statusDiv.innerHTML = '<span class="warning">API Token Not Configured</span><br>Set CLICKUP_API_TOKEN environment variable';
-                        } else if (data.connection_working && data.user_info) {
-                            statusDiv.innerHTML = '<span class="success">Connected to ClickUp</span><br>User: ' + data.user_info.username + ' (' + data.user_info.email + ')';
-                            
-                            if (data.team_info) {
-                                statusDiv.innerHTML += '<br>Team: ' + data.team_info.name + ' (' + data.team_info.members + ' members)';
-                            }
-                        } else {
-                            statusDiv.innerHTML = '<span class="error">Connection Failed</span><br>' + (data.error || 'Unknown error');
-                        }
-                    })
-                    .catch(e => {
-                        document.getElementById('status').innerHTML = '<span class="error">Status Check Failed</span>';
-                    });
-            }
-            
-            refreshStatus();
-            setInterval(refreshStatus, 30000);
-        </script>
-    </body>
-    </html>
-    """)
-# Section 16: ElevenLabs Text-to-Speech Integration
-# COMPLETE REPLACEMENT FOR YOUR ELEVENLABS SECTION IN app.py
-# Replace Section 16: ElevenLabs Text-to-Speech Integration with this:
-
-import os
-import requests
-import tempfile
+# Section 12: ElevenLabs Text-to-Speech
 import base64
-import json
 
-# Add this to your imports at the top of app.py
+# ElevenLabs SDK imports
 try:
     from elevenlabs import ElevenLabs, Voice, VoiceSettings
     ELEVENLABS_SDK_AVAILABLE = True
@@ -3319,13 +1147,11 @@ def text_to_speech():
         if len(text) > 2500:  # ElevenLabs character limit
             text = text[:2500] + "..."
         
-        # ElevenLabs API configuration
         api_key = os.getenv('ELEVENLABS_API_KEY')
         if not api_key:
             app.logger.error("ELEVENLABS_API_KEY not configured")
             return jsonify({'success': False, 'error': 'ElevenLabs API key not configured'}), 400
         
-        # Voice ID - use your configured voice
         voice_id = os.getenv('ELEVENLABS_VOICE_ID', "21m00Tcm4TlvDq8ikWAM")  # Default to Rachel
         
         app.logger.info(f"Using ElevenLabs voice: {voice_id}")
@@ -3343,14 +1169,12 @@ def text_to_speech():
 def _tts_with_sdk(text, api_key, voice_id):
     """TTS using official ElevenLabs SDK"""
     try:
-        # Initialize ElevenLabs client
         client = ElevenLabs(api_key=api_key)
         
-        # Generate audio with proper voice settings
         audio = client.text_to_speech.convert(
             text=text,
             voice_id=voice_id,
-            model_id="eleven_monolingual_v1",  # or "eleven_multilingual_v2"
+            model_id="eleven_monolingual_v1",
             voice_settings=VoiceSettings(
                 stability=0.5,
                 similarity_boost=0.5,
@@ -3360,7 +1184,6 @@ def _tts_with_sdk(text, api_key, voice_id):
             output_format="mp3_44100_128"
         )
         
-        # Convert audio to base64
         audio_bytes = b''.join(audio)  # SDK returns generator
         audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
         
@@ -3376,7 +1199,6 @@ def _tts_with_sdk(text, api_key, voice_id):
         
     except Exception as e:
         app.logger.error(f"SDK TTS failed: {e}")
-        # Fallback to HTTP if SDK fails
         return _tts_with_http(text, api_key, voice_id)
 
 def _tts_with_http(text, api_key, voice_id):
@@ -3387,7 +1209,7 @@ def _tts_with_http(text, api_key, voice_id):
         headers = {
             "Accept": "audio/mpeg",
             "Content-Type": "application/json",
-            "xi-api-key": api_key  # Correct header name
+            "xi-api-key": api_key
         }
         
         payload = {
@@ -3402,15 +1224,12 @@ def _tts_with_http(text, api_key, voice_id):
         }
         
         app.logger.info(f"Making HTTP request to {url}")
-        app.logger.info(f"Using voice ID: {voice_id}")
-        app.logger.info(f"API key length: {len(api_key)} characters")
         
         response = requests.post(url, json=payload, headers=headers, timeout=30)
         
         app.logger.info(f"ElevenLabs HTTP response status: {response.status_code}")
         
         if response.status_code == 200:
-            # Return audio as base64
             audio_base64 = base64.b64encode(response.content).decode('utf-8')
             
             app.logger.info(f"Successfully generated {len(response.content)} bytes of audio using HTTP")
@@ -3429,7 +1248,6 @@ def _tts_with_http(text, api_key, voice_id):
                 error_detail = response.json()
                 app.logger.error(f"API error details: {error_detail}")
                 
-                # Handle common errors
                 if response.status_code == 401:
                     error_msg = "Invalid API key - check your ELEVENLABS_API_KEY"
                 elif response.status_code == 422:
@@ -3455,62 +1273,6 @@ def _tts_with_http(text, api_key, voice_id):
         app.logger.error(f"HTTP TTS failed: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/tts/voices')
-def get_available_voices():
-    """Get list of available ElevenLabs voices with better error handling"""
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
-    api_key = os.getenv('ELEVENLABS_API_KEY')
-    if not api_key:
-        return jsonify({'success': False, 'error': 'API key not configured'}), 400
-    
-    try:
-        if ELEVENLABS_SDK_AVAILABLE:
-            # Use SDK if available
-            client = ElevenLabs(api_key=api_key)
-            response = client.voices.get_all()
-            
-            voices = []
-            for voice in response.voices:
-                voices.append({
-                    'voice_id': voice.voice_id,
-                    'name': voice.name,
-                    'category': voice.category,
-                    'description': getattr(voice, 'description', ''),
-                    'preview_url': getattr(voice, 'preview_url', '')
-                })
-            
-            return jsonify({'success': True, 'voices': voices, 'method': 'SDK'})
-        else:
-            # Use HTTP fallback
-            headers = {"xi-api-key": api_key}
-            response = requests.get("https://api.elevenlabs.io/v1/voices", headers=headers, timeout=10)
-            
-            if response.status_code == 200:
-                voices_data = response.json()
-                voices = []
-                
-                for voice in voices_data.get('voices', []):
-                    voices.append({
-                        'voice_id': voice['voice_id'],
-                        'name': voice['name'],
-                        'category': voice.get('category', 'Unknown'),
-                        'description': voice.get('description', ''),
-                        'preview_url': voice.get('preview_url', '')
-                    })
-                
-                return jsonify({'success': True, 'voices': voices, 'method': 'HTTP'})
-            else:
-                error_msg = f"Failed to fetch voices: {response.status_code}"
-                if response.status_code == 401:
-                    error_msg = "Invalid API key"
-                return jsonify({'success': False, 'error': error_msg}), 500
-                
-    except Exception as e:
-        app.logger.error(f"Voice list fetch failed: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
 @app.route('/api/tts/status')
 def tts_status():
     """Enhanced TTS status with better diagnostics"""
@@ -3529,7 +1291,6 @@ def tts_status():
     api_key = os.getenv('ELEVENLABS_API_KEY')
     if status["configured"] and api_key:
         try:
-            # Test API connection with user info endpoint
             if ELEVENLABS_SDK_AVAILABLE:
                 try:
                     client = ElevenLabs(api_key=api_key)
@@ -3543,14 +1304,12 @@ def tts_status():
                     
                 except Exception as sdk_error:
                     app.logger.warning(f"SDK connection failed, trying HTTP: {sdk_error}")
-                    # Fallback to HTTP
                     raise Exception("SDK failed, trying HTTP")
                     
             else:
                 raise Exception("SDK not available, using HTTP")
                 
         except Exception:
-            # HTTP fallback for connection test
             try:
                 headers = {"xi-api-key": api_key}
                 response = requests.get("https://api.elevenlabs.io/v1/user", headers=headers, timeout=10)
@@ -3574,32 +1333,8 @@ def tts_status():
                 status["error"] = f"Connection test failed: {str(e)}"
     
     return jsonify(status)
-
-# Test endpoint for debugging
-@app.route('/api/tts/test')
-def tts_test():
-    """Test TTS with debug information"""
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
     
-    api_key = os.getenv('ELEVENLABS_API_KEY')
-    voice_id = os.getenv('ELEVENLABS_VOICE_ID', "21m00Tcm4TlvDq8ikWAM")
-    
-    debug_info = {
-        "api_key_configured": bool(api_key),
-        "api_key_length": len(api_key) if api_key else 0,
-        "api_key_preview": f"{api_key[:10]}..." if api_key and len(api_key) > 10 else "Not set",
-        "voice_id": voice_id,
-        "sdk_available": ELEVENLABS_SDK_AVAILABLE
-    }
-    
-    return jsonify(debug_info)
-
-
-# Section 17: Mobile API Endpoints
-# Section 17: Mobile API Endpoints
-# Section 17: Mobile API Endpoints
-# Section 17: Mobile API Endpoints
+# Section 13: Mobile API Routes
 @app.route('/api/mobile/auth', methods=['POST'])
 def mobile_auth():
     """JWT authentication for mobile clients"""
@@ -3608,7 +1343,6 @@ def mobile_auth():
         password = data.get('password')
         
         if password == PASSWORD:
-            # Generate JWT token here (requires PyJWT)
             if JWT_AVAILABLE:
                 import time
                 
@@ -3631,7 +1365,6 @@ def mobile_auth():
         else:
             return jsonify({'success': False, 'error': 'Invalid password'}), 401
     else:
-        # Already authenticated via session
         return jsonify({'success': True, 'message': 'Already authenticated'})
 
 @app.route('/api/mobile/projects')
@@ -3660,7 +1393,6 @@ def mobile_projects():
                     'last_activity': result[1].isoformat() if result and result[1] else None
                 })
         else:
-            # Fallback to file system count
             for project in PROJECTS:
                 projects_with_counts.append({
                     'name': project,
@@ -3675,7 +1407,7 @@ def mobile_projects():
 
 @app.route('/api/mobile/conversations/<project>')
 def mobile_conversations(project):
-    """Get conversation history for a project (paginated) - FIXED VERSION"""
+    """Get conversation history for a project (paginated)"""
     if not is_mobile_authenticated():
         return jsonify({'error': 'Unauthorized'}), 401
     
@@ -3725,46 +1457,62 @@ def mobile_conversations(project):
 
 @app.route('/api/mobile/chat', methods=['POST'])
 def mobile_chat():
-    """Simple chat endpoint for mobile app"""
+    """Simple test version for Swift app development"""
     if not is_mobile_authenticated():
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
     user_input = data.get('user_input', '').strip()
-    project = data.get('project', 'Personal Operating Manual')
-    use_voices = data.get('voices', ['SyntaxPrime'])
-    random_toggle = data.get('random', False)
     
     if not user_input:
         return jsonify({'error': 'No input provided'}), 400
     
-    try:
-        # Use your existing response generation
-        retrieval_ctx = enhanced_retrieve(user_input, k=5) if is_ready() else []
-        response_data = generate_response(
-            user_input, use_voices, random_toggle,
-            project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
-        )
-        
-        # Save to database
-        save_conversation_enhanced(project, user_input, response_data)
-        
-        return jsonify({
-            'success': True,
-            'responses': response_data
-        })
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    # Simple test response - replace with full pipeline once Swift app is working
+    return jsonify({
+        'success': True,
+        'responses': {
+            'SyntaxPrime': f'Test response to: {user_input}'
+        }
+    })
 
-# Helper function for mobile auth
+# TODO: Replace above with full mobile chat implementation once Swift app is tested:
+# @app.route('/api/mobile/chat', methods=['POST'])
+# def mobile_chat_full():
+#     """Full mobile chat endpoint"""
+#     if not is_mobile_authenticated():
+#         return jsonify({'error': 'Unauthorized'}), 401
+#
+#     data = request.get_json()
+#     user_input = data.get('user_input', '').strip()
+#     project = data.get('project', 'Personal Operating Manual')
+#     use_voices = data.get('voices', ['SyntaxPrime'])
+#     random_toggle = data.get('random', False)
+#
+#     if not user_input:
+#         return jsonify({'error': 'No input provided'}), 400
+#
+#     try:
+#         retrieval_ctx = enhanced_retrieve(user_input, k=5) if is_ready() else []
+#         response_data = generate_response(
+#             user_input, use_voices, random_toggle,
+#             project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+#         )
+#
+#         save_conversation_enhanced(project, user_input, response_data)
+#
+#         return jsonify({
+#             'success': True,
+#             'responses': response_data
+#         })
+#
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 500
+
 def is_mobile_authenticated():
     """Check if mobile client is authenticated via JWT or session"""
-    # Check session first (for web clients)
     if session.get('logged_in'):
         return True
     
-    # Check JWT token in Authorization header
     if JWT_AVAILABLE:
         auth_header = request.headers.get('Authorization')
         if auth_header and auth_header.startswith('Bearer '):
@@ -3777,11 +1525,7 @@ def is_mobile_authenticated():
     
     return False
 
-# Section 18: Google OAuth Integration Routes
-# Section 18: Google OAuth Integration Routes
-# Section 18: Google OAuth Integration Routes
-# Add this as a new section in your app.py after Section 17
-
+# Section 14: Google OAuth Integration
 @app.route('/google/auth/start')
 def google_auth_start():
     """Initiate Google OAuth flow - Railway-compatible version"""
@@ -3789,10 +1533,8 @@ def google_auth_start():
         return redirect(url_for('login'))
     
     try:
-        # Use the paths defined at the top of your app.py
         credentials_path = os.getenv('GOOGLE_CREDENTIALS_PATH', 'credentials.json')
         
-        # Check if credentials file exists
         if not os.path.exists(credentials_path):
             return render_template_string("""
             <!DOCTYPE html>
@@ -3831,7 +1573,7 @@ def google_auth_start():
                             <li>Return here and try again</li>
                         </ol>
                     </div>
-                    <a href="/google/setup" class="btn">Setup Instructions</a>
+                    <a href="/integrations" class="btn">Setup Instructions</a>
                     <a href="/" class="btn">Back to Chat</a>
                 </div>
             </body>
@@ -3840,17 +1582,14 @@ def google_auth_start():
         
         from google_auth_oauthlib.flow import Flow
         
-        # Get the Railway app URL for callback
         railway_url = os.getenv('RAILWAY_STATIC_URL')
         if railway_url:
             redirect_uri = f"https://{railway_url}/google/auth/callback"
         else:
-            # Fallback for local development
             redirect_uri = "http://localhost:5000/google/auth/callback"
         
         app.logger.info(f"Starting OAuth flow with redirect URI: {redirect_uri}")
         
-        # Create the flow with your existing scopes
         flow = Flow.from_client_secrets_file(
             credentials_path,
             scopes=[
@@ -3860,14 +1599,12 @@ def google_auth_start():
         )
         flow.redirect_uri = redirect_uri
         
-        # Generate authorization URL
         authorization_url, state = flow.authorization_url(
-            access_type='offline',  # This enables refresh tokens
+            access_type='offline',
             include_granted_scopes='true',
-            prompt='consent'  # Force consent to get refresh token
+            prompt='consent'
         )
         
-        # Store state in session for security
         session['oauth_state'] = state
         session['oauth_redirect_uri'] = redirect_uri
         
@@ -3876,7 +1613,7 @@ def google_auth_start():
         
     except Exception as e:
         app.logger.error(f"OAuth start failed: {e}")
-        return f"OAuth initialization failed: {str(e)}<br><a href='/google/setup'>Setup Instructions</a>", 500
+        return f"OAuth initialization failed: {str(e)}<br><a href='/integrations'>Setup Instructions</a>", 500
 
 @app.route('/google/auth/callback')
 def google_auth_callback():
@@ -3885,23 +1622,20 @@ def google_auth_callback():
         return redirect(url_for('login'))
     
     try:
-        # Check for OAuth errors
         error = request.args.get('error')
         if error:
             app.logger.error(f"OAuth error: {error}")
-            return f"OAuth failed: {error}<br><a href='/google/setup'>Try Again</a>", 400
+            return f"OAuth failed: {error}<br><a href='/integrations'>Try Again</a>", 400
         
-        # Verify state parameter for security
         if request.args.get('state') != session.get('oauth_state'):
             app.logger.error("OAuth state mismatch")
-            return "Invalid state parameter - possible CSRF attack<br><a href='/google/setup'>Try Again</a>", 400
+            return "Invalid state parameter - possible CSRF attack<br><a href='/integrations'>Try Again</a>", 400
         
         from google_auth_oauthlib.flow import Flow
         
         credentials_path = os.getenv('GOOGLE_CREDENTIALS_PATH', 'credentials.json')
         token_path = os.getenv('GOOGLE_TOKEN_PATH', 'token.json')
         
-        # Recreate the flow
         flow = Flow.from_client_secrets_file(
             credentials_path,
             scopes=[
@@ -3914,10 +1648,8 @@ def google_auth_callback():
         
         app.logger.info(f"Processing OAuth callback, saving token to: {token_path}")
         
-        # Exchange authorization code for credentials
         flow.fetch_token(authorization_response=request.url)
         
-        # Save credentials to file
         credentials = flow.credentials
         with open(token_path, 'w') as token_file:
             token_file.write(credentials.to_json())
@@ -3929,12 +1661,10 @@ def google_auth_callback():
         try:
             from utils.gmail_client import _gmail_service, _calendar_service
             
-            # Test Gmail
             gmail_svc = _gmail_service()
             profile = gmail_svc.users().getProfile(userId='me').execute()
             test_results['gmail'] = f"Connected as {profile.get('emailAddress', 'Unknown')}"
             
-            # Test Calendar
             cal_svc = _calendar_service()
             calendar_list = cal_svc.calendarList().list(maxResults=1).execute()
             test_results['calendar'] = f"Access to {len(calendar_list.get('items', []))} calendars"
@@ -3942,7 +1672,6 @@ def google_auth_callback():
         except Exception as test_error:
             test_results['error'] = str(test_error)
         
-        # Clean up session
         session.pop('oauth_state', None)
         session.pop('oauth_redirect_uri', None)
         
@@ -3971,17 +1700,12 @@ def google_auth_callback():
                     background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
                     padding: 15px; margin: 15px 0; 
                 }
-                .command-list { background: #1a1a1a; padding: 15px; border-radius: 8px; margin: 15px 0; }
-                .command-list code { 
-                    background: #2a2a2a; padding: 3px 6px; border-radius: 4px; 
-                    font-family: monospace; 
-                }
             </style>
         </head>
         <body>
             <div class="container">
                 <div class="success-box">
-                    <h1>✅ Google OAuth Setup Complete!</h1>
+                    <h1>Google OAuth Setup Complete!</h1>
                     <p>Your Gmail and Calendar access has been configured successfully.</p>
                     <p><strong>Token saved to:</strong> {{ token_path }}</p>
                 </div>
@@ -3989,32 +1713,19 @@ def google_auth_callback():
                 <div class="test-results">
                     <h3>Connection Test Results:</h3>
                     {% if test_results.gmail %}
-                        <p>✅ <strong>Gmail:</strong> {{ test_results.gmail }}</p>
+                        <p>Gmail: {{ test_results.gmail }}</p>
                     {% endif %}
                     {% if test_results.calendar %}
-                        <p>✅ <strong>Calendar:</strong> {{ test_results.calendar }}</p>
+                        <p>Calendar: {{ test_results.calendar }}</p>
                     {% endif %}
                     {% if test_results.error %}
-                        <p>⚠️ <strong>Warning:</strong> {{ test_results.error }}</p>
+                        <p>Warning: {{ test_results.error }}</p>
                     {% endif %}
-                </div>
-                
-                <div class="command-list">
-                    <h3>Available Commands:</h3>
-                    <ul>
-                        <li><code>good morning</code> - Complete daily briefing with emails and calendar</li>
-                        <li><code>overnight</code> - Check overnight emails</li>
-                        <li><code>calendar</code> or <code>today</code> - Today's schedule</li>
-                        <li><code>tomorrow</code> - Tomorrow's meetings</li>
-                        <li><code>next meeting</code> - Next upcoming meeting</li>
-                        <li><code>search [query]</code> - Search Gmail messages</li>
-                        <li><code>good evening</code> - End of day wrap-up</li>
-                    </ul>
                 </div>
                 
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="/" class="btn success">← Start Using Gmail Commands</a>
-                    <a href="/google/setup" class="btn">View Setup Page</a>
+                    <a href="/" class="btn success">Start Using Gmail Commands</a>
+                    <a href="/integrations" class="btn">View Integrations</a>
                 </div>
             </div>
         </body>
@@ -4023,68 +1734,7 @@ def google_auth_callback():
         
     except Exception as e:
         app.logger.error(f"OAuth callback failed: {e}")
-        return f"OAuth completion failed: {str(e)}<br><a href='/google/setup'>Try Again</a>", 500
-
-@app.route('/google/auth/status')
-def google_auth_status():
-    """Check Google authentication status - API endpoint"""
-    if not session.get('logged_in'):
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    credentials_path = os.getenv('GOOGLE_CREDENTIALS_PATH', 'credentials.json')
-    token_path = os.getenv('GOOGLE_TOKEN_PATH', 'token.json')
-    
-    status = {
-        "credentials_file_exists": os.path.exists(credentials_path),
-        "credentials_path": credentials_path,
-        "token_file_exists": os.path.exists(token_path),
-        "token_path": token_path,
-        "gmail_working": False,
-        "calendar_working": False,
-        "railway_url": os.getenv('RAILWAY_STATIC_URL', 'Not set'),
-        "callback_url": f"https://{os.getenv('RAILWAY_STATIC_URL', 'your-app.railway.app')}/google/auth/callback"
-    }
-    
-    if status["token_file_exists"]:
-        try:
-            from utils.gmail_client import _build_creds, _gmail_service, _calendar_service
-            
-            # Test credentials
-            creds = _build_creds()
-            status["credentials_valid"] = creds.valid
-            status["credentials_expired"] = creds.expired
-            status["has_refresh_token"] = bool(creds.refresh_token)
-            status["scopes"] = creds.scopes
-            
-            # Test Gmail API
-            try:
-                gmail_svc = _gmail_service()
-                profile = gmail_svc.users().getProfile(userId='me').execute()
-                status["gmail_working"] = True
-                status["gmail_email"] = profile.get('emailAddress', 'Unknown')
-                status["gmail_total_messages"] = profile.get('messagesTotal', 0)
-            except Exception as e:
-                status["gmail_error"] = str(e)
-            
-            # Test Calendar API
-            try:
-                cal_svc = _calendar_service()
-                calendar_list = cal_svc.calendarList().list(maxResults=5).execute()
-                status["calendar_working"] = True
-                calendars = calendar_list.get('items', [])
-                status["calendar_count"] = len(calendars)
-                if calendars:
-                    status["primary_calendar"] = next(
-                        (cal.get('summary', 'Unknown') for cal in calendars if cal.get('primary')),
-                        calendars[0].get('summary', 'Unknown')
-                    )
-            except Exception as e:
-                status["calendar_error"] = str(e)
-                
-        except Exception as e:
-            status["auth_error"] = str(e)
-    
-    return jsonify(status)
+        return f"OAuth completion failed: {str(e)}<br><a href='/integrations'>Try Again</a>", 500
 
 @app.route('/google/auth/revoke', methods=['POST'])
 def google_auth_revoke():
@@ -4096,13 +1746,10 @@ def google_auth_revoke():
         token_path = os.getenv('GOOGLE_TOKEN_PATH', 'token.json')
         
         if os.path.exists(token_path):
-            # Try to revoke the token with Google first
             try:
                 from utils.gmail_client import _build_creds
                 creds = _build_creds()
                 
-                # Revoke the token
-                import requests
                 requests.post(
                     'https://oauth2.googleapis.com/revoke',
                     params={'token': creds.token},
@@ -4112,7 +1759,6 @@ def google_auth_revoke():
             except:
                 app.logger.warning("Could not revoke token with Google, but will delete local file")
             
-            # Delete the local token file
             os.remove(token_path)
             app.logger.info("Local token file deleted")
             
@@ -4132,256 +1778,8 @@ def google_auth_revoke():
             'success': False,
             'error': str(e)
         }), 500
-
-@app.route('/google/setup')
-def google_setup_page():
-    """Google integration setup and management page"""
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    
-    railway_url = os.getenv('RAILWAY_STATIC_URL', 'your-app.railway.app')
-    callback_url = f"https://{railway_url}/google/auth/callback"
-    
-    return render_template_string("""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Google Integration Setup</title>
-        <style>
-            body { 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
-            }
-            .container { max-width: 1000px; margin: 0 auto; }
-            .btn { 
-                background: #6366f1; color: white; border: none; padding: 12px 24px;
-                border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
-                text-decoration: none; display: inline-block;
-            }
-            .btn:hover { background: #5855eb; }
-            .btn.success { background: #059669; }
-            .btn.success:hover { background: #047857; }
-            .btn.warning { background: #d97706; }
-            .btn.danger { background: #dc2626; }
-            .status-box { 
-                background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
-                padding: 20px; margin: 20px 0; 
-            }
-            .success { color: #10b981; }
-            .error { color: #ef4444; }
-            .warning { color: #f59e0b; }
-            .setup-steps { 
-                background: #1a1a1a; padding: 20px; border-radius: 8px; 
-                margin: 15px 0; 
-            }
-            .setup-steps ol li { margin: 15px 0; line-height: 1.4; }
-            .callback-url { 
-                background: #2a2a2a; padding: 10px; border-radius: 4px; 
-                font-family: monospace; word-break: break-all; margin: 10px 0;
-            }
-            .commands-grid {
-                display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                gap: 15px; margin: 20px 0;
-            }
-            .command-card {
-                background: #2a2a2a; padding: 15px; border-radius: 8px;
-            }
-            .command-title { 
-                font-size: 16px; font-weight: bold; margin-bottom: 8px; color: #6366f1; 
-            }
-            .command-example { 
-                background: #1a1a1a; padding: 8px; border-radius: 4px; 
-                font-family: monospace; margin: 5px 0; font-size: 14px;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>🔗 Google Integration Setup</h1>
-            <p>Connect Gmail and Google Calendar to enable email checking, calendar summaries, and daily briefings.</p>
-            
-            <div class="status-box">
-                <h3>Current Status</h3>
-                <div id="status">Loading...</div>
-                
-                <div style="margin-top: 20px;">
-                    <a href="/google/auth/start" class="btn success" id="oauth-btn">🔐 Start OAuth Setup</a>
-                    <button class="btn" onclick="refreshStatus()">🔄 Refresh Status</button>
-                    <a href="/debug/google_auth_test" class="btn warning">🔧 Debug Test</a>
-                    <button class="btn danger" onclick="revokeAuth()" id="revoke-btn" style="display: none;">🗑️ Revoke Access</button>
-                </div>
-            </div>
-            
-            <div class="setup-steps">
-                <h3>📋 Complete Setup Instructions</h3>
-                <ol>
-                    <li><strong>Go to Google Cloud Console:</strong><br>
-                        Visit <a href="https://console.cloud.google.com/" target="_blank">console.cloud.google.com</a>
-                    </li>
-                    
-                    <li><strong>Create/Select Project:</strong><br>
-                        Create a new project or select an existing one
-                    </li>
-                    
-                    <li><strong>Enable APIs:</strong><br>
-                        Go to "APIs & Services" → "Library" and enable:
-                        <ul>
-                            <li><strong>Gmail API</strong></li>
-                            <li><strong>Google Calendar API</strong></li>
-                        </ul>
-                    </li>
-                    
-                    <li><strong>Create OAuth Credentials:</strong><br>
-                        Go to "APIs & Services" → "Credentials" → "Create Credentials" → "OAuth 2.0 Client ID"<br>
-                        Select "Web application"
-                    </li>
-                    
-                    <li><strong>Set Authorized Redirect URI:</strong><br>
-                        Add this exact URL to "Authorized redirect URIs":
-                        <div class="callback-url">{{ callback_url }}</div>
-                    </li>
-                    
-                    <li><strong>Download Credentials:</strong><br>
-                        Download the JSON file (usually named like <code>client_secret_xxx.json</code>)
-                    </li>
-                    
-                    <li><strong>Upload to Railway:</strong><br>
-                        Upload the credentials file to your Railway project and set environment variable:<br>
-                        <code>GOOGLE_CREDENTIALS_PATH=your-credentials-file.json</code>
-                    </li>
-                    
-                    <li><strong>Complete OAuth:</strong><br>
-                        Click the "Start OAuth Setup" button above and authorize the application
-                    </li>
-                </ol>
-            </div>
-            
-            <div class="status-box">
-                <h3>📱 Available Commands After Setup</h3>
-                <div class="commands-grid">
-                    <div class="command-card">
-                        <div class="command-title">Daily Briefings</div>
-                        <div class="command-example">good morning</div>
-                        <div class="command-example">good evening</div>
-                        <p>Complete daily summaries with emails and calendar</p>
-                    </div>
-                    
-                    <div class="command-card">
-                        <div class="command-title">Email Commands</div>
-                        <div class="command-example">overnight</div>
-                        <div class="command-example">search project alpha</div>
-                        <p>Check overnight emails and search your Gmail</p>
-                    </div>
-                    
-                    <div class="command-card">
-                        <div class="command-title">Calendar Commands</div>
-                        <div class="command-example">calendar</div>
-                        <div class="command-example">tomorrow</div>
-                        <div class="command-example">next meeting</div>
-                        <p>View schedules and upcoming meetings</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="status-box">
-                <h3>🔒 Privacy & Security</h3>
-                <ul>
-                    <li><strong>Read-only access:</strong> Ghostline can only read your emails and calendar, not send or modify</li>
-                    <li><strong>Local storage:</strong> Your OAuth token is stored securely on your Railway server</li>
-                    <li><strong>Revokable:</strong> You can revoke access anytime from this page or Google Account settings</li>
-                    <li><strong>No data sharing:</strong> Your email/calendar data is never shared or stored elsewhere</li>
-                </ul>
-            </div>
-            
-            <div class="status-box">
-                <a href="/" class="btn">← Back to Chat</a>
-                <a href="/brain" class="btn">🧠 Brain Dashboard</a>
-                <a href="/database" class="btn">💾 Database Dashboard</a>
-            </div>
-        </div>
         
-        <script>
-            function refreshStatus() {
-                fetch('/google/auth/status')
-                    .then(r => r.json())
-                    .then(data => {
-                        const statusDiv = document.getElementById('status');
-                        const oauthBtn = document.getElementById('oauth-btn');
-                        const revokeBtn = document.getElementById('revoke-btn');
-                        let html = '';
-                        
-                        // Environment info
-                        html += `<p><strong>Railway URL:</strong> ${data.railway_url || 'Not detected'}</p>`;
-                        html += `<p><strong>Callback URL:</strong> ${data.callback_url}</p>`;
-                        
-                        if (!data.credentials_file_exists) {
-                            html += '<p><span class="error">❌ Credentials file missing</span><br>';
-                            html += `Looking for: ${data.credentials_path}<br>`;
-                            html += 'Upload credentials JSON and set GOOGLE_CREDENTIALS_PATH</p>';
-                            oauthBtn.style.display = 'none';
-                            revokeBtn.style.display = 'none';
-                        } else if (!data.token_file_exists) {
-                            html += '<p><span class="warning">⚠️ OAuth not completed</span><br>';
-                            html += 'Credentials file found, ready for OAuth flow</p>';
-                            oauthBtn.style.display = 'inline-block';
-                            revokeBtn.style.display = 'none';
-                        } else if (data.gmail_working && data.calendar_working) {
-                            html += '<p><span class="success">✅ Fully Connected & Working</span></p>';
-                            html += `<p><strong>Gmail:</strong> ${data.gmail_email} (${data.gmail_total_messages || 0} messages)</p>`;
-                            html += `<p><strong>Calendar:</strong> ${data.calendar_count} calendars`;
-                            if (data.primary_calendar) {
-                                html += ` (Primary: ${data.primary_calendar})`;
-                            }
-                            html += '</p>';
-                            if (data.has_refresh_token) {
-                                html += '<p><strong>Token:</strong> Valid with auto-refresh capability</p>';
-                            }
-                            oauthBtn.innerHTML = '🔄 Re-authorize';
-                            revokeBtn.style.display = 'inline-block';
-                        } else {
-                            html += '<p><span class="error">❌ Connection Issues</span></p>';
-                            if (data.gmail_error) html += `<p><strong>Gmail Error:</strong> ${data.gmail_error}</p>`;
-                            if (data.calendar_error) html += `<p><strong>Calendar Error:</strong> ${data.calendar_error}</p>`;
-                            if (data.auth_error) html += `<p><strong>Auth Error:</strong> ${data.auth_error}</p>`;
-                            oauthBtn.innerHTML = '🔄 Re-authorize';
-                            oauthBtn.style.display = 'inline-block';
-                            revokeBtn.style.display = 'inline-block';
-                        }
-                        
-                        statusDiv.innerHTML = html;
-                    })
-                    .catch(e => {
-                        document.getElementById('status').innerHTML = '<p><span class="error">❌ Status Check Failed</span></p>';
-                    });
-            }
-            
-            function revokeAuth() {
-                if (confirm('This will revoke Google access and delete your OAuth token. You will need to re-authorize to use Gmail/Calendar features. Continue?')) {
-                    fetch('/google/auth/revoke', { method: 'POST' })
-                        .then(r => r.json())
-                        .then(data => {
-                            if (data.success) {
-                                alert('✅ Google access revoked successfully');
-                                refreshStatus();
-                            } else {
-                                alert('❌ Revocation failed: ' + data.error);
-                            }
-                        })
-                        .catch(e => alert('❌ Revocation request failed'));
-                }
-            }
-            
-            // Auto-refresh status every 30 seconds
-            refreshStatus();
-            setInterval(refreshStatus, 30000);
-        </script>
-    </body>
-    </html>
-    """, callback_url=callback_url)
-
-# Section 19: Automated Backup & Maintenance Routes
-# Section 19: Automated Backup & Maintenance Routes
-
+# Section 15: Backup and Maintenance Routes
 from modules.backup_maintenance import (
     backup_manager,
     backup_scheduler,
@@ -4389,454 +1787,6 @@ from modules.backup_maintenance import (
     start_automated_backups,
     stop_automated_backups
 )
-
-@app.route('/backup')
-def backup_dashboard():
-    """Backup and maintenance dashboard"""
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    
-    return render_template_string("""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Backup & Maintenance Dashboard</title>
-        <style>
-            body { 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
-            }
-            .container { max-width: 1200px; margin: 0 auto; }
-            .status-box { 
-                background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
-                padding: 20px; margin: 20px 0; 
-            }
-            .btn { 
-                background: #6366f1; color: white; border: none; padding: 12px 24px;
-                border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
-                text-decoration: none; display: inline-block;
-            }
-            .btn:hover { background: #5855eb; }
-            .btn.success { background: #059669; }
-            .btn.success:hover { background: #047857; }
-            .btn.warning { background: #d97706; }
-            .btn.danger { background: #dc2626; }
-            .btn.secondary { background: #374151; }
-            .btn.secondary:hover { background: #4b5563; }
-            
-            .backup-grid {
-                display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                gap: 15px; margin: 20px 0;
-            }
-            .backup-card {
-                background: #2a2a2a; padding: 15px; border-radius: 8px;
-                border: 1px solid #404040;
-            }
-            .backup-filename { 
-                font-family: monospace; font-size: 12px; 
-                background: #1a1a1a; padding: 5px; border-radius: 4px; margin: 5px 0;
-                word-break: break-all;
-            }
-            .backup-size { color: #10b981; font-weight: bold; }
-            .backup-date { color: #6b7280; font-size: 12px; }
-            
-            .progress-bar {
-                width: 100%; height: 20px; background: #1a1a1a; border-radius: 10px;
-                overflow: hidden; margin: 10px 0;
-            }
-            .progress-fill {
-                height: 100%; background: #059669; transition: width 0.3s;
-            }
-            
-            .log-output {
-                background: #1a1a1a; border: 1px solid #333; border-radius: 8px;
-                padding: 15px; font-family: monospace; font-size: 12px;
-                max-height: 300px; overflow-y: auto; white-space: pre-wrap;
-                margin: 15px 0;
-            }
-            
-            .success { color: #10b981; }
-            .error { color: #ef4444; }
-            .warning { color: #f59e0b; }
-            .info { color: #3b82f6; }
-            
-            .feature-card {
-                background: #2a2a2a; padding: 20px; border-radius: 8px;
-                border: 1px solid #404040; text-align: center;
-            }
-            .feature-icon { font-size: 2.5em; margin-bottom: 15px; }
-            
-            .stats-grid {
-                display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 15px; margin: 20px 0;
-            }
-            .stat-box {
-                background: #2a2a2a; padding: 15px; border-radius: 8px; text-align: center;
-            }
-            .stat-number { font-size: 24px; font-weight: bold; color: #10b981; }
-            .stat-label { color: #9ca3af; margin-top: 5px; }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>🔄 Backup & Maintenance Dashboard</h1>
-            <p>Automated database backups, knowledge base reindexing, and system maintenance for Ghostline AI.</p>
-            
-            <div class="status-box">
-                <h3>System Status</h3>
-                <div id="status">Loading...</div>
-                
-                <div class="stats-grid" id="stats">
-                    <!-- Stats will be loaded here -->
-                </div>
-            </div>
-            
-            <div class="status-box">
-                <h3>Manual Operations</h3>
-                <div style="margin: 15px 0;">
-                    <button class="btn success" onclick="createDatabaseBackup()">💾 Database Backup</button>
-                    <button class="btn success" onclick="createBrainBackup()">🧠 Brain Backup</button>
-                    <button class="btn warning" onclick="createFullBackup()">📦 Full System Backup</button>
-                    <button class="btn" onclick="reindexKnowledge()">🔍 Reindex Knowledge Base</button>
-                    <button class="btn warning" onclick="performMaintenance()">🔧 Full Maintenance</button>
-                </div>
-                
-                <div style="margin: 15px 0;">
-                    <button class="btn secondary" id="scheduler-btn" onclick="toggleScheduler()">
-                        ⏰ Start Automated Backups
-                    </button>
-                    <button class="btn secondary" onclick="refreshStatus()">🔄 Refresh</button>
-                    <button class="btn secondary" onclick="downloadLogs()">📋 Download Logs</button>
-                </div>
-            </div>
-            
-            <div class="status-box">
-                <h3>Operation Progress</h3>
-                <div id="progress-section" style="display: none;">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progress-fill" style="width: 0%;"></div>
-                    </div>
-                    <div id="progress-text">Ready...</div>
-                </div>
-                
-                <div class="log-output" id="operation-log">
-Ready for backup operations...
-Use the buttons above to start manual backups or enable automated scheduling.
-
-Automated backups run daily at 2 AM and include:
-- Full database export with compression
-- Knowledge base documents backup
-- System configuration snapshot
-- Automatic cleanup of old backups (keeps 7 days)
-                </div>
-            </div>
-            
-            <div class="status-box">
-                <h3>Recent Backups</h3>
-                <div id="backup-list">
-                    <div class="backup-grid" id="backup-grid">
-                        <!-- Recent backups will be loaded here -->
-                    </div>
-                </div>
-            </div>
-            
-            <div class="status-box">
-                <h3>Backup Features</h3>
-                <div class="backup-grid">
-                    <div class="feature-card">
-                        <div class="feature-icon">🛡️</div>
-                        <h4>Railway Compatible</h4>
-                        <p>Uses pg_dump for PostgreSQL backups with Railway deployment support</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">📊</div>
-                        <h4>Smart Compression</h4>
-                        <p>Gzip compression reduces backup sizes by 80-90% while maintaining data integrity</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">🧠</div>
-                        <h4>Knowledge Base</h4>
-                        <p>Separate brain document backups with full-text search index rebuilding</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">⏰</div>
-                        <h4>Automated Schedule</h4>
-                        <p>Daily backups at 2 AM with automatic cleanup and maintenance cycles</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">🔄</div>
-                        <h4>Multiple Strategies</h4>
-                        <p>Fallback methods ensure backups work even if pg_dump is unavailable</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">📈</div>
-                        <h4>Health Monitoring</h4>
-                        <p>Database optimization, index rebuilding, and performance monitoring</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="status-box">
-                <a href="/" class="btn secondary">← Back to Chat</a>
-                <a href="/brain" class="btn secondary">🧠 Brain Dashboard</a>
-                <a href="/database" class="btn secondary">💾 Database Dashboard</a>
-            </div>
-        </div>
-        
-        <script>
-            let operationInProgress = false;
-            
-            function refreshStatus() {
-                fetch('/backup/status')
-                    .then(r => r.json())
-                    .then(data => {
-                        updateStatusDisplay(data);
-                        updateBackupList(data.recent_backups);
-                        updateStats(data);
-                    })
-                    .catch(e => {
-                        document.getElementById('status').innerHTML = '<span class="error">❌ Status check failed</span>';
-                        console.error('Status refresh failed:', e);
-                    });
-            }
-            
-            function updateStatusDisplay(data) {
-                const statusDiv = document.getElementById('status');
-                const schedulerBtn = document.getElementById('scheduler-btn');
-                
-                let html = '';
-                
-                if (data.scheduler_running) {
-                    html += '<span class="success">✅ Automated backups running</span><br>';
-                    schedulerBtn.textContent = '⏸️ Stop Automated Backups';
-                    schedulerBtn.onclick = () => toggleScheduler(false);
-                } else {
-                    html += '<span class="warning">⚠️ Automated backups stopped</span><br>';
-                    schedulerBtn.textContent = '▶️ Start Automated Backups';
-                    schedulerBtn.onclick = () => toggleScheduler(true);
-                }
-                
-                html += `<strong>Backup Directory:</strong> ${data.backup_directory}<br>`;
-                html += `<strong>Database:</strong> ${data.database_status.connection_working ? '✅ Connected' : '❌ Disconnected'}<br>`;
-                html += `<strong>Brain Status:</strong> ${data.brain_status.status === 'complete' ? '✅ Ready' : '⚠️ ' + data.brain_status.status}`;
-                
-                statusDiv.innerHTML = html;
-            }
-            
-            function updateStats(data) {
-                const statsDiv = document.getElementById('stats');
-                
-                const totalBackups = data.recent_backups ? data.recent_backups.length : 0;
-                const totalSize = data.recent_backups ? 
-                    data.recent_backups.reduce((sum, backup) => sum + (backup.size_bytes || 0), 0) : 0;
-                const lastBackup = data.recent_backups && data.recent_backups.length > 0 ? 
-                    new Date(data.recent_backups[0].created).toLocaleDateString() : 'Never';
-                
-                statsDiv.innerHTML = `
-                    <div class="stat-box">
-                        <div class="stat-number">${totalBackups}</div>
-                        <div class="stat-label">Total Backups</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-number">${formatBytes(totalSize)}</div>
-                        <div class="stat-label">Total Size</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-number">${lastBackup}</div>
-                        <div class="stat-label">Last Backup</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-number">${data.database_status.conversation_count || 0}</div>
-                        <div class="stat-label">Conversations</div>
-                    </div>
-                `;
-            }
-            
-            function updateBackupList(backups) {
-                const gridDiv = document.getElementById('backup-grid');
-                
-                if (!backups || backups.length === 0) {
-                    gridDiv.innerHTML = '<p>No backups found</p>';
-                    return;
-                }
-                
-                gridDiv.innerHTML = backups.map(backup => `
-                    <div class="backup-card">
-                        <div class="backup-filename">${backup.filename}</div>
-                        <div class="backup-size">${formatBytes(backup.size_bytes)}</div>
-                        <div class="backup-date">${new Date(backup.created).toLocaleString()}</div>
-                        <button class="btn secondary" onclick="downloadBackup('${backup.filename}')" 
-                                style="margin-top: 10px; padding: 8px 16px; font-size: 12px;">
-                            💾 Download
-                        </button>
-                    </div>
-                `).join('');
-            }
-            
-            function formatBytes(bytes) {
-                if (bytes === 0) return '0 B';
-                const k = 1024;
-                const sizes = ['B', 'KB', 'MB', 'GB'];
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-            }
-            
-            function toggleScheduler(start = null) {
-                if (operationInProgress) return;
-                
-                const action = start !== null ? start : !document.getElementById('scheduler-btn').textContent.includes('Stop');
-                const endpoint = action ? '/backup/start-scheduler' : '/backup/stop-scheduler';
-                
-                operationInProgress = true;
-                showProgress('Updating scheduler...', 0);
-                
-                fetch(endpoint, { method: 'POST' })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.success) {
-                            addToLog(`✅ Scheduler ${action ? 'started' : 'stopped'} successfully`);
-                            refreshStatus();
-                        } else {
-                            addToLog(`❌ Failed to ${action ? 'start' : 'stop'} scheduler: ${data.error}`);
-                        }
-                    })
-                    .catch(e => {
-                        addToLog(`❌ Scheduler operation failed: ${e.message}`);
-                    })
-                    .finally(() => {
-                        operationInProgress = false;
-                        hideProgress();
-                    });
-            }
-            
-            function createDatabaseBackup() {
-                if (operationInProgress) return;
-                executeOperation('/backup/create-database', 'Creating database backup...');
-            }
-            
-            function createBrainBackup() {
-                if (operationInProgress) return;
-                executeOperation('/backup/create-brain', 'Creating brain backup...');
-            }
-            
-            function createFullBackup() {
-                if (operationInProgress) return;
-                executeOperation('/backup/create-full', 'Creating full system backup...');
-            }
-            
-            function reindexKnowledge() {
-                if (operationInProgress) return;
-                executeOperation('/backup/reindex', 'Reindexing knowledge base...');
-            }
-            
-            function performMaintenance() {
-                if (operationInProgress) return;
-                executeOperation('/backup/maintenance', 'Performing full maintenance...');
-            }
-            
-            function executeOperation(endpoint, message) {
-                operationInProgress = true;
-                showProgress(message, 10);
-                addToLog(`🔄 ${message}`);
-                
-                fetch(endpoint, { method: 'POST' })
-                    .then(response => {
-                        showProgress(message, 50);
-                        return response.json();
-                    })
-                    .then(data => {
-                        showProgress('Processing results...', 90);
-                        
-                        if (data.success) {
-                            addToLog(`✅ Operation completed successfully`);
-                            
-                            if (data.backup_files) {
-                                data.backup_files.forEach(file => {
-                                    addToLog(`📁 Created: ${file}`);
-                                });
-                            }
-                            
-                            if (data.size_bytes) {
-                                addToLog(`💾 Size: ${formatBytes(data.size_bytes)}`);
-                            }
-                            
-                            if (data.operations) {
-                                data.operations.forEach(op => {
-                                    addToLog(`📋 ${op}`);
-                                });
-                            }
-                            
-                            refreshStatus(); // Refresh to show new backup
-                        } else {
-                            addToLog(`❌ Operation failed: ${data.error || 'Unknown error'}`);
-                        }
-                    })
-                    .catch(e => {
-                        addToLog(`❌ Operation failed: ${e.message}`);
-                    })
-                    .finally(() => {
-                        operationInProgress = false;
-                        hideProgress();
-                    });
-            }
-            
-            function showProgress(text, percent) {
-                const progressSection = document.getElementById('progress-section');
-                const progressFill = document.getElementById('progress-fill');
-                const progressText = document.getElementById('progress-text');
-                
-                progressSection.style.display = 'block';
-                progressFill.style.width = percent + '%';
-                progressText.textContent = text;
-            }
-            
-            function hideProgress() {
-                const progressSection = document.getElementById('progress-section');
-                progressSection.style.display = 'none';
-            }
-            
-            function addToLog(message) {
-                const logDiv = document.getElementById('operation-log');
-                const timestamp = new Date().toLocaleTimeString();
-                logDiv.textContent += `\\n[${timestamp}] ${message}`;
-                logDiv.scrollTop = logDiv.scrollHeight;
-            }
-            
-            function downloadBackup(filename) {
-                window.open(`/backup/download/${encodeURIComponent(filename)}`, '_blank');
-            }
-            
-            function downloadLogs() {
-                const logs = document.getElementById('operation-log').textContent;
-                const blob = new Blob([logs], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `backup_logs_${new Date().toISOString().slice(0,10)}.txt`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }
-            
-            // Auto-refresh every 30 seconds
-            refreshStatus();
-            setInterval(refreshStatus, 30000);
-        </script>
-    </body>
-    </html>
-    """)
-
-@app.route('/backup/status')
-def backup_status_api():
-    """Get backup system status"""
-    if not session.get('logged_in'):
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    try:
-        return jsonify(get_backup_status())
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 @app.route('/backup/create-database', methods=['POST'])
 def create_database_backup():
@@ -4935,7 +1885,6 @@ def download_backup_file(filename):
         return redirect(url_for('login'))
     
     try:
-        # Security: only allow files in backup directory
         backup_path = os.path.join(backup_manager.backup_dir, filename)
         
         if not os.path.exists(backup_path):
@@ -4953,46 +1902,49 @@ def download_backup_file(filename):
         
     except Exception as e:
         return f"Download failed: {str(e)}", 500
+        
+# Section 16: Utility and Export Routes
+@app.route('/healthz')
+def healthz():
+    build_status = get_build_status()
+    status = {
+        "status": "ok",
+        "brain_ready": build_status["status"] == "complete",
+        "brain_building": _rag_building or build_status["status"] == "building",
+        "brain_progress": build_status["progress"],
+        "brain_chunks": build_status.get("chunks_processed", 0)
+    }
+    return jsonify(status)
 
-# Section 10: Debug Routes, Authentication, and App Startup
-# Section 10: Debug Routes, Authentication, and App Startup
-# Section 10: Debug Routes, Authentication, and App Startup
-# Section 10: Debug Routes, Authentication, and App Startup
-# Section 10: Debug Routes, Authentication, and App Startup
-
-# --- DEBUG ROUTES ---
-@app.route('/debug/rag')
-def debug_rag():
+@app.route('/export/<project>')
+def export_session(project):
     if not session.get('logged_in'):
-        return "Unauthorized", 401
-    q = request.args.get('query', '').strip()
-    k = int(request.args.get('k', 5))
-    if not q:
-        return jsonify({"ok": False, "error": "missing query"}), 400
-    if not is_ready():
-        return jsonify({"ok": False, "error": "brain not ready"}), 500
-    hits = retrieve(q, k=k)
-    return jsonify({"ok": True, "count": len(hits), "results": hits})
-
-@app.route('/debug/ocr')
-def debug_ocr():
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
+        return redirect(url_for('login'))
+        
+    session_path = f'sessions/{project.lower().replace(" ", "_")}.json'
     try:
-        import easyocr
-        import numpy as np
+        with open(session_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        content = ""
+        for line in lines:
+            entry = json.loads(line)
+            content += f"### Prompt:\n{entry['prompt']}\n"
+            for voice, reply in entry['response'].items():
+                content += f"- **{voice}**: {reply}\n"
+            content += "\n---\n\n"
+        file_stream = io.BytesIO()
+        file_stream.write(content.encode('utf-8'))
+        file_stream.seek(0)
+        return send_file(
+            file_stream,
+            mimetype='text/markdown',
+            as_attachment=True,
+            download_name=f"{project}_session.md"
+        )
+    except FileNotFoundError:
+        return f"No session data found for project: {project}", 404
         
-        reader = easyocr.Reader(['en'])
-        
-        return "<pre>EasyOCR is working!\n\nSupported languages: English\nReady for image analysis!</pre>"
-        
-    except ImportError as e:
-        return f"<pre>EasyOCR not installed: {str(e)}</pre>"
-    except Exception as e:
-        return f"<pre>EasyOCR error: {str(e)}</pre>"
-
-# --- AUTHENTICATION ---
+# Section 17: Authentication Routes
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
@@ -5008,8 +1960,8 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for('login'))
-
-# Safe reminder checker function with enhanced spam prevention
+    
+# Section 18: Background Services and Startup
 def safe_reminder_checker():
     """Background thread with enhanced safety to prevent spam"""
     consecutive_errors = 0
@@ -5070,33 +2022,31 @@ def safe_reminder_checker():
         # Standard interval - longer to prevent spam
         time.sleep(180)  # Check every 3 minutes instead of 2
 
-# --- APP STARTUP ---
-if __name__ == '__main__':
-    # Background checker is now safe to run with spam protection
-    if os.getenv('RAILWAY_ENVIRONMENT'):
-        checker_thread = threading.Thread(target=safe_reminder_checker, daemon=True)
-        checker_thread.start()
-        print("Telegram reminder checker started with spam protection")
-    else:
-        print("Telegram reminder checker disabled (not on Railway)")
+# Start background services only on Railway
+if os.getenv('RAILWAY_ENVIRONMENT'):
+    # Start Telegram reminder checker
+    checker_thread = threading.Thread(target=safe_reminder_checker, daemon=True)
+    checker_thread.start()
+    print("Telegram reminder checker started with spam protection")
     
-    # Only start automated backups on Railway
-    if os.getenv('RAILWAY_ENVIRONMENT') and not os.getenv('DISABLE_AUTO_BACKUPS'):
-        # Start automated backups after a 5-minute delay to allow app to fully initialize
+    # Start automated backups after a delay
+    if not os.getenv('DISABLE_AUTO_BACKUPS'):
         def delayed_backup_start():
-            import time
             time.sleep(300)  # 5 minute delay
             try:
                 start_automated_backups()
-                print("✅ Automated backups started successfully")
+                print("Automated backups started successfully")
             except Exception as e:
-                print(f"❌ Failed to start automated backups: {e}")
+                print(f"Failed to start automated backups: {e}")
         
         backup_startup_thread = threading.Thread(target=delayed_backup_start, daemon=True)
         backup_startup_thread.start()
-        print("🔄 Scheduled automated backup startup in 5 minutes")
+        print("Scheduled automated backup startup in 5 minutes")
     else:
-        print("⚠️ Automated backups disabled (set RAILWAY_ENVIRONMENT to enable)")
-    
+        print("Automated backups disabled")
+else:
+    print("Background services disabled (not on Railway)")
+
+if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)

@@ -855,6 +855,18 @@
         <nav class="dropdown-menu" id="dropdownMenu">
           <div class="menu-section">
             <div class="menu-section-title">Main Dashboards</div>
+            <a href="/system" class="menu-item">
+              <span class="menu-icon">⚙️</span>
+              <span>System Management</span>
+            </a>
+            <a href="/integrations" class="menu-item">
+              <span class="menu-icon">🔗</span>
+              <span>Integrations</span>
+            </a>
+            <a href="/diagnostics" class="menu-item">
+              <span class="menu-icon">🔍</span>
+              <span>Diagnostics & Testing</span>
+            </a>
             <a href="/marketing" class="menu-item">
               <span class="menu-icon">🎨</span>
               <span>Marketing Assets</span>
@@ -863,50 +875,10 @@
               <span class="menu-icon">📊</span>
               <span>Reports & Analytics</span>
             </a>
-            <a href="/brain" class="menu-item">
-              <span class="menu-icon">🧠</span>
-              <span>Brain Control</span>
-            </a>
-            <a href="/database" class="menu-item">
-              <span class="menu-icon">🗄️</span>
-              <span>Database Status</span>
-            </a>
-            <a href="/telegram" class="menu-item">
-              <span class="menu-icon">📱</span>
-              <span>Telegram Reminders</span>
-            </a>
-            <a href="/clickup" class="menu-item">
-              <span class="menu-icon">✅</span>
-              <span>ClickUp Tasks</span>
-            </a>
-            <a href="/cloze" class="menu-item">
-              <span class="menu-icon">💼</span>
-              <span>CRM Integration</span>
-            </a>
-            <a href="/tts" class="menu-item">
-              <span class="menu-icon">🔊</span>
-              <span>Text-to-Speech</span>
-            </a>
           </div>
 
           <div class="menu-section">
-            <div class="menu-section-title">Marketing Tools</div>
-            <a href="/marketing/campaigns" class="menu-item">
-              <span class="menu-icon">🚀</span>
-              <span>Campaign Manager</span>
-            </a>
-            <a href="/marketing/assets" class="menu-item">
-              <span class="menu-icon">🖼️</span>
-              <span>Asset Library</span>
-            </a>
-            <a href="/api/marketing/status" class="menu-item">
-              <span class="menu-icon">⚡</span>
-              <span>FLUX Status</span>
-            </a>
-          </div>
-
-          <div class="menu-section">
-            <div class="menu-section-title">Reports & Briefings</div>
+            <div class="menu-section-title">Quick Reports</div>
             <a href="/reports/daily/today" class="menu-item">
               <span class="menu-icon">📅</span>
               <span>Today's Briefing</span>
@@ -914,18 +886,6 @@
             <a href="/reports/daily/today.pdf" class="menu-item">
               <span class="menu-icon">📄</span>
               <span>Download PDF</span>
-            </a>
-            <a href="/clickup/briefing" class="menu-item">
-              <span class="menu-icon">📋</span>
-              <span>Task Briefing</span>
-            </a>
-            <a href="/cloze/briefing" class="menu-item">
-              <span class="menu-icon">☀️</span>
-              <span>CRM Morning Brief</span>
-            </a>
-            <a href="/cloze/pipeline" class="menu-item">
-              <span class="menu-icon">💰</span>
-              <span>Sales Pipeline</span>
             </a>
           </div>
 
@@ -939,10 +899,6 @@
               <span class="menu-icon">🔄</span>
               <span>Refresh Page</span>
             </button>
-            <a href="/debug/rag" class="menu-item">
-              <span class="menu-icon">🔍</span>
-              <span>Debug RAG</span>
-            </a>
           </div>
 
           <div class="menu-section">
@@ -961,6 +917,11 @@
               <span class="menu-icon">📅</span>
               <span>Today's Calendar</span>
               <span class="menu-shortcut">Alt+C</span>
+            </button>
+            <button onclick="sendQuickCommand('remind me to follow up in 1 hour')" class="menu-item">
+              <span class="menu-icon">⏰</span>
+              <span>Quick Reminder</span>
+              <span class="menu-shortcut">Alt+R</span>
             </button>
           </div>
         </nav>
@@ -1066,7 +1027,6 @@
 
             <div class="controls-row">
               <a href="/export/{{ current_project or 'Personal Operating Manual' }}" class="secondary-btn">Export Session</a>
-              <a href="/backup_all" class="secondary-btn">Backup All Projects</a>
             </div>
           </div>
         </details>
@@ -1397,6 +1357,7 @@
         
         // Clear input and files
         document.getElementById('promptInput').value = '';
+        const currentFiles = attachedFiles.slice(); // Copy before clearing
         attachedFiles = [];
         updateAttachedFilesUI();
         updatePaperclipButton();
@@ -1406,7 +1367,7 @@
         }
 
         // Process each file
-        for (const file of attachedFiles.slice()) {
+        for (const file of currentFiles) {
           const formData = new FormData();
           formData.append('file', file);
           formData.append('project', project);
@@ -1420,9 +1381,6 @@
             const errorText = await response.text();
             throw new Error(`Upload failed for ${file.name}: ${response.status} - ${errorText}`);
           }
-
-          // The upload endpoint handles the AI analysis and saves it to the conversation
-          // We just need to reload the page to show the results
         }
 
         // Reload page to show analysis results
@@ -1466,6 +1424,53 @@
       `;
       
       thread.insertBefore(messageDiv, anchor);
+      scrollToBottom();
+    }
+
+    function scrollToBottom() {
+      const thread = document.getElementById('thread');
+      const anchor = document.getElementById('bottom-anchor');
+      
+      if (anchor) {
+        anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      } else if (thread) {
+        thread.scrollTop = thread.scrollHeight;
+      }
+    }
+
+    function updateExportLink() {
+      const projectSelect = document.getElementById('projectSelect');
+      const exportLink = document.querySelector('a[href*="/export/"]');
+      
+      if (projectSelect && exportLink) {
+        const selectedProject = encodeURIComponent(projectSelect.value);
+        exportLink.href = `/export/${selectedProject}`;
+      }
+    }
+
+    // Initialize everything when DOM is ready
+    document.addEventListener('DOMContentLoaded', initializeApp);
+
+    // Also initialize on window load for safety
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        scrollToBottom();
+        
+        if (!window.location.hash) {
+          const promptInput = document.getElementById('promptInput');
+          if (promptInput) {
+            promptInput.focus();
+          }
+        }
+      }, 100);
+      
+      if (window.location.hash === '#bottom-anchor') {
+        setTimeout(scrollToBottom, 500);
+      }
+    });
+  </script>
+</body>
+</html>efore(messageDiv, anchor);
       scrollToBottom();
     }
 
@@ -1622,7 +1627,7 @@
       });
     }
 
-    // Menu handling (unchanged)
+    // Menu handling
     function initializeMenu() {
       const hamburgerBtn = document.getElementById('hamburgerBtn');
       const dropdownMenu = document.getElementById('dropdownMenu');
@@ -1669,6 +1674,10 @@
             case 'c':
               e.preventDefault();
               sendQuickCommand('calendar');
+              break;
+            case 'r':
+              e.preventDefault();
+              sendQuickCommand('remind me to follow up in 1 hour');
               break;
           }
         }
@@ -1724,7 +1733,7 @@
     // Form handling
     function initializeApp() {
       initializeMenu();
-      initializeFileHandling(); // NEW
+      initializeFileHandling();
       
       const promptInput = document.getElementById('promptInput');
       const sendButton = document.getElementById('sendBtn');
@@ -1851,51 +1860,4 @@
         </div>
       `;
       
-      thread.insertBefore(messageDiv, anchor);
-      scrollToBottom();
-    }
-
-    function scrollToBottom() {
-      const thread = document.getElementById('thread');
-      const anchor = document.getElementById('bottom-anchor');
-      
-      if (anchor) {
-        anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      } else if (thread) {
-        thread.scrollTop = thread.scrollHeight;
-      }
-    }
-
-    function updateExportLink() {
-      const projectSelect = document.getElementById('projectSelect');
-      const exportLink = document.querySelector('a[href*="/export/"]');
-      
-      if (projectSelect && exportLink) {
-        const selectedProject = encodeURIComponent(projectSelect.value);
-        exportLink.href = `/export/${selectedProject}`;
-      }
-    }
-
-    // Initialize everything when DOM is ready
-    document.addEventListener('DOMContentLoaded', initializeApp);
-
-    // Also initialize on window load for safety
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        scrollToBottom();
-        
-        if (!window.location.hash) {
-          const promptInput = document.getElementById('promptInput');
-          if (promptInput) {
-            promptInput.focus();
-          }
-        }
-      }, 100);
-      
-      if (window.location.hash === '#bottom-anchor') {
-        setTimeout(scrollToBottom, 500);
-      }
-    });
-  </script>
-</body>
-</html>
+      thread.insertB
