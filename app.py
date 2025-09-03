@@ -1335,6 +1335,7 @@ def tts_status():
     return jsonify(status)
     
 # Section 13: Mobile API Routes
+# Section 13: Mobile API Routes
 @app.route('/api/mobile/auth', methods=['POST'])
 def mobile_auth():
     """JWT authentication for mobile clients"""
@@ -1348,14 +1349,14 @@ def mobile_auth():
                 
                 payload = {
                     'authenticated': True,
-                    'exp': int(time.time()) + (24 * 60 * 60)  # 24 hours
+                    'exp': int(time.time()) + (4 * 60 * 60)  # 4 hours instead of 24
                 }
                 token = jwt.encode(payload, app.secret_key, algorithm='HS256')
                 
                 return jsonify({
                     'success': True,
                     'token': token,
-                    'expires_in': 24 * 60 * 60
+                    'expires_in': 4 * 60 * 60  # 4 hours
                 })
             else:
                 return jsonify({
@@ -1366,6 +1367,57 @@ def mobile_auth():
             return jsonify({'success': False, 'error': 'Invalid password'}), 401
     else:
         return jsonify({'success': True, 'message': 'Already authenticated'})
+
+def is_mobile_authenticated():
+    """Check if mobile client is authenticated via JWT or session - simplified"""
+    if session.get('logged_in'):
+        return True
+    
+    if JWT_AVAILABLE:
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return False
+        
+        try:
+            token = auth_header.split(' ')[1]
+            payload = jwt.decode(token, app.secret_key, algorithms=['HS256'])
+            return payload.get('authenticated', False)
+        except jwt.ExpiredSignatureError:
+            app.logger.info("JWT token expired")
+            return False
+        except jwt.InvalidTokenError as e:
+            app.logger.info(f"JWT invalid: {e}")
+            return False
+        except Exception as e:
+            app.logger.error(f"JWT auth error: {e}")
+            return False
+    
+    return False
+
+@app.route('/api/mobile/debug-auth')
+def debug_mobile_auth():
+    """Debug mobile authentication"""
+    auth_header = request.headers.get('Authorization', 'None')
+    
+    debug_info = {
+        'auth_header_present': bool(auth_header and auth_header != 'None'),
+        'auth_header_format': auth_header[:20] + '...' if auth_header else 'None',
+        'jwt_available': JWT_AVAILABLE,
+        'current_time': int(time.time()),
+        'session_logged_in': session.get('logged_in', False)
+    }
+    
+    if JWT_AVAILABLE and auth_header and auth_header.startswith('Bearer '):
+        try:
+            token = auth_header.split(' ')[1]
+            # Don't verify, just decode to see contents
+            unverified = jwt.decode(token, options={"verify_signature": False})
+            debug_info['token_payload'] = unverified
+            debug_info['token_expired'] = unverified.get('exp', 0) < int(time.time())
+        except Exception as e:
+            debug_info['token_decode_error'] = str(e)
+    
+    return jsonify(debug_info)
 
 @app.route('/api/mobile/projects')
 def mobile_projects():
@@ -1457,51 +1509,119 @@ def mobile_conversations(project):
 
 @app.route('/api/mobile/chat', methods=['POST'])
 def mobile_chat():
-    """Mobile chat with brain retrieval - testing phase"""
+    """Mobile chat with full AI processing - enhanced version"""
     if not is_mobile_authenticated():
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
     user_input = data.get('user_input', '').strip()
     project = data.get('project', 'Personal Operating Manual')
+    use_voices = data.get('voices', ['SyntaxPrime'])
+    random_toggle = data.get('random', False)
     
     if not user_input:
         return jsonify({'error': 'No input provided'}), 400
     
+    app.logger.info(f"Mobile chat request: '{user_input}' for project '{project}'")
+    
     try:
-        # Add back brain retrieval
-        retrieval_ctx = enhanced_retrieve(user_input, k=5) if is_ready() else []
+        response_data = {}
+        handled = False
         
-        # For now, just return a response with context info
-        context_info = f"Found {len(retrieval_ctx)} brain results" if retrieval_ctx else "No brain context"
+        # Auto-refresh brain context periodically
+        try:
+            refresh_brain_context()
+        except Exception as e:
+            app.logger.warning(f"Brain context refresh failed: {e}")
+
+        # Try smart commands FIRST (same as web version)
+        response_data, handled = process_smart_command(user_input, project, use_voices, random_toggle)
+        if handled:
+            save_conversation_enhanced(project, user_input, response_data)
+            return jsonify({'success': True, 'responses': response_data})
+
+        # Try Gmail/calendar commands
+        response_data, handled = process_gmail_command(user_input, project, use_voices, random_toggle)
+        if handled:
+            save_conversation_enhanced(project, user_input, response_data)
+            return jsonify({'success': True, 'responses': response_data})
+
+        # Try reminder commands
+        response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
+        if handled:
+            save_conversation_enhanced(project, user_input, response_data)
+            return jsonify({'success': True, 'responses': response_data})
+
+        # Try ClickUp commands (with improved detection)
+        if is_clickup_configured():
+            response_data, handled = process_clickup_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                save_conversation_enhanced(project, user_input, response_data)
+                return jsonify({'success': True, 'responses': response_data})
+
+        # Try marketing commands (image generation)
+        if is_marketing_configured():
+            response_data, handled = process_marketing_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                save_conversation_enhanced(project, user_input, response_data)
+                return jsonify({'success': True, 'responses': response_data})
+
+        # Try Cloze commands
+        if is_cloze_configured():
+            response_data, handled = process_cloze_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                save_conversation_enhanced(project, user_input, response_data)
+                return jsonify({'success': True, 'responses': response_data})
+
+        # Handle scrape command
+        if user_input.lower().startswith("scrape "):
+            url = user_input.split(" ", 1)[1].strip()
+            try:
+                result = scrape_url(url)
+                if not result["ok"]:
+                    response_data = {"SyntaxPrime": f"Could not fetch/extract content: {result['error']}"}
+                else:
+                    summary_prompt = (
+                        "Summarize the key points from the following webpage for Carl. "
+                        "Use bullets and keep it tight and actionable.\n\n"
+                        f"--- SCRAPED CONTENT START ---\n{result['text']}\n--- SCRAPED CONTENT END ---"
+                    )
+                    retrieval_ctx = enhanced_retrieve(summary_prompt, k=5, project=project) if is_ready() else []
+                    response_data = generate_response(
+                        summary_prompt, use_voices, random_toggle,
+                        project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+                    )
+                handled = True
+            except Exception as e:
+                app.logger.error(f"Scrape command failed: {e}")
+                response_data = {"SyntaxPrime": f"Scrape failed: {e}"}
+                handled = True
+            
+            save_conversation_enhanced(project, user_input, response_data)
+            return jsonify({'success': True, 'responses': response_data})
+
+        # Normal AI response as fallback (same enhanced logic as web version)
+        if not handled:
+            try:
+                retrieval_ctx = enhanced_retrieve(user_input, k=5, project=project) if is_ready() else []
+                
+                # Use enhanced response generation with context validation
+                response_data = generate_response_with_context_check(
+                    user_input, use_voices, random_toggle,
+                    project, CHAT_MODEL, retrieval_ctx
+                )
+                
+                save_conversation_enhanced(project, user_input, response_data)
+            except Exception as e:
+                app.logger.error(f"Normal response generation failed: {e}")
+                response_data = {"SyntaxPrime": f"Response generation failed: {e}"}
+                save_conversation_enhanced(project, user_input, response_data)
         
-        return jsonify({
-            'success': True,
-            'responses': {
-                'SyntaxPrime': f"Brain-enhanced response to '{user_input}' - {context_info}"
-            }
-        })
+        return jsonify({'success': True, 'responses': response_data})
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-def is_mobile_authenticated():
-    """Check if mobile client is authenticated via JWT or session"""
-    if session.get('logged_in'):
-        return True
-    
-    if JWT_AVAILABLE:
-        auth_header = request.headers.get('Authorization')
-        if auth_header and auth_header.startswith('Bearer '):
-            try:
-                token = auth_header.split(' ')[1]
-                payload = jwt.decode(token, app.secret_key, algorithms=['HS256'])
-                return payload.get('authenticated', False)
-            except:
-                return False
-    
-    return False
-
+        app.logger.error(f"Mobile chat failed: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 # Section 14: Google OAuth Integration
 @app.route('/google/auth/start')
 def google_auth_start():

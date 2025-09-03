@@ -509,3 +509,272 @@ riefing()">📊 Morning Briefing</button>
                             if (stats) {
                                 stats.innerHTML = `
                                     <div class="stat-box">
+# Add this to the END of your dashboard_integrations.py file to complete the truncated template:
+
+                                        <div class="stat-number">${data.configured ? 'Yes' : 'No'}</div>
+                                        <div class="stat-label">API Configured</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-number">${data.connection_working ? 'Working' : 'Failed'}</div>
+                                        <div class="stat-label">Connection</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-number">${data.user_info?.name || 'Unknown'}</div>
+                                        <div class="stat-label">User Account</div>
+                                    </div>
+                                `;
+                            }
+                        })
+                        .catch(e => {
+                            console.error('Cloze status failed:', e);
+                            document.getElementById('cloze-status-summary').innerHTML = '<span class="error">❌ Status Error</span>';
+                            document.getElementById('cloze-details').innerHTML = `<span class="error">❌ Failed to load status: ${e.message}</span>`;
+                        });
+                }
+                
+                function refreshClozeStatus() {
+                    loadClozeStatus();
+                }
+                
+                function getCloze Briefing() {
+                    alert('Getting Cloze briefing...');
+                }
+                
+                function getClozePipeline() {
+                    alert('Getting Cloze pipeline...');
+                }
+                
+                function testClozeConnection() {
+                    alert('Testing Cloze connection...');
+                }
+                
+                function testClozeSearch() {
+                    alert('Testing Cloze search...');
+                }
+                
+                // ClickUp Functions
+                function loadClickUpStatus() {
+                    console.log('Loading ClickUp status...');
+                    fetch('/api/integrations/clickup-status')
+                        .then(r => {
+                            console.log('ClickUp status response:', r.status);
+                            if (!r.ok) {
+                                throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+                            }
+                            return r.json();
+                        })
+                        .then(data => {
+                            console.log('ClickUp status data:', data);
+                            const summary = document.getElementById('clickup-status-summary');
+                            const details = document.getElementById('clickup-details');
+                            const stats = document.getElementById('clickup-stats');
+                            
+                            if (!data.configured) {
+                                summary.innerHTML = '<span class="warning">⚠️ API Token Missing</span>';
+                                details.innerHTML = '<span class="warning">⚠️ Set CLICKUP_API_TOKEN environment variable</span>';
+                            } else if (data.connection_working) {
+                                summary.innerHTML = '<span class="success">✅ Connected</span>';
+                                details.innerHTML = '<span class="success">✅ Connected to ClickUp</span>';
+                            } else {
+                                summary.innerHTML = '<span class="error">❌ Connection Failed</span>';
+                                details.innerHTML = `<span class="error">❌ ${data.error || 'Unknown error'}</span>`;
+                            }
+                            
+                            if (stats) {
+                                stats.innerHTML = `
+                                    <div class="stat-box">
+                                        <div class="stat-number">${data.configured ? 'Yes' : 'No'}</div>
+                                        <div class="stat-label">API Configured</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-number">${data.connection_working ? 'Working' : 'Failed'}</div>
+                                        <div class="stat-label">Connection</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-number">${data.user_info?.username || 'Unknown'}</div>
+                                        <div class="stat-label">User Account</div>
+                                    </div>
+                                `;
+                            }
+                        })
+                        .catch(e => {
+                            console.error('ClickUp status failed:', e);
+                            document.getElementById('clickup-status-summary').innerHTML = '<span class="error">❌ Status Error</span>';
+                            document.getElementById('clickup-details').innerHTML = `<span class="error">❌ Failed to load status: ${e.message}</span>`;
+                        });
+                }
+                
+                function refreshClickUpStatus() {
+                    loadClickUpStatus();
+                }
+                
+                function getClickUpBriefing() {
+                    alert('Getting ClickUp briefing...');
+                }
+                
+                function getClickUpTimeToday() {
+                    alert('Getting ClickUp time today...');
+                }
+                
+                function getClickUpTasks() {
+                    alert('Getting ClickUp tasks...');
+                }
+                
+                function testClickUpConnection() {
+                    alert('Testing ClickUp connection...');
+                }
+                
+                // Global Functions
+                function refreshAllStatus() {
+                    loadGoogleStatus();
+                    loadClozeStatus();
+                    loadClickUpStatus();
+                }
+                
+                // Load initial status when page loads
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Auto-open Google section by default
+                    toggleAccordion('google');
+                });
+            </script>
+        </body>
+        </html>
+        """)
+
+    # Add the missing API endpoints that the JavaScript calls
+    @app.route('/api/integrations/google-status')
+    def google_integration_status():
+        """Google services integration status"""
+        if not session.get('logged_in'):
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        try:
+            status = {
+                "configured": False,
+                "credentials_file_exists": False,
+                "token_file_exists": False,
+                "gmail_working": False,
+                "calendar_working": False,
+                "gmail_email": None,
+                "calendar_count": 0,
+                "callback_url": f"https://{os.getenv('RAILWAY_STATIC_URL', 'localhost')}/google/auth/callback",
+                "error": None
+            }
+            
+            # Check credentials file
+            credentials_path = os.getenv('GOOGLE_CREDENTIALS_PATH', 'credentials.json')
+            status["credentials_file_exists"] = os.path.exists(credentials_path)
+            
+            # Check token file
+            token_path = os.getenv('GOOGLE_TOKEN_PATH', 'token.json')
+            status["token_file_exists"] = os.path.exists(token_path)
+            
+            if status["credentials_file_exists"] and status["token_file_exists"]:
+                status["configured"] = True
+                
+                # Test Gmail connection
+                try:
+                    from utils.gmail_client import _gmail_service
+                    gmail_svc = _gmail_service()
+                    profile = gmail_svc.users().getProfile(userId='me').execute()
+                    status["gmail_working"] = True
+                    status["gmail_email"] = profile.get('emailAddress', 'Unknown')
+                except Exception as e:
+                    status["error"] = f"Gmail test failed: {str(e)}"
+                
+                # Test Calendar connection
+                try:
+                    from utils.gmail_client import _calendar_service
+                    cal_svc = _calendar_service()
+                    calendar_list = cal_svc.calendarList().list(maxResults=10).execute()
+                    status["calendar_working"] = True
+                    status["calendar_count"] = len(calendar_list.get('items', []))
+                except Exception as e:
+                    if not status["error"]:
+                        status["error"] = f"Calendar test failed: {str(e)}"
+                    else:
+                        status["error"] += f"; Calendar test failed: {str(e)}"
+            
+            return jsonify(status)
+            
+        except Exception as e:
+            return jsonify({
+                "configured": False,
+                "error": str(e),
+                "credentials_file_exists": False,
+                "token_file_exists": False,
+                "gmail_working": False,
+                "calendar_working": False
+            })
+    
+    @app.route('/api/integrations/cloze-status')
+    def cloze_integration_status():
+        """Cloze CRM integration status"""
+        if not session.get('logged_in'):
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        try:
+            from modules.cloze_integration import is_cloze_configured
+            
+            status = {
+                "configured": is_cloze_configured(),
+                "connection_working": False,
+                "user_info": None,
+                "error": None
+            }
+            
+            if status["configured"]:
+                # Test connection
+                try:
+                    from modules.cloze_integration import ClozeClient
+                    client = ClozeClient()
+                    user_info = client.get_user_info()
+                    status["connection_working"] = True
+                    status["user_info"] = user_info
+                except Exception as e:
+                    status["error"] = str(e)
+            
+            return jsonify(status)
+            
+        except Exception as e:
+            return jsonify({
+                "configured": False,
+                "connection_working": False,
+                "error": str(e)
+            })
+    
+    @app.route('/api/integrations/clickup-status')
+    def clickup_integration_status():
+        """ClickUp integration status"""
+        if not session.get('logged_in'):
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        try:
+            from modules.clickup_integration import is_clickup_configured
+            
+            status = {
+                "configured": is_clickup_configured(),
+                "connection_working": False,
+                "user_info": None,
+                "error": None
+            }
+            
+            if status["configured"]:
+                # Test connection
+                try:
+                    from modules.clickup_integration import ClickUpClient
+                    client = ClickUpClient()
+                    user_info = client.get_user()
+                    status["connection_working"] = True
+                    status["user_info"] = user_info
+                except Exception as e:
+                    status["error"] = str(e)
+            
+            return jsonify(status)
+            
+        except Exception as e:
+            return jsonify({
+                "configured": False,
+                "connection_working": False,
+                "error": str(e)
+            })
