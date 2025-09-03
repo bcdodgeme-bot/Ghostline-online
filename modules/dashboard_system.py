@@ -104,10 +104,16 @@ def setup_system_routes(app):
                 
                 .progress-bar {
                     width: 100%; height: 20px; background: #1a1a1a; border-radius: 10px;
-                    overflow: hidden; margin: 10px 0;
+                    overflow: hidden; margin: 10px 0; position: relative;
                 }
                 .progress-fill {
-                    height: 100%; background: #059669; transition: width 0.3s;
+                    height: 100%; background: linear-gradient(90deg, #059669, #34d399);
+                    transition: width 0.3s ease; border-radius: 10px;
+                    position: relative;
+                }
+                .progress-text {
+                    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                    color: #fff; font-size: 12px; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
                 }
                 
                 .backup-grid {
@@ -125,6 +131,15 @@ def setup_system_routes(app):
                 }
                 .backup-size { color: #10b981; font-weight: bold; }
                 .backup-date { color: #6b7280; font-size: 12px; }
+                
+                /* Status Updates Animation */
+                .status-updating {
+                    animation: statusPulse 1.5s infinite;
+                }
+                @keyframes statusPulse {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0.6; }
+                }
             </style>
         </head>
         <body>
@@ -192,12 +207,13 @@ def setup_system_routes(app):
                             </div>
                         </div>
                         
-                        <div id="brain-progress-section" style="display: none;">
+                        <div id="brain-progress-section">
                             <h4>Operation Progress</h4>
                             <div class="progress-bar">
                                 <div class="progress-fill" id="brain-progress-fill" style="width: 0%;"></div>
+                                <div class="progress-text" id="brain-progress-text">Ready...</div>
                             </div>
-                            <div id="brain-progress-text">Ready...</div>
+                            <div id="brain-progress-details" style="font-size: 12px; color: #9ca3af; margin-top: 5px;"></div>
                         </div>
                     </div>
                 </div>
@@ -237,8 +253,8 @@ def setup_system_routes(app):
                             <h4>Operation Progress</h4>
                             <div class="progress-bar">
                                 <div class="progress-fill" id="backup-progress-fill" style="width: 0%;"></div>
+                                <div class="progress-text" id="backup-progress-text">Ready...</div>
                             </div>
-                            <div id="backup-progress-text">Ready...</div>
                         </div>
                         
                         <div class="log-output" id="operation-log">
@@ -268,6 +284,7 @@ Click any section above to expand and view detailed status information.
             <script>
                 let operationInProgress = false;
                 let refreshInterval = null;
+                let brainStatusInterval = null;
                 
                 // Accordion functionality
                 function toggleAccordion(section) {
@@ -281,6 +298,11 @@ Click any section above to expand and view detailed status information.
                         content.classList.remove('active');
                         arrow.classList.remove('active');
                         header.classList.remove('active');
+                        
+                        // Stop brain monitoring if brain section is closed
+                        if (section === 'brain') {
+                            stopBrainMonitoring();
+                        }
                     } else {
                         content.classList.add('active');
                         arrow.classList.add('active');
@@ -288,8 +310,31 @@ Click any section above to expand and view detailed status information.
                         
                         // Load section data when opened
                         if (section === 'database') loadDatabaseStatus();
-                        if (section === 'brain') loadBrainStatus();
+                        if (section === 'brain') {
+                            loadBrainStatus();
+                            startBrainMonitoring();
+                        }
                         if (section === 'backup') loadBackupStatus();
+                    }
+                }
+                
+                // Brain status monitoring
+                function startBrainMonitoring() {
+                    if (brainStatusInterval) return; // Already running
+                    
+                    // Load immediately
+                    loadBrainStatus();
+                    
+                    // Then check every 3 seconds
+                    brainStatusInterval = setInterval(() => {
+                        loadBrainStatus();
+                    }, 3000);
+                }
+                
+                function stopBrainMonitoring() {
+                    if (brainStatusInterval) {
+                        clearInterval(brainStatusInterval);
+                        brainStatusInterval = null;
                     }
                 }
                 
@@ -337,34 +382,64 @@ Click any section above to expand and view detailed status information.
                             const summary = document.getElementById('brain-status-summary');
                             const details = document.getElementById('brain-details');
                             const stats = document.getElementById('brain-stats');
+                            const progressFill = document.getElementById('brain-progress-fill');
+                            const progressText = document.getElementById('brain-progress-text');
+                            const progressDetails = document.getElementById('brain-progress-details');
+                            
+                            const progress = Math.round(data.progress || 0);
+                            const chunksProcessed = data.chunks_processed || 0;
+                            const totalChunks = data.total_chunks || 0;
                             
                             if (data.status === 'complete') {
                                 summary.innerHTML = '<span class="success">✅ Ready</span>';
                                 details.innerHTML = '<span class="success">✅ Brain System Ready</span>';
+                                progressFill.style.width = '100%';
+                                progressText.textContent = 'Complete';
+                                progressDetails.textContent = `${chunksProcessed} chunks indexed`;
+                                
+                                // Stop monitoring when complete
+                                if (!operationInProgress) {
+                                    stopBrainMonitoring();
+                                }
                             } else if (data.status === 'building') {
-                                summary.innerHTML = '<span class="warning">🔄 Building</span>';
-                                details.innerHTML = '<span class="warning">🔄 Brain Building in Progress</span>';
+                                summary.innerHTML = '<span class="warning status-updating">🔄 Building</span>';
+                                details.innerHTML = '<span class="warning status-updating">🔄 Brain Building in Progress</span>';
+                                progressFill.style.width = progress + '%';
+                                progressText.textContent = `${progress}%`;
+                                progressDetails.textContent = `Processing: ${chunksProcessed}/${totalChunks} chunks`;
+                                
+                                if (data.current_batch) {
+                                    progressDetails.textContent += ` • Batch: ${data.current_batch}`;
+                                }
                             } else {
                                 summary.innerHTML = '<span class="error">❌ Not Ready</span>';
                                 details.innerHTML = '<span class="error">❌ Brain System Not Ready</span>';
+                                progressFill.style.width = '0%';
+                                progressText.textContent = 'Not Built';
+                                progressDetails.textContent = 'Click "Build Brain" to initialize';
                             }
                             
                             stats.innerHTML = `
                                 <div class="stat-box">
-                                    <div class="stat-number">${data.chunks_processed || 0}</div>
+                                    <div class="stat-number">${chunksProcessed}</div>
                                     <div class="stat-label">Knowledge Chunks</div>
                                 </div>
                                 <div class="stat-box">
-                                    <div class="stat-number">${Math.round(data.progress || 0)}%</div>
+                                    <div class="stat-number">${progress}%</div>
                                     <div class="stat-label">Build Progress</div>
                                 </div>
                                 <div class="stat-box">
                                     <div class="stat-number">${data.batch_size || 0}</div>
                                     <div class="stat-label">Batch Size</div>
                                 </div>
+                                <div class="stat-box">
+                                    <div class="stat-number">${data.status}</div>
+                                    <div class="stat-label">Status</div>
+                                </div>
                             `;
                         })
                         .catch(e => {
+                            console.error('Brain status fetch failed:', e);
                             document.getElementById('brain-status-summary').innerHTML = '<span class="error">❌ Status Error</span>';
                         });
                 }
@@ -449,11 +524,15 @@ Click any section above to expand and view detailed status information.
                 
                 function buildBrain() {
                     if (operationInProgress) return;
+                    operationInProgress = true;
+                    startBrainMonitoring(); // Start monitoring during build
                     executeOperation('/build_brain', 'Building brain system...');
                 }
                 
                 function buildNewBrain() {
                     if (operationInProgress) return;
+                    operationInProgress = true;
+                    startBrainMonitoring(); // Start monitoring during build
                     executeOperation('/build_new_brain', 'Rebuilding brain from sources...');
                 }
                 
@@ -570,21 +649,27 @@ Click any section above to expand and view detailed status information.
                     const progressFill = document.getElementById('backup-progress-fill');
                     const progressText = document.getElementById('backup-progress-text');
                     
-                    progressSection.style.display = 'block';
-                    progressFill.style.width = percent + '%';
-                    progressText.textContent = text;
+                    if (progressSection) {
+                        progressSection.style.display = 'block';
+                        if (progressFill) progressFill.style.width = percent + '%';
+                        if (progressText) progressText.textContent = text;
+                    }
                 }
                 
                 function hideProgress() {
                     const progressSection = document.getElementById('backup-progress-section');
-                    progressSection.style.display = 'none';
+                    if (progressSection) {
+                        progressSection.style.display = 'none';
+                    }
                 }
                 
                 function addToLog(message) {
                     const logDiv = document.getElementById('operation-log');
-                    const timestamp = new Date().toLocaleTimeString();
-                    logDiv.textContent += `\\n[${timestamp}] ${message}`;
-                    logDiv.scrollTop = logDiv.scrollHeight;
+                    if (logDiv) {
+                        const timestamp = new Date().toLocaleTimeString();
+                        logDiv.textContent += `\\n[${timestamp}] ${message}`;
+                        logDiv.scrollTop = logDiv.scrollHeight;
+                    }
                 }
                 
                 function downloadBackup(filename) {
@@ -603,6 +688,12 @@ Click any section above to expand and view detailed status information.
                 document.addEventListener('DOMContentLoaded', function() {
                     refreshAllStatus();
                     refreshInterval = setInterval(refreshAllStatus, 60000);
+                });
+                
+                // Clean up intervals when page unloads
+                window.addEventListener('beforeunload', function() {
+                    if (refreshInterval) clearInterval(refreshInterval);
+                    if (brainStatusInterval) clearInterval(brainStatusInterval);
                 });
             </script>
         </body>

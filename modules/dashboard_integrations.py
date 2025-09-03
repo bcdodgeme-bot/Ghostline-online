@@ -368,9 +368,17 @@ riefing()">📊 Morning Briefing</button>
                 
                 // Google Services Functions
                 function loadGoogleStatus() {
+                    console.log('Loading Google status...');
                     fetch('/api/integrations/google-status')
-                        .then(r => r.json())
+                        .then(r => {
+                            console.log('Google status response:', r.status);
+                            if (!r.ok) {
+                                throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+                            }
+                            return r.json();
+                        })
                         .then(data => {
+                            console.log('Google status data:', data);
                             const summary = document.getElementById('google-status-summary');
                             const details = document.getElementById('google-details');
                             const stats = document.getElementById('google-stats');
@@ -379,56 +387,65 @@ riefing()">📊 Morning Briefing</button>
                             const revokeBtn = document.getElementById('revoke-btn');
                             
                             // Update callback URL
-                            document.getElementById('callback-url').textContent = data.callback_url || 'Loading...';
+                            const callbackElement = document.getElementById('callback-url');
+                            if (callbackElement) {
+                                callbackElement.textContent = data.callback_url || 'Loading...';
+                            }
                             
                             if (!data.credentials_file_exists) {
                                 summary.innerHTML = '<span class="error">❌ Setup Required</span>';
                                 details.innerHTML = '<span class="error">❌ Credentials file missing</span>';
-                                setupDiv.style.display = 'block';
-                                oauthBtn.style.display = 'none';
-                                revokeBtn.style.display = 'none';
+                                if (setupDiv) setupDiv.style.display = 'block';
+                                if (oauthBtn) oauthBtn.style.display = 'none';
+                                if (revokeBtn) revokeBtn.style.display = 'none';
                             } else if (!data.token_file_exists) {
                                 summary.innerHTML = '<span class="warning">⚠️ OAuth Needed</span>';
                                 details.innerHTML = '<span class="warning">⚠️ OAuth authorization required</span>';
-                                setupDiv.style.display = 'none';
-                                oauthBtn.style.display = 'inline-block';
-                                revokeBtn.style.display = 'none';
+                                if (setupDiv) setupDiv.style.display = 'none';
+                                if (oauthBtn) oauthBtn.style.display = 'inline-block';
+                                if (revokeBtn) revokeBtn.style.display = 'none';
                             } else if (data.gmail_working && data.calendar_working) {
                                 summary.innerHTML = '<span class="success">✅ Connected & Working</span>';
                                 details.innerHTML = '<span class="success">✅ Gmail and Calendar connected</span>';
-                                setupDiv.style.display = 'none';
-                                oauthBtn.innerHTML = '🔄 Re-authorize';
-                                revokeBtn.style.display = 'inline-block';
+                                if (setupDiv) setupDiv.style.display = 'none';
+                                if (oauthBtn) oauthBtn.innerHTML = '🔄 Re-authorize';
+                                if (revokeBtn) revokeBtn.style.display = 'inline-block';
                             } else {
                                 summary.innerHTML = '<span class="error">❌ Connection Issues</span>';
                                 details.innerHTML = '<span class="error">❌ Services not responding</span>';
-                                setupDiv.style.display = 'none';
-                                oauthBtn.innerHTML = '🔄 Re-authorize';
-                                oauthBtn.style.display = 'inline-block';
-                                revokeBtn.style.display = 'inline-block';
+                                if (setupDiv) setupDiv.style.display = 'none';
+                                if (oauthBtn) {
+                                    oauthBtn.innerHTML = '🔄 Re-authorize';
+                                    oauthBtn.style.display = 'inline-block';
+                                }
+                                if (revokeBtn) revokeBtn.style.display = 'inline-block';
                             }
                             
-                            stats.innerHTML = `
-                                <div class="stat-box">
-                                    <div class="stat-number">${data.gmail_working ? 'Connected' : 'Disconnected'}</div>
-                                    <div class="stat-label">Gmail Status</div>
-                                </div>
-                                <div class="stat-box">
-                                    <div class="stat-number">${data.calendar_working ? 'Connected' : 'Disconnected'}</div>
-                                    <div class="stat-label">Calendar Status</div>
-                                </div>
-                                <div class="stat-box">
-                                    <div class="stat-number">${data.gmail_email || 'Unknown'}</div>
-                                    <div class="stat-label">Email Account</div>
-                                </div>
-                                <div class="stat-box">
-                                    <div class="stat-number">${data.calendar_count || 0}</div>
-                                    <div class="stat-label">Calendars</div>
-                                </div>
-                            `;
+                            if (stats) {
+                                stats.innerHTML = `
+                                    <div class="stat-box">
+                                        <div class="stat-number">${data.gmail_working ? 'Connected' : 'Disconnected'}</div>
+                                        <div class="stat-label">Gmail Status</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-number">${data.calendar_working ? 'Connected' : 'Disconnected'}</div>
+                                        <div class="stat-label">Calendar Status</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-number">${data.gmail_email || 'Unknown'}</div>
+                                        <div class="stat-label">Email Account</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-number">${data.calendar_count || 0}</div>
+                                        <div class="stat-label">Calendars</div>
+                                    </div>
+                                `;
+                            }
                         })
                         .catch(e => {
+                            console.error('Google status failed:', e);
                             document.getElementById('google-status-summary').innerHTML = '<span class="error">❌ Status Error</span>';
+                            document.getElementById('google-details').innerHTML = `<span class="error">❌ Failed to load status: ${e.message}</span>`;
                         });
                 }
                 
@@ -463,9 +480,17 @@ riefing()">📊 Morning Briefing</button>
                 
                 // Cloze Functions
                 function loadClozeStatus() {
+                    console.log('Loading Cloze status...');
                     fetch('/api/integrations/cloze-status')
-                        .then(r => r.json())
+                        .then(r => {
+                            console.log('Cloze status response:', r.status);
+                            if (!r.ok) {
+                                throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+                            }
+                            return r.json();
+                        })
                         .then(data => {
+                            console.log('Cloze status data:', data);
                             const summary = document.getElementById('cloze-status-summary');
                             const details = document.getElementById('cloze-details');
                             const stats = document.getElementById('cloze-stats');
@@ -481,256 +506,6 @@ riefing()">📊 Morning Briefing</button>
                                 details.innerHTML = `<span class="error">❌ ${data.error || 'Unknown error'}</span>`;
                             }
                             
-                            stats.innerHTML = `
-                                <div class="stat-box">
-                                    <div class="stat-number">${data.connection_working ? 'Connected' : 'Disconnected'}</div>
-                                    <div class="stat-label">API Status</div>
-                                </div>
-                                <div class="stat-box">
-                                    <div class="stat-number">${data.user_info?.name || 'Unknown'}</div>
-                                    <div class="stat-label">User</div>
-                                </div>
-                                <div class="stat-box">
-                                    <div class="stat-number">${data.user_info?.email || 'Unknown'}</div>
-                                    <div class="stat-label">Email</div>
-                                </div>
-                            `;
-                        })
-                        .catch(e => {
-                            document.getElementById('cloze-status-summary').innerHTML = '<span class="error">❌ Status Error</span>';
-                        });
-                }
-                
-                function refreshClozeStatus() {
-                    loadClozeStatus();
-                }
-                
-                function getClozeB
-
-riefing() {
-                    window.open('/cloze/briefing', '_blank');
-                }
-                
-                function getClozePipeline() {
-                    window.open('/cloze/pipeline', '_blank');
-                }
-                
-                function testClozeConnection() {
-                    alert('Testing Cloze connection...');
-                }
-                
-                function testClozeSearch() {
-                    const query = prompt('Enter search query:');
-                    if (query) {
-                        alert(`Searching Cloze for: ${query}`);
-                    }
-                }
-                
-                // ClickUp Functions
-                function loadClickUpStatus() {
-                    fetch('/api/integrations/clickup-status')
-                        .then(r => r.json())
-                        .then(data => {
-                            const summary = document.getElementById('clickup-status-summary');
-                            const details = document.getElementById('clickup-details');
-                            const stats = document.getElementById('clickup-stats');
-                            
-                            if (!data.configured) {
-                                summary.innerHTML = '<span class="warning">⚠️ API Token Missing</span>';
-                                details.innerHTML = '<span class="warning">⚠️ Set CLICKUP_API_TOKEN environment variable</span>';
-                            } else if (data.connection_working && data.user_info) {
-                                summary.innerHTML = '<span class="success">✅ Connected</span>';
-                                details.innerHTML = '<span class="success">✅ Connected to ClickUp</span>';
-                            } else {
-                                summary.innerHTML = '<span class="error">❌ Connection Failed</span>';
-                                details.innerHTML = `<span class="error">❌ ${data.error || 'Unknown error'}</span>`;
-                            }
-                            
-                            stats.innerHTML = `
-                                <div class="stat-box">
-                                    <div class="stat-number">${data.connection_working ? 'Connected' : 'Disconnected'}</div>
-                                    <div class="stat-label">API Status</div>
-                                </div>
-                                <div class="stat-box">
-                                    <div class="stat-number">${data.user_info?.username || 'Unknown'}</div>
-                                    <div class="stat-label">User</div>
-                                </div>
-                                <div class="stat-box">
-                                    <div class="stat-number">${data.team_info?.name || 'Unknown'}</div>
-                                    <div class="stat-label">Team</div>
-                                </div>
-                                <div class="stat-box">
-                                    <div class="stat-number">${data.team_info?.members || 0}</div>
-                                    <div class="stat-label">Members</div>
-                                </div>
-                            `;
-                        })
-                        .catch(e => {
-                            document.getElementById('clickup-status-summary').innerHTML = '<span class="error">❌ Status Error</span>';
-                        });
-                }
-                
-                function refreshClickUpStatus() {
-                    loadClickUpStatus();
-                }
-                
-                function getClickUpBriefing() {
-                    window.open('/clickup/briefing', '_blank');
-                }
-                
-                function getClickUpTimeToday() {
-                    window.open('/clickup/time/today', '_blank');
-                }
-                
-                function getClickUpTasks() {
-                    window.open('/clickup/tasks', '_blank');
-                }
-                
-                function testClickUpConnection() {
-                    alert('Testing ClickUp connection...');
-                }
-                
-                // Utility Functions
-                function refreshAllStatus() {
-                    loadGoogleStatus();
-                    loadClozeStatus();
-                    loadClickUpStatus();
-                }
-                
-                // Initialize on load
-                document.addEventListener('DOMContentLoaded', function() {
-                    refreshAllStatus();
-                });
-            </script>
-        </body>
-        </html>
-        """)
-
-    # API endpoints for integrations dashboard
-    @app.route('/api/integrations/google-status')
-    def api_google_status():
-        """Get Google services status"""
-        if not session.get('logged_in'):
-            return jsonify({'error': 'Unauthorized'}), 401
-        
-        credentials_path = os.getenv('GOOGLE_CREDENTIALS_PATH', 'credentials.json')
-        token_path = os.getenv('GOOGLE_TOKEN_PATH', 'token.json')
-        railway_url = os.getenv('RAILWAY_STATIC_URL', 'your-app.railway.app')
-        
-        status = {
-            "credentials_file_exists": os.path.exists(credentials_path),
-            "token_file_exists": os.path.exists(token_path),
-            "gmail_working": False,
-            "calendar_working": False,
-            "callback_url": f"https://{railway_url}/google/auth/callback"
-        }
-        
-        if status["token_file_exists"]:
-            try:
-                from utils.gmail_client import _build_creds, _gmail_service, _calendar_service
-                
-                # Test credentials
-                creds = _build_creds()
-                
-                # Test Gmail API
-                try:
-                    gmail_svc = _gmail_service()
-                    profile = gmail_svc.users().getProfile(userId='me').execute()
-                    status["gmail_working"] = True
-                    status["gmail_email"] = profile.get('emailAddress', 'Unknown')
-                    status["gmail_total_messages"] = profile.get('messagesTotal', 0)
-                except Exception:
-                    pass
-                
-                # Test Calendar API
-                try:
-                    cal_svc = _calendar_service()
-                    calendar_list = cal_svc.calendarList().list(maxResults=5).execute()
-                    status["calendar_working"] = True
-                    calendars = calendar_list.get('items', [])
-                    status["calendar_count"] = len(calendars)
-                    if calendars:
-                        status["primary_calendar"] = next(
-                            (cal.get('summary', 'Unknown') for cal in calendars if cal.get('primary')),
-                            calendars[0].get('summary', 'Unknown')
-                        )
-                except Exception:
-                    pass
-                    
-            except Exception as e:
-                status["auth_error"] = str(e)
-        
-        return jsonify(status)
-
-    @app.route('/api/integrations/cloze-status')
-    def api_cloze_status():
-        """Get Cloze CRM status"""
-        if not session.get('logged_in'):
-            return jsonify({'error': 'Unauthorized'}), 401
-        
-        from modules.cloze_integration import is_cloze_configured
-        
-        status = {
-            "configured": is_cloze_configured(),
-            "api_key_present": bool(os.getenv('CLOZE_API_KEY')),
-            "connection_working": False,
-            "user_info": None
-        }
-        
-        if is_cloze_configured():
-            try:
-                from modules.cloze_integration import ClozeClient
-                client = ClozeClient()
-                profile = client.get_profile()
-                status["connection_working"] = True
-                status["user_info"] = {
-                    "name": profile.get('name', 'Unknown'),
-                    "email": profile.get('email', 'Unknown')
-                }
-            except Exception as e:
-                status["error"] = str(e)
-        
-        return jsonify(status)
-
-    @app.route('/api/integrations/clickup-status')
-    def api_clickup_status():
-        """Get ClickUp status"""
-        if not session.get('logged_in'):
-            return jsonify({'error': 'Unauthorized'}), 401
-        
-        from modules.clickup_integration import is_clickup_configured, ClickUpClient
-        
-        status = {
-            "configured": is_clickup_configured(),
-            "api_token_present": bool(os.getenv('CLICKUP_API_TOKEN')),
-            "connection_working": False,
-            "user_info": None,
-            "team_info": None
-        }
-        
-        if is_clickup_configured():
-            try:
-                client = ClickUpClient()
-                
-                # Test connection and get user info
-                user_info = client.get_user_info()
-                status["connection_working"] = True
-                status["user_info"] = {
-                    "username": user_info.get('user', {}).get('username', 'Unknown'),
-                    "email": user_info.get('user', {}).get('email', 'Unknown'),
-                    "id": user_info.get('user', {}).get('id', 'Unknown')
-                }
-                
-                # Get team info
-                teams = client.get_teams()
-                if teams.get('teams'):
-                    status["team_info"] = {
-                        "name": teams['teams'][0].get('name', 'Unknown'),
-                        "id": teams['teams'][0].get('id', 'Unknown'),
-                        "members": len(teams['teams'][0].get('members', []))
-                    }
-                
-            except Exception as e:
-                status["error"] = str(e)
-        
-        return jsonify(status)
+                            if (stats) {
+                                stats.innerHTML = `
+                                    <div class="stat-box">
