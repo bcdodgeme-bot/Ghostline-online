@@ -1,4 +1,4 @@
-# utils/rag_basic.py - Memory-optimized batched RAG system with chunk file support
+# utils/rag_basic.py - Memory-optimized batched RAG system with OpenRouter embeddings
 import json
 import os
 import pickle
@@ -9,10 +9,10 @@ import math
 import gc
 import glob
 import tempfile
+import requests
 
 try:
     import numpy as np
-    import openai
     DEPENDENCIES_AVAILABLE = True
 except ImportError as e:
     print(f"Missing dependencies: {e}")
@@ -22,16 +22,16 @@ except ImportError as e:
 _rag_system = None
 
 class BatchedRAG:
-    def __init__(self, data_dir: str = "rag_data", batch_size: int = 6000):  # Reduced batch size
+    def __init__(self, data_dir: str = "rag_data", batch_size: int = 6000):
         if not DEPENDENCIES_AVAILABLE:
-            raise ImportError("Missing required dependencies: numpy, openai")
+            raise ImportError("Missing required dependencies: numpy")
             
-        # Get API key from environment
-        api_key = os.getenv('OPENAI_API_KEY')
-        if not api_key:
-            raise ValueError("OPENAI_API_KEY environment variable not set")
+        # Get OpenRouter API key from environment
+        self.api_key = os.getenv('OPENROUTER_API_KEY')
+        if not self.api_key:
+            raise ValueError("OPENROUTER_API_KEY environment variable not set")
         
-        self.client = openai.OpenAI(api_key=api_key)
+        self.openrouter_base_url = "https://openrouter.ai/api/v1"
         self.data_dir = data_dir
         self.batch_size = batch_size
         
@@ -50,6 +50,92 @@ class BatchedRAG:
         
         # Load existing data
         self.load_existing_data()
+    
+    def create_embedding(self, text: str) -> List[float]:
+        """Create embedding for a text using OpenRouter"""
+        try:
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://ghostline.ai",
+                "X-Title": "Ghostline AI"
+            }
+            
+            # Use a model that supports embeddings on OpenRouter
+            # You can use text-embedding-3-small or another embedding model available on OpenRouter
+            payload = {
+                "input": text,
+                "model": "text-embedding-3-small"  # or "text-embedding-ada-002" if preferred
+            }
+            
+            response = requests.post(
+                f"{self.openrouter_base_url}/embeddings",
+                headers=headers,
+                json=payload,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                return data['data'][0]['embedding']
+            else:
+                print(f"OpenRouter embedding API error: {response.status_code} - {response.text}")
+                return [0.0] * 1536  # Return zero vector as fallback
+                
+        except Exception as e:
+            print(f"Error creating embedding with OpenRouter: {e}")
+            return [0.0] * 1536
+    
+    def process_batch_embeddings(self, batch_chunks: List[Dict], batch_num: int) -> int:
+        """Create embeddings with streaming saves to prevent memory buildup"""
+        total_chunks = len(batch_chunks)
+        print(f"Creating embeddings for {total_chunks} chunks with streaming saves...")
+        
+        # Process embeddings in smaller sub-batches and save immediately
+        embedding_batch_size = 10  # Reduced for API rate limits
+        sub_batch_count = 0
+        total_embeddings_created = 0
+        
+        for i in range(0, total_chunks, embedding_batch_size):
+            end_idx = min(i + embedding_batch_size, total_chunks)
+            sub_batch = batch_chunks[i:end_idx]
+            
+            # Calculate progress percentage
+            progress_pct = int((i / total_chunks) * 100)
+            overall_progress = int(((self.batch_progress["total_embeddings_created"] + i) /
+                                  (self.batch_progress["total_chunks_processed"] + total_chunks)) * 100)
+            
+            print(f"Creating embeddings: {i + 1}-{end_idx}/{total_chunks} ({progress_pct}% batch, {overall_progress}% overall)")
+            
+            # For OpenRouter, process one at a time to avoid rate limits
+            # You could batch them if OpenRouter supports batch embeddings
+            sub_batch_embeddings = []
+            chunk_indices = []
+            
+            for chunk in sub_batch:
+                embedding = self.create_embedding(chunk["text"])
+                sub_batch_embeddings.append(embedding)
+                chunk_indices.append(chunk["id"])
+                
+                # Small delay to respect rate limits
+                import time
+                time.sleep(0.1)
+            
+            # Immediately save to disk and free memory
+            self.save_embedding_batch(batch_num, sub_batch_count, sub_batch_embeddings, chunk_indices)
+            total_embeddings_created += len(sub_batch_embeddings)
+            
+            # Clear memory
+            del sub_batch_embeddings
+            del chunk_indices
+            gc.collect()  # Force garbage collection
+            
+            sub_batch_count += 1
+        
+        print(f"\nCompleted all embeddings for batch {batch_num + 1}: {total_embeddings_created} embeddings created")
+        return total_embeddings_created
+
+    # ... rest of the methods remain the same as they don't use OpenAI directly ...
     
     def combine_brain_parts(self, base_path: str) -> str:
         """Combine brain_chunk_* files into a temporary single file"""
@@ -239,18 +325,6 @@ class BatchedRAG:
         print(f"\nBatch {batch_num + 1} complete: created {len(batch_chunks)} chunks")
         return batch_chunks
     
-    def create_embedding(self, text: str) -> List[float]:
-        """Create embedding for a text using OpenAI"""
-        try:
-            response = self.client.embeddings.create(
-                input=text,
-                model="text-embedding-3-small"
-            )
-            return response.data[0].embedding
-        except Exception as e:
-            print(f"Error creating embedding: {e}")
-            return [0.0] * 1536
-    
     def save_embedding_batch(self, batch_num: int, sub_batch_num: int, embeddings: List[List[float]], chunk_indices: List[int]):
         """Save a sub-batch of embeddings to disk immediately"""
         embedding_sub_file = os.path.join(self.batch_dir, f"embeddings_{batch_num}_{sub_batch_num}.pkl")
@@ -265,75 +339,6 @@ class BatchedRAG:
             json.dump(chunk_indices, f)
         
         print(f"Saved embedding sub-batch {sub_batch_num} to disk")
-    
-    def process_batch_embeddings(self, batch_chunks: List[Dict], batch_num: int) -> int:
-        """Create embeddings with streaming saves to prevent memory buildup"""
-        total_chunks = len(batch_chunks)
-        print(f"Creating embeddings for {total_chunks} chunks with streaming saves...")
-        
-        # Process embeddings in smaller sub-batches and save immediately
-        embedding_batch_size = 50  # Reduced sub-batch size
-        sub_batch_count = 0
-        total_embeddings_created = 0
-        
-        for i in range(0, total_chunks, embedding_batch_size):
-            end_idx = min(i + embedding_batch_size, total_chunks)
-            sub_batch = batch_chunks[i:end_idx]
-            
-            # Calculate progress percentage
-            progress_pct = int((i / total_chunks) * 100)
-            overall_progress = int(((self.batch_progress["total_embeddings_created"] + i) / 
-                                  (self.batch_progress["total_chunks_processed"] + total_chunks)) * 100)
-            
-            print(f"Creating embeddings: {i + 1}-{end_idx}/{total_chunks} ({progress_pct}% batch, {overall_progress}% overall)")
-            
-            # Extract texts for this sub-batch
-            texts = [chunk["text"] for chunk in sub_batch]
-            chunk_indices = [chunk["id"] for chunk in sub_batch]
-            
-            try:
-                # Create embeddings for multiple texts in one API call
-                response = self.client.embeddings.create(
-                    input=texts,
-                    model="text-embedding-3-small"
-                )
-                
-                # Extract embeddings from response
-                sub_batch_embeddings = [data.embedding for data in response.data]
-                
-                # Immediately save to disk and free memory
-                self.save_embedding_batch(batch_num, sub_batch_count, sub_batch_embeddings, chunk_indices)
-                total_embeddings_created += len(sub_batch_embeddings)
-                
-                # Clear memory
-                del sub_batch_embeddings
-                del texts
-                del chunk_indices
-                gc.collect()  # Force garbage collection
-                
-            except Exception as e:
-                print(f"\nError creating embeddings for sub-batch {sub_batch_count}: {e}")
-                # Fallback to individual processing for this sub-batch
-                sub_batch_embeddings = []
-                chunk_indices = []
-                for chunk in sub_batch:
-                    embedding = self.create_embedding(chunk["text"])
-                    sub_batch_embeddings.append(embedding)
-                    chunk_indices.append(chunk["id"])
-                
-                # Save fallback results
-                self.save_embedding_batch(batch_num, sub_batch_count, sub_batch_embeddings, chunk_indices)
-                total_embeddings_created += len(sub_batch_embeddings)
-                
-                # Clear memory
-                del sub_batch_embeddings
-                del chunk_indices
-                gc.collect()
-            
-            sub_batch_count += 1
-        
-        print(f"\nCompleted all embeddings for batch {batch_num + 1}: {total_embeddings_created} embeddings created")
-        return total_embeddings_created
     
     def save_batch_data(self, batch_num: int, batch_chunks: List[Dict]):
         """Save batch chunk data to disk"""
@@ -546,7 +551,7 @@ def _get_rag_system():
         try:
             if DEPENDENCIES_AVAILABLE:
                 _rag_system = BatchedRAG()
-                print("Batched RAG system initialized")
+                print("Batched RAG system initialized with OpenRouter")
             else:
                 print("RAG system disabled - missing dependencies")
         except Exception as e:
@@ -582,7 +587,7 @@ def load_corpus(path):
         
         _rag_system = BatchedRAG()
         _rag_system.build_index_in_batches(path)
-        print("Batched RAG corpus loaded successfully")
+        print("Batched RAG corpus loaded successfully with OpenRouter")
     except Exception as e:
         print(f"RAG corpus load failed: {e}")
         _rag_system = None
