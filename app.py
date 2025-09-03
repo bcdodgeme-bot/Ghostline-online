@@ -3750,6 +3750,607 @@ def mobile_chat():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# Section 18: Google OAuth Integration Routes
+# Section 18: Google OAuth Integration Routes
+# Section 18: Google OAuth Integration Routes
+# Add this as a new section in your app.py after Section 17
+
+@app.route('/google/auth/start')
+def google_auth_start():
+    """Initiate Google OAuth flow - Railway-compatible version"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    try:
+        # Use the paths defined at the top of your app.py
+        credentials_path = os.getenv('GOOGLE_CREDENTIALS_PATH', 'credentials.json')
+        
+        # Check if credentials file exists
+        if not os.path.exists(credentials_path):
+            return render_template_string("""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Google Setup Required</title>
+                <style>
+                    body { 
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                        background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
+                    }
+                    .container { max-width: 800px; margin: 0 auto; }
+                    .btn { 
+                        background: #6366f1; color: white; border: none; padding: 12px 24px;
+                        border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
+                        text-decoration: none; display: inline-block;
+                    }
+                    .setup-steps { background: #1a1a1a; padding: 20px; border-radius: 8px; margin: 15px 0; }
+                    .setup-steps ol li { margin: 10px 0; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1>Google OAuth Setup Required</h1>
+                    <div class="setup-steps">
+                        <h3>Complete These Steps First:</h3>
+                        <ol>
+                            <li>Go to <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a></li>
+                            <li>Create a new project or select existing</li>
+                            <li>Enable <strong>Gmail API</strong> and <strong>Calendar API</strong></li>
+                            <li>Go to <strong>APIs & Services → Credentials</strong></li>
+                            <li>Create <strong>OAuth 2.0 Client ID</strong> (Web application)</li>
+                            <li>Add authorized redirect URI: <code>https://{{ railway_url }}/google/auth/callback</code></li>
+                            <li>Download the credentials JSON file</li>
+                            <li>Upload it to Railway and set <code>GOOGLE_CREDENTIALS_PATH</code> env var</li>
+                            <li>Return here and try again</li>
+                        </ol>
+                    </div>
+                    <a href="/google/setup" class="btn">Setup Instructions</a>
+                    <a href="/" class="btn">Back to Chat</a>
+                </div>
+            </body>
+            </html>
+            """, railway_url=os.getenv('RAILWAY_STATIC_URL', 'your-app.railway.app'))
+        
+        from google_auth_oauthlib.flow import Flow
+        
+        # Get the Railway app URL for callback
+        railway_url = os.getenv('RAILWAY_STATIC_URL')
+        if railway_url:
+            redirect_uri = f"https://{railway_url}/google/auth/callback"
+        else:
+            # Fallback for local development
+            redirect_uri = "http://localhost:5000/google/auth/callback"
+        
+        app.logger.info(f"Starting OAuth flow with redirect URI: {redirect_uri}")
+        
+        # Create the flow with your existing scopes
+        flow = Flow.from_client_secrets_file(
+            credentials_path,
+            scopes=[
+                "https://www.googleapis.com/auth/gmail.readonly",
+                "https://www.googleapis.com/auth/calendar.readonly"
+            ]
+        )
+        flow.redirect_uri = redirect_uri
+        
+        # Generate authorization URL
+        authorization_url, state = flow.authorization_url(
+            access_type='offline',  # This enables refresh tokens
+            include_granted_scopes='true',
+            prompt='consent'  # Force consent to get refresh token
+        )
+        
+        # Store state in session for security
+        session['oauth_state'] = state
+        session['oauth_redirect_uri'] = redirect_uri
+        
+        app.logger.info(f"Redirecting to Google OAuth: {authorization_url}")
+        return redirect(authorization_url)
+        
+    except Exception as e:
+        app.logger.error(f"OAuth start failed: {e}")
+        return f"OAuth initialization failed: {str(e)}<br><a href='/google/setup'>Setup Instructions</a>", 500
+
+@app.route('/google/auth/callback')
+def google_auth_callback():
+    """Handle Google OAuth callback and save token"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    try:
+        # Check for OAuth errors
+        error = request.args.get('error')
+        if error:
+            app.logger.error(f"OAuth error: {error}")
+            return f"OAuth failed: {error}<br><a href='/google/setup'>Try Again</a>", 400
+        
+        # Verify state parameter for security
+        if request.args.get('state') != session.get('oauth_state'):
+            app.logger.error("OAuth state mismatch")
+            return "Invalid state parameter - possible CSRF attack<br><a href='/google/setup'>Try Again</a>", 400
+        
+        from google_auth_oauthlib.flow import Flow
+        
+        credentials_path = os.getenv('GOOGLE_CREDENTIALS_PATH', 'credentials.json')
+        token_path = os.getenv('GOOGLE_TOKEN_PATH', 'token.json')
+        
+        # Recreate the flow
+        flow = Flow.from_client_secrets_file(
+            credentials_path,
+            scopes=[
+                "https://www.googleapis.com/auth/gmail.readonly",
+                "https://www.googleapis.com/auth/calendar.readonly"
+            ],
+            state=session['oauth_state']
+        )
+        flow.redirect_uri = session.get('oauth_redirect_uri')
+        
+        app.logger.info(f"Processing OAuth callback, saving token to: {token_path}")
+        
+        # Exchange authorization code for credentials
+        flow.fetch_token(authorization_response=request.url)
+        
+        # Save credentials to file
+        credentials = flow.credentials
+        with open(token_path, 'w') as token_file:
+            token_file.write(credentials.to_json())
+        
+        app.logger.info("Token saved successfully")
+        
+        # Test the credentials immediately
+        test_results = {}
+        try:
+            from utils.gmail_client import _gmail_service, _calendar_service
+            
+            # Test Gmail
+            gmail_svc = _gmail_service()
+            profile = gmail_svc.users().getProfile(userId='me').execute()
+            test_results['gmail'] = f"Connected as {profile.get('emailAddress', 'Unknown')}"
+            
+            # Test Calendar
+            cal_svc = _calendar_service()
+            calendar_list = cal_svc.calendarList().list(maxResults=1).execute()
+            test_results['calendar'] = f"Access to {len(calendar_list.get('items', []))} calendars"
+            
+        except Exception as test_error:
+            test_results['error'] = str(test_error)
+        
+        # Clean up session
+        session.pop('oauth_state', None)
+        session.pop('oauth_redirect_uri', None)
+        
+        return render_template_string("""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Google OAuth Complete</title>
+            <style>
+                body { 
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
+                }
+                .container { max-width: 800px; margin: 0 auto; }
+                .btn { 
+                    background: #6366f1; color: white; border: none; padding: 12px 24px;
+                    border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
+                    text-decoration: none; display: inline-block;
+                }
+                .btn.success { background: #059669; }
+                .success-box { 
+                    background: #065f46; border: 1px solid #059669; border-radius: 8px; 
+                    padding: 20px; margin: 20px 0; 
+                }
+                .test-results { 
+                    background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
+                    padding: 15px; margin: 15px 0; 
+                }
+                .command-list { background: #1a1a1a; padding: 15px; border-radius: 8px; margin: 15px 0; }
+                .command-list code { 
+                    background: #2a2a2a; padding: 3px 6px; border-radius: 4px; 
+                    font-family: monospace; 
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="success-box">
+                    <h1>✅ Google OAuth Setup Complete!</h1>
+                    <p>Your Gmail and Calendar access has been configured successfully.</p>
+                    <p><strong>Token saved to:</strong> {{ token_path }}</p>
+                </div>
+                
+                <div class="test-results">
+                    <h3>Connection Test Results:</h3>
+                    {% if test_results.gmail %}
+                        <p>✅ <strong>Gmail:</strong> {{ test_results.gmail }}</p>
+                    {% endif %}
+                    {% if test_results.calendar %}
+                        <p>✅ <strong>Calendar:</strong> {{ test_results.calendar }}</p>
+                    {% endif %}
+                    {% if test_results.error %}
+                        <p>⚠️ <strong>Warning:</strong> {{ test_results.error }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="command-list">
+                    <h3>Available Commands:</h3>
+                    <ul>
+                        <li><code>good morning</code> - Complete daily briefing with emails and calendar</li>
+                        <li><code>overnight</code> - Check overnight emails</li>
+                        <li><code>calendar</code> or <code>today</code> - Today's schedule</li>
+                        <li><code>tomorrow</code> - Tomorrow's meetings</li>
+                        <li><code>next meeting</code> - Next upcoming meeting</li>
+                        <li><code>search [query]</code> - Search Gmail messages</li>
+                        <li><code>good evening</code> - End of day wrap-up</li>
+                    </ul>
+                </div>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="/" class="btn success">← Start Using Gmail Commands</a>
+                    <a href="/google/setup" class="btn">View Setup Page</a>
+                </div>
+            </div>
+        </body>
+        </html>
+        """, token_path=token_path, test_results=test_results)
+        
+    except Exception as e:
+        app.logger.error(f"OAuth callback failed: {e}")
+        return f"OAuth completion failed: {str(e)}<br><a href='/google/setup'>Try Again</a>", 500
+
+@app.route('/google/auth/status')
+def google_auth_status():
+    """Check Google authentication status - API endpoint"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    credentials_path = os.getenv('GOOGLE_CREDENTIALS_PATH', 'credentials.json')
+    token_path = os.getenv('GOOGLE_TOKEN_PATH', 'token.json')
+    
+    status = {
+        "credentials_file_exists": os.path.exists(credentials_path),
+        "credentials_path": credentials_path,
+        "token_file_exists": os.path.exists(token_path),
+        "token_path": token_path,
+        "gmail_working": False,
+        "calendar_working": False,
+        "railway_url": os.getenv('RAILWAY_STATIC_URL', 'Not set'),
+        "callback_url": f"https://{os.getenv('RAILWAY_STATIC_URL', 'your-app.railway.app')}/google/auth/callback"
+    }
+    
+    if status["token_file_exists"]:
+        try:
+            from utils.gmail_client import _build_creds, _gmail_service, _calendar_service
+            
+            # Test credentials
+            creds = _build_creds()
+            status["credentials_valid"] = creds.valid
+            status["credentials_expired"] = creds.expired
+            status["has_refresh_token"] = bool(creds.refresh_token)
+            status["scopes"] = creds.scopes
+            
+            # Test Gmail API
+            try:
+                gmail_svc = _gmail_service()
+                profile = gmail_svc.users().getProfile(userId='me').execute()
+                status["gmail_working"] = True
+                status["gmail_email"] = profile.get('emailAddress', 'Unknown')
+                status["gmail_total_messages"] = profile.get('messagesTotal', 0)
+            except Exception as e:
+                status["gmail_error"] = str(e)
+            
+            # Test Calendar API
+            try:
+                cal_svc = _calendar_service()
+                calendar_list = cal_svc.calendarList().list(maxResults=5).execute()
+                status["calendar_working"] = True
+                calendars = calendar_list.get('items', [])
+                status["calendar_count"] = len(calendars)
+                if calendars:
+                    status["primary_calendar"] = next(
+                        (cal.get('summary', 'Unknown') for cal in calendars if cal.get('primary')),
+                        calendars[0].get('summary', 'Unknown')
+                    )
+            except Exception as e:
+                status["calendar_error"] = str(e)
+                
+        except Exception as e:
+            status["auth_error"] = str(e)
+    
+    return jsonify(status)
+
+@app.route('/google/auth/revoke', methods=['POST'])
+def google_auth_revoke():
+    """Revoke Google authentication and delete token"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        token_path = os.getenv('GOOGLE_TOKEN_PATH', 'token.json')
+        
+        if os.path.exists(token_path):
+            # Try to revoke the token with Google first
+            try:
+                from utils.gmail_client import _build_creds
+                creds = _build_creds()
+                
+                # Revoke the token
+                import requests
+                requests.post(
+                    'https://oauth2.googleapis.com/revoke',
+                    params={'token': creds.token},
+                    headers={'content-type': 'application/x-www-form-urlencoded'}
+                )
+                app.logger.info("Token revoked with Google")
+            except:
+                app.logger.warning("Could not revoke token with Google, but will delete local file")
+            
+            # Delete the local token file
+            os.remove(token_path)
+            app.logger.info("Local token file deleted")
+            
+            return jsonify({
+                'success': True,
+                'message': 'Google authentication revoked and token deleted'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'No token file found'
+            })
+            
+    except Exception as e:
+        app.logger.error(f"Token revocation failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/google/setup')
+def google_setup_page():
+    """Google integration setup and management page"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    railway_url = os.getenv('RAILWAY_STATIC_URL', 'your-app.railway.app')
+    callback_url = f"https://{railway_url}/google/auth/callback"
+    
+    return render_template_string("""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Google Integration Setup</title>
+        <style>
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
+            }
+            .container { max-width: 1000px; margin: 0 auto; }
+            .btn { 
+                background: #6366f1; color: white; border: none; padding: 12px 24px;
+                border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
+                text-decoration: none; display: inline-block;
+            }
+            .btn:hover { background: #5855eb; }
+            .btn.success { background: #059669; }
+            .btn.success:hover { background: #047857; }
+            .btn.warning { background: #d97706; }
+            .btn.danger { background: #dc2626; }
+            .status-box { 
+                background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
+                padding: 20px; margin: 20px 0; 
+            }
+            .success { color: #10b981; }
+            .error { color: #ef4444; }
+            .warning { color: #f59e0b; }
+            .setup-steps { 
+                background: #1a1a1a; padding: 20px; border-radius: 8px; 
+                margin: 15px 0; 
+            }
+            .setup-steps ol li { margin: 15px 0; line-height: 1.4; }
+            .callback-url { 
+                background: #2a2a2a; padding: 10px; border-radius: 4px; 
+                font-family: monospace; word-break: break-all; margin: 10px 0;
+            }
+            .commands-grid {
+                display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 15px; margin: 20px 0;
+            }
+            .command-card {
+                background: #2a2a2a; padding: 15px; border-radius: 8px;
+            }
+            .command-title { 
+                font-size: 16px; font-weight: bold; margin-bottom: 8px; color: #6366f1; 
+            }
+            .command-example { 
+                background: #1a1a1a; padding: 8px; border-radius: 4px; 
+                font-family: monospace; margin: 5px 0; font-size: 14px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🔗 Google Integration Setup</h1>
+            <p>Connect Gmail and Google Calendar to enable email checking, calendar summaries, and daily briefings.</p>
+            
+            <div class="status-box">
+                <h3>Current Status</h3>
+                <div id="status">Loading...</div>
+                
+                <div style="margin-top: 20px;">
+                    <a href="/google/auth/start" class="btn success" id="oauth-btn">🔐 Start OAuth Setup</a>
+                    <button class="btn" onclick="refreshStatus()">🔄 Refresh Status</button>
+                    <a href="/debug/google_auth_test" class="btn warning">🔧 Debug Test</a>
+                    <button class="btn danger" onclick="revokeAuth()" id="revoke-btn" style="display: none;">🗑️ Revoke Access</button>
+                </div>
+            </div>
+            
+            <div class="setup-steps">
+                <h3>📋 Complete Setup Instructions</h3>
+                <ol>
+                    <li><strong>Go to Google Cloud Console:</strong><br>
+                        Visit <a href="https://console.cloud.google.com/" target="_blank">console.cloud.google.com</a>
+                    </li>
+                    
+                    <li><strong>Create/Select Project:</strong><br>
+                        Create a new project or select an existing one
+                    </li>
+                    
+                    <li><strong>Enable APIs:</strong><br>
+                        Go to "APIs & Services" → "Library" and enable:
+                        <ul>
+                            <li><strong>Gmail API</strong></li>
+                            <li><strong>Google Calendar API</strong></li>
+                        </ul>
+                    </li>
+                    
+                    <li><strong>Create OAuth Credentials:</strong><br>
+                        Go to "APIs & Services" → "Credentials" → "Create Credentials" → "OAuth 2.0 Client ID"<br>
+                        Select "Web application"
+                    </li>
+                    
+                    <li><strong>Set Authorized Redirect URI:</strong><br>
+                        Add this exact URL to "Authorized redirect URIs":
+                        <div class="callback-url">{{ callback_url }}</div>
+                    </li>
+                    
+                    <li><strong>Download Credentials:</strong><br>
+                        Download the JSON file (usually named like <code>client_secret_xxx.json</code>)
+                    </li>
+                    
+                    <li><strong>Upload to Railway:</strong><br>
+                        Upload the credentials file to your Railway project and set environment variable:<br>
+                        <code>GOOGLE_CREDENTIALS_PATH=your-credentials-file.json</code>
+                    </li>
+                    
+                    <li><strong>Complete OAuth:</strong><br>
+                        Click the "Start OAuth Setup" button above and authorize the application
+                    </li>
+                </ol>
+            </div>
+            
+            <div class="status-box">
+                <h3>📱 Available Commands After Setup</h3>
+                <div class="commands-grid">
+                    <div class="command-card">
+                        <div class="command-title">Daily Briefings</div>
+                        <div class="command-example">good morning</div>
+                        <div class="command-example">good evening</div>
+                        <p>Complete daily summaries with emails and calendar</p>
+                    </div>
+                    
+                    <div class="command-card">
+                        <div class="command-title">Email Commands</div>
+                        <div class="command-example">overnight</div>
+                        <div class="command-example">search project alpha</div>
+                        <p>Check overnight emails and search your Gmail</p>
+                    </div>
+                    
+                    <div class="command-card">
+                        <div class="command-title">Calendar Commands</div>
+                        <div class="command-example">calendar</div>
+                        <div class="command-example">tomorrow</div>
+                        <div class="command-example">next meeting</div>
+                        <p>View schedules and upcoming meetings</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="status-box">
+                <h3>🔒 Privacy & Security</h3>
+                <ul>
+                    <li><strong>Read-only access:</strong> Ghostline can only read your emails and calendar, not send or modify</li>
+                    <li><strong>Local storage:</strong> Your OAuth token is stored securely on your Railway server</li>
+                    <li><strong>Revokable:</strong> You can revoke access anytime from this page or Google Account settings</li>
+                    <li><strong>No data sharing:</strong> Your email/calendar data is never shared or stored elsewhere</li>
+                </ul>
+            </div>
+            
+            <div class="status-box">
+                <a href="/" class="btn">← Back to Chat</a>
+                <a href="/brain" class="btn">🧠 Brain Dashboard</a>
+                <a href="/database" class="btn">💾 Database Dashboard</a>
+            </div>
+        </div>
+        
+        <script>
+            function refreshStatus() {
+                fetch('/google/auth/status')
+                    .then(r => r.json())
+                    .then(data => {
+                        const statusDiv = document.getElementById('status');
+                        const oauthBtn = document.getElementById('oauth-btn');
+                        const revokeBtn = document.getElementById('revoke-btn');
+                        let html = '';
+                        
+                        // Environment info
+                        html += `<p><strong>Railway URL:</strong> ${data.railway_url || 'Not detected'}</p>`;
+                        html += `<p><strong>Callback URL:</strong> ${data.callback_url}</p>`;
+                        
+                        if (!data.credentials_file_exists) {
+                            html += '<p><span class="error">❌ Credentials file missing</span><br>';
+                            html += `Looking for: ${data.credentials_path}<br>`;
+                            html += 'Upload credentials JSON and set GOOGLE_CREDENTIALS_PATH</p>';
+                            oauthBtn.style.display = 'none';
+                            revokeBtn.style.display = 'none';
+                        } else if (!data.token_file_exists) {
+                            html += '<p><span class="warning">⚠️ OAuth not completed</span><br>';
+                            html += 'Credentials file found, ready for OAuth flow</p>';
+                            oauthBtn.style.display = 'inline-block';
+                            revokeBtn.style.display = 'none';
+                        } else if (data.gmail_working && data.calendar_working) {
+                            html += '<p><span class="success">✅ Fully Connected & Working</span></p>';
+                            html += `<p><strong>Gmail:</strong> ${data.gmail_email} (${data.gmail_total_messages || 0} messages)</p>`;
+                            html += `<p><strong>Calendar:</strong> ${data.calendar_count} calendars`;
+                            if (data.primary_calendar) {
+                                html += ` (Primary: ${data.primary_calendar})`;
+                            }
+                            html += '</p>';
+                            if (data.has_refresh_token) {
+                                html += '<p><strong>Token:</strong> Valid with auto-refresh capability</p>';
+                            }
+                            oauthBtn.innerHTML = '🔄 Re-authorize';
+                            revokeBtn.style.display = 'inline-block';
+                        } else {
+                            html += '<p><span class="error">❌ Connection Issues</span></p>';
+                            if (data.gmail_error) html += `<p><strong>Gmail Error:</strong> ${data.gmail_error}</p>`;
+                            if (data.calendar_error) html += `<p><strong>Calendar Error:</strong> ${data.calendar_error}</p>`;
+                            if (data.auth_error) html += `<p><strong>Auth Error:</strong> ${data.auth_error}</p>`;
+                            oauthBtn.innerHTML = '🔄 Re-authorize';
+                            oauthBtn.style.display = 'inline-block';
+                            revokeBtn.style.display = 'inline-block';
+                        }
+                        
+                        statusDiv.innerHTML = html;
+                    })
+                    .catch(e => {
+                        document.getElementById('status').innerHTML = '<p><span class="error">❌ Status Check Failed</span></p>';
+                    });
+            }
+            
+            function revokeAuth() {
+                if (confirm('This will revoke Google access and delete your OAuth token. You will need to re-authorize to use Gmail/Calendar features. Continue?')) {
+                    fetch('/google/auth/revoke', { method: 'POST' })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert('✅ Google access revoked successfully');
+                                refreshStatus();
+                            } else {
+                                alert('❌ Revocation failed: ' + data.error);
+                            }
+                        })
+                        .catch(e => alert('❌ Revocation request failed'));
+                }
+            }
+            
+            // Auto-refresh status every 30 seconds
+            refreshStatus();
+            setInterval(refreshStatus, 30000);
+        </script>
+    </body>
+    </html>
+    """, callback_url=callback_url)
 # Section 10: Debug Routes, Authentication, and App Startup
 # Section 10: Debug Routes, Authentication, and App Startup
 # Section 10: Debug Routes, Authentication, and App Startup
