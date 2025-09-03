@@ -118,10 +118,10 @@ from modules.database import (
 
 from modules.brain import (
     enhanced_retrieve,
-    enhanced_build_brain_background,
-    enhanced_build_new_brain_background,
-    build_brain_background,
-    build_new_brain_background
+    build_brain_from_corpus,  # Changed
+    build_brain_from_sources,  # Changed
+    get_brain_status,
+    get_brain_control_dashboard
 )
 
 from modules.file_processing import setup_easyocr_environment, markdown_filter
