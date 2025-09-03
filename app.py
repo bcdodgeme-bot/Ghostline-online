@@ -1457,56 +1457,33 @@ def mobile_conversations(project):
 
 @app.route('/api/mobile/chat', methods=['POST'])
 def mobile_chat():
-    """Simple test version for Swift app development"""
+    """Mobile chat with brain retrieval - testing phase"""
     if not is_mobile_authenticated():
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.get_json()
     user_input = data.get('user_input', '').strip()
+    project = data.get('project', 'Personal Operating Manual')
     
     if not user_input:
         return jsonify({'error': 'No input provided'}), 400
     
-    # Simple test response - replace with full pipeline once Swift app is working
-    return jsonify({
-        'success': True,
-        'responses': {
-            'SyntaxPrime': f'Test response to: {user_input}'
-        }
-    })
-
-# TODO: Replace above with full mobile chat implementation once Swift app is tested:
-# @app.route('/api/mobile/chat', methods=['POST'])
-# def mobile_chat_full():
-#     """Full mobile chat endpoint"""
-#     if not is_mobile_authenticated():
-#         return jsonify({'error': 'Unauthorized'}), 401
-#
-#     data = request.get_json()
-#     user_input = data.get('user_input', '').strip()
-#     project = data.get('project', 'Personal Operating Manual')
-#     use_voices = data.get('voices', ['SyntaxPrime'])
-#     random_toggle = data.get('random', False)
-#
-#     if not user_input:
-#         return jsonify({'error': 'No input provided'}), 400
-#
-#     try:
-#         retrieval_ctx = enhanced_retrieve(user_input, k=5) if is_ready() else []
-#         response_data = generate_response(
-#             user_input, use_voices, random_toggle,
-#             project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
-#         )
-#
-#         save_conversation_enhanced(project, user_input, response_data)
-#
-#         return jsonify({
-#             'success': True,
-#             'responses': response_data
-#         })
-#
-#     except Exception as e:
-#         return jsonify({'error': str(e)}), 500
+    try:
+        # Add back brain retrieval
+        retrieval_ctx = enhanced_retrieve(user_input, k=5) if is_ready() else []
+        
+        # For now, just return a response with context info
+        context_info = f"Found {len(retrieval_ctx)} brain results" if retrieval_ctx else "No brain context"
+        
+        return jsonify({
+            'success': True,
+            'responses': {
+                'SyntaxPrime': f"Brain-enhanced response to '{user_input}' - {context_info}"
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 def is_mobile_authenticated():
     """Check if mobile client is authenticated via JWT or session"""
