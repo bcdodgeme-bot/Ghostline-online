@@ -1,4 +1,5 @@
-# modules/file_processing.py - File Processing Module
+# modules/file_processing.py - UPDATED for integrated chat flow
+# Fixes Entry #4: Now keeps file analysis in the conversational thread
 
 import os
 import io
@@ -8,7 +9,7 @@ import fitz
 import docx
 import markdown
 from markupsafe import Markup
-from flask import request, redirect
+from flask import request, redirect, jsonify, current_app
 from utils.ghostline_engine import generate_response
 from utils.rag_basic import is_ready
 from modules.database import save_conversation_enhanced, track_uploaded_file
@@ -174,104 +175,97 @@ def markdown_filter(text):
     md = markdown.Markdown(extensions=['nl2br', 'fenced_code'])
     return Markup(md.convert(text))
 
-def handle_file_upload():
-    """Handle file upload processing"""
-    try:
-        file = request.files.get('file')
-        if not file or not file.filename:
-            return "No file uploaded", 400
-        
-        # Get current project from form or session
-        project = request.form.get('project', PROJECTS[0])
-        filename = file.filename.lower()
-        text = ""
-        
-        print(f"Processing file: {filename} for project: {project}")
+def process_single_file(file, project):
+    """Process a single file and return analysis data - NEW FUNCTION"""
+    filename = file.filename.lower()
+    text = ""
+    
+    print(f"Processing file: {filename} for project: {project}")
 
-        # Process different file types
-        if filename.endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
-            text = process_image_ocr(file.stream, filename)
+    # Process different file types
+    if filename.endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
+        text = process_image_ocr(file.stream, filename)
+            
+    elif filename.endswith('.pdf'):
+        try:
+            file.stream.seek(0)
+            data = file.read()
+            
+            if not data:
+                raise Exception("PDF file appears to be empty")
+            
+            doc = fitz.open(stream=data, filetype="pdf")
+            
+            if doc.page_count == 0:
+                raise Exception("PDF has no pages")
+            
+            text_parts = []
+            for page_num in range(doc.page_count):
+                page = doc[page_num]
+                page_text = page.get_text()
+                if page_text.strip():
+                    text_parts.append(f"=== Page {page_num + 1} ===\n{page_text}")
+            
+            text = "\n\n".join(text_parts)
+            doc.close()
+            
+            if not text.strip():
+                text = "No text found in PDF (may be image-based or encrypted)"
                 
-        elif filename.endswith('.pdf'):
-            try:
-                file.stream.seek(0)
-                data = file.read()
+        except Exception as e:
+            print(f"PDF processing failed: {e}")
+            raise Exception(f"PDF Error: {str(e)}")
+            
+    elif filename.endswith('.docx'):
+        try:
+            file.stream.seek(0)
+            file_data = file.read()
+            
+            if not file_data:
+                raise Exception("Word document appears to be empty")
+            
+            file_stream = io.BytesIO(file_data)
+            document = docx.Document(file_stream)
+            
+            paragraphs = [p.text for p in document.paragraphs if p.text.strip()]
+            
+            tables_text = []
+            for table in document.tables:
+                for row in table.rows:
+                    row_text = [cell.text.strip() for cell in row.cells if cell.text.strip()]
+                    if row_text:
+                        tables_text.append(" | ".join(row_text))
+            
+            all_text = []
+            if paragraphs:
+                all_text.extend(paragraphs)
+            if tables_text:
+                all_text.append("\n=== Tables ===")
+                all_text.extend(tables_text)
+            
+            text = "\n".join(all_text)
+            
+            if not text.strip():
+                text = "No readable text found in Word document"
                 
-                if not data:
-                    return "PDF file appears to be empty", 400
-                
-                doc = fitz.open(stream=data, filetype="pdf")
-                
-                if doc.page_count == 0:
-                    return "PDF has no pages", 400
-                
-                text_parts = []
-                for page_num in range(doc.page_count):
-                    page = doc[page_num]
-                    page_text = page.get_text()
-                    if page_text.strip():
-                        text_parts.append(f"=== Page {page_num + 1} ===\n{page_text}")
-                
-                text = "\n\n".join(text_parts)
-                doc.close()
-                
-                if not text.strip():
-                    text = "No text found in PDF (may be image-based or encrypted)"
-                    
-            except Exception as e:
-                print(f"PDF processing failed: {e}")
-                return f"PDF Error: {str(e)}", 500
-                
-        elif filename.endswith('.docx'):
-            try:
-                file.stream.seek(0)
-                file_data = file.read()
-                
-                if not file_data:
-                    return "Word document appears to be empty", 400
-                
-                file_stream = io.BytesIO(file_data)
-                document = docx.Document(file_stream)
-                
-                paragraphs = [p.text for p in document.paragraphs if p.text.strip()]
-                
-                tables_text = []
-                for table in document.tables:
-                    for row in table.rows:
-                        row_text = [cell.text.strip() for cell in row.cells if cell.text.strip()]
-                        if row_text:
-                            tables_text.append(" | ".join(row_text))
-                
-                all_text = []
-                if paragraphs:
-                    all_text.extend(paragraphs)
-                if tables_text:
-                    all_text.append("\n=== Tables ===")
-                    all_text.extend(tables_text)
-                
-                text = "\n".join(all_text)
-                
-                if not text.strip():
-                    text = "No readable text found in Word document"
-                    
-            except Exception as e:
-                print(f"Word document processing failed: {e}")
-                return f"Word Document Error: {str(e)}", 500
-                
-        else:
-            return "Unsupported file type. Supported: PNG, JPG, JPEG, GIF, BMP, PDF, DOCX", 400
+        except Exception as e:
+            print(f"Word document processing failed: {e}")
+            raise Exception(f"Word Document Error: {str(e)}")
+            
+    else:
+        raise Exception(f"Unsupported file type: {filename}. Supported: PNG, JPG, JPEG, GIF, BMP, PDF, DOCX")
 
-        # Truncate if too long
-        if len(text) > 15000:
-            text = text[:15000] + "\n\n[...Content truncated...]"
-        
-        # Check if OCR results are meaningful (fallback logic)
-        text_words = len(text.split()) if text else 0
-        is_image_file = filename.endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp'))
-        
-        # UPDATED TASK EXTRACTION LOGIC - Phase 2 fix
-        if filename.endswith(('.pdf', '.docx')):
-            analysis_prompt = f"""EXTRACT ACTIONABLE TASKS from this document: '{file.filename}'
+    # Truncate if too long
+    if len(text) > 15000:
+        text = text[:15000] + "\n\n[...Content truncated...]"
+    
+    # Check if OCR results are meaningful (fallback logic)
+    text_words = len(text.split()) if text else 0
+    is_image_file = filename.endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp'))
+    
+    # Generate analysis prompt based on file type and content
+    if filename.endswith(('.pdf', '.docx')):
+        analysis_prompt = f"""EXTRACT ACTIONABLE TASKS from this document: '{file.filename}'
 
 DOCUMENT CONTENT:
 {text}
@@ -299,14 +293,14 @@ REQUIRED OUTPUT FORMAT:
 
 Focus on creating structured, scannable output that transforms document content into actionable work items."""
 
-        elif is_image_file and text_words < 5:
-            # Poor OCR results - switch to GPT-4 Vision analysis
-            print(f"OCR extracted only {text_words} words, switching to vision analysis")
-            
-            # Get vision analysis
-            vision_description = analyze_image_with_vision(file.stream, file.filename)
-            
-            analysis_prompt = f"""I've uploaded an image file '{file.filename}'. OCR only extracted: "{text.strip()}"
+    elif is_image_file and text_words < 5:
+        # Poor OCR results - switch to GPT-4 Vision analysis
+        print(f"OCR extracted only {text_words} words, switching to vision analysis")
+        
+        # Get vision analysis
+        vision_description = analyze_image_with_vision(file.stream, file.filename)
+        
+        analysis_prompt = f"""I've uploaded an image file '{file.filename}'. OCR only extracted: "{text.strip()}"
 
 Since the text was minimal, I analyzed the image visually instead:
 
@@ -320,9 +314,9 @@ Since the text was minimal, I analyzed the image visually instead:
 
 Please provide insights based on this visual analysis."""
 
-        else:
-            # Good OCR results or other file types - proceed with generic analysis
-            analysis_prompt = f"""I've uploaded and processed the file '{file.filename}'. Here's what was extracted:
+    else:
+        # Good OCR results or other file types - proceed with generic analysis
+        analysis_prompt = f"""I've uploaded and processed the file '{file.filename}'. Here's what was extracted:
 
 === EXTRACTED CONTENT ===
 {text}
@@ -336,13 +330,85 @@ Please provide insights based on this visual analysis."""
 
 Please analyze this content and provide insights, summaries, or answer any questions about what you see."""
 
-        print(f"File processing successful: {len(text)} characters extracted")
+    print(f"File processing successful: {len(text)} characters extracted")
+    
+    return {
+        'filename': file.filename,
+        'analysis_prompt': analysis_prompt,
+        'extracted_text': text,
+        'file_size': len(file.read()) if hasattr(file, 'read') else 0
+    }
 
-        # Get AI voices from form or use default
+def handle_file_upload():
+    """UPDATED: Handle file upload processing for integrated chat flow"""
+    try:
+        files = request.files.getlist('file')  # Handle multiple files
+        if not files or not files[0].filename:
+            return jsonify({'error': 'No files uploaded'}), 400
+        
+        # Get current project from form or session
+        project = request.form.get('project', PROJECTS[0])
+        
+        # Process all uploaded files
+        file_analyses = []
+        for file in files:
+            if file and file.filename:
+                try:
+                    file_data = process_single_file(file, project)
+                    file_analyses.append(file_data)
+                except Exception as e:
+                    # Log error but continue with other files
+                    print(f"Failed to process {file.filename}: {e}")
+                    file_analyses.append({
+                        'filename': file.filename,
+                        'error': str(e)
+                    })
+        
+        if not file_analyses:
+            return jsonify({'error': 'No files could be processed'}), 400
+        
+        # Create combined analysis prompt for multiple files
+        if len(file_analyses) == 1:
+            # Single file
+            file_data = file_analyses[0]
+            if 'error' in file_data:
+                return jsonify({'error': f"File processing failed: {file_data['error']}"}), 400
+            
+            analysis_prompt = file_data['analysis_prompt']
+            user_message = f"📎 {file_data['filename']}"
+            
+        else:
+            # Multiple files
+            successful_files = [f for f in file_analyses if 'error' not in f]
+            failed_files = [f for f in file_analyses if 'error' in f]
+            
+            if not successful_files:
+                errors = [f"{f['filename']}: {f['error']}" for f in failed_files]
+                return jsonify({'error': f"All files failed to process: {'; '.join(errors)}"}), 400
+            
+            # Combine analysis prompts
+            analysis_parts = []
+            analysis_parts.append(f"I've uploaded {len(successful_files)} files for analysis:")
+            
+            for i, file_data in enumerate(successful_files, 1):
+                analysis_parts.append(f"\n=== FILE {i}: {file_data['filename']} ===")
+                analysis_parts.append(file_data['extracted_text'])
+            
+            if failed_files:
+                analysis_parts.append(f"\n=== PROCESSING ERRORS ===")
+                for failed in failed_files:
+                    analysis_parts.append(f"- {failed['filename']}: {failed['error']}")
+            
+            analysis_parts.append(f"\nPlease analyze the successfully processed files and provide insights, summaries, or actionable items from the content.")
+            
+            analysis_prompt = "\n".join(analysis_parts)
+            filenames = [f['filename'] for f in successful_files]
+            user_message = f"📎 {', '.join(filenames)}"
+        
+        # Generate AI analysis
         use_voices = ['SyntaxPrime']  # Default to SyntaxPrime for file analysis
         random_toggle = False
-
-        # Generate AI analysis
+        
         try:
             retrieval_ctx = enhanced_retrieve(analysis_prompt, k=5) if is_ready() else []
             response_data = generate_response(
@@ -351,22 +417,71 @@ Please analyze this content and provide insights, summaries, or answer any quest
             )
         except Exception as e:
             print(f"AI analysis failed: {e}")
+            response_data = {"SyntaxPrime": f"Files processed successfully, but AI analysis failed: {e}"}
+
+        # Save to database and track file uploads
+        save_conversation_enhanced(project, user_message, response_data)
+        
+        # Track each uploaded file in database
+        for file_data in file_analyses:
+            if 'error' not in file_data:
+                filename = file_data['filename']
+                file_extension = filename.split('.')[-1].upper() if '.' in filename else 'UNKNOWN'
+                content_summary = file_data['extracted_text'][:500] if file_data['extracted_text'] else "No text extracted"
+                track_uploaded_file(filename, file_extension, project, content_summary)
+        
+        # CRITICAL FIX: Return success status for AJAX handling
+        return jsonify({
+            'success': True,
+            'message': 'Files processed successfully',
+            'project': project,
+            'files_processed': len(successful_files) if len(file_analyses) > 1 else 1
+        })
+        
+    except Exception as e:
+        print(f"Upload route failed: {e}")
+        current_app.logger.error(f"File upload error: {e}")
+        return jsonify({'error': f'Upload failed: {str(e)}'}), 500
+
+# BACKWARD COMPATIBILITY: Keep original function as fallback
+def handle_file_upload_legacy():
+    """Original file upload handler for backward compatibility"""
+    try:
+        file = request.files.get('file')
+        if not file or not file.filename:
+            return "No file uploaded", 400
+        
+        project = request.form.get('project', PROJECTS[0])
+        
+        # Process single file using new function
+        file_data = process_single_file(file, project)
+        
+        # Generate AI analysis
+        use_voices = ['SyntaxPrime']
+        random_toggle = False
+        
+        try:
+            retrieval_ctx = enhanced_retrieve(file_data['analysis_prompt'], k=5) if is_ready() else []
+            response_data = generate_response(
+                file_data['analysis_prompt'], use_voices, random_toggle,
+                project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+            )
+        except Exception as e:
+            print(f"AI analysis failed: {e}")
             response_data = {"SyntaxPrime": f"File processed successfully, but AI analysis failed: {e}"}
 
-        # Save to database and track file upload
+        # Save to database
         user_message = f"[File Upload] {file.filename}"
         save_conversation_enhanced(project, user_message, response_data)
         
-        # Track the uploaded file in database
-        file_extension = filename.split('.')[-1].upper() if '.' in filename else 'UNKNOWN'
-        content_summary = text[:500] if text else "No text extracted"
+        # Track the uploaded file
+        file_extension = file.filename.split('.')[-1].upper() if '.' in file.filename else 'UNKNOWN'
+        content_summary = file_data['extracted_text'][:500] if file_data['extracted_text'] else "No text extracted"
         track_uploaded_file(file.filename, file_extension, project, content_summary)
 
         # Redirect back to main chat with the analysis
         return redirect(f'/?project={project}#bottom-anchor')
         
     except Exception as e:
-        print(f"Upload route failed: {e}")
-        import traceback
-        print(f"Full traceback: {traceback.format_exc()}")
+        print(f"Legacy upload route failed: {e}")
         return f"Upload Error: {str(e)}", 500

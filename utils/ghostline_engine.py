@@ -2,21 +2,17 @@
 
 import os
 import json
+import requests
 from datetime import datetime
 from typing import Optional, Iterable, List, Dict
 
-from openai import OpenAI
-
 # -------- OpenRouter client setup --------
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+
 if not OPENROUTER_API_KEY:
     # You will get a clear error at runtime if you call the API without this.
     pass
-
-_client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=OPENROUTER_API_KEY,
-)
 
 ANSWER_RULES = (
     "Answer ONLY the latest user message. "
@@ -25,6 +21,70 @@ ANSWER_RULES = (
     "Be direct, helpful, and stay in persona. "
     "One clean answer—no preambles like 'Certainly' or 'Here's your response'."
 )
+
+# ---- OpenRouter HTTP client class ----
+class OpenRouterClient:
+    def __init__(self, api_key: str, base_url: str):
+        self.api_key = api_key
+        self.base_url = base_url
+    
+    def _make_request(self, endpoint: str, data: dict, stream: bool = False):
+        """Make HTTP request to OpenRouter API"""
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://ghostline.ai",  # Optional: helps with rate limits
+            "X-Title": "Ghostline AI"  # Optional: shows in OpenRouter logs
+        }
+        
+        url = f"{self.base_url}/{endpoint}"
+        
+        if stream:
+            data["stream"] = True
+            response = requests.post(url, headers=headers, json=data, stream=True, timeout=60)
+        else:
+            response = requests.post(url, headers=headers, json=data, timeout=60)
+        
+        response.raise_for_status()
+        return response
+    
+    def chat_completion(self, model: str, messages: List[Dict], temperature: float = 0.7, stream: bool = False):
+        """Create chat completion"""
+        data = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature
+        }
+        
+        if stream:
+            return self._stream_completion(data)
+        else:
+            response = self._make_request("chat/completions", data)
+            return response.json()
+    
+    def _stream_completion(self, data: dict):
+        """Handle streaming completion"""
+        response = self._make_request("chat/completions", data, stream=True)
+        
+        for line in response.iter_lines():
+            if line:
+                line = line.decode('utf-8')
+                if line.startswith('data: '):
+                    line = line[6:]  # Remove 'data: ' prefix
+                    if line.strip() == '[DONE]':
+                        break
+                    try:
+                        chunk = json.loads(line)
+                        if 'choices' in chunk and len(chunk['choices']) > 0:
+                            delta = chunk['choices'][0].get('delta', {})
+                            content = delta.get('content', '')
+                            if content:
+                                yield content
+                    except json.JSONDecodeError:
+                        continue
+
+# Create client instance
+_client = OpenRouterClient(OPENROUTER_API_KEY, OPENROUTER_BASE_URL)
 
 # ---- Minimal per-project user-only history helpers ----
 def _estimate_tokens(text: str) -> int:
@@ -129,16 +189,28 @@ def generate_response(
             + "\n\nRespond now as one clean answer (no transcripts)."
         )
 
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+
         try:
-            resp = _client.chat.completions.create(
+            response = _client.chat_completion(
                 model=model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                temperature=0.7 if randomize else 0.2,
+                messages=messages,
+                temperature=0.7 if randomize else 0.2
             )
-            text = (resp.choices[0].message.content or "").strip()
+            
+            text = ""
+            if 'choices' in response and len(response['choices']) > 0:
+                message = response['choices'][0].get('message', {})
+                text = (message.get('content') or "").strip()
+            
+            if not text:
+                text = "(Empty response from API)"
+                
+        except requests.exceptions.RequestException as e:
+            text = f"(API request error: {e})"
         except Exception as e:
             text = f"(Generation error: {e})"
 
@@ -175,22 +247,20 @@ def stream_generate(
         + "\n\nRespond now as one clean answer (no transcripts)."
     )
 
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+    ]
+
     try:
-        stream = _client.chat.completions.create(
+        for chunk in _client.chat_completion(
             model=model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
+            messages=messages,
             temperature=0.2,
-            stream=True,
-        )
-        for event in stream:
-            delta = getattr(event.choices[0].delta, "content", None)
-            if delta:
-                yield delta
+            stream=True
+        ):
+            yield chunk
+    except requests.exceptions.RequestException as e:
+        yield f"(API request error: {e})"
     except Exception as e:
         yield f"(Generation error: {e})"
-
-
-

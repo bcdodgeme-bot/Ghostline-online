@@ -124,6 +124,25 @@ personality_integration = PersonalityIntegration()
 # Add this after your existing imports in Section 1
 import datetime
 
+# ADD THIS TO THE APP STARTUP SECTION IN app.py (at the end)
+# Only start automated backups on Railway
+if os.getenv('RAILWAY_ENVIRONMENT') and not os.getenv('DISABLE_AUTO_BACKUPS'):
+    # Start automated backups after a 5-minute delay to allow app to fully initialize
+    def delayed_backup_start():
+        import time
+        time.sleep(300)  # 5 minute delay
+        try:
+            start_automated_backups()
+            print("✅ Automated backups started successfully")
+        except Exception as e:
+            print(f"❌ Failed to start automated backups: {e}")
+    
+    backup_startup_thread = threading.Thread(target=delayed_backup_start, daemon=True)
+    backup_startup_thread.start()
+    print("🔄 Scheduled automated backup startup in 5 minutes")
+else:
+    print("⚠️ Automated backups disabled (set RAILWAY_ENVIRONMENT to enable)")
+
 # Section 2: Database Connection and Management Functions
 # Section 2: Database Imports and Initialization
 from modules.database import (
@@ -476,14 +495,22 @@ def brain_control():
     
     return get_brain_control_dashboard()
 # Section 8: File Upload and Processing Route
-
+# Section 8: File Upload and Processing Route
+# Section 8: File Upload and Processing Route
 # Section 8: File Upload and Processing Route
 
 from modules.file_processing import handle_file_upload
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    return handle_file_upload()
+    """Updated upload handler for integrated chat flow"""
+    # Check authentication
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    # Use the updated file processing handler
+    return handle_file_upload()  # This now returns JSON response
+
 
 # Section 9: Other Routes - Streaming, Database Dashboard, and Utilities
 # Section 9: Other Routes - Streaming, Database Dashboard, and Utilities
@@ -3571,6 +3598,8 @@ def tts_test():
 
 # Section 17: Mobile API Endpoints
 # Section 17: Mobile API Endpoints
+# Section 17: Mobile API Endpoints
+# Section 17: Mobile API Endpoints
 @app.route('/api/mobile/auth', methods=['POST'])
 def mobile_auth():
     """JWT authentication for mobile clients"""
@@ -3694,28 +3723,6 @@ def mobile_conversations(project):
         }
     })
 
-# Helper function for mobile auth
-def is_mobile_authenticated():
-    """Check if mobile client is authenticated via JWT or session"""
-    # Check session first (for web clients)
-    if session.get('logged_in'):
-        return True
-    
-    # Check JWT token in Authorization header
-    if JWT_AVAILABLE:
-        auth_header = request.headers.get('Authorization')
-        if auth_header and auth_header.startswith('Bearer '):
-            try:
-                token = auth_header.split(' ')[1]
-                payload = jwt.decode(token, app.secret_key, algorithms=['HS256'])
-                return payload.get('authenticated', False)
-            except:
-                return False
-    
-    return False
-
-# Add this route to Section 17: Mobile API Endpoints in your app.py
-
 @app.route('/api/mobile/chat', methods=['POST'])
 def mobile_chat():
     """Simple chat endpoint for mobile app"""
@@ -3749,6 +3756,26 @@ def mobile_chat():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# Helper function for mobile auth
+def is_mobile_authenticated():
+    """Check if mobile client is authenticated via JWT or session"""
+    # Check session first (for web clients)
+    if session.get('logged_in'):
+        return True
+    
+    # Check JWT token in Authorization header
+    if JWT_AVAILABLE:
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            try:
+                token = auth_header.split(' ')[1]
+                payload = jwt.decode(token, app.secret_key, algorithms=['HS256'])
+                return payload.get('authenticated', False)
+            except:
+                return False
+    
+    return False
 
 # Section 18: Google OAuth Integration Routes
 # Section 18: Google OAuth Integration Routes
@@ -4351,6 +4378,583 @@ def google_setup_page():
     </body>
     </html>
     """, callback_url=callback_url)
+
+# Section 19: Automated Backup & Maintenance Routes
+# Section 19: Automated Backup & Maintenance Routes
+
+from modules.backup_maintenance import (
+    backup_manager,
+    backup_scheduler,
+    get_backup_status,
+    start_automated_backups,
+    stop_automated_backups
+)
+
+@app.route('/backup')
+def backup_dashboard():
+    """Backup and maintenance dashboard"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    return render_template_string("""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Backup & Maintenance Dashboard</title>
+        <style>
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
+            }
+            .container { max-width: 1200px; margin: 0 auto; }
+            .status-box { 
+                background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
+                padding: 20px; margin: 20px 0; 
+            }
+            .btn { 
+                background: #6366f1; color: white; border: none; padding: 12px 24px;
+                border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
+                text-decoration: none; display: inline-block;
+            }
+            .btn:hover { background: #5855eb; }
+            .btn.success { background: #059669; }
+            .btn.success:hover { background: #047857; }
+            .btn.warning { background: #d97706; }
+            .btn.danger { background: #dc2626; }
+            .btn.secondary { background: #374151; }
+            .btn.secondary:hover { background: #4b5563; }
+            
+            .backup-grid {
+                display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 15px; margin: 20px 0;
+            }
+            .backup-card {
+                background: #2a2a2a; padding: 15px; border-radius: 8px;
+                border: 1px solid #404040;
+            }
+            .backup-filename { 
+                font-family: monospace; font-size: 12px; 
+                background: #1a1a1a; padding: 5px; border-radius: 4px; margin: 5px 0;
+                word-break: break-all;
+            }
+            .backup-size { color: #10b981; font-weight: bold; }
+            .backup-date { color: #6b7280; font-size: 12px; }
+            
+            .progress-bar {
+                width: 100%; height: 20px; background: #1a1a1a; border-radius: 10px;
+                overflow: hidden; margin: 10px 0;
+            }
+            .progress-fill {
+                height: 100%; background: #059669; transition: width 0.3s;
+            }
+            
+            .log-output {
+                background: #1a1a1a; border: 1px solid #333; border-radius: 8px;
+                padding: 15px; font-family: monospace; font-size: 12px;
+                max-height: 300px; overflow-y: auto; white-space: pre-wrap;
+                margin: 15px 0;
+            }
+            
+            .success { color: #10b981; }
+            .error { color: #ef4444; }
+            .warning { color: #f59e0b; }
+            .info { color: #3b82f6; }
+            
+            .feature-card {
+                background: #2a2a2a; padding: 20px; border-radius: 8px;
+                border: 1px solid #404040; text-align: center;
+            }
+            .feature-icon { font-size: 2.5em; margin-bottom: 15px; }
+            
+            .stats-grid {
+                display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px; margin: 20px 0;
+            }
+            .stat-box {
+                background: #2a2a2a; padding: 15px; border-radius: 8px; text-align: center;
+            }
+            .stat-number { font-size: 24px; font-weight: bold; color: #10b981; }
+            .stat-label { color: #9ca3af; margin-top: 5px; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🔄 Backup & Maintenance Dashboard</h1>
+            <p>Automated database backups, knowledge base reindexing, and system maintenance for Ghostline AI.</p>
+            
+            <div class="status-box">
+                <h3>System Status</h3>
+                <div id="status">Loading...</div>
+                
+                <div class="stats-grid" id="stats">
+                    <!-- Stats will be loaded here -->
+                </div>
+            </div>
+            
+            <div class="status-box">
+                <h3>Manual Operations</h3>
+                <div style="margin: 15px 0;">
+                    <button class="btn success" onclick="createDatabaseBackup()">💾 Database Backup</button>
+                    <button class="btn success" onclick="createBrainBackup()">🧠 Brain Backup</button>
+                    <button class="btn warning" onclick="createFullBackup()">📦 Full System Backup</button>
+                    <button class="btn" onclick="reindexKnowledge()">🔍 Reindex Knowledge Base</button>
+                    <button class="btn warning" onclick="performMaintenance()">🔧 Full Maintenance</button>
+                </div>
+                
+                <div style="margin: 15px 0;">
+                    <button class="btn secondary" id="scheduler-btn" onclick="toggleScheduler()">
+                        ⏰ Start Automated Backups
+                    </button>
+                    <button class="btn secondary" onclick="refreshStatus()">🔄 Refresh</button>
+                    <button class="btn secondary" onclick="downloadLogs()">📋 Download Logs</button>
+                </div>
+            </div>
+            
+            <div class="status-box">
+                <h3>Operation Progress</h3>
+                <div id="progress-section" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill" style="width: 0%;"></div>
+                    </div>
+                    <div id="progress-text">Ready...</div>
+                </div>
+                
+                <div class="log-output" id="operation-log">
+Ready for backup operations...
+Use the buttons above to start manual backups or enable automated scheduling.
+
+Automated backups run daily at 2 AM and include:
+- Full database export with compression
+- Knowledge base documents backup
+- System configuration snapshot
+- Automatic cleanup of old backups (keeps 7 days)
+                </div>
+            </div>
+            
+            <div class="status-box">
+                <h3>Recent Backups</h3>
+                <div id="backup-list">
+                    <div class="backup-grid" id="backup-grid">
+                        <!-- Recent backups will be loaded here -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="status-box">
+                <h3>Backup Features</h3>
+                <div class="backup-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🛡️</div>
+                        <h4>Railway Compatible</h4>
+                        <p>Uses pg_dump for PostgreSQL backups with Railway deployment support</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📊</div>
+                        <h4>Smart Compression</h4>
+                        <p>Gzip compression reduces backup sizes by 80-90% while maintaining data integrity</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🧠</div>
+                        <h4>Knowledge Base</h4>
+                        <p>Separate brain document backups with full-text search index rebuilding</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">⏰</div>
+                        <h4>Automated Schedule</h4>
+                        <p>Daily backups at 2 AM with automatic cleanup and maintenance cycles</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔄</div>
+                        <h4>Multiple Strategies</h4>
+                        <p>Fallback methods ensure backups work even if pg_dump is unavailable</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📈</div>
+                        <h4>Health Monitoring</h4>
+                        <p>Database optimization, index rebuilding, and performance monitoring</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="status-box">
+                <a href="/" class="btn secondary">← Back to Chat</a>
+                <a href="/brain" class="btn secondary">🧠 Brain Dashboard</a>
+                <a href="/database" class="btn secondary">💾 Database Dashboard</a>
+            </div>
+        </div>
+        
+        <script>
+            let operationInProgress = false;
+            
+            function refreshStatus() {
+                fetch('/backup/status')
+                    .then(r => r.json())
+                    .then(data => {
+                        updateStatusDisplay(data);
+                        updateBackupList(data.recent_backups);
+                        updateStats(data);
+                    })
+                    .catch(e => {
+                        document.getElementById('status').innerHTML = '<span class="error">❌ Status check failed</span>';
+                        console.error('Status refresh failed:', e);
+                    });
+            }
+            
+            function updateStatusDisplay(data) {
+                const statusDiv = document.getElementById('status');
+                const schedulerBtn = document.getElementById('scheduler-btn');
+                
+                let html = '';
+                
+                if (data.scheduler_running) {
+                    html += '<span class="success">✅ Automated backups running</span><br>';
+                    schedulerBtn.textContent = '⏸️ Stop Automated Backups';
+                    schedulerBtn.onclick = () => toggleScheduler(false);
+                } else {
+                    html += '<span class="warning">⚠️ Automated backups stopped</span><br>';
+                    schedulerBtn.textContent = '▶️ Start Automated Backups';
+                    schedulerBtn.onclick = () => toggleScheduler(true);
+                }
+                
+                html += `<strong>Backup Directory:</strong> ${data.backup_directory}<br>`;
+                html += `<strong>Database:</strong> ${data.database_status.connection_working ? '✅ Connected' : '❌ Disconnected'}<br>`;
+                html += `<strong>Brain Status:</strong> ${data.brain_status.status === 'complete' ? '✅ Ready' : '⚠️ ' + data.brain_status.status}`;
+                
+                statusDiv.innerHTML = html;
+            }
+            
+            function updateStats(data) {
+                const statsDiv = document.getElementById('stats');
+                
+                const totalBackups = data.recent_backups ? data.recent_backups.length : 0;
+                const totalSize = data.recent_backups ? 
+                    data.recent_backups.reduce((sum, backup) => sum + (backup.size_bytes || 0), 0) : 0;
+                const lastBackup = data.recent_backups && data.recent_backups.length > 0 ? 
+                    new Date(data.recent_backups[0].created).toLocaleDateString() : 'Never';
+                
+                statsDiv.innerHTML = `
+                    <div class="stat-box">
+                        <div class="stat-number">${totalBackups}</div>
+                        <div class="stat-label">Total Backups</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">${formatBytes(totalSize)}</div>
+                        <div class="stat-label">Total Size</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">${lastBackup}</div>
+                        <div class="stat-label">Last Backup</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">${data.database_status.conversation_count || 0}</div>
+                        <div class="stat-label">Conversations</div>
+                    </div>
+                `;
+            }
+            
+            function updateBackupList(backups) {
+                const gridDiv = document.getElementById('backup-grid');
+                
+                if (!backups || backups.length === 0) {
+                    gridDiv.innerHTML = '<p>No backups found</p>';
+                    return;
+                }
+                
+                gridDiv.innerHTML = backups.map(backup => `
+                    <div class="backup-card">
+                        <div class="backup-filename">${backup.filename}</div>
+                        <div class="backup-size">${formatBytes(backup.size_bytes)}</div>
+                        <div class="backup-date">${new Date(backup.created).toLocaleString()}</div>
+                        <button class="btn secondary" onclick="downloadBackup('${backup.filename}')" 
+                                style="margin-top: 10px; padding: 8px 16px; font-size: 12px;">
+                            💾 Download
+                        </button>
+                    </div>
+                `).join('');
+            }
+            
+            function formatBytes(bytes) {
+                if (bytes === 0) return '0 B';
+                const k = 1024;
+                const sizes = ['B', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+            
+            function toggleScheduler(start = null) {
+                if (operationInProgress) return;
+                
+                const action = start !== null ? start : !document.getElementById('scheduler-btn').textContent.includes('Stop');
+                const endpoint = action ? '/backup/start-scheduler' : '/backup/stop-scheduler';
+                
+                operationInProgress = true;
+                showProgress('Updating scheduler...', 0);
+                
+                fetch(endpoint, { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            addToLog(`✅ Scheduler ${action ? 'started' : 'stopped'} successfully`);
+                            refreshStatus();
+                        } else {
+                            addToLog(`❌ Failed to ${action ? 'start' : 'stop'} scheduler: ${data.error}`);
+                        }
+                    })
+                    .catch(e => {
+                        addToLog(`❌ Scheduler operation failed: ${e.message}`);
+                    })
+                    .finally(() => {
+                        operationInProgress = false;
+                        hideProgress();
+                    });
+            }
+            
+            function createDatabaseBackup() {
+                if (operationInProgress) return;
+                executeOperation('/backup/create-database', 'Creating database backup...');
+            }
+            
+            function createBrainBackup() {
+                if (operationInProgress) return;
+                executeOperation('/backup/create-brain', 'Creating brain backup...');
+            }
+            
+            function createFullBackup() {
+                if (operationInProgress) return;
+                executeOperation('/backup/create-full', 'Creating full system backup...');
+            }
+            
+            function reindexKnowledge() {
+                if (operationInProgress) return;
+                executeOperation('/backup/reindex', 'Reindexing knowledge base...');
+            }
+            
+            function performMaintenance() {
+                if (operationInProgress) return;
+                executeOperation('/backup/maintenance', 'Performing full maintenance...');
+            }
+            
+            function executeOperation(endpoint, message) {
+                operationInProgress = true;
+                showProgress(message, 10);
+                addToLog(`🔄 ${message}`);
+                
+                fetch(endpoint, { method: 'POST' })
+                    .then(response => {
+                        showProgress(message, 50);
+                        return response.json();
+                    })
+                    .then(data => {
+                        showProgress('Processing results...', 90);
+                        
+                        if (data.success) {
+                            addToLog(`✅ Operation completed successfully`);
+                            
+                            if (data.backup_files) {
+                                data.backup_files.forEach(file => {
+                                    addToLog(`📁 Created: ${file}`);
+                                });
+                            }
+                            
+                            if (data.size_bytes) {
+                                addToLog(`💾 Size: ${formatBytes(data.size_bytes)}`);
+                            }
+                            
+                            if (data.operations) {
+                                data.operations.forEach(op => {
+                                    addToLog(`📋 ${op}`);
+                                });
+                            }
+                            
+                            refreshStatus(); // Refresh to show new backup
+                        } else {
+                            addToLog(`❌ Operation failed: ${data.error || 'Unknown error'}`);
+                        }
+                    })
+                    .catch(e => {
+                        addToLog(`❌ Operation failed: ${e.message}`);
+                    })
+                    .finally(() => {
+                        operationInProgress = false;
+                        hideProgress();
+                    });
+            }
+            
+            function showProgress(text, percent) {
+                const progressSection = document.getElementById('progress-section');
+                const progressFill = document.getElementById('progress-fill');
+                const progressText = document.getElementById('progress-text');
+                
+                progressSection.style.display = 'block';
+                progressFill.style.width = percent + '%';
+                progressText.textContent = text;
+            }
+            
+            function hideProgress() {
+                const progressSection = document.getElementById('progress-section');
+                progressSection.style.display = 'none';
+            }
+            
+            function addToLog(message) {
+                const logDiv = document.getElementById('operation-log');
+                const timestamp = new Date().toLocaleTimeString();
+                logDiv.textContent += `\\n[${timestamp}] ${message}`;
+                logDiv.scrollTop = logDiv.scrollHeight;
+            }
+            
+            function downloadBackup(filename) {
+                window.open(`/backup/download/${encodeURIComponent(filename)}`, '_blank');
+            }
+            
+            function downloadLogs() {
+                const logs = document.getElementById('operation-log').textContent;
+                const blob = new Blob([logs], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `backup_logs_${new Date().toISOString().slice(0,10)}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+            
+            // Auto-refresh every 30 seconds
+            refreshStatus();
+            setInterval(refreshStatus, 30000);
+        </script>
+    </body>
+    </html>
+    """)
+
+@app.route('/backup/status')
+def backup_status_api():
+    """Get backup system status"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        return jsonify(get_backup_status())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/backup/create-database', methods=['POST'])
+def create_database_backup():
+    """Create database backup"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        result = backup_manager.create_database_backup()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/backup/create-brain', methods=['POST'])
+def create_brain_backup():
+    """Create brain backup"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        result = backup_manager.create_brain_backup()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/backup/create-full', methods=['POST'])
+def create_full_backup():
+    """Create full system backup"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        result = backup_manager.create_full_system_backup()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/backup/reindex', methods=['POST'])
+def reindex_knowledge_base():
+    """Reindex knowledge base"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        result = backup_manager.reindex_knowledge_base()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/backup/maintenance', methods=['POST'])
+def perform_maintenance():
+    """Perform full maintenance"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        result = backup_manager.perform_maintenance()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/backup/start-scheduler', methods=['POST'])
+def start_backup_scheduler():
+    """Start automated backup scheduler"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        success = start_automated_backups()
+        return jsonify({
+            'success': success,
+            'message': 'Scheduler started' if success else 'Scheduler already running'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/backup/stop-scheduler', methods=['POST'])
+def stop_backup_scheduler():
+    """Stop automated backup scheduler"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        success = stop_automated_backups()
+        return jsonify({
+            'success': success,
+            'message': 'Scheduler stopped' if success else 'Scheduler not running'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/backup/download/<filename>')
+def download_backup_file(filename):
+    """Download a backup file"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    try:
+        # Security: only allow files in backup directory
+        backup_path = os.path.join(backup_manager.backup_dir, filename)
+        
+        if not os.path.exists(backup_path):
+            return "Backup file not found", 404
+        
+        if not backup_path.startswith(os.path.abspath(backup_manager.backup_dir)):
+            return "Invalid file path", 400
+        
+        return send_file(
+            backup_path,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/octet-stream'
+        )
+        
+    except Exception as e:
+        return f"Download failed: {str(e)}", 500
+
+# Section 10: Debug Routes, Authentication, and App Startup
 # Section 10: Debug Routes, Authentication, and App Startup
 # Section 10: Debug Routes, Authentication, and App Startup
 # Section 10: Debug Routes, Authentication, and App Startup
@@ -4475,6 +5079,24 @@ if __name__ == '__main__':
         print("Telegram reminder checker started with spam protection")
     else:
         print("Telegram reminder checker disabled (not on Railway)")
+    
+    # Only start automated backups on Railway
+    if os.getenv('RAILWAY_ENVIRONMENT') and not os.getenv('DISABLE_AUTO_BACKUPS'):
+        # Start automated backups after a 5-minute delay to allow app to fully initialize
+        def delayed_backup_start():
+            import time
+            time.sleep(300)  # 5 minute delay
+            try:
+                start_automated_backups()
+                print("✅ Automated backups started successfully")
+            except Exception as e:
+                print(f"❌ Failed to start automated backups: {e}")
+        
+        backup_startup_thread = threading.Thread(target=delayed_backup_start, daemon=True)
+        backup_startup_thread.start()
+        print("🔄 Scheduled automated backup startup in 5 minutes")
+    else:
+        print("⚠️ Automated backups disabled (set RAILWAY_ENVIRONMENT to enable)")
     
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
