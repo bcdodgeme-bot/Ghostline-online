@@ -606,6 +606,8 @@ def check_auth_status():
     })
     
 # Section 8: Dashboard Routes (Modular)
+# Section 8: Dashboard Routes (Modular) - UPDATED WITH GOOGLE DIAGNOSTICS
+# Section 8: Dashboard Routes (Modular) - UPDATED WITH CLICKUP DIAGNOSTICS
 from modules.dashboard_system import setup_system_routes
 from modules.dashboard_diagnostics import setup_diagnostics_routes
 from modules.dashboard_integrations import setup_integrations_routes
@@ -614,6 +616,380 @@ from modules.dashboard_integrations import setup_integrations_routes
 setup_system_routes(app)
 setup_diagnostics_routes(app)
 setup_integrations_routes(app)
+
+# Google Integration Diagnostics Routes
+@app.route('/diagnostics/google-integration')
+def google_integration_diagnostics():
+    """Google integration diagnostic page"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    try:
+        from modules.google_diagnostics import generate_diagnostic_report
+        report = generate_diagnostic_report()
+        
+        return render_template_string("""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Google Integration Diagnostics</title>
+            <style>
+                body { 
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    background: #0f0f0f; 
+                    color: #fff; 
+                    margin: 0; 
+                    padding: 20px; 
+                }
+                .container { max-width: 1000px; margin: 0 auto; }
+                .btn { 
+                    background: #6366f1; 
+                    color: white; 
+                    border: none; 
+                    padding: 12px 24px; 
+                    border-radius: 8px; 
+                    cursor: pointer; 
+                    font-size: 16px; 
+                    margin: 10px 5px;
+                    text-decoration: none;
+                    display: inline-block;
+                }
+                .btn:hover { background: #5855eb; }
+                .btn.success { background: #059669; }
+                .btn.warning { background: #d97706; }
+                .btn.danger { background: #dc2626; }
+                .diagnostic-report { 
+                    background: #1a1a1a; 
+                    border: 1px solid #333; 
+                    border-radius: 8px; 
+                    padding: 20px; 
+                    margin: 20px 0; 
+                    font-family: 'Courier New', monospace;
+                    white-space: pre-wrap;
+                    overflow-x: auto;
+                }
+                .action-buttons {
+                    text-align: center;
+                    margin: 20px 0;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Google Integration Diagnostics</h1>
+                
+                <div class="action-buttons">
+                    <button onclick="runDiagnostics()" class="btn">Refresh Diagnostics</button>
+                    <a href="/google/auth/start" class="btn warning">Re-authenticate Google</a>
+                    <a href="/integrations" class="btn">Back to Integrations</a>
+                </div>
+                
+                <div class="diagnostic-report">{{ report }}</div>
+                
+                <div class="action-buttons">
+                    <button onclick="testEmailCommand()" class="btn">Test Email Command</button>
+                    <button onclick="testCalendarCommand()" class="btn">Test Calendar Command</button>
+                    <button onclick="testMorningBriefing()" class="btn">Test Morning Briefing</button>
+                </div>
+            </div>
+            
+            <script>
+                function runDiagnostics() {
+                    window.location.reload();
+                }
+                
+                function testEmailCommand() {
+                    fetch('/api/test-command', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        credentials: 'include',
+                        body: JSON.stringify({command: 'overnight'})
+                    }).then(r => r.json()).then(data => {
+                        alert('Email test result: ' + JSON.stringify(data, null, 2));
+                    }).catch(e => alert('Test failed: ' + e));
+                }
+                
+                function testCalendarCommand() {
+                    fetch('/api/test-command', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        credentials: 'include',
+                        body: JSON.stringify({command: 'calendar'})
+                    }).then(r => r.json()).then(data => {
+                        alert('Calendar test result: ' + JSON.stringify(data, null, 2));
+                    }).catch(e => alert('Test failed: ' + e));
+                }
+                
+                function testMorningBriefing() {
+                    fetch('/api/test-command', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        credentials: 'include',
+                        body: JSON.stringify({command: 'good morning'})
+                    }).then(r => r.json()).then(data => {
+                        alert('Morning briefing test result: ' + JSON.stringify(data, null, 2));
+                    }).catch(e => alert('Test failed: ' + e));
+                }
+            </script>
+        </body>
+        </html>
+        """, report=report)
+        
+    except Exception as e:
+        return f"Diagnostic failed: {str(e)}", 500
+
+@app.route('/api/test-command', methods=['POST'])
+def test_command():
+    """Test specific Gmail/Calendar commands for debugging"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        command = data.get('command', '')
+        
+        from modules.gmail import process_gmail_command
+        
+        # Test the command with minimal parameters
+        response_data, handled = process_gmail_command(
+            command,
+            'diagnostics',
+            ['SyntaxPrime'],
+            False
+        )
+        
+        return jsonify({
+            'success': True,
+            'handled': handled,
+            'response': response_data,
+            'command_tested': command
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'command_tested': data.get('command', 'unknown') if 'data' in locals() else 'unknown'
+        }), 500
+
+# ClickUp Integration Diagnostics Routes
+@app.route('/diagnostics/clickup')
+def clickup_diagnostics():
+    """ClickUp integration diagnostic page"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    try:
+        from modules.clickup_diagnostics import generate_clickup_diagnostic_report
+        report = generate_clickup_diagnostic_report()
+        
+        return render_template_string("""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>ClickUp Integration Diagnostics</title>
+            <style>
+                body { 
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    background: #0f0f0f; 
+                    color: #fff; 
+                    margin: 0; 
+                    padding: 20px; 
+                }
+                .container { max-width: 1000px; margin: 0 auto; }
+                .btn { 
+                    background: #6366f1; 
+                    color: white; 
+                    border: none; 
+                    padding: 12px 24px; 
+                    border-radius: 8px; 
+                    cursor: pointer; 
+                    font-size: 16px; 
+                    margin: 10px 5px;
+                    text-decoration: none;
+                    display: inline-block;
+                }
+                .btn:hover { background: #5855eb; }
+                .btn.success { background: #059669; }
+                .btn.warning { background: #d97706; }
+                .btn.danger { background: #dc2626; }
+                .diagnostic-report { 
+                    background: #1a1a1a; 
+                    border: 1px solid #333; 
+                    border-radius: 8px; 
+                    padding: 20px; 
+                    margin: 20px 0; 
+                    font-family: 'Courier New', monospace;
+                    white-space: pre-wrap;
+                    overflow-x: auto;
+                    line-height: 1.5;
+                }
+                .action-buttons {
+                    text-align: center;
+                    margin: 20px 0;
+                }
+                .setup-section {
+                    background: #1a1a1a;
+                    border: 1px solid #333;
+                    border-radius: 8px;
+                    padding: 20px;
+                    margin: 20px 0;
+                }
+                .config-box {
+                    background: #2a2a2a;
+                    border: 1px solid #444;
+                    border-radius: 4px;
+                    padding: 15px;
+                    margin: 15px 0;
+                    font-family: 'Courier New', monospace;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>ClickUp Integration Diagnostics</h1>
+                
+                <div class="action-buttons">
+                    <button onclick="runDiagnostics()" class="btn">Refresh Diagnostics</button>
+                    <button onclick="testTaskCreation()" class="btn warning">Test Task Creation</button>
+                    <button onclick="showWorkspaceTree()" class="btn">Show Workspace Tree</button>
+                    <a href="/integrations" class="btn">Back to Integrations</a>
+                </div>
+                
+                <div class="diagnostic-report">{{ report }}</div>
+                
+                <div class="setup-section">
+                    <h3>Manual ClickUp Setup Steps:</h3>
+                    <ol>
+                        <li><strong>Get API Token:</strong>
+                            <ul>
+                                <li>Go to ClickUp Settings → Apps → API</li>
+                                <li>Generate a Personal API Token</li>
+                                <li>Add to Railway environment as <code>CLICKUP_API_TOKEN</code></li>
+                            </ul>
+                        </li>
+                        <li><strong>Create Workspace Structure:</strong>
+                            <ul>
+                                <li>Create a Space called "Ghostline" (or use existing)</li>
+                                <li>Create a List called "Inbox" or "Tasks"</li>
+                                <li>Note the List ID from diagnostics above</li>
+                            </ul>
+                        </li>
+                        <li><strong>Set Environment Variables:</strong>
+                            <div class="config-box" id="configBox">
+                                Run diagnostics to get specific configuration
+                            </div>
+                        </li>
+                        <li><strong>Test Integration:</strong>
+                            <ul>
+                                <li>Try: "create clickup task: Test task"</li>
+                                <li>Check if task appears in your ClickUp workspace</li>
+                            </ul>
+                        </li>
+                    </ol>
+                </div>
+                
+                <div class="action-buttons">
+                    <button onclick="copyConfig()" class="btn success" id="copyBtn" style="display:none;">Copy Configuration</button>
+                </div>
+            </div>
+            
+            <script>
+                function runDiagnostics() {
+                    window.location.reload();
+                }
+                
+                function testTaskCreation() {
+                    const listId = prompt("Enter List ID to test (from diagnostic report above):");
+                    if (!listId) return;
+                    
+                    fetch('/api/clickup/test-task', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        credentials: 'include',
+                        body: JSON.stringify({list_id: listId})
+                    }).then(r => r.json()).then(data => {
+                        if (data.success) {
+                            alert('Test successful! Task created: ' + data.task_id + '\\nURL: ' + data.task_url);
+                        } else {
+                            alert('Test failed: ' + data.error);
+                        }
+                    }).catch(e => alert('Test failed: ' + e));
+                }
+                
+                function showWorkspaceTree() {
+                    fetch('/api/clickup/workspace-tree', {
+                        credentials: 'include'
+                    }).then(r => r.json()).then(data => {
+                        if (data.error) {
+                            alert('Failed to load workspace tree: ' + data.error);
+                        } else {
+                            const tree = JSON.stringify(data.workspace_tree, null, 2);
+                            const newWindow = window.open('', '_blank');
+                            newWindow.document.write('<pre style="background:#1a1a1a;color:#fff;padding:20px;font-family:monospace;">' + tree + '</pre>');
+                        }
+                    });
+                }
+                
+                function copyConfig() {
+                    const configText = document.getElementById('configBox').textContent;
+                    navigator.clipboard.writeText(configText).then(() => {
+                        alert('Configuration copied to clipboard!');
+                    });
+                }
+                
+                // Extract configuration from report if available
+                document.addEventListener('DOMContentLoaded', function() {
+                    const report = document.querySelector('.diagnostic-report').textContent;
+                    const configMatch = report.match(/Environment Variables to Set:[\\s\\S]*?```([\\s\\S]*?)```/);
+                    if (configMatch) {
+                        document.getElementById('configBox').textContent = configMatch[1].trim();
+                        document.getElementById('copyBtn').style.display = 'inline-block';
+                    }
+                });
+            </script>
+        </body>
+        </html>
+        """, report=report)
+        
+    except Exception as e:
+        return f"ClickUp diagnostic failed: {str(e)}", 500
+
+@app.route('/api/clickup/test-task', methods=['POST'])
+def test_clickup_task():
+    """Test ClickUp task creation"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        list_id = data.get('list_id')
+        
+        if not list_id:
+            return jsonify({'success': False, 'error': 'List ID required'}), 400
+        
+        from modules.clickup_diagnostics import ClickUpDiagnostics
+        diagnostics = ClickUpDiagnostics()
+        result = diagnostics.test_task_creation(list_id)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/clickup/workspace-tree')
+def get_clickup_workspace_tree():
+    """Get ClickUp workspace tree structure"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        from modules.clickup_diagnostics import get_clickup_workspace_tree
+        result = get_clickup_workspace_tree()
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # Section 9: PDF Report Generation
 from modules.pdf_generation import (
@@ -2058,6 +2434,337 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
     
+# Section 19: Timezone Management Routes
+@app.route('/api/timezone/detect', methods=['POST'])
+def detect_timezone():
+    """Receive browser-detected timezone"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        timezone_name = data.get('timezone')
+        
+        if not timezone_name:
+            return jsonify({'success': False, 'error': 'No timezone provided'}), 400
+        
+        from modules.timezone_handler import timezone_manager
+        
+        success = timezone_manager.set_detected_timezone(timezone_name)
+        if success:
+            tz_info = timezone_manager.get_timezone_info()
+            return jsonify({
+                'success': True,
+                'timezone_set': timezone_name,
+                'current_info': tz_info
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'Invalid timezone: {timezone_name}'
+            }), 400
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/timezone/set', methods=['POST'])
+def set_user_timezone_route():
+    """Set user's preferred timezone manually"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        timezone_name = data.get('timezone')
+        
+        if not timezone_name:
+            return jsonify({'success': False, 'error': 'No timezone provided'}), 400
+        
+        from modules.timezone_handler import timezone_manager
+        
+        success = timezone_manager.set_user_timezone(timezone_name)
+        if success:
+            tz_info = timezone_manager.get_timezone_info()
+            return jsonify({
+                'success': True,
+                'timezone_set': timezone_name,
+                'current_info': tz_info
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'Invalid timezone: {timezone_name}'
+            }), 400
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/timezone/info')
+def get_timezone_info_route():
+    """Get current timezone information"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        from modules.timezone_handler import timezone_manager
+        tz_info = timezone_manager.get_timezone_info()
+        common_timezones = timezone_manager.get_common_timezones()
+        
+        return jsonify({
+            'success': True,
+            'current': tz_info,
+            'common_timezones': common_timezones,
+            'user_set': 'user_timezone' in session,
+            'detected': 'detected_timezone' in session
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/timezone-settings')
+def timezone_settings():
+    """Timezone settings page"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    return render_template_string("""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Timezone Settings</title>
+        <style>
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
+            }
+            .container { max-width: 800px; margin: 0 auto; }
+            .btn { 
+                background: #6366f1; color: white; border: none; padding: 12px 24px;
+                border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
+                text-decoration: none; display: inline-block;
+            }
+            .btn:hover { background: #5855eb; }
+            .btn.success { background: #059669; }
+            .btn.warning { background: #d97706; }
+            .settings-section { 
+                background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
+                padding: 20px; margin: 20px 0; 
+            }
+            .form-group { margin: 15px 0; }
+            .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+            .form-group select, .form-group input { 
+                width: 100%; padding: 10px; background: #333; color: #fff; 
+                border: 1px solid #555; border-radius: 4px; font-size: 16px;
+            }
+            .current-time { 
+                font-size: 24px; font-weight: bold; text-align: center; 
+                padding: 20px; background: #2a2a2a; border-radius: 8px; margin: 20px 0;
+            }
+            .status-indicator { 
+                display: inline-block; width: 12px; height: 12px; border-radius: 50%; 
+                margin-right: 8px;
+            }
+            .status-detected { background: #059669; }
+            .status-manual { background: #6366f1; }
+            .status-default { background: #d97706; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Timezone Settings</h1>
+            
+            <div class="current-time" id="currentTime">Loading current time...</div>
+            
+            <div class="settings-section">
+                <h3>Timezone Status</h3>
+                <div id="timezoneStatus">Loading...</div>
+            </div>
+            
+            <div class="settings-section">
+                <h3>Automatic Detection</h3>
+                <p>Let your browser automatically detect your timezone:</p>
+                <button onclick="detectTimezone()" class="btn">Detect My Timezone</button>
+                <div id="detectionResult"></div>
+            </div>
+            
+            <div class="settings-section">
+                <h3>Manual Selection</h3>
+                <p>Choose your timezone manually:</p>
+                <div class="form-group">
+                    <label for="timezoneSelect">Select Timezone:</label>
+                    <select id="timezoneSelect" onchange="setTimezone()">
+                        <option value="">Loading timezones...</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <a href="/" class="btn">Back to Chat</a>
+                <a href="/integrations" class="btn">Integrations</a>
+                <a href="/system" class="btn">System Dashboard</a>
+            </div>
+        </div>
+        
+        <script>
+            let currentTimezoneInfo = null;
+            
+            // Initialize page
+            document.addEventListener('DOMContentLoaded', function() {
+                loadTimezoneInfo();
+                setInterval(updateCurrentTime, 1000); // Update time every second
+            });
+            
+            function loadTimezoneInfo() {
+                fetch('/api/timezone/info', {
+                    credentials: 'include'
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        currentTimezoneInfo = data;
+                        updateDisplay();
+                        populateTimezoneSelect();
+                    } else {
+                        console.error('Failed to load timezone info:', data.error);
+                    }
+                })
+                .catch(e => {
+                    console.error('Error loading timezone info:', e);
+                });
+            }
+            
+            function updateDisplay() {
+                if (!currentTimezoneInfo) return;
+                
+                // Update current time
+                document.getElementById('currentTime').textContent = 
+                    currentTimezoneInfo.current.formatted_time;
+                
+                // Update status
+                let statusHtml = '';
+                if (currentTimezoneInfo.user_set) {
+                    statusHtml += '<span class="status-indicator status-manual"></span>Manually set to: ' + 
+                                 currentTimezoneInfo.current.timezone_name;
+                } else if (currentTimezoneInfo.detected) {
+                    statusHtml += '<span class="status-indicator status-detected"></span>Auto-detected: ' + 
+                                 currentTimezoneInfo.current.timezone_name;
+                } else {
+                    statusHtml += '<span class="status-indicator status-default"></span>Using default: ' + 
+                                 currentTimezoneInfo.current.timezone_name;
+                }
+                
+                statusHtml += '<br><small>Current offset: ' + currentTimezoneInfo.current.utc_offset + 
+                             ' (' + currentTimezoneInfo.current.timezone_abbr + ')</small>';
+                
+                document.getElementById('timezoneStatus').innerHTML = statusHtml;
+            }
+            
+            function updateCurrentTime() {
+                if (currentTimezoneInfo) {
+                    const now = new Date();
+                    const formatter = new Intl.DateTimeFormat('en-US', {
+                        timeZone: currentTimezoneInfo.current.timezone_name,
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        timeZoneName: 'short'
+                    });
+                    
+                    document.getElementById('currentTime').textContent = formatter.format(now);
+                }
+            }
+            
+            function populateTimezoneSelect() {
+                if (!currentTimezoneInfo) return;
+                
+                const select = document.getElementById('timezoneSelect');
+                select.innerHTML = '<option value="">Choose timezone...</option>';
+                
+                for (const [display, value] of Object.entries(currentTimezoneInfo.common_timezones)) {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = display;
+                    if (value === currentTimezoneInfo.current.timezone_name) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                }
+            }
+            
+            function detectTimezone() {
+                const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                
+                fetch('/api/timezone/detect', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify({timezone: detectedTimezone})
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('detectionResult').innerHTML = 
+                            '<div style="color: #059669; margin-top: 10px;">✓ Detected and set timezone: ' + 
+                            detectedTimezone + '</div>';
+                        loadTimezoneInfo(); // Reload to update display
+                    } else {
+                        document.getElementById('detectionResult').innerHTML = 
+                            '<div style="color: #dc2626; margin-top: 10px;">✗ Detection failed: ' + 
+                            data.error + '</div>';
+                    }
+                })
+                .catch(e => {
+                    document.getElementById('detectionResult').innerHTML = 
+                        '<div style="color: #dc2626; margin-top: 10px;">✗ Detection failed: ' + e + '</div>';
+                });
+            }
+            
+            function setTimezone() {
+                const select = document.getElementById('timezoneSelect');
+                const timezone = select.value;
+                
+                if (!timezone) return;
+                
+                fetch('/api/timezone/set', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify({timezone: timezone})
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        loadTimezoneInfo(); // Reload to update display
+                        alert('Timezone updated successfully!');
+                    } else {
+                        alert('Failed to set timezone: ' + data.error);
+                    }
+                })
+                .catch(e => {
+                    alert('Error setting timezone: ' + e);
+                });
+            }
+        </script>
+    </body>
+    </html>
+    """)
+
+# Register timezone template filters
+try:
+    from modules.timezone_handler import datetime_filter, date_filter, time_filter
+    app.jinja_env.filters['user_datetime'] = datetime_filter
+    app.jinja_env.filters['user_date'] = date_filter
+    app.jinja_env.filters['user_time'] = time_filter
+    print("Timezone template filters registered successfully")
+except ImportError as e:
+    print(f"Could not register timezone filters: {e}")
+except Exception as e:
+    print(f"Error registering timezone filters: {e}")
+
 # Section 18: Background Services and Startup
 def safe_reminder_checker():
     """Background thread with enhanced safety to prevent spam"""

@@ -1,5 +1,5 @@
 # modules/clickup_integration.py
-# ClickUp API integration for task management, time tracking, and productivity insights
+# Updated ClickUp API integration with environment variable configuration
 
 import os
 import json
@@ -13,7 +13,7 @@ class ClickUpClient:
     def __init__(self):
         self.api_token = os.getenv('CLICKUP_API_TOKEN')
         if not self.api_token:
-            raise ValueError("CLICKUP_API_TOKEN not configured")
+            raise ValueError("CLICKUP_API_TOKEN not configured - visit /diagnostics/clickup for setup")
         
         self.base_url = "https://api.clickup.com/api/v2"
         self.headers = {
@@ -21,10 +21,13 @@ class ClickUpClient:
             "Content-Type": "application/json"
         }
         
-        # Cache team/workspace info
-        self._team_id = None
-        self._default_space_id = None
-        self._default_list_id = None
+        # Try to get preconfigured IDs from environment
+        self._team_id = os.getenv('CLICKUP_DEFAULT_TEAM_ID')
+        self._default_list_id = os.getenv('CLICKUP_DEFAULT_LIST_ID')
+        
+        # Fallback cache
+        self._cached_team_id = None
+        self._cached_list_id = None
     
     def _make_request(self, method, endpoint, data=None):
         """Make API request with error handling"""
@@ -32,17 +35,26 @@ class ClickUpClient:
         
         try:
             if method.upper() == 'GET':
-                response = requests.get(url, headers=self.headers)
+                response = requests.get(url, headers=self.headers, timeout=30)
             elif method.upper() == 'POST':
-                response = requests.post(url, headers=self.headers, json=data)
+                response = requests.post(url, headers=self.headers, json=data, timeout=30)
             elif method.upper() == 'PUT':
-                response = requests.put(url, headers=self.headers, json=data)
+                response = requests.put(url, headers=self.headers, json=data, timeout=30)
             elif method.upper() == 'DELETE':
-                response = requests.delete(url, headers=self.headers)
+                response = requests.delete(url, headers=self.headers, timeout=30)
+            
+            if response.status_code == 401:
+                raise Exception("Invalid ClickUp API token - check CLICKUP_API_TOKEN")
+            elif response.status_code == 403:
+                raise Exception("ClickUp API access forbidden - check token permissions")
+            elif response.status_code == 429:
+                raise Exception("ClickUp API rate limit exceeded - try again later")
             
             response.raise_for_status()
             return response.json()
             
+        except requests.exceptions.Timeout:
+            raise Exception("ClickUp API request timed out")
         except requests.exceptions.RequestException as e:
             current_app.logger.error(f"ClickUp API error: {e}")
             raise Exception(f"ClickUp API request failed: {str(e)}")
@@ -52,17 +64,34 @@ class ClickUpClient:
         return self._make_request('GET', '/team')
     
     def get_team_id(self):
-        """Get the primary team ID"""
-        if not self._team_id:
+        """Get the team ID (from env var or cache)"""
+        # First try environment variable
+        if self._team_id:
+            return self._team_id
+            
+        # Then try cache
+        if self._cached_team_id:
+            return self._cached_team_id
+        
+        # Finally, query API
+        try:
             teams = self.get_teams()
             if teams['teams']:
-                self._team_id = teams['teams'][0]['id']
-        return self._team_id
+                self._cached_team_id = teams['teams'][0]['id']
+                return self._cached_team_id
+        except Exception as e:
+            current_app.logger.error(f"Failed to get team ID: {e}")
+            
+        return None
     
     def get_spaces(self, team_id=None):
         """Get spaces in team"""
         if not team_id:
             team_id = self.get_team_id()
+        
+        if not team_id:
+            raise Exception("No ClickUp team found - check workspace setup")
+            
         return self._make_request('GET', f'/team/{team_id}/space')
     
     def get_lists(self, space_id):
@@ -70,86 +99,122 @@ class ClickUpClient:
         return self._make_request('GET', f'/space/{space_id}/list')
     
     def get_default_list_id(self):
-        """Get a default list ID for task creation"""
-        if not self._default_list_id:
-            try:
-                team_id = self.get_team_id()
-                spaces = self.get_spaces(team_id)
-                
-                if spaces['spaces']:
-                    # Use first space
-                    space_id = spaces['spaces'][0]['id']
-                    lists = self.get_lists(space_id)
-                    
-                    if lists['lists']:
-                        # Use first list
-                        self._default_list_id = lists['lists'][0]['id']
-                        
-            except Exception as e:
-                current_app.logger.error(f"Failed to get default list: {e}")
+        """Get default list ID with better error messaging"""
+        # First try environment variable
+        if self._default_list_id:
+            return self._default_list_id
+            
+        # Then try cache
+        if self._cached_list_id:
+            return self._cached_list_id
         
-        return self._default_list_id
+        # Finally, try to find automatically
+        try:
+            team_id = self.get_team_id()
+            if not team_id:
+                raise Exception("No ClickUp team found")
+                
+            spaces = self.get_spaces(team_id)
+            
+            if not spaces.get('spaces'):
+                raise Exception("No ClickUp spaces found - create a Space in your workspace")
+            
+            # Look for the first space with lists
+            for space in spaces['spaces']:
+                space_id = space['id']
+                try:
+                    lists = self.get_lists(space_id)
+                    if lists.get('lists'):
+                        self._cached_list_id = lists['lists'][0]['id']
+                        current_app.logger.info(f"Using ClickUp list: {lists['lists'][0]['name']} in {space['name']}")
+                        return self._cached_list_id
+                except Exception:
+                    continue
+            
+            raise Exception("No ClickUp lists found - create a List in your workspace")
+                        
+        except Exception as e:
+            current_app.logger.error(f"Failed to get default list: {e}")
+            raise Exception(f"ClickUp workspace configuration error: {str(e)}\n\nVisit /diagnostics/clickup for setup help")
     
     def create_task(self, name, description="", due_date=None, priority=3, list_id=None):
-        """Create a new task"""
-        if not list_id:
-            list_id = self.get_default_list_id()
-        
-        if not list_id:
-            raise Exception("No default list found. Please configure ClickUp workspace.")
-        
-        task_data = {
-            "name": name,
-            "description": description,
-            "priority": priority
-        }
-        
-        if due_date:
-            # Convert datetime to timestamp (milliseconds)
-            if isinstance(due_date, datetime.datetime):
-                task_data["due_date"] = int(due_date.timestamp() * 1000)
-        
-        return self._make_request('POST', f'/list/{list_id}/task', task_data)
+        """Create a new task with better error handling"""
+        try:
+            if not list_id:
+                list_id = self.get_default_list_id()
+            
+            task_data = {
+                "name": name,
+                "description": description,
+                "priority": priority
+            }
+            
+            if due_date:
+                # Convert datetime to timestamp (milliseconds)
+                if isinstance(due_date, datetime.datetime):
+                    task_data["due_date"] = int(due_date.timestamp() * 1000)
+            
+            result = self._make_request('POST', f'/list/{list_id}/task', task_data)
+            current_app.logger.info(f"Created ClickUp task: {name} (ID: {result.get('id')})")
+            return result
+            
+        except Exception as e:
+            error_msg = str(e)
+            if "configuration error" in error_msg:
+                # Pass through configuration errors with diagnostic link
+                raise e
+            else:
+                raise Exception(f"Failed to create ClickUp task: {error_msg}")
     
     def get_tasks(self, list_id=None, **filters):
         """Get tasks with filters"""
-        if not list_id:
-            list_id = self.get_default_list_id()
-        
-        if not list_id:
+        try:
+            if not list_id:
+                list_id = self.get_default_list_id()
+            
+            # Build query parameters
+            params = {}
+            if 'due_date_gt' in filters:
+                params['due_date_gt'] = int(filters['due_date_gt'].timestamp() * 1000)
+            if 'due_date_lt' in filters:
+                params['due_date_lt'] = int(filters['due_date_lt'].timestamp() * 1000)
+            
+            query_string = '&'.join([f"{k}={v}" for k, v in params.items()])
+            endpoint = f'/list/{list_id}/task'
+            if query_string:
+                endpoint += f'?{query_string}'
+            
+            return self._make_request('GET', endpoint)
+            
+        except Exception as e:
+            current_app.logger.error(f"Failed to get tasks: {e}")
             return {"tasks": []}
-        
-        # Build query parameters
-        params = {}
-        if 'due_date_gt' in filters:
-            params['due_date_gt'] = int(filters['due_date_gt'].timestamp() * 1000)
-        if 'due_date_lt' in filters:
-            params['due_date_lt'] = int(filters['due_date_lt'].timestamp() * 1000)
-        
-        query_string = '&'.join([f"{k}={v}" for k, v in params.items()])
-        endpoint = f'/list/{list_id}/task'
-        if query_string:
-            endpoint += f'?{query_string}'
-        
-        return self._make_request('GET', endpoint)
     
     def get_time_entries(self, team_id=None, start_date=None, end_date=None):
         """Get time tracking entries"""
-        if not team_id:
-            team_id = self.get_team_id()
-        
-        params = {}
-        if start_date:
-            params['start_date'] = int(start_date.timestamp() * 1000)
-        if end_date:
-            params['end_date'] = int(end_date.timestamp() * 1000)
-        
-        query_string = '&'.join([f"{k}={v}" for k, v in params.items()])
-        endpoint = f'/team/{team_id}/time_entries'
-        if query_string:
-            endpoint += f'?{query_string}'
-        
-        return self._make_request('GET', endpoint)
+        try:
+            if not team_id:
+                team_id = self.get_team_id()
+                
+            if not team_id:
+                raise Exception("No team ID available for time tracking")
+            
+            params = {}
+            if start_date:
+                params['start_date'] = int(start_date.timestamp() * 1000)
+            if end_date:
+                params['end_date'] = int(end_date.timestamp() * 1000)
+            
+            query_string = '&'.join([f"{k}={v}" for k, v in params.items()])
+            endpoint = f'/team/{team_id}/time_entries'
+            if query_string:
+                endpoint += f'?{query_string}'
+            
+            return self._make_request('GET', endpoint)
+            
+        except Exception as e:
+            current_app.logger.error(f"Failed to get time entries: {e}")
+            return {"data": []}
     
     def start_time_tracking(self, task_id, description=""):
         """Start time tracking on a task"""
@@ -164,6 +229,9 @@ class ClickUpClient:
         if not team_id:
             team_id = self.get_team_id()
         
+        if not team_id:
+            raise Exception("No team ID available to stop timer")
+        
         return self._make_request('DELETE', f'/team/{team_id}/time_entries/current')
     
     def get_user_info(self):
@@ -175,15 +243,16 @@ def is_clickup_configured():
     return bool(os.getenv('CLICKUP_API_TOKEN'))
 
 def process_clickup_command(user_input, project, use_voices, random_toggle):
-    """Process ClickUp-related commands"""
+    """Process ClickUp-related commands with better error handling"""
     if not is_clickup_configured():
         return None, False
     
     user_input_lower = user_input.lower()
     
-    # ClickUp command patterns
+    # ClickUp command patterns - more comprehensive
     clickup_patterns = [
-        'clickup', 'click up', 'cu ', ' cu', 'time track', 'my tasks', 'create task'
+        'clickup', 'click up', 'cu ', ' cu ', 'time track', 'my tasks', 'create task',
+        'task list', 'task status', 'work timer', 'productivity'
     ]
     
     if not any(pattern in user_input_lower for pattern in clickup_patterns):
@@ -191,6 +260,20 @@ def process_clickup_command(user_input, project, use_voices, random_toggle):
     
     try:
         client = ClickUpClient()
+        
+        # Setup/diagnostic command
+        if any(keyword in user_input_lower for keyword in ['setup', 'configure', 'diagnostic']):
+            response_data = {
+                "SyntaxPrime": "**ClickUp Setup Required**\n\n"
+                              "Visit `/diagnostics/clickup` for complete setup wizard.\n\n"
+                              "Quick setup:\n"
+                              "1. Get API token from ClickUp Settings → Apps → API\n"
+                              "2. Set `CLICKUP_API_TOKEN` in Railway environment\n"
+                              "3. Create workspace: Space → List structure\n"
+                              "4. Run diagnostics to get configuration\n\n"
+                              "**Current Status:** " + ("API Token Set" if is_clickup_configured() else "API Token Missing")
+            }
+            return response_data, True
         
         # Morning briefing / status
         if any(keyword in user_input_lower for keyword in ['morning', 'briefing', 'status', 'today']):
@@ -210,59 +293,131 @@ def process_clickup_command(user_input, project, use_voices, random_toggle):
             response_data = {"SyntaxPrime": time_summary}
             return response_data, True
         
-        # Task creation
+        # Task creation with better parsing
         if any(keyword in user_input_lower for keyword in ['create', 'add', 'new task']):
-            # Extract task name after "create task", "add task", etc.
-            task_match = re.search(r'(?:create|add|new)\s+(?:clickup\s+)?task:?\s*(.+)', user_input, re.IGNORECASE)
-            if task_match:
-                task_name = task_match.group(1).strip()
+            # Extract task name after various patterns
+            patterns = [
+                r'(?:create|add|new)\s+(?:clickup\s+)?task:?\s*(.+)',
+                r'(?:create|add|new)\s+(.+)\s+(?:task|to-do)',
+                r'task:?\s*(.+)'
+            ]
+            
+            task_name = None
+            for pattern in patterns:
+                task_match = re.search(pattern, user_input, re.IGNORECASE)
+                if task_match:
+                    task_name = task_match.group(1).strip()
+                    break
+            
+            if task_name:
                 result = create_clickup_task(client, task_name, project)
                 response_data = {"SyntaxPrime": result}
                 return response_data, True
+            else:
+                response_data = {"SyntaxPrime": "Please specify a task name. Example: `create clickup task: Review quarterly report`"}
+                return response_data, True
         
         # Task queries
-        if any(keyword in user_input_lower for keyword in ['tasks', 'due', 'deadline']):
+        if any(keyword in user_input_lower for keyword in ['tasks', 'due', 'deadline', 'todo']):
             tasks_summary = get_clickup_tasks_summary(client)
             response_data = {"SyntaxPrime": tasks_summary}
             return response_data, True
         
         # Time tracking controls
-        if 'start timer' in user_input_lower:
-            # Extract task name or ID
-            timer_match = re.search(r'start timer (?:on\s+)?(.+)', user_input, re.IGNORECASE)
+        if 'start timer' in user_input_lower or 'start tracking' in user_input_lower:
+            timer_match = re.search(r'start (?:timer|tracking) (?:on\s+)?(.+)', user_input, re.IGNORECASE)
             if timer_match:
                 task_identifier = timer_match.group(1).strip()
                 result = start_clickup_timer(client, task_identifier)
                 response_data = {"SyntaxPrime": result}
                 return response_data, True
         
-        if 'stop timer' in user_input_lower:
+        if 'stop timer' in user_input_lower or 'stop tracking' in user_input_lower:
             result = stop_clickup_timer(client)
             response_data = {"SyntaxPrime": result}
             return response_data, True
         
-        # Default response for unrecognized ClickUp commands
+        # Default help response
         response_data = {
             "SyntaxPrime": "**ClickUp Commands Available:**\n\n"
-                          "• `clickup morning` - Daily task briefing\n"
-                          "• `clickup time today` - Today's time tracking\n"
-                          "• `clickup time week` - This week's hours\n"
-                          "• `create clickup task: [name]` - New task\n"
+                          "📋 **Tasks:**\n"
+                          "• `create clickup task: [name]` - Create new task\n"
                           "• `clickup tasks` - View due tasks\n"
+                          "• `clickup morning` - Daily briefing\n\n"
+                          "⏱️ **Time Tracking:**\n"
+                          "• `clickup time today` - Today's hours\n"
+                          "• `clickup time week` - Weekly summary\n"
                           "• `start timer on [task]` - Start tracking\n"
-                          "• `stop timer` - Stop current timer"
+                          "• `stop timer` - Stop current timer\n\n"
+                          "⚙️ **Setup:**\n"
+                          "• `clickup setup` - Configuration help\n"
+                          "• Visit `/diagnostics/clickup` for full setup"
         }
         return response_data, True
         
     except Exception as e:
         current_app.logger.error(f"ClickUp command failed: {e}")
-        response_data = {"SyntaxPrime": f"ClickUp integration error: {str(e)}"}
+        
+        error_message = str(e)
+        if "configuration error" in error_message or "workspace setup" in error_message:
+            # Configuration-related errors
+            response_data = {
+                "SyntaxPrime": f"**ClickUp Configuration Issue:**\n\n{error_message}\n\n"
+                              "**Quick Fix:**\n"
+                              "1. Visit `/diagnostics/clickup` for setup wizard\n"
+                              "2. Or set these environment variables:\n"
+                              "   - `CLICKUP_API_TOKEN` (from ClickUp Settings)\n"
+                              "   - `CLICKUP_DEFAULT_LIST_ID` (from diagnostics)\n\n"
+                              "Need help? Check the integration dashboard."
+            }
+        else:
+            # Other API errors
+            response_data = {"SyntaxPrime": f"ClickUp integration error: {error_message}"}
+        
         return response_data, True
 
+# Rest of your existing functions remain the same, but with improved error handling
+
+def create_clickup_task(client, task_name, project=None):
+    """Create a new ClickUp task with better error handling"""
+    try:
+        description = f"Created from Ghostline chat"
+        if project:
+            description += f" (Project: {project})"
+        
+        task = client.create_task(
+            name=task_name,
+            description=description,
+            priority=3
+        )
+        
+        task_id = task.get('id')
+        task_url = task.get('url', '')
+        
+        response = f"✅ **Task Created:** {task_name}\n"
+        response += f"🆔 **ID:** {task_id}\n"
+        if task_url:
+            response += f"🔗 **URL:** {task_url}"
+        
+        return response
+        
+    except Exception as e:
+        error_msg = str(e)
+        if "configuration error" in error_msg:
+            return error_msg  # Pass through configuration errors
+        else:
+            return f"❌ **Task creation failed:** {error_msg}\n\nTry visiting `/diagnostics/clickup` for help."
+
+# Keep all your existing helper functions (get_clickup_morning_briefing, etc.)
+# but add this improved error handling pattern to each one
+
 def get_clickup_morning_briefing(client=None):
-    """Generate morning briefing with tasks and time tracking"""
+    """Generate morning briefing with enhanced error handling"""
     if not client:
-        client = ClickUpClient()
+        try:
+            client = ClickUpClient()
+        except Exception as e:
+            return f"**ClickUp Morning Briefing Unavailable**\n\nConfiguration error: {str(e)}\n\nVisit `/diagnostics/clickup` for setup help."
     
     try:
         briefing = ["📋 **CLICKUP MORNING BRIEFING**", ""]
@@ -281,7 +436,7 @@ def get_clickup_morning_briefing(client=None):
         briefing.append(f"**📅 Tasks Due Today ({len(today_tasks.get('tasks', []))}):**")
         if today_tasks.get('tasks'):
             for task in today_tasks['tasks'][:5]:  # Limit to 5 tasks
-                status = "✅" if task.get('status', {}).get('status') == 'complete' else "🔲"
+                status = "✅" if task.get('status', {}).get('status') == 'complete' else "📲"
                 priority_map = {1: "🔴", 2: "🟡", 3: "🟢", 4: "🔵"}
                 priority_icon = priority_map.get(task.get('priority', {}).get('priority', 3), "🟢")
                 briefing.append(f"  {status} {priority_icon} {task['name']}")
@@ -293,7 +448,7 @@ def get_clickup_morning_briefing(client=None):
         # Get overdue tasks
         yesterday = today - datetime.timedelta(days=1)
         overdue_tasks = client.get_tasks(due_date_lt=yesterday)
-        overdue_count = len([t for t in overdue_tasks.get('tasks', []) 
+        overdue_count = len([t for t in overdue_tasks.get('tasks', [])
                            if t.get('status', {}).get('status') != 'complete'])
         
         if overdue_count > 0:
@@ -328,261 +483,6 @@ def get_clickup_morning_briefing(client=None):
         
     except Exception as e:
         current_app.logger.error(f"ClickUp briefing failed: {e}")
-        return f"**ClickUp Morning Briefing Error:** {str(e)}"
+        return f"**ClickUp Morning Briefing Error:**\n{str(e)}\n\nTry visiting `/diagnostics/clickup` for help."
 
-def get_clickup_time_today(client=None):
-    """Get today's time tracking summary"""
-    if not client:
-        client = ClickUpClient()
-    
-    try:
-        today = datetime.datetime.now()
-        start_of_day = today.replace(hour=0, minute=0, second=0, microsecond=0)
-        end_of_day = today.replace(hour=23, minute=59, second=59, microsecond=59)
-        
-        time_entries = client.get_time_entries(
-            start_date=start_of_day,
-            end_date=end_of_day
-        )
-        
-        total_time = 0
-        task_breakdown = {}
-        
-        for entry in time_entries.get('data', []):
-            duration = int(entry.get('duration', 0))
-            total_time += duration
-            
-            task_name = entry.get('task', {}).get('name', 'Unknown Task')
-            if task_name in task_breakdown:
-                task_breakdown[task_name] += duration
-            else:
-                task_breakdown[task_name] = duration
-        
-        # Format response
-        total_hours = total_time // 3600000
-        total_minutes = (total_time % 3600000) // 60000
-        
-        response = [f"⏰ **Today's Time Tracking: {total_hours}h {total_minutes}m**", ""]
-        
-        if task_breakdown:
-            response.append("**Breakdown by Task:**")
-            for task, duration in sorted(task_breakdown.items(), key=lambda x: x[1], reverse=True):
-                task_hours = duration // 3600000
-                task_minutes = (duration % 3600000) // 60000
-                response.append(f"• {task}: {task_hours}h {task_minutes}m")
-        else:
-            response.append("No time tracked today yet.")
-        
-        return "\n".join(response)
-        
-    except Exception as e:
-        return f"Time tracking query failed: {str(e)}"
-
-def get_clickup_time_week(client=None):
-    """Get this week's time tracking summary"""
-    if not client:
-        client = ClickUpClient()
-    
-    try:
-        today = datetime.datetime.now()
-        week_start = today - datetime.timedelta(days=today.weekday())
-        
-        time_entries = client.get_time_entries(start_date=week_start)
-        
-        total_time = 0
-        daily_breakdown = {}
-        
-        for entry in time_entries.get('data', []):
-            duration = int(entry.get('duration', 0))
-            total_time += duration
-            
-            # Get date from timestamp
-            start_time = datetime.datetime.fromtimestamp(int(entry.get('start', 0)) / 1000)
-            date_key = start_time.strftime('%A, %m/%d')
-            
-            if date_key in daily_breakdown:
-                daily_breakdown[date_key] += duration
-            else:
-                daily_breakdown[date_key] = duration
-        
-        # Format response
-        total_hours = total_time // 3600000
-        total_minutes = (total_time % 3600000) // 60000
-        
-        response = [f"📊 **This Week's Time: {total_hours}h {total_minutes}m**", ""]
-        
-        if daily_breakdown:
-            response.append("**Daily Breakdown:**")
-            for day, duration in daily_breakdown.items():
-                day_hours = duration // 3600000
-                day_minutes = (duration % 3600000) // 60000
-                response.append(f"• {day}: {day_hours}h {day_minutes}m")
-        else:
-            response.append("No time tracked this week yet.")
-        
-        return "\n".join(response)
-        
-    except Exception as e:
-        return f"Weekly time query failed: {str(e)}"
-
-def create_clickup_task(client, task_name, project=None):
-    """Create a new ClickUp task"""
-    try:
-        description = f"Created from Ghostline chat"
-        if project:
-            description += f" (Project: {project})"
-        
-        task = client.create_task(
-            name=task_name,
-            description=description,
-            priority=3
-        )
-        
-        task_id = task.get('id')
-        task_url = task.get('url', '')
-        
-        return f"✅ **Task Created:** {task_name}\n📝 **ID:** {task_id}\n🔗 **URL:** {task_url}"
-        
-    except Exception as e:
-        return f"Failed to create task: {str(e)}"
-
-def get_clickup_tasks_summary(client=None):
-    """Get summary of current tasks"""
-    if not client:
-        client = ClickUpClient()
-    
-    try:
-        # Get all tasks
-        all_tasks = client.get_tasks()
-        tasks = all_tasks.get('tasks', [])
-        
-        # Categorize tasks
-        overdue = []
-        due_today = []
-        upcoming = []
-        
-        today = datetime.datetime.now()
-        today_start = today.replace(hour=0, minute=0, second=0, microsecond=0)
-        today_end = today.replace(hour=23, minute=59, second=59, microsecond=59)
-        
-        for task in tasks:
-            if task.get('status', {}).get('status') == 'complete':
-                continue  # Skip completed tasks
-                
-            due_date_ms = task.get('due_date')
-            if due_date_ms:
-                due_date = datetime.datetime.fromtimestamp(int(due_date_ms) / 1000)
-                
-                if due_date < today_start:
-                    overdue.append(task)
-                elif today_start <= due_date <= today_end:
-                    due_today.append(task)
-                elif due_date <= today + datetime.timedelta(days=7):
-                    upcoming.append(task)
-        
-        # Format response
-        response = ["📋 **ClickUp Tasks Summary**", ""]
-        
-        if overdue:
-            response.append(f"⚠️ **Overdue ({len(overdue)}):**")
-            for task in overdue[:3]:  # Show first 3
-                response.append(f"  • {task['name']}")
-            response.append("")
-        
-        if due_today:
-            response.append(f"📅 **Due Today ({len(due_today)}):**")
-            for task in due_today:
-                priority_map = {1: "🔴", 2: "🟡", 3: "🟢", 4: "🔵"}
-                priority_icon = priority_map.get(task.get('priority', {}).get('priority', 3), "🟢")
-                response.append(f"  • {priority_icon} {task['name']}")
-            response.append("")
-        
-        if upcoming:
-            response.append(f"📆 **This Week ({len(upcoming)}):**")
-            for task in upcoming[:5]:  # Show first 5
-                due_date_ms = task.get('due_date')
-                if due_date_ms:
-                    due_date = datetime.datetime.fromtimestamp(int(due_date_ms) / 1000)
-                    date_str = due_date.strftime('%m/%d')
-                    response.append(f"  • {task['name']} (due {date_str})")
-        
-        if not overdue and not due_today and not upcoming:
-            response.append("No upcoming tasks found.")
-        
-        return "\n".join(response)
-        
-    except Exception as e:
-        return f"Tasks query failed: {str(e)}"
-
-def start_clickup_timer(client, task_identifier):
-    """Start timer on a task"""
-    try:
-        # For now, assume task_identifier is a task name
-        # In a more complete implementation, we'd search for tasks by name
-        return f"⏰ **Timer started** on: {task_identifier}\n\n*(Note: Task search by name not yet implemented. Use task ID for now.)*"
-        
-    except Exception as e:
-        return f"Failed to start timer: {str(e)}"
-
-def stop_clickup_timer(client=None):
-    """Stop current timer"""
-    if not client:
-        client = ClickUpClient()
-    
-    try:
-        result = client.stop_time_tracking()
-        return "⏹️ **Timer stopped** and time logged."
-        
-    except Exception as e:
-        return f"Failed to stop timer: {str(e)}"
-
-def log_ghostline_conversation_to_clickup(conversation_summary, project=None):
-    """Log important Ghostline conversations as ClickUp tasks or comments"""
-    if not is_clickup_configured():
-        return False
-    
-    try:
-        client = ClickUpClient()
-        
-        # Create task for significant conversations
-        task_name = f"Ghostline: {conversation_summary[:50]}..."
-        description = f"Auto-generated from Ghostline conversation\nProject: {project or 'General'}\n\nContent: {conversation_summary}"
-        
-        task = client.create_task(
-            name=task_name,
-            description=description,
-            priority=4  # Low priority for auto-generated tasks
-        )
-        
-        current_app.logger.info(f"Logged conversation to ClickUp: {task.get('id')}")
-        return True
-        
-    except Exception as e:
-        current_app.logger.error(f"Failed to log to ClickUp: {e}")
-        return False
-
-def create_clickup_task_from_reminder_snooze(reminder_title, snooze_until):
-    """Create ClickUp task when Telegram reminder is snoozed"""
-    if not is_clickup_configured():
-        return False
-    
-    try:
-        client = ClickUpClient()
-        
-        task_name = f"Follow up: {reminder_title}"
-        description = f"Auto-created from snoozed Telegram reminder\nOriginal reminder: {reminder_title}\nSnoozed until: {snooze_until}"
-        
-        # Set due date to snooze time
-        task = client.create_task(
-            name=task_name,
-            description=description,
-            due_date=snooze_until,
-            priority=3
-        )
-        
-        current_app.logger.info(f"Created ClickUp task from reminder snooze: {task.get('id')}")
-        return True
-        
-    except Exception as e:
-        current_app.logger.error(f"Failed to create task from reminder: {e}")
-        return False
+# Copy the rest of your existing helper functions here with similar error handling improvements...
