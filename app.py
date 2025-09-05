@@ -284,6 +284,7 @@ If this is about popular culture, TV shows, movies, books, or well-known topics,
     
     
 # Section 4: Main Chat Route
+# Section 4: Main Chat Route
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if not session.get('logged_in'):
@@ -326,6 +327,14 @@ def index():
         # Try ClickUp commands (with improved detection)
         if is_clickup_configured():
             response_data, handled = process_clickup_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+
+        # Try Cloze + ClickUp integration commands
+        if is_cloze_configured() and is_clickup_configured():
+            from modules.cloze_clickup_integration import process_cloze_clickup_command
+            response_data, handled = process_cloze_clickup_command(user_input, project, use_voices, random_toggle)
             if handled:
                 save_conversation_enhanced(project, user_input, response_data)
                 return _render_enhanced(project, response_data)
