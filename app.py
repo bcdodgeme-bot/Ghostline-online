@@ -285,6 +285,7 @@ If this is about popular culture, TV shows, movies, books, or well-known topics,
     
 # Section 4: Main Chat Route
 # Section 4: Main Chat Route
+# Section 4: Main Chat Route
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if not session.get('logged_in'):
@@ -307,7 +308,28 @@ def index():
         except Exception as e:
             print(f"Brain context refresh failed: {e}")
 
-        # Try smart commands FIRST (before individual system commands)
+        # Try Cloze + ClickUp integration commands FIRST (before smart commands)
+        if is_cloze_configured() and is_clickup_configured():
+            try:
+                from modules.cloze_clickup_integration import process_cloze_clickup_command
+                response_data, handled = process_cloze_clickup_command(user_input, project, use_voices, random_toggle)
+                if handled:
+                    save_conversation_enhanced(project, user_input, response_data)
+                    return _render_enhanced(project, response_data)
+            except ImportError as e:
+                app.logger.error(f"Cloze integration import failed: {e}")
+                if user_input.lower() in ['relationship priorities', 'cloze productivity', 'productivity briefing']:
+                    response_data = {"SyntaxPrime": f"Integration module import failed: {str(e)}\nCheck if modules/cloze_clickup_integration.py exists and has no syntax errors."}
+                    save_conversation_enhanced(project, user_input, response_data)
+                    return _render_enhanced(project, response_data)
+            except Exception as e:
+                app.logger.error(f"Cloze integration error: {e}")
+                if user_input.lower() in ['relationship priorities', 'cloze productivity', 'productivity briefing']:
+                    response_data = {"SyntaxPrime": f"Integration error: {str(e)}"}
+                    save_conversation_enhanced(project, user_input, response_data)
+                    return _render_enhanced(project, response_data)
+
+        # Try smart commands SECOND (after integration commands)
         response_data, handled = process_smart_command(user_input, project, use_voices, random_toggle)
         if handled:
             save_conversation_enhanced(project, user_input, response_data)
@@ -327,14 +349,6 @@ def index():
         # Try ClickUp commands (with improved detection)
         if is_clickup_configured():
             response_data, handled = process_clickup_command(user_input, project, use_voices, random_toggle)
-            if handled:
-                save_conversation_enhanced(project, user_input, response_data)
-                return _render_enhanced(project, response_data)
-
-        # Try Cloze + ClickUp integration commands
-        if is_cloze_configured() and is_clickup_configured():
-            from modules.cloze_clickup_integration import process_cloze_clickup_command
-            response_data, handled = process_cloze_clickup_command(user_input, project, use_voices, random_toggle)
             if handled:
                 save_conversation_enhanced(project, user_input, response_data)
                 return _render_enhanced(project, response_data)
