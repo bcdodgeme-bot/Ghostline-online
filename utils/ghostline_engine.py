@@ -27,7 +27,7 @@ ANSWER_RULES = (
     "Do NOT repeat or quote the prompt. "
     "Do NOT invent 'User:'/'Assistant:' transcripts. "
     "Be direct, helpful, and stay in persona. "
-    "One clean answerâ€"no preambles like 'Certainly' or 'Here's your response'."
+    "One clean answer no preambles like 'Certainly' or 'Here's your response'."
 )
 
 # FIXED: Helper function to get properly formatted current time
