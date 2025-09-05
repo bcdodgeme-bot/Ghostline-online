@@ -1,10 +1,18 @@
-# utils/ghostline_engine.py
+# utils/ghostline_engine.py - FIXED VERSION with proper timezone support
 
 import os
 import json
 import requests
 from datetime import datetime
 from typing import Optional, Iterable, List, Dict
+
+# FIXED: Import the timezone manager
+try:
+    from modules.timezone_handler import timezone_manager, now_user_time
+    TIMEZONE_AVAILABLE = True
+except ImportError:
+    TIMEZONE_AVAILABLE = False
+    print("Timezone handler not available - using UTC")
 
 # -------- OpenRouter client setup --------
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
@@ -21,6 +29,27 @@ ANSWER_RULES = (
     "Be direct, helpful, and stay in persona. "
     "One clean answer—no preambles like 'Certainly' or 'Here's your response'."
 )
+
+# FIXED: Helper function to get properly formatted current time
+def get_current_time_context():
+    """Get current time in user's timezone with full context"""
+    if TIMEZONE_AVAILABLE:
+        try:
+            user_now = now_user_time()
+            tz_info = timezone_manager.get_timezone_info()
+            
+            # Rich time context for the AI
+            return (
+                f"Current time: {user_now.strftime('%A, %B %d, %Y at %I:%M %p')} "
+                f"({tz_info['timezone_abbr']}, {tz_info['timezone_name']})"
+            )
+        except Exception as e:
+            print(f"Timezone context failed: {e}")
+            # Fallback to basic format
+            return f"Current time: {datetime.now().strftime('%A, %B %d, %Y at %I:%M %p UTC')}"
+    else:
+        # Fallback when timezone handler not available
+        return f"Current time: {datetime.now().strftime('%A, %B %d, %Y at %H:%M UTC')}"
 
 # ---- OpenRouter HTTP client class ----
 class OpenRouterClient:
@@ -169,16 +198,20 @@ def generate_response(
     Return a dict {voice: reply}
     """
     output: Dict[str, str] = {}
-    today = datetime.now().strftime("%A, %B %d, %Y")
+    
+    # FIXED: Use timezone-aware time context instead of hardcoded UTC
+    time_context = get_current_time_context()
 
     # reserve a small budget for user-only history (very rough)
     history_text = load_user_history_only(project, max_tokens=400)
     retrieval_block = _format_retrieval_block(retrieval_context or [])
 
     for voice in voices:
+        # FIXED: Include rich time context in system prompt
         system_prompt = (
-            f"{_persona_for(voice)} Today is {today}. {ANSWER_RULES} "
-            "If the user corrects you, acknowledge briefly and proceed."
+            f"{_persona_for(voice)} {time_context}. {ANSWER_RULES} "
+            "If the user corrects you, acknowledge briefly and proceed. "
+            "When discussing time, dates, or schedules, use the provided current time context."
         )
 
         user_prompt = (
@@ -231,14 +264,20 @@ def stream_generate(
     For UI simplicity we just pick voices[0] for the stream header.
     """
     voice = voices[0] if voices else "SyntaxPrime"
-    today = datetime.now().strftime("%A, %B %d, %Y")
+    
+    # FIXED: Use timezone-aware time context for streaming too
+    time_context = get_current_time_context()
+    
     history_text = load_user_history_only(project, max_tokens=400)
     retrieval_block = _format_retrieval_block(retrieval_context or [])
 
+    # FIXED: Include rich time context in streaming system prompt
     system_prompt = (
-        f"{_persona_for(voice)} Today is {today}. {ANSWER_RULES} "
-        "If the user corrects you, acknowledge briefly and proceed."
+        f"{_persona_for(voice)} {time_context}. {ANSWER_RULES} "
+        "If the user corrects you, acknowledge briefly and proceed. "
+        "When discussing time, dates, or schedules, use the provided current time context."
     )
+    
     user_prompt = (
         (history_text if history_text else "")
         + (retrieval_block if retrieval_block else "")
