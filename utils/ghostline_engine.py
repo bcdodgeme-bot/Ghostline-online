@@ -170,7 +170,7 @@ def _format_retrieval_block(snippets: List[Dict]) -> str:
         title = s.get("title") or "Untitled"
         src = s.get("source") or ""
         body = (s.get("text") or "")[:1200]
-        lines.append(f"- {title}{' â€" ' + src if src else ''}\n{body}")
+        lines.append(f"- {title}{' - ' + src if src else ''}\n{body}")
     return "<RETRIEVED_KNOWLEDGE>\n" + "\n\n".join(lines) + "\n</RETRIEVED_KNOWLEDGE>\n"
 
 # ---- Personas ----
