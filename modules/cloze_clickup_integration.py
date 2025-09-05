@@ -73,7 +73,7 @@ class ClozeClickUpIntegration:
         """Get recent email engagement data from Cloze"""
         try:
             engagement_data = self.cloze_client.get_message_opens(
-                days_back=days_back, 
+                days_back=days_back,
                 limit=50
             )
             
@@ -352,8 +352,29 @@ class ClozeClickUpIntegration:
         return prompt
 
 def process_cloze_clickup_command(user_input: str, project: str, use_voices: List[str], random_toggle: bool) -> tuple:
-    """Process Cloze + ClickUp integration commands"""
+    """Process Cloze + ClickUp integration commands with PRECISE pattern matching"""
     user_lower = user_input.lower().strip()
+    
+    # PRECISE command detection to avoid conflicts with smart_commands
+    integration_commands = [
+        'relationship priorities', 'cloze priorities', 'relationship analysis',
+        'priority contacts', 'create relationship tasks', 'create priority tasks',
+        'make tasks from cloze', 'generate relationship tasks', 'email engagement',
+        'who opened emails', 'engagement analysis', 'email opens', 'engaged contacts',
+        'create engagement tasks', 'follow up engaged contacts', 'make tasks from engagement',
+        'productivity briefing', 'cloze clickup briefing', 'relationship productivity',
+        'integration briefing', 'combined briefing', 'cloze productivity'
+    ]
+    
+    # Only process if it's an exact match or starts with integration command
+    is_integration_command = False
+    for cmd in integration_commands:
+        if user_lower == cmd or user_lower.startswith(cmd + ' '):
+            is_integration_command = True
+            break
+    
+    if not is_integration_command:
+        return {}, False
     
     # Check if both systems are configured
     if not (is_cloze_configured() and is_clickup_configured()):
@@ -368,7 +389,7 @@ def process_cloze_clickup_command(user_input: str, project: str, use_voices: Lis
         # Relationship analysis command
         if any(phrase in user_lower for phrase in [
             'relationship priorities', 'cloze priorities', 'relationship analysis',
-            'who should i follow up with', 'priority contacts'
+            'priority contacts'
         ]):
             analysis = integration.analyze_relationship_priorities()
             
