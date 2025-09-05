@@ -1,5 +1,6 @@
 # modules/file_processing.py - UPDATED for integrated chat flow
 # Fixes Entry #4: Now keeps file analysis in the conversational thread
+# FIXED: Task extraction with mandatory format enforcement
 
 import os
 import io
@@ -263,14 +264,16 @@ def process_single_file(file, project):
     text_words = len(text.split()) if text else 0
     is_image_file = filename.endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp'))
     
-    # Generate analysis prompt based on file type and content
+    # Generate analysis prompt based on file type and content - FIXED VERSION
     if filename.endswith(('.pdf', '.docx')):
-        analysis_prompt = f"""EXTRACT ACTIONABLE TASKS from this document: '{file.filename}'
+        analysis_prompt = f"""MANDATORY FORMAT REQUIREMENT: Your response MUST include the exact table structure shown below. Do not deviate from this format.
+
+EXTRACT ACTIONABLE TASKS from this document: '{file.filename}'
 
 DOCUMENT CONTENT:
 {text}
 
-REQUIRED OUTPUT FORMAT:
+REQUIRED OUTPUT - FOLLOW THIS EXACT FORMAT:
 
 ## 📋 EXTRACTED TASKS TABLE
 | Task | Due Date | Priority | Status |
@@ -291,7 +294,14 @@ REQUIRED OUTPUT FORMAT:
 2. [Second priority action]
 3. [Third priority action]
 
-Focus on creating structured, scannable output that transforms document content into actionable work items."""
+IMPORTANT RULES:
+- If no explicit tasks are found, derive at least 3 actionable items from the content
+- Every task must have a priority level (High/Medium/Low)
+- Use "TBD" for unknown due dates
+- Be specific and actionable in task descriptions
+- Focus on creating structured, scannable output that transforms document content into actionable work items
+
+START YOUR RESPONSE WITH THE TASKS TABLE - DO NOT PUT ANY TEXT BEFORE IT."""
 
     elif is_image_file and text_words < 5:
         # Poor OCR results - switch to GPT-4 Vision analysis

@@ -1,5 +1,5 @@
-# modules/smart_commands.py - FIXED VERSION with precise keyword matching
-# This fixes the overly aggressive keyword triggers causing false command activation
+# modules/smart_commands.py - COMPREHENSIVE FIX for command over-triggering
+# This fixes ALL overly aggressive keyword triggers causing false command activation
 
 import os
 import re
@@ -15,92 +15,96 @@ from modules.gmail import (
 
 CHAT_MODEL = os.getenv("CHAT_MODEL", os.getenv("OPENROUTER_MODEL", "openrouter/auto"))
 
-# FIXED: More precise content mode patterns - using word boundaries and specific phrases
+# FIXED: Ultra-precise content mode patterns with strict word boundaries
 CONTENT_MODES = {
     "email": {
         "prompt": "We are writing an email. Use professional tone, clear CTAs, proper email structure.",
         "patterns": [
-            r'\bwrite\s+email\b',
-            r'\bdraft\s+email\b',
-            r'\bemail\s+for\b',
-            r'\bcompose\s+email\b',
-            r'\bemail\s+about\b',
+            r'\bwrite\s+an?\s+email\b',
+            r'\bdraft\s+an?\s+email\b',
+            r'\bemail\s+for\s+\w+\b',
+            r'\bcompose\s+an?\s+email\b',
+            r'\bemail\s+about\s+\w+\b',
             r'\bgiving\s+circle\s+email\b',
-            r'\bnewsletter\b'
+            r'\bnewsletter\s+email\b',
+            r'\bsend\s+an?\s+email\b'
         ],
         "tone_questions": ["What's the target audience?", "Professional or casual tone?", "Any specific CTAs needed?"]
     },
     "blog": {
         "prompt": "We are writing a blog post. Use SEO best practices, engaging headlines, proper meta descriptions.",
         "patterns": [
-            r'\bwrite\s+blog\b',
-            r'\bblog\s+post\b',
-            r'\bdraft\s+blog\b',
-            r'\bwrite\s+article\b',
-            r'\bblog\s+about\b'
+            r'\bwrite\s+a\s+blog\b',
+            r'\bblog\s+post\s+about\b',
+            r'\bdraft\s+a\s+blog\b',
+            r'\bwrite\s+an?\s+article\b',
+            r'\bblog\s+article\s+about\b',
+            r'\bcreate\s+a\s+blog\b'
         ],
         "tone_questions": ["What's the tone?", "Any target keywords for SEO?", "What's the main message?"]
     },
     "sms": {
         "prompt": "We are writing SMS content. Keep under 160 characters, clear action, urgent tone.",
         "patterns": [
-            r'\bwrite\s+sms\b',
-            r'\btext\s+message\b',
-            r'\bsms\s+for\b',
-            r'\btext\s+about\b'
+            r'\bwrite\s+an?\s+sms\b',
+            r'\btext\s+message\s+for\b',
+            r'\bsms\s+for\s+\w+\b',
+            r'\btext\s+about\s+\w+\b',
+            r'\bsend\s+a\s+text\b'
         ],
         "tone_questions": ["What's the main action?", "How urgent is this?"]
     },
     "social": {
         "prompt": "We are writing social media content. Platform-optimized, engaging, hashtag-ready.",
         "patterns": [
-            r'\bsocial\s+media\b',
-            r'\bsocial\s+post\b',
-            r'\btweet\b',
-            r'\binstagram\s+post\b',
-            r'\bfacebook\s+post\b',
-            r'\blinkedin\s+post\b'
+            r'\bsocial\s+media\s+post\b',
+            r'\bsocial\s+media\s+content\b',
+            r'\bwrite\s+a\s+tweet\b',
+            r'\binstagram\s+post\s+(for|about)\b',
+            r'\bfacebook\s+post\s+(for|about)\b',
+            r'\blinkedin\s+post\s+(for|about)\b',
+            r'\bcreate\s+social\s+content\b'
         ],
         "tone_questions": ["Which platform?", "Professional or casual tone?", "Any specific hashtags needed?"]
     }
 }
 
-# FIXED: More specific analysis mode patterns
+# FIXED: Ultra-specific analysis mode patterns
 ANALYSIS_MODES = {
     "marketing_plan": {
         "prompt": "We are developing a marketing plan. Focus on strategy, target audience analysis, channel selection.",
         "patterns": [
-            r'\bmarketing\s+plan\b',
-            r'\bmarketing\s+strategy\b',
-            r'\bcampaign\s+plan\b',
-            r'\bmarketing\s+analysis\b',
-            r'\bbrand\s+strategy\b',
-            r'\bcreate\s+marketing\b',
-            r'\bdevelop\s+marketing\b'
+            r'\bmarketing\s+plan\s+(for|about)\b',
+            r'\bmarketing\s+strategy\s+(for|about)\b',
+            r'\bcampaign\s+plan\s+(for|about)\b',
+            r'\bmarketing\s+analysis\s+(of|for)\b',
+            r'\bbrand\s+strategy\s+(for|about)\b',
+            r'\bcreate\s+a\s+marketing\s+plan\b',
+            r'\bdevelop\s+a\s+marketing\s+strategy\b'
         ],
         "questions": ["What's the product/service?", "Target audience?", "Budget range?"]
     },
     "board_report": {
         "prompt": "We are writing a board report. Use executive summary format, data-driven insights, clear recommendations.",
         "patterns": [
-            r'\bboard\s+report\b',
-            r'\bexecutive\s+report\b',
-            r'\bquarterly\s+report\b',
-            r'\bboard\s+presentation\b',
-            r'\bexecutive\s+summary\b',
-            r'\bwrite\s+board\b',
-            r'\bcreate\s+board\s+report\b'
+            r'\bboard\s+report\s+(for|about)\b',
+            r'\bexecutive\s+report\s+(for|about)\b',
+            r'\bquarterly\s+report\s+(for|about)\b',
+            r'\bboard\s+presentation\s+(for|about)\b',
+            r'\bexecutive\s+summary\s+(for|of)\b',
+            r'\bwrite\s+a\s+board\s+report\b',
+            r'\bcreate\s+a\s+board\s+report\b'
         ],
         "questions": ["Which quarter/period?", "Key metrics to highlight?", "Any major decisions needed?"]
     },
     "competitive_analysis": {
         "prompt": "We are conducting competitive analysis. Focus on market positioning, competitive advantages.",
         "patterns": [
-            r'\bcompetitive\s+analysis\b',
-            r'\bcompetitor\s+research\b',
-            r'\bmarket\s+analysis\b',
-            r'\bcompetition\s+review\b',
-            r'\bcompetitor\s+study\b'
+            r'\bcompetitive\s+analysis\s+(of|for)\b',
+            r'\bcompetitor\s+research\s+(on|for)\b',
+            r'\bmarket\s+analysis\s+(of|for)\b',
+            r'\bcompetition\s+review\s+(of|for)\b',
+            r'\bcompetitor\s+study\s+(of|for)\b'
         ],
         "questions": ["Who are the main competitors?", "What market segment?"]
     }
@@ -119,34 +123,34 @@ def matches_pattern(text, patterns):
     return False
 
 def detect_intent(user_input):
-    """FIXED: Much more precise intent detection with better exit handling"""
+    """ULTRA-PRECISE intent detection with bulletproof exit handling"""
     global _current_content_mode
     lower_input = user_input.lower().strip()
     
-    # FIXED: Better exit pattern detection
+    # FIXED: Ultra-specific exit pattern detection
     exit_patterns = [
-        r'\bthat\'?s\s+done\b',
-        r'\bthat\'?s\s+finished\b',
-        r'\bthat\'?s\s+complete\b',
-        r'\bokay,?\s+that\b',
-        r'\blet\'?s\s+move\s+on\b',
-        r'\bnext,?\s',
-        r'\bnow\s+let\'?s\b',
-        r'\bdone\s+with\s+that\b',
-        r'\bfinished\s+with\b'
+        r'^that\'?s\s+done\.?$',
+        r'^that\'?s\s+finished\.?$',
+        r'^that\'?s\s+complete\.?$',
+        r'^okay,?\s+that\'?s\s+(done|finished|complete)\.?$',
+        r'^let\'?s\s+move\s+on\.?$',
+        r'^next\.?$',
+        r'^now\s+let\'?s\b',
+        r'^done\s+with\s+that\.?$',
+        r'^finished\s+with\s+(that|this)\.?$'
     ]
     
     if any(re.search(pattern, lower_input) for pattern in exit_patterns):
         print(f"Exiting content mode due to completion signal: '{user_input}'")
         _current_content_mode = None
         _current_context.clear()
-        return "casual"  # Treat as casual conversation after exit
+        return "casual"
     
-    # FIXED: More precise content mode transitions
+    # FIXED: Ultra-precise content mode transitions (only when explicitly requested)
     transition_patterns = [
-        r'\blet\'?s\s+write\s+social\b',
-        r'\bsocial\s+media\s+posts?\s+for\s+it\b',
-        r'\bnow\s+create\s+social\b'
+        r'^let\'?s\s+write\s+social\s+media\b',
+        r'^now\s+create\s+social\s+media\b',
+        r'^social\s+media\s+posts?\s+for\s+this\b'
     ]
     
     if any(re.search(pattern, lower_input) for pattern in transition_patterns):
@@ -156,27 +160,46 @@ def detect_intent(user_input):
     
     # If we're in content mode, check if this is still content-related
     if _current_content_mode:
-        # FIXED: Allow natural conversation to break out of content mode
+        # FIXED: Ultra-specific casual conversation indicators that ALWAYS break content mode
         casual_conversation_indicators = [
-            r'\bhello\b', r'\bhi\b', r'\bhey\b', r'\bthanks?\b', r'\bthank\s+you\b',
-            r'\bhow\s+are\s+you\b', r'\bwhat\'?s\s+up\b', r'\bgood\s+morning\b',
-            r'\bhow\'?s\s+it\s+going\b', r'\bawesome\b', r'\bgreat\b',
-            r'\bpraying\s+fajr\b',  # Specific fix for user's example
-            r'\bcup\s+(one|two|three|\d+)\b',  # Specific fix for coffee references
-            r'\bgood\s+afternoon\b', r'\bgood\s+evening\b'
+            r'^(hello|hi|hey)(\s+\w+)?\.?$',  # Simple greetings only
+            r'^(thanks?|thank\s+you)\.?$',
+            r'^(good\s+morning|good\s+afternoon|good\s+evening)\.?$',
+            r'^how\s+are\s+you(\s+doing)?\.?$',
+            r'^what\'?s\s+up\.?$',
+            r'^(awesome|great|nice|cool)\.?$',
+            r'^(got\s+it|understood|perfect)\.?$',
+            r'^\w*\s*praying\s+fajr\b',  # Religious activities
+            r'^cup\s+(one|two|three|four|five|\d+)\b',  # Coffee references
+            r'^(coffee|tea)\s+time\b',
+            r'^taking\s+a\s+break\b',
+            r'^just\s+(checking|saying)\s+hi\b'
         ]
         
         if any(re.search(pattern, lower_input) for pattern in casual_conversation_indicators):
-            print(f"Breaking out of {_current_content_mode} mode for casual conversation")
+            print(f"Breaking out of {_current_content_mode} mode for casual conversation: '{lower_input}'")
             _current_content_mode = None
             _current_context.clear()
             return "casual"
         
-        # Otherwise, continue in current mode
-        print(f"Continuing in {_current_content_mode} content mode")
-        return "content_creation" if _current_content_mode in CONTENT_MODES else "analysis_mode"
+        # Continue in current mode only if input is clearly content-related
+        content_continuation_patterns = [
+            r'\b(write|draft|create|edit|revise|update|change)\b',
+            r'\b(add|include|mention|focus|emphasize)\b',
+            r'\b(tone|style|format|structure)\b'
+        ]
+        
+        if any(re.search(pattern, lower_input) for pattern in content_continuation_patterns):
+            print(f"Continuing in {_current_content_mode} content mode")
+            return "content_creation" if _current_content_mode in CONTENT_MODES else "analysis_mode"
+        else:
+            # If not clearly content-related, exit mode
+            print(f"Exiting {_current_content_mode} mode - input not content-related: '{lower_input}'")
+            _current_content_mode = None
+            _current_context.clear()
+            return "casual"
     
-    # FIXED: Check for new content mode entry with precise patterns
+    # FIXED: Check for new content mode entry with ultra-precise patterns
     for mode, config in CONTENT_MODES.items():
         if matches_pattern(user_input, config["patterns"]):
             _current_content_mode = mode
@@ -184,7 +207,7 @@ def detect_intent(user_input):
             print(f"Entering {mode} content mode")
             return "content_creation"
     
-    # FIXED: Check for analysis mode entry with precise patterns
+    # FIXED: Check for analysis mode entry with ultra-precise patterns
     for mode, config in ANALYSIS_MODES.items():
         if matches_pattern(user_input, config["patterns"]):
             _current_content_mode = mode
@@ -192,24 +215,29 @@ def detect_intent(user_input):
             print(f"Entering {mode} analysis mode")
             return "analysis_mode"
     
-    # FIXED: Much more specific casual/greeting patterns
+    # FIXED: Ultra-specific casual/greeting patterns that NEVER trigger commands
     casual_patterns = [
-        r'^\b(hello|hi|hey)\b',  # Must start with greeting
-        r'\bgood\s+(afternoon|evening|night)\b',
-        r'\bhow\s+are\s+you(\s+doing)?\b',
-        r'^\bwhat\'?s\s+up\b',
-        r'^\b(thanks?|thank\s+you)\b',
-        r'^\b(ok|okay|cool|great|nice|got\s+it|understood|perfect)\b$',
-        r'\bhello\s+syntax\b',
-        r'\bhi\s+syntax\b',
-        r'\bhey\s+syntax\b',
-        r'\bpraying\s+fajr\b',  # User's specific example
-        r'\bcup\s+(one|two|three|\d+)\b'  # Coffee references
+        r'^(hello|hi|hey)(\s+syntax)?(\s+prime)?\.?$',
+        r'^(good\s+morning|good\s+afternoon|good\s+evening)(\s+syntax)?\.?$',
+        r'^how\s+are\s+you(\s+doing)?\.?$',
+        r'^what\'?s\s+up\.?$',
+        r'^(thanks?|thank\s+you)(\s+syntax)?\.?$',
+        r'^(ok|okay|cool|great|nice|got\s+it|understood|perfect)\.?$',
+        r'^(hello|hi|hey)\s+syntax(\s+prime)?\.?$',
+        r'^\w*\s*praying\s+fajr\b',
+        r'^cup\s+(one|two|three|four|five|\d+)(\s+of\s+(coffee|tea))?\.?$',
+        r'^(coffee|tea)\s+break\b',
+        r'^just\s+(saying\s+)?hi\b'
     ]
     
-    # Only match casual if it's clearly casual and not asking for briefing info
-    briefing_keywords = [r'\bbriefing\b', r'\bbrief\s+me\b', r'\bcatch\s+me\s+up\b',
-                        r'\bupdate\s+me\b', r'\bstart\s+my\s+day\b', r'\bdaily\b']
+    # Ultra-specific briefing keywords that NEVER match casual conversation
+    briefing_keywords = [
+        r'\bdaily\s+briefing\b',
+        r'\bbrief\s+me\s+on\b',
+        r'\bcatch\s+me\s+up\s+on\b',
+        r'\bmorning\s+update\b',
+        r'\bstart\s+my\s+day\b'
+    ]
     
     is_casual = any(re.search(pattern, lower_input) for pattern in casual_patterns)
     is_briefing = any(re.search(pattern, lower_input) for pattern in briefing_keywords)
@@ -218,59 +246,68 @@ def detect_intent(user_input):
         print(f"Detected casual greeting: '{lower_input}'")
         return "casual"
     
-    # FIXED: More specific morning briefing patterns
+    # FIXED: Ultra-specific morning briefing patterns
     morning_patterns = [
-        r'\bdaily\s+briefing\b',
-        r'\bbrief\s+me\b',
-        r'\bcatch\s+me\s+up\b',
-        r'\bmorning\s+update\b',
-        r'\bdaily\s+summary\b',
-        r'\bwhat\'?s\s+today\b',
-        r'\bwhat\s+do\s+i\s+need\s+to\s+know\b',
-        r'\bmorning\s+sync\b',
-        r'\bdaily\s+intel\b',
-        r'\bstart\s+my\s+day\b'
+        r'^daily\s+briefing\.?$',
+        r'^brief\s+me\.?$',
+        r'^catch\s+me\s+up\.?$',
+        r'^morning\s+update\.?$',
+        r'^daily\s+summary\.?$',
+        r'^what\'?s\s+today\'?s\s+(schedule|agenda)\b',
+        r'^what\s+do\s+i\s+need\s+to\s+know\s+today\b',
+        r'^morning\s+sync\.?$',
+        r'^daily\s+intel\.?$',
+        r'^start\s+my\s+day\.?$'
     ]
     
-    # Other intent patterns (keep existing logic but make more precise)
+    # Ultra-specific productivity patterns
     productivity_patterns = [
-        r'\bwhat\s+should\s+i\s+work\s+on\b',
-        r'\bmy\s+priorities\b',
-        r'\bwhat\'?s\s+due\b',
-        r'\bdeadlines\b',
-        r'\bmy\s+tasks\b',
-        r'\btask\s+summary\b',
-        r'\bwork\s+focus\b'
+        r'^what\s+should\s+i\s+work\s+on\s+today\b',
+        r'^my\s+top\s+priorities\b',
+        r'^what\'?s\s+due\s+today\b',
+        r'^today\'?s\s+deadlines\b',
+        r'^my\s+task\s+list\b',
+        r'^task\s+summary\s+for\s+today\b',
+        r'^work\s+focus\s+for\s+today\b'
     ]
     
+    # Ultra-specific relationship patterns
     relationship_patterns = [
-        r'\bwho\s+should\s+i\s+follow\s+up\s+with\b',
-        r'\bpipeline\b',
-        r'\bdeals\b',
-        r'\bcrm\b',
-        r'\bfollow\s+ups?\b'
+        r'^who\s+should\s+i\s+follow\s+up\s+with\b',
+        r'^pipeline\s+update\b',
+        r'^deals\s+status\b',
+        r'^crm\s+update\b',
+        r'^follow\s+up\s+reminders\b'
     ]
     
+    # Ultra-specific email patterns
     email_patterns = [
-        r'^\bovernight\b$',  # Must be exact word
-        r'^\bemails?\b$',
-        r'^\binbox\b$',
-        r'^\bmail\b$',
-        r'\bcheck\s+mail\b',
-        r'\bcalendar\b',
-        r'\bmeetings?\b',
-        r'\bschedule\b'
+        r'^overnight\s+emails?\b',
+        r'^check\s+emails?\b',
+        r'^inbox\s+status\b',
+        r'^new\s+mail\b',
+        r'^email\s+summary\b'
     ]
     
+    # Ultra-specific calendar patterns
+    calendar_patterns = [
+        r'^calendar\s+for\s+today\b',
+        r'^today\'?s\s+meetings\b',
+        r'^my\s+schedule\s+today\b',
+        r'^next\s+meeting\b'
+    ]
+    
+    # Ultra-specific question patterns
     specific_patterns = [
-        r'\bwhat\s+is\b',
-        r'\bwhat\s+does\b',
-        r'\btell\s+me\s+about\b',
-        r'\bexplain\b',
-        r'\bdescribe\b'
+        r'^what\s+is\s+\w+\b',
+        r'^what\s+does\s+\w+\b',
+        r'^tell\s+me\s+about\s+\w+\b',
+        r'^explain\s+\w+\b',
+        r'^describe\s+\w+\b',
+        r'^how\s+does\s+\w+\b'
     ]
     
-    # Check patterns in priority order with precise matching
+    # Check patterns in priority order with ultra-precise matching
     if any(re.search(pattern, lower_input) for pattern in morning_patterns):
         return "morning_briefing"
     elif any(re.search(pattern, lower_input) for pattern in productivity_patterns):
@@ -279,12 +316,12 @@ def detect_intent(user_input):
         return "relationship_focus"
     elif any(re.search(pattern, lower_input) for pattern in email_patterns):
         return "quick_check"
+    elif any(re.search(pattern, lower_input) for pattern in calendar_patterns):
+        return "quick_check"
     elif any(re.search(pattern, lower_input) for pattern in specific_patterns):
         return "specific_question"
     
     return "general"
-
-# Keep all your existing handler functions but with better error handling
 
 def handle_content_creation(user_input, project, use_voices, random_toggle):
     """Handle content creation with improved exit detection"""
@@ -296,7 +333,6 @@ def handle_content_creation(user_input, project, use_voices, random_toggle):
     # Get mode configuration
     mode_config = CONTENT_MODES.get(_current_content_mode) or ANALYSIS_MODES.get(_current_content_mode, CONTENT_MODES["email"])
     
-    # Rest of your existing content creation logic...
     try:
         from modules.brain import enhanced_retrieve
         retrieval_ctx = enhanced_retrieve(f"{_current_content_mode} {user_input}", k=6, project=project)
@@ -326,13 +362,14 @@ def handle_analysis_mode(user_input, project, use_voices, random_toggle):
     
     mode_config = ANALYSIS_MODES[_current_content_mode]
     
-    # FIXED: Better exit detection for board report loops
+    # FIXED: Ultra-specific exit detection for board report loops
     if "board_report" in _current_content_mode:
         board_completion_signals = [
-            r'\bthat\'?s\s+the\s+report\b',
-            r'\bthat\'?s\s+enough\b',
-            r'\bboard\s+report\s+is\s+done\b',
-            r'\bfinished\s+with\s+the\s+board\s+report\b'
+            r'^that\'?s\s+the\s+report\.?$',
+            r'^that\'?s\s+enough\s+for\s+the\s+report\.?$',
+            r'^board\s+report\s+is\s+done\.?$',
+            r'^finished\s+with\s+the\s+board\s+report\.?$',
+            r'^report\s+complete\.?$'
         ]
         
         if any(re.search(pattern, user_input.lower()) for pattern in board_completion_signals):
@@ -340,7 +377,6 @@ def handle_analysis_mode(user_input, project, use_voices, random_toggle):
             _current_context.clear()
             return {"SyntaxPrime": "Board report completed! What else can I help you with?"}, True
     
-    # Rest of your existing analysis mode logic...
     try:
         from modules.brain import enhanced_retrieve
         retrieval_ctx = enhanced_retrieve(f"{_current_content_mode} {user_input}", k=8, project=project)
@@ -370,15 +406,12 @@ def handle_casual_greeting(user_input, project, use_voices, random_toggle):
     
     casual_prompt = f"""User said: {user_input}
 
-This is a casual greeting. Respond as Syntax Prime with your characteristic personality - direct, slightly sarcastic, efficient, but helpful. Keep it brief and conversational. Don't provide briefings unless specifically asked."""
+This is a casual greeting or conversation. Respond as Syntax Prime with your characteristic personality - direct, slightly sarcastic, efficient, but helpful. Keep it brief and conversational. Don't provide briefings unless specifically asked."""
     
     return generate_response(
         casual_prompt, use_voices, random_toggle,
         project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
     )
-
-# Keep all your other existing handler functions unchanged...
-# (handle_specific_question, handle_morning_briefing, etc.)
 
 def enhanced_retrieve_with_fallbacks(query_text, k=5, project=None):
     """Enhanced retrieval with multiple fallback strategies"""
@@ -463,7 +496,7 @@ def get_current_mode_status():
     }
 
 def process_smart_command(user_input, project, use_voices, random_toggle):
-    """FIXED: Main smart command processor with precise intent detection"""
+    """ULTRA-PRECISE main smart command processor with bulletproof intent detection"""
     
     intent = detect_intent(user_input)
     print(f"Smart command intent: {intent} for input: '{user_input}'")

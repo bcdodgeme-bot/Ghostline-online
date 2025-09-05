@@ -1,4 +1,4 @@
-# utils/ghostline_engine.py - FIXED VERSION with proper timezone support
+# utils/ghostline_engine.py - FIXED VERSION with proper timezone support and Gmail fix
 
 import os
 import json
@@ -27,7 +27,7 @@ ANSWER_RULES = (
     "Do NOT repeat or quote the prompt. "
     "Do NOT invent 'User:'/'Assistant:' transcripts. "
     "Be direct, helpful, and stay in persona. "
-    "One clean answer—no preambles like 'Certainly' or 'Here's your response'."
+    "One clean answerâ€"no preambles like 'Certainly' or 'Here's your response'."
 )
 
 # FIXED: Helper function to get properly formatted current time
@@ -170,7 +170,7 @@ def _format_retrieval_block(snippets: List[Dict]) -> str:
         title = s.get("title") or "Untitled"
         src = s.get("source") or ""
         body = (s.get("text") or "")[:1200]
-        lines.append(f"- {title}{' — ' + src if src else ''}\n{body}")
+        lines.append(f"- {title}{' â€" ' + src if src else ''}\n{body}")
     return "<RETRIEVED_KNOWLEDGE>\n" + "\n\n".join(lines) + "\n</RETRIEVED_KNOWLEDGE>\n"
 
 # ---- Personas ----
@@ -214,8 +214,15 @@ def generate_response(
             "When discussing time, dates, or schedules, use the provided current time context."
         )
 
+        # FIXED: Gmail command detection to prevent context contamination
+        is_gmail_command = any(cmd in prompt.lower() for cmd in [
+            'overnight', 'email', 'inbox', 'gmail', 'unread', 'messages',
+            'no emails found', 'no readable', 'overnight emails'
+        ])
+
         user_prompt = (
-            (history_text if history_text else "")
+            # Only include history for non-Gmail commands to prevent context contamination
+            (history_text if history_text and not is_gmail_command else "")
             + (retrieval_block if retrieval_block else "")
             + "User's new message:\n"
             + prompt
@@ -278,8 +285,15 @@ def stream_generate(
         "When discussing time, dates, or schedules, use the provided current time context."
     )
     
+    # FIXED: Gmail command detection for streaming function too
+    is_gmail_command = any(cmd in prompt.lower() for cmd in [
+        'overnight', 'email', 'inbox', 'gmail', 'unread', 'messages',
+        'no emails found', 'no readable', 'overnight emails'
+    ])
+    
     user_prompt = (
-        (history_text if history_text else "")
+        # Only include history for non-Gmail commands to prevent context contamination
+        (history_text if history_text and not is_gmail_command else "")
         + (retrieval_block if retrieval_block else "")
         + "User's new message:\n"
         + prompt

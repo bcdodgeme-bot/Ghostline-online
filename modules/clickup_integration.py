@@ -1,4 +1,4 @@
-# modules/clickup_integration.py - FIXED VERSION with proper Flask context handling
+# modules/clickup_integration.py - FIXED VERSION with proper pattern matching and Flask context handling
 
 import os
 import json
@@ -262,26 +262,35 @@ def is_clickup_configured():
     return bool(os.getenv('CLICKUP_API_TOKEN'))
 
 def process_clickup_command(user_input, project, use_voices, random_toggle):
-    """Process ClickUp-related commands with FIXED context handling"""
+    """Process ClickUp-related commands with FIXED pattern matching and context handling"""
     if not is_clickup_configured():
         return None, False
     
     user_input_lower = user_input.lower()
     
-    # ClickUp command patterns - more comprehensive
+    # FIXED: Use proper regex patterns with word boundaries to prevent false positives
     clickup_patterns = [
-        'clickup', 'click up', 'cu ', ' cu ', 'time track', 'my tasks', 'create task',
-        'task list', 'task status', 'work timer', 'productivity'
+        r'\bclickup\b',                    # "clickup" as whole word
+        r'\bclick\s+up\b',                # "click up" with space
+        r'\bcreate\s+clickup\s+task\b',   # "create clickup task"
+        r'\bmy\s+clickup\s+tasks\b',      # "my clickup tasks"
+        r'\bclickup\s+time\b',            # "clickup time"
+        r'\bclickup\s+morning\b',         # "clickup morning"
+        r'\bclickup\s+setup\b',           # "clickup setup"
+        r'\bwork\s+timer\b',              # "work timer"
+        r'\btask\s+list\b',               # "task list"
+        r'\btask\s+status\b'              # "task status"
     ]
     
-    if not any(pattern in user_input_lower for pattern in clickup_patterns):
+    # FIXED: Use regex search instead of simple string containment
+    if not any(re.search(pattern, user_input_lower) for pattern in clickup_patterns):
         return None, False
     
     try:
         client = ClickUpClient()
         
         # Setup/diagnostic command
-        if any(keyword in user_input_lower for keyword in ['setup', 'configure', 'diagnostic']):
+        if any(re.search(pattern, user_input_lower) for pattern in [r'\bsetup\b', r'\bconfigure\b', r'\bdiagnostic\b']):
             response_data = {
                 "SyntaxPrime": "**ClickUp Setup Status**\n\n"
                               "From your recent diagnostics, you need to set these environment variables:\n\n"
@@ -294,23 +303,50 @@ def process_clickup_command(user_input, project, use_voices, random_toggle):
             }
             return response_data, True
         
+        # Morning briefing command
+        if re.search(r'\bmorning\b', user_input_lower):
+            briefing = get_clickup_morning_briefing(client)
+            response_data = {"SyntaxPrime": briefing}
+            return response_data, True
+        
+        # Time tracking commands
+        if re.search(r'\btime\b', user_input_lower):
+            if re.search(r'\btoday\b', user_input_lower):
+                time_summary = get_clickup_time_summary(client, 'today')
+            elif re.search(r'\bweek\b', user_input_lower):
+                time_summary = get_clickup_time_summary(client, 'week')
+            else:
+                time_summary = get_clickup_time_summary(client, 'today')
+            
+            response_data = {"SyntaxPrime": time_summary}
+            return response_data, True
+        
+        # Task listing commands
+        if re.search(r'\btasks?\b', user_input_lower) and not re.search(r'\bcreate\b|\badd\b|\bnew\b', user_input_lower):
+            tasks_summary = get_clickup_tasks_summary(client)
+            response_data = {"SyntaxPrime": tasks_summary}
+            return response_data, True
+        
         # Task creation with better parsing
-        if any(keyword in user_input_lower for keyword in ['create', 'add', 'new task']):
-            # Extract task name after various patterns
-            patterns = [
+        if any(re.search(pattern, user_input_lower) for pattern in [r'\bcreate\b', r'\badd\b', r'\bnew\s+task\b']):
+            # FIXED: Better task name extraction patterns
+            task_patterns = [
                 r'(?:create|add|new)\s+(?:clickup\s+)?task:?\s*(.+)',
-                r'(?:create|add|new)\s+(.+)\s+(?:task|to-do)',
-                r'task:?\s*(.+)'
+                r'(?:create|add|new)\s+(.+?)\s+(?:task|to-do|item)',
+                r'task:?\s*(.+)',
+                r'clickup:?\s*(.+)'
             ]
             
             task_name = None
-            for pattern in patterns:
+            for pattern in task_patterns:
                 task_match = re.search(pattern, user_input, re.IGNORECASE)
                 if task_match:
                     task_name = task_match.group(1).strip()
+                    # Clean up common suffixes
+                    task_name = re.sub(r'\s+(task|to-do|item)$', '', task_name, flags=re.IGNORECASE)
                     break
             
-            if task_name:
+            if task_name and len(task_name) > 2:  # Ensure meaningful task name
                 result = create_clickup_task(client, task_name, project)
                 response_data = {"SyntaxPrime": result}
                 return response_data, True
@@ -381,7 +417,6 @@ def create_clickup_task(client, task_name, project=None):
         else:
             return f"❌ **Task creation failed:** {error_msg}\n\nTry visiting `/diagnostics/clickup` for help."
 
-# Keep all your existing helper functions with similar logging fixes...
 def get_clickup_morning_briefing(client=None):
     """Generate morning briefing with FIXED context handling"""
     if not client:
@@ -420,3 +455,105 @@ def get_clickup_morning_briefing(client=None):
         # FIXED: Use print instead of current_app.logger
         print(f"ClickUp briefing failed: {e}")
         return f"**ClickUp Morning Briefing Error:**\n{str(e)}"
+
+def get_clickup_tasks_summary(client=None):
+    """Get summary of current tasks"""
+    if not client:
+        try:
+            client = ClickUpClient()
+        except Exception as e:
+            return f"**ClickUp Tasks Unavailable**\n\nConfiguration error: {str(e)}"
+    
+    try:
+        # Get upcoming tasks (next 7 days)
+        today = datetime.datetime.now()
+        week_end = today + datetime.timedelta(days=7)
+        
+        upcoming_tasks = client.get_tasks(
+            due_date_gt=today,
+            due_date_lt=week_end
+        )
+        
+        summary = ["📋 **CLICKUP TASKS SUMMARY**", ""]
+        
+        if upcoming_tasks.get('tasks'):
+            summary.append(f"**📅 Upcoming Tasks ({len(upcoming_tasks['tasks'])}):**")
+            for task in upcoming_tasks['tasks'][:10]:  # Limit to 10 tasks
+                due_date = ""
+                if task.get('due_date'):
+                    due_timestamp = int(task['due_date']) / 1000
+                    due_dt = datetime.datetime.fromtimestamp(due_timestamp)
+                    due_date = f" (Due: {due_dt.strftime('%m/%d')})"
+                
+                status = "✅" if task.get('status', {}).get('status') == 'complete' else "📲"
+                priority_map = {1: "🔴", 2: "🟡", 3: "🟢", 4: "🔵"}
+                priority_icon = priority_map.get(task.get('priority', {}).get('priority', 3), "🟢")
+                
+                summary.append(f"  {status} {priority_icon} {task['name']}{due_date}")
+        else:
+            summary.append("No upcoming tasks found")
+        
+        return "\n".join(summary)
+        
+    except Exception as e:
+        print(f"ClickUp tasks summary failed: {e}")
+        return f"**ClickUp Tasks Summary Error:**\n{str(e)}"
+
+def get_clickup_time_summary(client=None, period='today'):
+    """Get time tracking summary"""
+    if not client:
+        try:
+            client = ClickUpClient()
+        except Exception as e:
+            return f"**ClickUp Time Summary Unavailable**\n\nConfiguration error: {str(e)}"
+    
+    try:
+        today = datetime.datetime.now()
+        
+        if period == 'today':
+            start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date = today.replace(hour=23, minute=59, second=59, microsecond=59)
+            title = "TODAY'S TIME"
+        elif period == 'week':
+            # Start of week (Monday)
+            start_date = today - datetime.timedelta(days=today.weekday())
+            start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date = today.replace(hour=23, minute=59, second=59, microsecond=59)
+            title = "THIS WEEK'S TIME"
+        
+        time_entries = client.get_time_entries(
+            start_date=start_date,
+            end_date=end_date
+        )
+        
+        summary = [f"⏱️ **CLICKUP {title} SUMMARY**", ""]
+        
+        if time_entries.get('data'):
+            total_duration = sum(int(entry.get('duration', 0)) for entry in time_entries['data'])
+            hours = total_duration // 3600000  # Convert from milliseconds to hours
+            minutes = (total_duration % 3600000) // 60000
+            
+            summary.append(f"**⏰ Total Time:** {hours}h {minutes}m")
+            summary.append(f"**📊 Entries:** {len(time_entries['data'])}")
+            
+            # Group by task
+            task_times = {}
+            for entry in time_entries['data']:
+                task_name = entry.get('task', {}).get('name', 'Unknown Task')
+                duration = int(entry.get('duration', 0))
+                task_times[task_name] = task_times.get(task_name, 0) + duration
+            
+            if task_times:
+                summary.append("\n**📋 Time by Task:**")
+                for task_name, duration in sorted(task_times.items(), key=lambda x: x[1], reverse=True)[:5]:
+                    task_hours = duration // 3600000
+                    task_minutes = (duration % 3600000) // 60000
+                    summary.append(f"  • {task_name}: {task_hours}h {task_minutes}m")
+        else:
+            summary.append(f"No time entries found for {period}")
+        
+        return "\n".join(summary)
+        
+    except Exception as e:
+        print(f"ClickUp time summary failed: {e}")
+        return f"**ClickUp Time Summary Error:**\n{str(e)}"

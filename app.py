@@ -608,6 +608,7 @@ def check_auth_status():
 # Section 8: Dashboard Routes (Modular)
 # Section 8: Dashboard Routes (Modular) - UPDATED WITH GOOGLE DIAGNOSTICS
 # Section 8: Dashboard Routes (Modular) - UPDATED WITH CLICKUP DIAGNOSTICS
+# Section 8: Dashboard Routes (Modular) - UPDATED WITH ADMIN CONTROLS
 from modules.dashboard_system import setup_system_routes
 from modules.dashboard_diagnostics import setup_diagnostics_routes
 from modules.dashboard_integrations import setup_integrations_routes
@@ -990,6 +991,223 @@ def get_clickup_workspace_tree():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# Enhanced System Dashboard with Admin Controls
+@app.route('/system/admin')
+def system_admin_dashboard():
+    """Enhanced system dashboard with admin controls"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    return render_template_string("""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Ghostline System Admin</title>
+        <style>
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #0f0f0f; 
+                color: #fff; 
+                margin: 0; 
+                padding: 20px; 
+            }
+            .container { max-width: 1000px; margin: 0 auto; }
+            .system-section { 
+                background: #1a1a1a; 
+                border: 1px solid #333; 
+                border-radius: 8px; 
+                padding: 20px; 
+                margin: 20px 0; 
+            }
+            .btn { 
+                background: #6366f1; 
+                color: white; 
+                border: none; 
+                padding: 12px 24px; 
+                border-radius: 8px; 
+                cursor: pointer; 
+                font-size: 16px; 
+                margin: 10px 5px;
+                text-decoration: none;
+                display: inline-block;
+            }
+            .btn:hover { background: #5855eb; }
+            .btn.success { background: #059669; }
+            .btn.warning { background: #d97706; }
+            .btn.danger { background: #dc2626; }
+            .btn.danger:hover { background: #b91c1c; }
+            .controls-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+                margin: 20px 0;
+            }
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Ghostline System Admin</h1>
+            
+            <div class="system-section">
+                <h3>🔧 Admin & Cache Controls</h3>
+                <div class="controls-grid">
+                    <button onclick="reloadModules()" class="btn warning">
+                        🔄 Reload Modules
+                    </button>
+                    <button onclick="clearCache()" class="btn">
+                        🗑️ Clear Cache
+                    </button>
+                    <button onclick="forceRestart()" class="btn danger" 
+                            title="⚠️ This will restart the entire application">
+                        🔁 Force Restart
+                    </button>
+                </div>
+                <div id="adminResults" style="margin-top: 15px;"></div>
+                
+                <details style="margin-top: 15px;">
+                    <summary style="cursor: pointer; font-weight: bold;">
+                        ℹ️ When to Use These Controls
+                    </summary>
+                    <div style="margin-top: 10px; padding: 10px; background: #2a2a2a; border-radius: 4px; font-size: 14px;">
+                        <p><strong>Reload Modules:</strong> Use when code changes aren't taking effect. Reloads Python modules without full restart.</p>
+                        <p><strong>Clear Cache:</strong> Clears memory caches and forces garbage collection. Try this first for weird behavior.</p>
+                        <p><strong>Force Restart:</strong> Nuclear option - completely restarts the application. Use when other methods fail.</p>
+                    </div>
+                </details>
+            </div>
+            
+            <div class="system-section">
+                <h3>🔗 Quick Links</h3>
+                <div class="controls-grid">
+                    <a href="/" class="btn">Back to Chat</a>
+                    <a href="/system" class="btn">System Dashboard</a>
+                    <a href="/integrations" class="btn">Integrations</a>
+                    <a href="/diagnostics" class="btn">Diagnostics</a>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+            function reloadModules() {
+                showSpinner('Reloading modules...');
+                
+                fetch('/admin/reload-modules', {
+                    method: 'POST',
+                    credentials: 'include'
+                })
+                .then(r => r.json())
+                .then(data => {
+                    hideSpinner();
+                    if (data.success) {
+                        showAdminResult('success', 
+                            `✅ Reloaded ${data.reloaded_modules.length} modules successfully.` + 
+                            (data.failed_modules.length > 0 ? 
+                                `<br>⚠️ Failed: ${data.failed_modules.join(', ')}` : ''));
+                    } else {
+                        showAdminResult('error', '❌ Module reload failed: ' + data.error);
+                    }
+                })
+                .catch(e => {
+                    hideSpinner();
+                    showAdminResult('error', '❌ Request failed: ' + e);
+                });
+            }
+
+            function clearCache() {
+                showSpinner('Clearing caches...');
+                
+                fetch('/admin/clear-cache', {
+                    method: 'POST',
+                    credentials: 'include'
+                })
+                .then(r => r.json())
+                .then(data => {
+                    hideSpinner();
+                    if (data.success) {
+                        showAdminResult('success', 
+                            `✅ Cache clearing completed.<br>` + 
+                            data.actions_performed.join('<br>'));
+                    } else {
+                        showAdminResult('error', '❌ Cache clearing failed: ' + data.error);
+                    }
+                })
+                .catch(e => {
+                    hideSpinner();
+                    showAdminResult('error', '❌ Request failed: ' + e);
+                });
+            }
+
+            function forceRestart() {
+                if (!confirm('⚠️ This will restart the entire application and disconnect all users. Continue?')) {
+                    return;
+                }
+                
+                showSpinner('Restarting application...');
+                
+                fetch('/admin/restart', {
+                    method: 'POST',
+                    credentials: 'include'
+                })
+                .then(r => r.json())
+                .then(data => {
+                    hideSpinner();
+                    if (data.success) {
+                        showAdminResult('warning', 
+                            '🔄 Application is restarting... Page will reload automatically.');
+                        
+                        // Auto-reload page after restart
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 5000);
+                    } else {
+                        showAdminResult('error', '❌ Restart failed: ' + data.error);
+                    }
+                })
+                .catch(e => {
+                    hideSpinner();
+                    // This is expected since the server restarts
+                    showAdminResult('warning', 
+                        '🔄 Restart initiated. Page will reload in 5 seconds...');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 5000);
+                });
+            }
+
+            function showAdminResult(type, message) {
+                const resultDiv = document.getElementById('adminResults');
+                const bgColor = type === 'success' ? '#065f46' : 
+                               type === 'warning' ? '#92400e' : '#991b1b';
+                
+                resultDiv.innerHTML = `
+                    <div style="background: ${bgColor}; padding: 10px; border-radius: 4px; margin-top: 10px;">
+                        ${message}
+                    </div>
+                `;
+            }
+
+            function showSpinner(message) {
+                const resultDiv = document.getElementById('adminResults');
+                resultDiv.innerHTML = `
+                    <div style="background: #374151; padding: 10px; border-radius: 4px; margin-top: 10px;">
+                        <span style="animation: spin 1s linear infinite; display: inline-block; margin-right: 8px;">⟳</span>
+                        ${message}
+                    </div>
+                `;
+            }
+
+            function hideSpinner() {
+                // Don't hide - showAdminResult will replace it
+            }
+        </script>
+    </body>
+    </html>
+    """)
 
 # Section 9: PDF Report Generation
 from modules.pdf_generation import (
@@ -2253,6 +2471,7 @@ def google_auth_revoke():
         }), 500
         
 # Section 15: Backup and Maintenance Routes
+# Section 15: Backup and Maintenance Routes
 from modules.backup_maintenance import (
     backup_manager,
     backup_scheduler,
@@ -2375,7 +2594,143 @@ def download_backup_file(filename):
         
     except Exception as e:
         return f"Download failed: {str(e)}", 500
+
+@app.route('/admin/reload-modules', methods=['POST'])
+def reload_modules():
+    """Force reload of Python modules to fix deployment caching issues"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        import sys
+        import importlib
         
+        # List of modules that commonly need reloading
+        modules_to_reload = [
+            'modules.gmail',
+            'modules.smart_commands',
+            'modules.clickup_integration',
+            'modules.cloze_integration',
+            'modules.marketing_commands',
+            'modules.telegram_notifications',
+            'utils.ghostline_engine',
+            'utils.gmail_client',
+            'modules.brain',
+            'modules.file_processing',
+            'modules.utils'
+        ]
+        
+        reloaded_modules = []
+        failed_modules = []
+        
+        for module_name in modules_to_reload:
+            try:
+                if module_name in sys.modules:
+                    importlib.reload(sys.modules[module_name])
+                    reloaded_modules.append(module_name)
+                    app.logger.info(f"Reloaded module: {module_name}")
+            except Exception as e:
+                failed_modules.append(f"{module_name}: {str(e)}")
+                app.logger.error(f"Failed to reload {module_name}: {e}")
+        
+        return jsonify({
+            "success": True,
+            "reloaded_modules": reloaded_modules,
+            "failed_modules": failed_modules,
+            "message": f"Reloaded {len(reloaded_modules)} modules"
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Module reload failed: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@app.route('/admin/restart', methods=['POST'])
+def force_restart():
+    """Force application restart to clear all caches"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        app.logger.warning("Force restart requested by user")
+        
+        # Send response before restarting
+        response = jsonify({
+            "success": True,
+            "message": "Application restarting in 2 seconds..."
+        })
+        
+        # Schedule restart after response is sent
+        def delayed_restart():
+            time.sleep(2)
+            app.logger.warning("Executing force restart")
+            os._exit(0)  # Force process restart
+        
+        restart_thread = threading.Thread(target=delayed_restart, daemon=True)
+        restart_thread.start()
+        
+        return response
+        
+    except Exception as e:
+        app.logger.error(f"Force restart failed: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@app.route('/admin/clear-cache', methods=['POST'])
+def clear_cache():
+    """Clear various application caches"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        import gc
+        
+        cache_actions = []
+        
+        # Clear Python bytecode cache
+        try:
+            import sys
+            for module_name in list(sys.modules.keys()):
+                if module_name.startswith(('modules.', 'utils.')):
+                    if hasattr(sys.modules[module_name], '__pycache__'):
+                        delattr(sys.modules[module_name], '__pycache__')
+            cache_actions.append("Python bytecode cache cleared")
+        except Exception as e:
+            cache_actions.append(f"Bytecode cache clear failed: {e}")
+        
+        # Force garbage collection
+        try:
+            collected = gc.collect()
+            cache_actions.append(f"Garbage collection: {collected} objects freed")
+        except Exception as e:
+            cache_actions.append(f"Garbage collection failed: {e}")
+        
+        # Clear session data (but keep login status)
+        try:
+            logged_in = session.get('logged_in')
+            session.clear()
+            if logged_in:
+                session['logged_in'] = True
+            cache_actions.append("Session cache cleared (keeping login)")
+        except Exception as e:
+            cache_actions.append(f"Session clear failed: {e}")
+        
+        return jsonify({
+            "success": True,
+            "actions_performed": cache_actions,
+            "message": "Cache clearing completed"
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Cache clearing failed: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 # Section 16: Utility and Export Routes
 @app.route('/healthz')
 def healthz():

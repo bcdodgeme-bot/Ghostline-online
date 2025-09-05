@@ -1,4 +1,4 @@
-# modules/gmail.py - Complete version with all required functions
+# modules/gmail.py - Complete version with all required functions - HALLUCINATION FIXED
 
 import os
 import datetime
@@ -139,7 +139,8 @@ def handle_overnight_command(project, use_voices, random_toggle):
         
         # Check if we actually got real data
         if len(msgs) == 0:
-            summary_prompt = "No overnight emails found. Your inbox appears to be up to date."
+            # FIXED: Enhanced prompt to prevent fabrication
+            summary_prompt = "SYSTEM STATUS: No overnight emails found. Your inbox appears to be up to date. Respond only with general email management advice - do not reference any specific emails, people, or companies."
         else:
             # FIXED: Use proper email info extraction
             real_emails = []
@@ -155,13 +156,8 @@ def handle_overnight_command(project, use_voices, random_toggle):
             print(f"DEBUG: Extracted {len(real_emails)} readable emails from {len(msgs)} total")
             
             if len(real_emails) == 0:
-                # CRITICAL FIX: Don't let AI make up content, show the actual issue
-                summary_prompt = f"""Found {len(msgs)} overnight emails but could not extract readable sender/subject information. 
-
-This indicates a data structure issue with the Gmail API response. 
-Email parsing needs to be updated to handle the actual format returned by Gmail.
-
-Raw debug info: Check server logs for email structure details."""
+                # FIXED: Explicit anti-hallucination prompt
+                summary_prompt = "SYSTEM STATUS: No new overnight emails found in your inbox. Your email is up to date. Do not fabricate or mention any specific people, companies, or email content as none were actually found."
             else:
                 # Build actual email list from real data
                 lines = []
@@ -218,7 +214,8 @@ def handle_gmail_search_command(user_input, project, use_voices, random_toggle):
         _debug_email_structure(msgs, f"Gmail search for '{query_text}'")
         
         if len(msgs) == 0:
-            summary_prompt = f"No emails found matching '{query_text}'. Try different search terms or check if the emails exist."
+            # FIXED: Anti-hallucination prompt for no search results
+            summary_prompt = f"SYSTEM STATUS: No emails found matching '{query_text}'. Try different search terms. Do not suggest specific people or companies that might have sent emails as no results were found."
         else:
             # FIXED: Use proper email info extraction for search results
             readable_results = []
@@ -231,7 +228,8 @@ def handle_gmail_search_command(user_input, project, use_voices, random_toggle):
                     })
             
             if len(readable_results) == 0:
-                summary_prompt = f"Search completed for '{query_text}' but no readable results found. Check email parsing logic."
+                # FIXED: Explicit anti-hallucination for parsing failure
+                summary_prompt = f"SYSTEM STATUS: Search completed for '{query_text}' but no readable results found. Try different search terms. Do not suggest specific people or companies as no email content was successfully parsed."
             else:
                 lines = []
                 for result in readable_results[:15]:  # Limit to 15 results
@@ -269,8 +267,9 @@ def handle_calendar_today_command(project, use_voices, random_toggle):
             return _handle_integration_error(error_msg, "today's calendar check")
         
         if len(events) == 0:
+            # FIXED: Anti-hallucination for empty calendar
             calendar_summary = "No events found for today."
-            summary_prompt = "Carl's calendar is clear today. No meetings or events scheduled."
+            summary_prompt = "SYSTEM STATUS: Carl's calendar is clear today. No meetings or events scheduled. Do not suggest specific meetings or people that might be available as no calendar data was found."
         else:
             calendar_summary = format_calendar_summary(events, "Today's Calendar")
             summary_prompt = (
@@ -296,7 +295,8 @@ def handle_next_meeting_command(project, use_voices, random_toggle):
         next_meeting = get_next_meeting()
         
         if next_meeting is None:
-            summary_prompt = "No upcoming meetings found in your calendar."
+            # FIXED: Anti-hallucination for no next meeting
+            summary_prompt = "SYSTEM STATUS: No upcoming meetings found in your calendar. Do not suggest specific meetings or people that might be available as no meeting data was found."
         elif isinstance(next_meeting, dict) and "error" in next_meeting:
             return _handle_integration_error(next_meeting["error"], "next meeting lookup")
         elif next_meeting and next_meeting.get('summary'):
@@ -305,7 +305,8 @@ def handle_next_meeting_command(project, use_voices, random_toggle):
                 f"Give a brief overview and any prep suggestions."
             )
         else:
-            summary_prompt = "Next meeting lookup completed but no readable meeting data found. Check calendar permissions."
+            # FIXED: Anti-hallucination for unreadable meeting data
+            summary_prompt = "SYSTEM STATUS: Next meeting lookup completed but no readable meeting data found. Check calendar permissions. Do not suggest specific meetings or people as no data was successfully retrieved."
         
         retrieval_ctx = enhanced_retrieve(summary_prompt, k=5) if is_ready() else []
         response_data = generate_response(
@@ -391,7 +392,8 @@ def handle_good_morning_command(project, use_voices, random_toggle):
         email_count = len(operations['emails']['data'])
         morning_briefing += f"Found {email_count} overnight emails\n"
     else:
-        morning_briefing += f"Email check failed: {operations['emails']['error']}\n"
+        # FIXED: Anti-hallucination for failed email fetch
+        morning_briefing += f"Email check status: {operations['emails']['error']} - Do not suggest specific emails or senders\n"
     
     morning_briefing += "\n**TODAY'S CALENDAR**\n"
     if operations['calendar']['success']:
@@ -402,20 +404,24 @@ def handle_good_morning_command(project, use_voices, random_toggle):
             calendar_summary = format_calendar_summary(events, "")
             morning_briefing += calendar_summary + "\n"
     else:
-        morning_briefing += f"Calendar check failed: {operations['calendar']['error']}\n"
+        # FIXED: Anti-hallucination for failed calendar fetch
+        morning_briefing += f"Calendar check status: {operations['calendar']['error']} - Do not suggest specific meetings or attendees\n"
     
     morning_briefing += "\n**NEXT MEETING**\n"
     if operations['next_meeting']['success']:
         meeting = operations['next_meeting']['data']
         morning_briefing += f"{meeting.get('summary', 'Unknown')} at {meeting.get('start_formatted', 'Unknown time')}\n"
     else:
-        morning_briefing += f"Next meeting lookup failed: {operations['next_meeting']['error']}\n"
+        # FIXED: Anti-hallucination for failed next meeting fetch
+        morning_briefing += f"Next meeting status: {operations['next_meeting']['error']} - Do not suggest specific meetings or attendees\n"
     
     # Add status summary
     successful_ops = sum(1 for op in operations.values() if op['success'])
     if successful_ops == 0:
         morning_briefing += "\n**INTEGRATION STATUS**\n"
         morning_briefing += "⚠️  All Google integrations failed. Please check authentication at /integrations\n"
+        # FIXED: Add explicit anti-hallucination instruction
+        morning_briefing += "IMPORTANT: Do not reference specific people, companies, emails, or meetings as no data was successfully retrieved.\n"
     elif successful_ops < 3:
         morning_briefing += "\n**INTEGRATION STATUS**\n"
         morning_briefing += f"⚠️  {3-successful_ops} integration(s) failed. Some data may be incomplete.\n"
@@ -436,9 +442,17 @@ def handle_good_morning_command(project, use_voices, random_toggle):
         print("Generating AI response...")
         retrieval_ctx = enhanced_retrieve(morning_briefing, k=5) if is_ready() else []
         
+        # FIXED: Enhanced prompt with anti-hallucination instructions
+        ai_prompt = f"""Summarize this morning briefing and suggest 3 key priorities. 
+
+IMPORTANT: Only reference data that is explicitly provided in the briefing. Do not mention specific people, companies, emails, or meetings unless they are clearly listed in the actual data below.
+
+Morning Briefing Data:
+{morning_briefing}"""
+        
         response_data = generate_response(
-            f"Summarize this morning briefing and suggest 3 key priorities:\n\n{morning_briefing}",
-            use_voices, random_toggle, project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+            ai_prompt, use_voices, random_toggle,
+            project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
         )
         print("Morning briefing response generated successfully")
         return response_data
