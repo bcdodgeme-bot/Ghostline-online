@@ -107,9 +107,13 @@ def enhanced_retrieve(query_text, k=5, project=None):
                     combined_text = f"CONVERSATION:\nUser: {user_input}\nAssistant: {response_content}"
                     
                     # Truncate if too long but keep meaningful content
-                    if len(combined_text) > 1200:
-                        combined_text = combined_text[:1200] + "..."
-                    
+                    if len(combined_text) > 250000:
+                         truncated = combined_text[:250000]
+                        last_sentence = truncated.rfind('. ')
+                        if last_sentence > 200000:  # Keep if we can find a good break point
+                            combined_text = truncated[:last_sentence + 1] + "..."
+                        else:
+                            combined_text = truncated + "..."
                     result = {
                         'text': combined_text,
                         'source': f"Conversation - {row['project']} ({row['created_at'].strftime('%m/%d/%Y')})",
