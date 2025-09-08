@@ -256,14 +256,34 @@ setup_easyocr_environment()
 app.jinja_env.filters['markdown'] = markdown_filter
 
 # Section 3: Helper Functions for Chat Processing
+# Section 3: Helper Functions for Chat Processing - FIXED VERSION
+
 def handle_reminder_command(user_input, project, use_voices, random_toggle):
-    """Handle reminder creation commands"""
-    reminder_keywords = [
-        'remind me', 'reminder', 'set reminder', 'alert me',
-        'don\'t forget', 'remember to', 'remind'
+    """Handle reminder creation commands - MUCH MORE SELECTIVE"""
+    
+    # Make detection MUCH more specific - only explicit reminder requests
+    explicit_reminder_patterns = [
+        r'^remind me to\s+',
+        r'^set a reminder\s+',
+        r'^create a reminder\s+',
+        r'^set reminder\s+',
+        r'^reminder:\s+',
+        r'^remind me in\s+\d+',
+        r'^remind me at\s+\d+',
+        r'^reminder for\s+',
+        r'remind me to .+ (in|at|tomorrow|today)',
+        r'set a reminder .+ (in|at|tomorrow|today)',
     ]
     
-    if not any(keyword in user_input.lower() for keyword in reminder_keywords):
+    user_input_lower = user_input.lower().strip()
+    
+    # Check if this is an EXPLICIT reminder request
+    is_explicit_reminder = any(
+        re.search(pattern, user_input_lower)
+        for pattern in explicit_reminder_patterns
+    )
+    
+    if not is_explicit_reminder:
         return None, False
     
     if not is_telegram_configured():
@@ -273,22 +293,35 @@ def handle_reminder_command(user_input, project, use_voices, random_toggle):
         return response_data, True
     
     try:
-        parsed = parse_reminder_command(user_input, project)
-        
-        if not parsed["success"]:
-            response_data = {"SyntaxPrime": parsed["error"]}
+        # Add safety wrapper around the problematic parse function
+        try:
+            parsed = parse_reminder_command(user_input, project)
+        except Exception as parse_error:
+            app.logger.error(f"Reminder parsing failed: {parse_error}")
+            response_data = {"SyntaxPrime": f"Could not parse reminder request: {str(parse_error)}"}
             return response_data, True
         
-        reminders = GhostlineTelegramReminders()
-        result = reminders.create_reminder(
-            title=parsed["title"],
-            remind_at=parsed["remind_at"],
-            project=parsed["project"],
-            priority=2
-        )
+        if not parsed or not parsed.get("success"):
+            error_msg = parsed.get("error", "Unknown parsing error") if parsed else "Parsing returned None"
+            response_data = {"SyntaxPrime": f"Reminder parsing failed: {error_msg}"}
+            return response_data, True
         
-        if result["success"]:
-            display_time = parsed.get("display_time", result["remind_at"].strftime('%I:%M %p on %B %d'))
+        # Add safety wrapper around reminder creation
+        try:
+            reminders = GhostlineTelegramReminders()
+            result = reminders.create_reminder(
+                title=parsed["title"],
+                remind_at=parsed["remind_at"],
+                project=parsed["project"],
+                priority=2
+            )
+        except Exception as creation_error:
+            app.logger.error(f"Reminder creation failed: {creation_error}")
+            response_data = {"SyntaxPrime": f"Failed to create reminder: {str(creation_error)}"}
+            return response_data, True
+        
+        if result and result.get("success"):
+            display_time = parsed.get("display_time", result["remind_at"].strftime('%I:%M %p on %B %d') if result.get("remind_at") else "unknown time")
             
             response_text = f"Reminder Created!\n\n"
             response_text += f"**What:** {parsed['title']}\n"
@@ -298,13 +331,14 @@ def handle_reminder_command(user_input, project, use_voices, random_toggle):
             
             response_data = {"SyntaxPrime": response_text}
         else:
-            response_data = {"SyntaxPrime": f"Failed to create reminder: {result['error']}"}
+            error_msg = result.get('error', 'Unknown error') if result else 'No result returned'
+            response_data = {"SyntaxPrime": f"Failed to create reminder: {error_msg}"}
         
         return response_data, True
         
     except Exception as e:
-        app.logger.error(f"Reminder command failed: {e}")
-        response_data = {"SyntaxPrime": f"Reminder creation failed: {str(e)}"}
+        app.logger.error(f"Reminder command completely failed: {e}", exc_info=True)
+        response_data = {"SyntaxPrime": f"Reminder system error: {str(e)}"}
         return response_data, True
 
 def generate_response_with_context_check(user_input, use_voices, random_toggle, project, model, retrieval_context):
@@ -592,9 +626,11 @@ def upload_file():
 # Section 7: Streaming Chat API (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)
 # Section 7: Streaming Chat API (UPDATED WITH UNIFIED CONVERSATION CONTEXT)
 # Section 7: Streaming Chat API (UPDATED WITH SLACK INTEGRATION)
+# Section 7: Streaming Chat API - FIXED VERSION
+
 @app.route('/api/chat/stream', methods=['POST'])
 def stream_chat():
-    """Enhanced streaming chat endpoint with Slack integration support"""
+    """Enhanced streaming chat endpoint - FIXED VERSION"""
     
     # Enhanced logging for debugging auth issues
     app.logger.info(f"Stream request from {request.remote_addr}")
@@ -645,43 +681,54 @@ def stream_chat():
                 response_data = {}
                 handled = False
                 
-                # Try command processors
-                processors = [
-                    ('google_consolidated', lambda: process_google_ecosystem_commands(user_input, project, use_voices, random_toggle)),
-                    ('reminder', lambda: handle_reminder_command(user_input, project, use_voices, random_toggle)),
-                ]
+                # FIXED: Handle reminder commands with proper error handling FIRST
+                try:
+                    response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
+                    if handled:
+                        app.logger.info(f"Request handled by reminder system")
+                except Exception as e:
+                    app.logger.error(f"Reminder handler failed: {e}")
+                    # Don't set handled=True here - let other processors try
                 
-                # Add Calendar → Telegram processor
-                if is_calendar_telegram_configured():
-                    app.logger.info(f"Adding Calendar-Telegram processor to stream pipeline")
-                    processors.insert(1, ('calendar_telegram', lambda: process_calendar_telegram_command(user_input, project, use_voices, random_toggle)))
-                
-                # Add enhanced marketing processor with context
-                if is_marketing_configured():
-                    app.logger.info(f"Adding enhanced marketing processor to stream pipeline")
-                    processors.insert(0, ('marketing_enhanced', lambda: process_marketing_command_with_context(user_input, project, use_voices, random_toggle, marketing_context)))
-                
-                # Add Cloze processor with proper configuration check
-                if is_cloze_configured():
-                    app.logger.info(f"Adding Cloze processor to stream pipeline")
-                    processors.insert(1, ('cloze', lambda: process_cloze_command(user_input, project, use_voices, random_toggle)))
-                
-                # Add other conditional processors
-                if is_clickup_configured():
-                    processors.append(('clickup', lambda: process_clickup_command(user_input, project, use_voices, random_toggle)))
-                
-                # Try each processor
-                for proc_name, processor in processors:
-                    if not handled:
-                        try:
-                            app.logger.info(f"Trying {proc_name} processor")
-                            response_data, handled = processor()
-                            if handled:
-                                app.logger.info(f"Request handled by {proc_name} processor")
-                                break
-                        except Exception as e:
-                            app.logger.error(f"{proc_name} processor failed: {e}")
-                            continue
+                # Try command processors only if reminder didn't handle it
+                if not handled:
+                    processors = [
+                        ('google_consolidated', lambda: process_google_ecosystem_commands(user_input, project, use_voices, random_toggle)),
+                    ]
+                    
+                    # Add Calendar → Telegram processor
+                    if is_calendar_telegram_configured():
+                        app.logger.info(f"Adding Calendar-Telegram processor to stream pipeline")
+                        processors.insert(1, ('calendar_telegram', lambda: process_calendar_telegram_command(user_input, project, use_voices, random_toggle)))
+                    
+                    # Add enhanced marketing processor with context
+                    if is_marketing_configured():
+                        app.logger.info(f"Adding enhanced marketing processor to stream pipeline")
+                        processors.insert(0, ('marketing_enhanced', lambda: process_marketing_command_with_context(user_input, project, use_voices, random_toggle, marketing_context)))
+                    
+                    # Add Cloze processor with proper configuration check
+                    if is_cloze_configured():
+                        app.logger.info(f"Adding Cloze processor to stream pipeline")
+                        processors.insert(1, ('cloze', lambda: process_cloze_command(user_input, project, use_voices, random_toggle)))
+                    
+                    # Add other conditional processors
+                    if is_clickup_configured():
+                        processors.append(('clickup', lambda: process_clickup_command(user_input, project, use_voices, random_toggle)))
+                    
+                    # Try each processor with individual error handling
+                    for proc_name, processor in processors:
+                        if not handled:
+                            try:
+                                app.logger.info(f"Trying {proc_name} processor")
+                                temp_response, temp_handled = processor()
+                                if temp_handled:
+                                    response_data = temp_response
+                                    handled = True
+                                    app.logger.info(f"Request handled by {proc_name} processor")
+                                    break
+                            except Exception as e:
+                                app.logger.error(f"{proc_name} processor failed: {e}")
+                                continue
                 
                 # Scrape command
                 if not handled and user_input.lower().startswith("scrape "):
@@ -711,9 +758,9 @@ def stream_chat():
                 if not handled:
                     try:
                         retrieval_ctx = enhanced_retrieve(user_input, k=5) if is_ready() else []
-                        response_data = generate_response(
+                        response_data = generate_response_with_context_check(
                             user_input, use_voices, random_toggle,
-                            project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+                            project, CHAT_MODEL, retrieval_ctx
                         )
                     except Exception as e:
                         app.logger.error(f"Normal response generation failed: {e}")
@@ -777,6 +824,10 @@ def stream_chat():
 # Section 8: Dashboard Routes (Modular) - UPDATED WITH GOOGLE DIAGNOSTICS
 # Section 8: Dashboard Routes (Modular) - UPDATED WITH CLICKUP DIAGNOSTICS
 # Section 8: Dashboard Routes (Modular) - UPDATED WITH ADMIN CONTROLS
+# Section 8: Dashboard Routes (Modular) - UPDATED WITH DEBUG ENDPOINT
+# Section 8: Dashboard Routes (Modular) - UPDATED WITH GOOGLE DIAGNOSTICS
+# Section 8: Dashboard Routes (Modular) - UPDATED WITH CLICKUP DIAGNOSTICS
+# Section 8: Dashboard Routes (Modular) - UPDATED WITH ADMIN CONTROLS
 from modules.dashboard_system import setup_system_routes
 from modules.dashboard_diagnostics import setup_diagnostics_routes
 from modules.dashboard_integrations import setup_integrations_routes
@@ -785,6 +836,226 @@ from modules.dashboard_integrations import setup_integrations_routes
 setup_system_routes(app)
 setup_diagnostics_routes(app)
 setup_integrations_routes(app)
+
+# CRITICAL DEBUG ENDPOINT - Database Retrieval Testing
+@app.route('/debug/test_ghada_query')
+def test_ghada_query():
+    """Direct database test for Ghada queries and conversation retrieval"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    from modules.database import get_db_connection
+    import json
+    
+    results = {
+        "database_connection": False,
+        "total_conversations": 0,
+        "ghada_mentions": 0,
+        "shazeen_mentions": 0,
+        "jonathan_mentions": 0,
+        "sample_ghada_conversations": [],
+        "raw_sql_test": None,
+        "enhanced_retrieve_test": None,
+        "simple_like_search": None
+    }
+    
+    with get_db_connection() as conn:
+        if conn:
+            results["database_connection"] = True
+            cursor = conn.cursor()
+            
+            try:
+                # Test 1: Total conversation count
+                cursor.execute("SELECT COUNT(*) FROM chat_threads")
+                results["total_conversations"] = cursor.fetchone()[0]
+                
+                # Test 2: Direct name searches (case-insensitive)
+                cursor.execute("SELECT COUNT(*) FROM chat_threads WHERE LOWER(user_input) LIKE %s OR LOWER(response_data::text) LIKE %s", ('%ghada%', '%ghada%'))
+                results["ghada_mentions"] = cursor.fetchone()[0]
+                
+                cursor.execute("SELECT COUNT(*) FROM chat_threads WHERE LOWER(user_input) LIKE %s OR LOWER(response_data::text) LIKE %s", ('%shazeen%', '%shazeen%'))
+                results["shazeen_mentions"] = cursor.fetchone()[0]
+                
+                cursor.execute("SELECT COUNT(*) FROM chat_threads WHERE LOWER(user_input) LIKE %s OR LOWER(response_data::text) LIKE %s", ('%jonathan%', '%jonathan%'))
+                results["jonathan_mentions"] = cursor.fetchone()[0]
+                
+                # Test 3: Get sample Ghada conversations with response data
+                cursor.execute("""
+                    SELECT user_input, response_data, created_at, project
+                    FROM chat_threads 
+                    WHERE (LOWER(user_input) LIKE %s OR LOWER(response_data::text) LIKE %s)
+                    ORDER BY created_at DESC 
+                    LIMIT 5
+                """, ('%ghada%', '%ghada%'))
+                
+                rows = cursor.fetchall()
+                for row in rows:
+                    response_preview = "None"
+                    if row[1] and isinstance(row[1], dict):
+                        response_content = row[1].get('SyntaxPrime', '')
+                        response_preview = response_content[:300] + "..." if len(response_content) > 300 else response_content
+                    
+                    results["sample_ghada_conversations"].append({
+                        "user_input": row[0],
+                        "response_preview": response_preview,
+                        "date": row[2].isoformat() if row[2] else "Unknown",
+                        "project": row[3]
+                    })
+                
+                # Test 4: Test the exact SQL that enhanced_retrieve uses
+                simple_sql = """
+                SELECT user_input, response_data, created_at, project
+                FROM chat_threads 
+                WHERE (
+                    LOWER(user_input) LIKE %s 
+                    OR LOWER(response_data::text) LIKE %s
+                )
+                AND user_input IS NOT NULL
+                AND LENGTH(TRIM(user_input)) > 2
+                ORDER BY created_at DESC
+                LIMIT 5
+                """
+                
+                search_pattern = '%ghada%'
+                cursor.execute(simple_sql, (search_pattern, search_pattern))
+                sql_rows = cursor.fetchall()
+                
+                results["raw_sql_test"] = {
+                    "query_worked": True,
+                    "results_count": len(sql_rows),
+                    "sample_results": [
+                        {
+                            "user_input": row[0],
+                            "date": row[2].isoformat() if row[2] else "Unknown",
+                            "project": row[3],
+                            "response_preview": (row[1].get('SyntaxPrime', '')[:100] + "..." if row[1] and isinstance(row[1], dict) else "No response")
+                        } for row in sql_rows
+                    ]
+                }
+                
+                # Test 5: Very simple LIKE search for debugging
+                cursor.execute("SELECT user_input FROM chat_threads WHERE LOWER(user_input) LIKE %s LIMIT 3", ('%who is%',))
+                like_rows = cursor.fetchall()
+                results["simple_like_search"] = {
+                    "who_is_queries": [row[0] for row in like_rows],
+                    "count": len(like_rows)
+                }
+                
+            except Exception as e:
+                results["raw_sql_test"] = {"error": str(e)}
+        
+        # Test 6: Test enhanced_retrieve function directly
+        try:
+            from modules.brain import enhanced_retrieve
+            retrieve_results = enhanced_retrieve("who is ghada", k=5)
+            results["enhanced_retrieve_test"] = {
+                "function_worked": True,
+                "results_count": len(retrieve_results),
+                "sample_results": [
+                    {
+                        "text_preview": r.get('text', '')[:200] + "..." if r.get('text') else "No text",
+                        "source": r.get('source', 'Unknown'),
+                        "source_type": r.get('source_type', 'Unknown'),
+                        "similarity": r.get('similarity', 0)
+                    } for r in retrieve_results[:3]
+                ]
+            }
+        except Exception as e:
+            results["enhanced_retrieve_test"] = {"error": str(e)}
+    
+    # Return as formatted HTML for easy reading
+    html = f"""
+    <html>
+    <head><title>Database Retrieval Debug Results</title>
+    <style>
+        body {{ font-family: monospace; background: #1a1a1a; color: #fff; padding: 20px; line-height: 1.6; }}
+        .section {{ margin: 20px 0; padding: 15px; background: #2a2a2a; border-radius: 8px; }}
+        .success {{ color: #10b981; }}
+        .error {{ color: #ef4444; }}
+        .warning {{ color: #f59e0b; }}
+        .info {{ color: #3b82f6; }}
+        pre {{ background: #0a0a0a; padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; }}
+        .conversation {{ background: #1a2332; margin: 10px 0; padding: 10px; border-radius: 4px; border-left: 3px solid #3b82f6; }}
+        .highlight {{ background: #fbbf24; color: #000; padding: 2px 4px; border-radius: 2px; }}
+    </style>
+    </head>
+    <body>
+    <h1>🔍 Database Retrieval Debug Results</h1>
+    
+    <div class="section">
+        <h3>📊 Database Connection & Overview</h3>
+        <p class="{'success' if results['database_connection'] else 'error'}">
+            {'✅ Database Connected' if results['database_connection'] else '❌ Database Connection Failed'}
+        </p>
+        <p>Total conversations in database: <span class="info">{results['total_conversations']:,}</span></p>
+    </div>
+    
+    <div class="section">
+        <h3>👥 Personal Name Search Results</h3>
+        <p>Ghada mentions: <span class="{'success' if results['ghada_mentions'] > 0 else 'error'}">{results['ghada_mentions']} found</span></p>
+        <p>Shazeen mentions: <span class="{'success' if results['shazeen_mentions'] > 0 else 'error'}">{results['shazeen_mentions']} found</span></p>
+        <p>Jonathan mentions: <span class="{'success' if results['jonathan_mentions'] > 0 else 'error'}">{results['jonathan_mentions']} found</span></p>
+    </div>
+    
+    <div class="section">
+        <h3>💬 Sample Ghada Conversations</h3>
+        {"".join([
+            f'''<div class="conversation">
+                <strong>Date:</strong> {conv['date']}<br>
+                <strong>Project:</strong> {conv['project']}<br>
+                <strong>User Input:</strong> {conv['user_input']}<br>
+                <strong>AI Response:</strong> {conv['response_preview'][:200]}...
+            </div>''' 
+            for conv in results['sample_ghada_conversations']
+        ]) if results['sample_ghada_conversations'] else '<p class="warning">No conversations found containing "ghada"</p>'}
+    </div>
+    
+    <div class="section">
+        <h3>🔧 Raw SQL Test (Enhanced Retrieve Logic)</h3>
+        <pre>{json.dumps(results['raw_sql_test'], indent=2)}</pre>
+    </div>
+    
+    <div class="section">
+        <h3>🧠 Enhanced Retrieve Function Test</h3>
+        <pre>{json.dumps(results['enhanced_retrieve_test'], indent=2)}</pre>
+    </div>
+    
+    <div class="section">
+        <h3>🔍 Simple Pattern Search Test</h3>
+        <p>Found "who is" queries: <span class="info">{results['simple_like_search']['count'] if results['simple_like_search'] else 0}</span></p>
+        <pre>{json.dumps(results['simple_like_search'], indent=2) if results['simple_like_search'] else 'No results'}</pre>
+    </div>
+    
+    <div class="section">
+        <h3>🎯 Action Items</h3>
+        <ul>
+            <li class="{'success' if results['database_connection'] else 'error'}">Database Connection: {'✅ Working' if results['database_connection'] else '❌ Fix connection'}</li>
+            <li class="{'success' if results['ghada_mentions'] > 0 else 'error'}">Ghada Data: {'✅ Found in database' if results['ghada_mentions'] > 0 else '❌ Missing from database'}</li>
+            <li class="{'success' if results.get('enhanced_retrieve_test', {}).get('results_count', 0) > 0 else 'error'}">Retrieve Function: {'✅ Working' if results.get('enhanced_retrieve_test', {}).get('results_count', 0) > 0 else '❌ Not finding results'}</li>
+        </ul>
+    </div>
+    
+    <p><a href="/diagnostics" style="color: #6366f1;">← Back to Diagnostics</a> | 
+       <a href="/system" style="color: #6366f1;">System Dashboard</a> | 
+       <a href="/" style="color: #6366f1;">Chat Interface</a></p>
+    </body>
+    </html>
+    """
+    
+    return html
+
+@app.route('/debug/brain_diagnostics')
+def brain_diagnostics():
+    """Enhanced brain diagnostics with retrieval testing"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        from modules.brain import get_brain_diagnostics
+        diagnostics = get_brain_diagnostics()
+        return jsonify(diagnostics)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # Google Integration Diagnostics Routes
 @app.route('/diagnostics/google-integration')
@@ -1232,7 +1503,7 @@ def system_admin_dashboard():
                     </button>
                     <button onclick="forceRestart()" class="btn danger" 
                             title="⚠️ This will restart the entire application">
-                        🔁 Force Restart
+                        🔴 Force Restart
                     </button>
                 </div>
                 <div id="adminResults" style="margin-top: 15px;"></div>
@@ -1256,6 +1527,7 @@ def system_admin_dashboard():
                     <a href="/system" class="btn">System Dashboard</a>
                     <a href="/integrations" class="btn">Integrations</a>
                     <a href="/diagnostics" class="btn">Diagnostics</a>
+                    <a href="/debug/test_ghada_query" class="btn success">🔍 Debug Database</a>
                 </div>
             </div>
         </div>
