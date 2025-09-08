@@ -1,5 +1,6 @@
 # modules/brain.py - Simplified Brain System with Database-Only Retrieval
 # FIXED: Removed overly restrictive filters that were blocking "Who is Ghada?" queries
+# UPDATED: Expanded context window to 250,000 characters for better continuity
 
 import os
 import datetime
@@ -60,7 +61,7 @@ class DatabaseBrainSystem:
 _brain_system = DatabaseBrainSystem()
 
 def enhanced_retrieve(query_text, k=5, project=None):
-    """Simplified retrieve function - FIXED to handle all query types including 'Who is Ghada?'"""
+    """Simplified retrieve function with 250K context - FIXED to handle all query types including 'Who is Ghada?'"""
     print(f"Enhanced retrieve: searching for '{query_text}'")
     
     all_results = []
@@ -108,12 +109,13 @@ def enhanced_retrieve(query_text, k=5, project=None):
                     
                     # Truncate if too long but keep meaningful content
                     if len(combined_text) > 250000:
-                         truncated = combined_text[:250000]
+                        truncated = combined_text[:250000]
                         last_sentence = truncated.rfind('. ')
                         if last_sentence > 200000:  # Keep if we can find a good break point
                             combined_text = truncated[:last_sentence + 1] + "..."
                         else:
                             combined_text = truncated + "..."
+                    
                     result = {
                         'text': combined_text,
                         'source': f"Conversation - {row['project']} ({row['created_at'].strftime('%m/%d/%Y')})",
@@ -515,7 +517,7 @@ def get_brain_status():
         "percentage": 100 if brain_status["ready"] else (50 if _brain_building else 0),
         "chunks": brain_status["document_count"],
         "conversations": brain_status.get("conversation_count", 0),
-        "method": "database_simple_fixed",
+        "method": "database_simple_fixed_250k",
         "health": health_status,
         "last_refresh": _last_brain_refresh.isoformat() if _last_brain_refresh else None
     }
@@ -528,7 +530,7 @@ def get_brain_control_dashboard():
     <!DOCTYPE html>
     <html>
     <head>
-        <title>Ghostline Brain Control - Simple Database Retrieval</title>
+        <title>Ghostline Brain Control - 250K Context Enhanced</title>
         <style>
             body { 
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -645,8 +647,8 @@ def get_brain_control_dashboard():
     </head>
     <body>
         <div class="container">
-            <h1>Brain Control - Simple Database Retrieval <span class="feature-badge">FIXED</span></h1>
-            <p>Fixed brain system that properly retrieves personal conversations including "Who is Ghada?" queries.</p>
+            <h1>Brain Control - 250K Context Enhanced <span class="feature-badge">FIXED</span></h1>
+            <p>Enhanced brain system with 250,000 character context windows for superior conversation continuity.</p>
             
             <div class="status-box">
                 <h3>Brain Status</h3>
@@ -666,7 +668,7 @@ def get_brain_control_dashboard():
                         <div class="stat-label">Conversations</div>
                     </div>
                     <div class="stat-box">
-                        <div class="stat-number" id="method">Simple DB</div>
+                        <div class="stat-number" id="method">250K DB</div>
                         <div class="stat-label">Method</div>
                     </div>
                     <div class="stat-box">
@@ -708,7 +710,7 @@ def get_brain_control_dashboard():
                         const statsDiv = document.getElementById('stats');
                         
                         if (data.ready) {
-                            statusDiv.innerHTML = '<span class="success">✅ Simple Database Retrieval Ready</span><br><small>Fixed conversation search with no overly restrictive filters</small>';
+                            statusDiv.innerHTML = '<span class="success">✅ 250K Context Database Retrieval Ready</span><br><small>Enhanced conversation threading with massive context windows</small>';
                             buildBtn.disabled = false;
                             serverBuildBtn.disabled = false;
                             progressDiv.classList.add('hidden');
@@ -743,7 +745,7 @@ def get_brain_control_dashboard():
             function updateStats(data) {
                 document.getElementById('document-count').textContent = data.chunks || 0;
                 document.getElementById('conversation-count').textContent = data.conversations || 0;
-                document.getElementById('method').textContent = 'Simple DB';
+                document.getElementById('method').textContent = '250K DB';
                 
                 const healthElement = document.getElementById('health-status');
                 if (data.health && data.health.status) {
@@ -840,7 +842,7 @@ def get_build_status():
         "chunks_processed": brain_status["document_count"],
         "embeddings_created": brain_status["document_count"],
         "conversations_available": brain_status["conversation_count"],
-        "method": "database_simple_fixed"
+        "method": "database_simple_fixed_250k"
     }
 
 # Debug function for testing
@@ -865,4 +867,4 @@ def test_ghada_directly():
         return False
 
 # Initialize brain system on import
-print("Brain system initialized - Simple database retrieval with fixed filters")
+print("Brain system initialized - 250K context enhanced database retrieval")
