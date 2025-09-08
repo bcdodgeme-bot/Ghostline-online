@@ -24,20 +24,152 @@ PROJECTS = [
 CHAT_MODEL = os.getenv("CHAT_MODEL", os.getenv("OPENROUTER_MODEL", "openrouter/auto"))
 
 def setup_easyocr_environment():
-    """Setup writable directory for EasyOCR models"""
+    """Setup EasyOCR environment variables"""
+    import os
+    os.environ['EASYOCR_MODULE_PATH'] = '/tmp/easyocr_models'
+    print(f"EasyOCR model path set to: {os.environ.get('EASYOCR_MODULE_PATH', 'default')}")
+
+def markdown_filter(text):
+    """Convert markdown to HTML for template rendering"""
+    if not text:
+        return ""
+    html = markdown.markdown(text)
+    return Markup(html)
+
+def get_project_specific_analysis_context(project):
+    """Return project-specific context for better document analysis"""
+    project_contexts = {
+        'Personal Operating Manual': "personal productivity, self-improvement, habits, and life optimization",
+        'AMCF': "business operations, client work, project management, and deliverables",
+        'BCDodgeme': "game development, mechanics, user experience, and technical implementation",
+        'Rose and Angel': "relationship management, personal connections, and social dynamics",
+        'Meals N Feelz': "nutrition, cooking, meal planning, and wellness tracking",
+        'TV Signals': "media projects, content creation, and entertainment development",
+        'Damn It Carl': "personal challenges, problem-solving, and self-accountability",
+        'HalalBot': "technical projects, automation, and system development",
+        'Kitchen': "cooking experiments, recipe development, and culinary exploration",
+        'Health': "medical tracking, fitness goals, and wellness monitoring",
+        'Side Quests': "experimental projects, learning goals, and creative pursuits"
+    }
+    
+    return project_contexts.get(project, "general productivity and organization")
+
+def select_optimal_voices_for_document(filename, content_preview, project):
+    """Select the best voice(s) based on document characteristics"""
+    
+    filename_lower = filename.lower()
+    content_lower = content_preview.lower()
+    
+    # Task-heavy documents - SyntaxPrime for organization
+    if any(keyword in content_lower for keyword in [
+        'todo', 'task', 'action', 'deadline', 'meeting', 'project',
+        'deliverable', 'milestone', 'schedule', 'agenda'
+    ]):
+        return ['SyntaxPrime']
+    
+    # Creative or experimental content - SyntaxBot for perspective
+    if any(keyword in content_lower for keyword in [
+        'creative', 'idea', 'concept', 'design', 'art', 'story',
+        'experiment', 'prototype', 'brainstorm'
+    ]) or project in ['Side Quests', 'TV Signals', 'BCDodgeme']:
+        return ['SyntaxBot']
+    
+    # Technical/logical content - Nil.exe for analysis
+    if any(keyword in content_lower for keyword in [
+        'code', 'technical', 'specification', 'requirements', 'bug',
+        'system', 'architecture', 'algorithm', 'data'
+    ]) or filename_lower.endswith(('.py', '.js', '.json', '.xml', '.csv')):
+        return ['Nil.exe']
+    
+    # Personal/relationship content - GGPT for warmth
+    if any(keyword in content_lower for keyword in [
+        'personal', 'relationship', 'family', 'friend', 'emotion',
+        'feeling', 'health', 'wellness', 'habit'
+    ]) or project in ['Rose and Angel', 'Health', 'Meals N Feelz']:
+        return ['GGPT']
+    
+    # Default to SyntaxPrime for general analysis
+    return ['SyntaxPrime']
+
+def generate_contextual_analysis_prompt(file, text, project, vision_description=None):
+    """Generate analysis prompt that's aware of project context and user needs"""
+    
+    project_context = get_project_specific_analysis_context(project)
+    filename = file.filename
+    
+    if vision_description:
+        # Image with vision analysis
+        return f"""I uploaded '{filename}' to my {project} project. 
+
+The OCR didn't pick up much text, but here's what I can see in the image:
+{vision_description}
+
+Given that this is for {project_context}, what should I do with this? Any insights that relate to what I'm working on in this area?"""
+
+    elif filename.endswith(('.pdf', '.docx')):
+        # Document analysis with project awareness
+        return f"""I uploaded '{filename}' to my {project} project.
+
+CONTENT:
+{text}
+
+This is related to {project_context}. What do I need to know from this document? 
+
+Specifically:
+- Any actions I should take?
+- Information that affects my current work in this area?
+- Deadlines or commitments I need to track?
+- Key insights that matter for {project}?
+
+Skip the summary unless it's actually useful - just tell me what I should do with this information."""
+
+    else:
+        # General file analysis
+        return f"""I uploaded '{filename}' to {project}.
+
+CONTENT:
+{text}
+
+This is going into my {project_context} tracking. What's worth paying attention to here? Any actions needed or just reference material?
+
+Given the context of {project}, does this change anything about what I'm working on or planning?"""
+
+def generate_document_analysis_response(analysis_prompt, project, voices, random_toggle):
+    """Generate personality-driven document analysis responses"""
+    
+    # Enhance the prompt to encourage natural conversation
+    enhanced_prompt = f"""Carl just uploaded a document for analysis. Respond naturally as his AI assistant - don't be overly formal or academic.
+
+{analysis_prompt}
+
+Remember:
+- Stay in your character voice/personality
+- Be practical and actionable, not theoretical  
+- If Carl needs to do something, tell him clearly
+- If it's just reference material, say so
+- Use your normal conversational tone
+- Don't force formal structures unless the content actually demands them
+- Focus on what Carl actually needs to know, not showing off analysis skills"""
+
+    # Use existing response generation with enhanced context
     try:
-        # Create a writable temp directory for EasyOCR
-        easyocr_dir = os.path.join(tempfile.gettempdir(), 'easyocr_models')
-        os.makedirs(easyocr_dir, exist_ok=True)
+        retrieval_ctx = enhanced_retrieve(analysis_prompt, k=3, project=project) if is_ready() else []
         
-        # Set environment variable to override EasyOCR's default path
-        os.environ['EASYOCR_MODULE_PATH'] = easyocr_dir
+        # Generate response using existing personality system
+        response_data = generate_response(
+            enhanced_prompt, voices, random_toggle,
+            project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+        )
         
-        print(f"EasyOCR model path set to: {easyocr_dir}")
-        return True
+        return response_data
+        
     except Exception as e:
-        print(f"Failed to setup EasyOCR environment: {e}")
-        return False
+        print(f"Enhanced analysis failed, falling back to basic: {e}")
+        # Fallback to original generation
+        return generate_response(
+            analysis_prompt, voices, random_toggle,
+            project=project, model=CHAT_MODEL, retrieval_context=[]
+        )
 
 def process_image_ocr(file_stream, filename):
     """Process image with EasyOCR, handling model download issues"""
@@ -168,16 +300,8 @@ def analyze_image_with_vision(file_stream, filename):
         print(f"Vision analysis failed: {e}")
         return f"Vision analysis error: {str(e)}"
 
-def markdown_filter(text):
-    """Convert markdown to HTML"""
-    if not text:
-        return ""
-    # Configure markdown with basic extensions
-    md = markdown.Markdown(extensions=['nl2br', 'fenced_code'])
-    return Markup(md.convert(text))
-
 def process_single_file(file, project):
-    """Process a single file and return analysis data - NEW FUNCTION"""
+    """Process a single file and return analysis data - IMPROVED VERSION"""
     filename = file.filename.lower()
     text = ""
     
@@ -264,81 +388,15 @@ def process_single_file(file, project):
     text_words = len(text.split()) if text else 0
     is_image_file = filename.endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp'))
     
-    # Generate analysis prompt based on file type and content - FIXED VERSION
-    if filename.endswith(('.pdf', '.docx')):
-        analysis_prompt = f"""MANDATORY FORMAT REQUIREMENT: Your response MUST include the exact table structure shown below. Do not deviate from this format.
-
-EXTRACT ACTIONABLE TASKS from this document: '{file.filename}'
-
-DOCUMENT CONTENT:
-{text}
-
-REQUIRED OUTPUT - FOLLOW THIS EXACT FORMAT:
-
-## 📋 EXTRACTED TASKS TABLE
-| Task | Due Date | Priority | Status |
-|------|----------|----------|---------|
-| [Extract specific tasks here] | [Any mentioned dates] | [High/Medium/Low] | [Pending] |
-
-## 📅 CRITICAL DEADLINES
-- List any time-sensitive items with specific dates
-- Note any recurring deadlines or milestones
-
-## 💡 KEY INSIGHTS
-- Summarize main objectives
-- Identify stakeholders mentioned  
-- Note any dependencies or requirements
-
-## ⚡ IMMEDIATE NEXT STEPS
-1. [Most urgent action needed]
-2. [Second priority action]
-3. [Third priority action]
-
-IMPORTANT RULES:
-- If no explicit tasks are found, derive at least 3 actionable items from the content
-- Every task must have a priority level (High/Medium/Low)
-- Use "TBD" for unknown due dates
-- Be specific and actionable in task descriptions
-- Focus on creating structured, scannable output that transforms document content into actionable work items
-
-START YOUR RESPONSE WITH THE TASKS TABLE - DO NOT PUT ANY TEXT BEFORE IT."""
-
-    elif is_image_file and text_words < 5:
+    # Generate analysis prompt with enhanced contextual approach
+    if is_image_file and text_words < 5:
         # Poor OCR results - switch to GPT-4 Vision analysis
         print(f"OCR extracted only {text_words} words, switching to vision analysis")
-        
-        # Get vision analysis
         vision_description = analyze_image_with_vision(file.stream, file.filename)
-        
-        analysis_prompt = f"""I've uploaded an image file '{file.filename}'. OCR only extracted: "{text.strip()}"
-
-Since the text was minimal, I analyzed the image visually instead:
-
-=== VISUAL ANALYSIS ===
-{vision_description}
-
-=== FILE DETAILS ===
-- Filename: {file.filename}
-- Type: IMAGE ({filename.split('.')[-1].upper()})
-- Analysis Method: GPT-4 Vision (due to minimal text extraction)
-
-Please provide insights based on this visual analysis."""
-
+        analysis_prompt = generate_contextual_analysis_prompt(file, text, project, vision_description)
     else:
-        # Good OCR results or other file types - proceed with generic analysis
-        analysis_prompt = f"""I've uploaded and processed the file '{file.filename}'. Here's what was extracted:
-
-=== EXTRACTED CONTENT ===
-{text}
-
-=== FILE DETAILS ===
-- Filename: {file.filename}
-- Type: {filename.split('.')[-1].upper()}
-- Characters: {len(text):,}
-- Words: {len(text.split()):,}
-- Lines: {len(text.splitlines()):,}
-
-Please analyze this content and provide insights, summaries, or answer any questions about what you see."""
+        # Good text extraction or document files
+        analysis_prompt = generate_contextual_analysis_prompt(file, text, project)
 
     print(f"File processing successful: {len(text)} characters extracted")
     
@@ -350,13 +408,12 @@ Please analyze this content and provide insights, summaries, or answer any quest
     }
 
 def handle_file_upload():
-    """UPDATED: Handle file upload processing for integrated chat flow"""
+    """UPDATED: Handle file upload processing with enhanced response generation"""
     try:
-        files = request.files.getlist('file')  # Handle multiple files
+        files = request.files.getlist('file')
         if not files or not files[0].filename:
             return jsonify({'error': 'No files uploaded'}), 400
         
-        # Get current project from form or session
         project = request.form.get('project', PROJECTS[0])
         
         # Process all uploaded files
@@ -367,7 +424,6 @@ def handle_file_upload():
                     file_data = process_single_file(file, project)
                     file_analyses.append(file_data)
                 except Exception as e:
-                    # Log error but continue with other files
                     print(f"Failed to process {file.filename}: {e}")
                     file_analyses.append({
                         'filename': file.filename,
@@ -377,62 +433,64 @@ def handle_file_upload():
         if not file_analyses:
             return jsonify({'error': 'No files could be processed'}), 400
         
-        # Create combined analysis prompt for multiple files
+        # Generate enhanced analysis
         if len(file_analyses) == 1:
             # Single file
             file_data = file_analyses[0]
             if 'error' in file_data:
                 return jsonify({'error': f"File processing failed: {file_data['error']}"}), 400
             
-            analysis_prompt = file_data['analysis_prompt']
+            # Smart voice selection
+            optimal_voices = select_optimal_voices_for_document(
+                file_data['filename'],
+                file_data['extracted_text'][:500],
+                project
+            )
+            
+            # Generate with improved prompting
+            response_data = generate_document_analysis_response(
+                file_data['analysis_prompt'],
+                project,
+                optimal_voices,
+                False  # Keep consistent for document analysis
+            )
+            
             user_message = f"📎 {file_data['filename']}"
             
         else:
-            # Multiple files
+            # Multiple files - create natural combined prompt
             successful_files = [f for f in file_analyses if 'error' not in f]
             failed_files = [f for f in file_analyses if 'error' in f]
             
             if not successful_files:
                 errors = [f"{f['filename']}: {f['error']}" for f in failed_files]
-                return jsonify({'error': f"All files failed to process: {'; '.join(errors)}"}), 400
+                return jsonify({'error': f"All files failed: {'; '.join(errors)}"}), 400
             
-            # Combine analysis prompts
-            analysis_parts = []
-            analysis_parts.append(f"I've uploaded {len(successful_files)} files for analysis:")
+            # Natural multi-file prompt
+            combined_prompt = f"I uploaded {len(successful_files)} files to {project}. Help me understand what I'm looking at and what I should do with them:\n\n"
             
             for i, file_data in enumerate(successful_files, 1):
-                analysis_parts.append(f"\n=== FILE {i}: {file_data['filename']} ===")
-                analysis_parts.append(file_data['extracted_text'])
+                combined_prompt += f"FILE {i}: {file_data['filename']}\n"
+                combined_prompt += f"{file_data['extracted_text'][:800]}\n\n"
             
             if failed_files:
-                analysis_parts.append(f"\n=== PROCESSING ERRORS ===")
-                for failed in failed_files:
-                    analysis_parts.append(f"- {failed['filename']}: {failed['error']}")
+                combined_prompt += f"Note: {len(failed_files)} files couldn't be processed.\n\n"
             
-            analysis_parts.append(f"\nPlease analyze the successfully processed files and provide insights, summaries, or actionable items from the content.")
+            combined_prompt += f"Given this is for {project}, what are the key things I should know? Any actions needed across these files?"
             
-            analysis_prompt = "\n".join(analysis_parts)
+            response_data = generate_document_analysis_response(
+                combined_prompt,
+                project,
+                ['SyntaxPrime'],  # Use organizing voice for multiple files
+                False
+            )
+            
             filenames = [f['filename'] for f in successful_files]
             user_message = f"📎 {', '.join(filenames)}"
         
-        # Generate AI analysis
-        use_voices = ['SyntaxPrime']  # Default to SyntaxPrime for file analysis
-        random_toggle = False
-        
-        try:
-            retrieval_ctx = enhanced_retrieve(analysis_prompt, k=5) if is_ready() else []
-            response_data = generate_response(
-                analysis_prompt, use_voices, random_toggle,
-                project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
-            )
-        except Exception as e:
-            print(f"AI analysis failed: {e}")
-            response_data = {"SyntaxPrime": f"Files processed successfully, but AI analysis failed: {e}"}
-
-        # Save to database and track file uploads
+        # Save conversation and track files
         save_conversation_enhanced(project, user_message, response_data)
         
-        # Track each uploaded file in database
         for file_data in file_analyses:
             if 'error' not in file_data:
                 filename = file_data['filename']
@@ -440,7 +498,6 @@ def handle_file_upload():
                 content_summary = file_data['extracted_text'][:500] if file_data['extracted_text'] else "No text extracted"
                 track_uploaded_file(filename, file_extension, project, content_summary)
         
-        # CRITICAL FIX: Return success status for AJAX handling
         return jsonify({
             'success': True,
             'message': 'Files processed successfully',

@@ -268,7 +268,8 @@ def process_clickup_command(user_input, project, use_voices, random_toggle):
     
     user_input_lower = user_input.lower()
     
-    # FIXED: Use proper regex patterns with word boundaries to prevent false positives
+    # PATCH: Tighten ClickUp pattern matching to reduce false positives
+    # FIXED: More specific regex patterns to prevent false positives
     clickup_patterns = [
         r'\bclickup\b',                    # "clickup" as whole word
         r'\bclick\s+up\b',                # "click up" with space
@@ -278,8 +279,11 @@ def process_clickup_command(user_input, project, use_voices, random_toggle):
         r'\bclickup\s+morning\b',         # "clickup morning"
         r'\bclickup\s+setup\b',           # "clickup setup"
         r'\bwork\s+timer\b',              # "work timer"
-        r'\btask\s+list\b',               # "task list"
-        r'\btask\s+status\b'              # "task status"
+        r'\bmy\s+task\s+list\b',          # FIXED: More specific - "my task list"
+        r'\bmy\s+task\s+status\b',        # FIXED: More specific - "my task status"
+        r'\bclickup\s+tasks?\b',          # ADDED: "clickup tasks" or "clickup task"
+        r'\bshow\s+clickup\s+tasks?\b',   # ADDED: "show clickup tasks"
+        r'\blist\s+clickup\s+tasks?\b'    # ADDED: "list clickup tasks"
     ]
     
     # FIXED: Use regex search instead of simple string containment
@@ -442,7 +446,7 @@ def get_clickup_morning_briefing(client=None):
         briefing.append(f"**📅 Tasks Due Today ({len(today_tasks.get('tasks', []))}):**")
         if today_tasks.get('tasks'):
             for task in today_tasks['tasks'][:5]:  # Limit to 5 tasks
-                status = "✅" if task.get('status', {}).get('status') == 'complete' else "📲"
+                status = "✅" if task.get('status', {}).get('status') == 'complete' else "🔲"
                 priority_map = {1: "🔴", 2: "🟡", 3: "🟢", 4: "🔵"}
                 priority_icon = priority_map.get(task.get('priority', {}).get('priority', 3), "🟢")
                 briefing.append(f"  {status} {priority_icon} {task['name']}")
@@ -485,7 +489,7 @@ def get_clickup_tasks_summary(client=None):
                     due_dt = datetime.datetime.fromtimestamp(due_timestamp)
                     due_date = f" (Due: {due_dt.strftime('%m/%d')})"
                 
-                status = "✅" if task.get('status', {}).get('status') == 'complete' else "📲"
+                status = "✅" if task.get('status', {}).get('status') == 'complete' else "🔲"
                 priority_map = {1: "🔴", 2: "🟡", 3: "🟢", 4: "🔵"}
                 priority_icon = priority_map.get(task.get('priority', {}).get('priority', 3), "🟢")
                 

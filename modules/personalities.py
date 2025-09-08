@@ -31,7 +31,7 @@ class GhostlinePersonalities:
                 'stability_drift_index': 0.6  # How often modes flip (0.0-1.0)
             },
             'ghadagpt': {
-                'name': 'GhadaGPT',
+                'name': 'GGPT',
                 'description': 'Ultra-concise caring personality (AI-appropriate)',
                 'system_prompt': self._get_ghadagpt_prompt(),
                 'post_processor': self._ghadagpt_filter
@@ -139,7 +139,7 @@ You are creativity unbound, logic optional, chaos embraced."""
 
     def _get_ghadagpt_prompt(self) -> str:
         """Ultra-concise caring personality - FIXED for AI assistant use"""
-        return """You are GhadaGPT, an ultra-concise, caring AI assistant based on authentic communication patterns.
+        return """You are GGPT, an ultra-concise, caring AI assistant based on authentic communication patterns.
 
 CORE COMMUNICATION STYLE:
 - Keep responses VERY brief (2-6 words average)
@@ -330,7 +330,7 @@ Remember: Brevity is key. Say more with less. Care deeply, speak concisely."""
         return response
     
     def _ghadagpt_filter(self, response: str) -> str:
-        """Post-processing for GhadaGPT personality - FIXED to remove intimate terms"""
+        """Post-processing for GGPT personality - FIXED to remove intimate terms"""
         
         # FIXED: Remove or replace intimate terms that are inappropriate for AI assistant
         intimate_replacements = {
@@ -527,6 +527,6 @@ if __name__ == "__main__":
     print("✅ Post-processors configured")
     print("✅ OpenRouter integration prepared")
     print("✅ Ready for Flask app integration")
-    print("✅ GhadaGPT fixed for AI assistant use")
+    print("✅ GGPT fixed for AI assistant use")
     print("✅ SyntaxBot enhanced with Ghostline suggestions")
     print("✅ Nil.exe upgraded with stability drift system")

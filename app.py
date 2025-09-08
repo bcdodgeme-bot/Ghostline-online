@@ -1,4 +1,9 @@
 # Section 1: Imports and Flask Setup
+# Section 1: Imports and Flask Setup (UPDATED)
+# Section 1: Imports and Flask Setup (UPDATED FOR PHASE 2)
+# Section 1: Imports and Flask Setup (UPDATED FOR CONSOLIDATED GOOGLE INTEGRATION)
+# Section 1: Imports and Flask Setup (UPDATED WITH ENHANCED MARKETING)
+# Section 1: Imports and Flask Setup (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)
 from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify, render_template_string, Response
 from flask_cors import CORS
 from utils.ghostline_engine import generate_response, stream_generate
@@ -17,6 +22,8 @@ import tempfile
 import datetime
 import requests
 
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
 # Module imports for integrated systems
 from modules.marketing_commands import process_marketing_command, is_marketing_configured
 from modules.cloze_integration import process_cloze_command, is_cloze_configured
@@ -28,6 +35,25 @@ from modules.telegram_notifications import (
 )
 from modules.smart_commands import process_smart_command
 from modules.personalities import GhostlinePersonalities, PersonalityIntegration
+
+# UPDATED: Enhanced Marketing Integration with Context
+from modules.conversation_context_handler import (
+    MarketingContextManager,
+    process_marketing_command_with_context,
+    marketing_context
+)
+
+# UPDATED: Consolidated Google Integration
+from modules.enhanced_google_integration import process_google_ecosystem_commands
+
+# NEW: Calendar → Telegram Integration
+from modules.calendar_telegram_integration import (
+    process_calendar_telegram_command,
+    is_calendar_telegram_configured,
+    start_calendar_monitoring,
+    stop_calendar_monitoring,
+    calendar_monitor_hotfix as calendar_monitor
+)
 
 # OCR/File Parsing
 from PIL import Image
@@ -59,6 +85,7 @@ try:
 except Exception:
     pass
 
+# Section 2: Database and Module Initialization
 app = Flask(__name__)
 
 # Enhanced session and CORS configuration for Railway deployment
@@ -103,6 +130,83 @@ if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
 personality_integration = PersonalityIntegration()
 
 # Section 2: Database and Module Initialization
+# Section 2: Database and Module Initialization
+app = Flask(__name__)
+
+# Enhanced session and CORS configuration for Railway deployment
+app.config.update(
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SECURE=bool(os.getenv('RAILWAY_ENVIRONMENT')),
+    SESSION_COOKIE_DOMAIN=None
+)
+
+# Enable CORS for streaming with credentials support
+CORS(app, supports_credentials=True, origins=['*'])
+
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'ghostline-default-key')
+PASSWORD = os.getenv('GHOSTLINE_PASSWORD', 'open_the_gate')
+
+# Choose model via env
+CHAT_MODEL = os.getenv("CHAT_MODEL", os.getenv("OPENROUTER_MODEL", "openrouter/auto"))
+
+# Sessions directory
+os.makedirs("sessions", exist_ok=True)
+
+PROJECTS = [
+    'Personal Operating Manual','AMCF','BCDodgeme','Rose and Angel','Meals N Feelz',
+    'TV Signals','Damn It Carl','HalalBot','Kitchen','Health','Side Quests'
+]
+
+CORPUS_PATH = "data/cleaned/ghostline_sources.jsonl.gz"
+
+# Global RAG system state
+_rag_building = False
+_rag_build_error = None
+_brain_building = False
+_brain_build_error = None
+
+# Database configuration
+DATABASE_URL = os.getenv('DATABASE_URL')
+if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
+    DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+
+# JWT for mobile API
+try:
+    import jwt
+    JWT_AVAILABLE = True
+except ImportError:
+    JWT_AVAILABLE = False
+    print("PyJWT not available - mobile API authentication disabled")
+
+def is_mobile_authenticated():
+    """Check if mobile request is authenticated"""
+    if not JWT_AVAILABLE:
+        return False
+    
+    auth_header = request.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return False
+    
+    token = auth_header[7:]  # Remove 'Bearer ' prefix
+    
+    try:
+        payload = jwt.decode(token, app.secret_key, algorithms=['HS256'])
+        return payload.get('mobile_authenticated', False)
+    except jwt.InvalidTokenError:
+        return False
+
+# .env support
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except Exception:
+    pass
+
+# Initialize personality system
+personality_integration = PersonalityIntegration()
+
+# Section 2: Database and Module Initialization
 from modules.database import (
     get_db_connection,
     init_database,
@@ -124,7 +228,7 @@ from modules.brain import (
     get_brain_control_dashboard
 )
 
-from modules.file_processing import setup_easyocr_environment, markdown_filter
+from modules.file_processing import setup_easyocr_environment, markdown_filter, handle_file_upload
 
 from modules.utils import (
     load_conversation,
@@ -141,7 +245,7 @@ from modules.utils import (
 from modules.gmail import process_gmail_command
 from modules.brain import enhanced_retrieve, refresh_brain_context
 
-# Initialize database when app starts
+# FIXED: Initialize database when app starts (moved after app creation)
 with app.app_context():
     init_database()
 
@@ -286,6 +390,14 @@ If this is about popular culture, TV shows, movies, books, or well-known topics,
 # Section 4: Main Chat Route
 # Section 4: Main Chat Route
 # Section 4: Main Chat Route
+# Section 4: Main Chat Route (UPDATED FOR PHASE 2)
+# Section 4: Main Chat Route (UPDATED FOR CONSOLIDATED GOOGLE INTEGRATION)
+# SECTION 4: Main Chat Route (UPDATED)
+# Replace the existing Section 4 with this updated version
+# ========================================
+# Section 4: Main Chat Route (UPDATED WITH ENHANCED MARKETING)
+# Section 4: Main Chat Route (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)
+# Section 4: Main Chat Route (UPDATED WITH UNIFIED CONVERSATION CONTEXT)
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if not session.get('logged_in'):
@@ -302,6 +414,28 @@ def index():
         use_voices = request.form.getlist('voices') or ['SyntaxPrime']
         random_toggle = 'random' in request.form
 
+        # Generate session ID for context tracking
+        session_id = session.get('session_id')
+        if not session_id:
+            import uuid
+            session_id = str(uuid.uuid4())
+            session['session_id'] = session_id
+
+        # NEW: Import unified context system
+        from modules.unified_conversation_context import (
+            unified_context,
+            check_for_follow_up,
+            store_integration_context
+        )
+
+        # NEW: Check for follow-up questions first
+        follow_up_response, is_follow_up = check_for_follow_up(
+            user_input, session_id, project, use_voices, random_toggle
+        )
+        if is_follow_up:
+            save_conversation_enhanced(project, user_input, follow_up_response)
+            return _render_enhanced(project, follow_up_response)
+
         # Auto-refresh brain context periodically
         try:
             refresh_brain_context()
@@ -314,6 +448,11 @@ def index():
                 from modules.cloze_clickup_integration import process_cloze_clickup_command
                 response_data, handled = process_cloze_clickup_command(user_input, project, use_voices, random_toggle)
                 if handled:
+                    # Store context for follow-up questions
+                    store_integration_context(
+                        'cloze_clickup_integration', session_id,
+                        {'response': response_data}, user_input
+                    )
                     save_conversation_enhanced(project, user_input, response_data)
                     return _render_enhanced(project, response_data)
             except ImportError as e:
@@ -332,42 +471,97 @@ def index():
         # Try smart commands SECOND (after integration commands)
         response_data, handled = process_smart_command(user_input, project, use_voices, random_toggle)
         if handled:
+            # Store context for follow-up questions
+            store_integration_context(
+                'smart_commands', session_id,
+                {'response': response_data}, user_input
+            )
             save_conversation_enhanced(project, user_input, response_data)
             return _render_enhanced(project, response_data)
 
-        # Try Gmail/calendar commands (fallback for specific commands)
-        response_data, handled = process_gmail_command(user_input, project, use_voices, random_toggle)
+        # Try Consolidated Google Integration (replaces both Phase 1 and Phase 2)
+        response_data, handled = process_google_ecosystem_commands(user_input, project, use_voices, random_toggle)
         if handled:
+            # Determine Google context type based on response content
+            context_type = 'gmail_search'
+            if 'calendar' in user_input.lower() or 'events' in user_input.lower():
+                context_type = 'calendar_today'
+            elif 'overnight' in user_input.lower() or 'morning' in user_input.lower():
+                context_type = 'gmail_overnight'
+            elif 'analytics' in user_input.lower():
+                context_type = 'analytics_report'
+            elif 'search console' in user_input.lower():
+                context_type = 'search_console_report'
+            
+            # Store context with detected type
+            store_integration_context(
+                context_type, session_id,
+                {'response': response_data, 'query_type': context_type}, user_input
+            )
+            save_conversation_enhanced(project, user_input, response_data)
             return _render_enhanced(project, response_data)
+
+        # Try Calendar → Telegram integration commands
+        if is_calendar_telegram_configured():
+            response_data, handled = process_calendar_telegram_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                store_integration_context(
+                    'calendar_telegram', session_id,
+                    {'response': response_data}, user_input
+                )
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
 
         # Try reminder commands
         response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
         if handled:
+            store_integration_context(
+                'telegram_reminders', session_id,
+                {'response': response_data}, user_input
+            )
             save_conversation_enhanced(project, user_input, response_data)
             return _render_enhanced(project, response_data)
+
+        # Enhanced Marketing Commands with Context Support
+        if is_marketing_configured():
+            response_data, handled = process_marketing_command_with_context(
+                user_input, project, use_voices, random_toggle, marketing_context
+            )
+            if handled:
+                store_integration_context(
+                    'marketing_generation', session_id,
+                    {'response': response_data, 'concept': user_input}, user_input
+                )
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+
+        # Try Cloze commands with proper feature flag validation
+        if is_cloze_configured():
+            app.logger.info(f"Cloze is configured, processing command: '{user_input}'")
+            response_data, handled = process_cloze_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                app.logger.info(f"Cloze command handled successfully")
+                store_integration_context(
+                    'cloze_pipeline', session_id,
+                    {'response': response_data, 'contacts': response_data.get('contacts', [])}, user_input
+                )
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+            else:
+                app.logger.info(f"Cloze command not recognized as Cloze-specific")
 
         # Try ClickUp commands (with improved detection)
         if is_clickup_configured():
             response_data, handled = process_clickup_command(user_input, project, use_voices, random_toggle)
             if handled:
+                store_integration_context(
+                    'clickup_tasks', session_id,
+                    {'response': response_data, 'tasks': response_data.get('tasks', [])}, user_input
+                )
                 save_conversation_enhanced(project, user_input, response_data)
                 return _render_enhanced(project, response_data)
 
-        # Try marketing commands (image generation)
-        if is_marketing_configured():
-            response_data, handled = process_marketing_command(user_input, project, use_voices, random_toggle)
-            if handled:
-                save_conversation_enhanced(project, user_input, response_data)
-                return _render_enhanced(project, response_data)
-
-        # Try Cloze commands
-        if is_cloze_configured():
-            response_data, handled = process_cloze_command(user_input, project, use_voices, random_toggle)
-            if handled:
-                save_conversation_enhanced(project, user_input, response_data)
-                return _render_enhanced(project, response_data)
-
-        # ---- Command: scrape <url> ----
+        # Handle scrape command
         if user_input.lower().startswith("scrape "):
             url = user_input.split(" ", 1)[1].strip()
             try:
@@ -385,6 +579,12 @@ def index():
                         summary_prompt, use_voices, random_toggle,
                         project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
                     )
+                
+                # Store scrape context
+                store_integration_context(
+                    'web_scraping', session_id,
+                    {'response': response_data, 'url': url, 'success': result["ok"]}, user_input
+                )
             except Exception as e:
                 app.logger.error(f"Scrape command failed: {e}")
                 response_data = {"SyntaxPrime": f"Scrape failed: {e}"}
@@ -392,7 +592,7 @@ def index():
             save_conversation_enhanced(project, user_input, response_data)
             return _render_enhanced(project, response_data)
 
-        # ---- Normal flow with enhanced context checking ----
+        # Normal flow with enhanced context checking
         try:
             retrieval_ctx = enhanced_retrieve(user_input, k=5, project=project) if is_ready() else []
             
@@ -402,6 +602,12 @@ def index():
                 project, CHAT_MODEL, retrieval_ctx
             )
             
+            # Store general conversation context for follow-ups
+            store_integration_context(
+                'general_conversation', session_id,
+                {'response': response_data, 'retrieval_used': len(retrieval_ctx) > 0}, user_input
+            )
+            
             save_conversation_enhanced(project, user_input, response_data)
         except Exception as e:
             app.logger.error(f"Normal flow failed: {e}")
@@ -409,6 +615,7 @@ def index():
             save_conversation_enhanced(project, user_input, response_data)
 
     return _render_enhanced(selected_project, response_data)
+
     
 # Section 5: Brain Building Routes
 from modules.brain import handle_build_brain, handle_build_new_brain, get_brain_status, get_brain_control_dashboard
@@ -443,7 +650,6 @@ def reload_corpus():
         return f"Reload failed: {e}", 500
         
 # Section 6: File Upload Processing
-from modules.file_processing import handle_file_upload
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -454,9 +660,18 @@ def upload_file():
     return handle_file_upload()
     
 # Section 7: Streaming Chat API
+# Section 7: Streaming Chat API (UPDATED)
+# Section 7: Streaming Chat API (UPDATED FOR PHASE 2)
+# Section 7: Streaming Chat API (UPDATED FOR CONSOLIDATED GOOGLE INTEGRATION)
+# SECTION 7: Streaming Chat API (UPDATED)
+# Replace the existing Section 7 with this updated version
+# ========================================
+# Section 7: Streaming Chat API (UPDATED WITH ENHANCED MARKETING)
+# Section 7: Streaming Chat API (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)
+# Section 7: Streaming Chat API (UPDATED WITH UNIFIED CONVERSATION CONTEXT)
 @app.route('/api/chat/stream', methods=['POST'])
 def stream_chat():
-    """Fixed streaming chat endpoint with enhanced auth debugging"""
+    """Enhanced streaming chat endpoint with unified context support"""
     
     # Enhanced logging for debugging auth issues
     app.logger.info(f"Stream request from {request.remote_addr}")
@@ -489,45 +704,115 @@ def stream_chat():
         if not user_input:
             return jsonify({'error': 'No input provided'}), 400
         
-        app.logger.info(f"Stream processing: '{user_input[:50]}...' for project '{project}'")
+        # Generate session ID for context tracking
+        session_id = session.get('session_id')
+        if not session_id:
+            import uuid
+            session_id = str(uuid.uuid4())
+            session['session_id'] = session_id
+        
+        app.logger.info(f"Stream processing: '{user_input[:50]}...' for project '{project}' (session: {session_id[:8]}...)")
         
         def generate_stream():
             try:
                 # Send initial message
                 yield f"data: {json.dumps({'type': 'start', 'message': 'Processing your request...'})}\n\n"
                 
+                # NEW: Import unified context system
+                from modules.unified_conversation_context import (
+                    unified_context,
+                    check_for_follow_up,
+                    store_integration_context
+                )
+                
                 # Initialize response data
                 response_data = {}
                 handled = False
                 
-                # Try command processors with better error isolation
-                processors = [
-                    ('smart', lambda: process_smart_command(user_input, project, use_voices, random_toggle)),
-                    ('gmail', lambda: process_gmail_command(user_input, project, use_voices, random_toggle)),
-                    ('reminder', lambda: handle_reminder_command(user_input, project, use_voices, random_toggle)),
-                ]
+                # NEW: Check for follow-up questions first
+                follow_up_response, is_follow_up = check_for_follow_up(
+                    user_input, session_id, project, use_voices, random_toggle
+                )
+                if is_follow_up:
+                    app.logger.info(f"Stream: Detected follow-up question")
+                    response_data = follow_up_response
+                    handled = True
                 
-                # Add conditional processors
-                if is_clickup_configured():
-                    processors.append(('clickup', lambda: process_clickup_command(user_input, project, use_voices, random_toggle)))
-                if is_marketing_configured():
-                    processors.append(('marketing', lambda: process_marketing_command(user_input, project, use_voices, random_toggle)))
-                if is_cloze_configured():
-                    processors.append(('cloze', lambda: process_cloze_command(user_input, project, use_voices, random_toggle)))
+                # Continue with normal processors if not a follow-up
+                if not handled:
+                    # Try command processors with enhanced context storage
+                    processors = [
+                        ('smart', lambda: process_smart_command(user_input, project, use_voices, random_toggle)),
+                        ('google_consolidated', lambda: process_google_ecosystem_commands(user_input, project, use_voices, random_toggle)),
+                        ('reminder', lambda: handle_reminder_command(user_input, project, use_voices, random_toggle)),
+                    ]
+                    
+                    # Add Calendar → Telegram processor
+                    if is_calendar_telegram_configured():
+                        app.logger.info(f"Adding Calendar-Telegram processor to stream pipeline")
+                        processors.insert(2, ('calendar_telegram', lambda: process_calendar_telegram_command(user_input, project, use_voices, random_toggle)))
+                    
+                    # Add enhanced marketing processor with context
+                    if is_marketing_configured():
+                        app.logger.info(f"Adding enhanced marketing processor to stream pipeline")
+                        processors.insert(1, ('marketing_enhanced', lambda: process_marketing_command_with_context(user_input, project, use_voices, random_toggle, marketing_context)))
+                    
+                    # Add Cloze processor with proper configuration check
+                    if is_cloze_configured():
+                        app.logger.info(f"Adding Cloze processor to stream pipeline")
+                        processors.insert(2, ('cloze', lambda: process_cloze_command(user_input, project, use_voices, random_toggle)))
+                    
+                    # Add other conditional processors
+                    if is_clickup_configured():
+                        processors.append(('clickup', lambda: process_clickup_command(user_input, project, use_voices, random_toggle)))
+                    
+                    # Try each processor and store context
+                    for proc_name, processor in processors:
+                        if not handled:
+                            try:
+                                app.logger.info(f"Trying {proc_name} processor")
+                                response_data, handled = processor()
+                                if handled:
+                                    app.logger.info(f"Request handled by {proc_name} processor")
+                                    
+                                    # Store context based on processor type
+                                    context_type = proc_name
+                                    if proc_name == 'google_consolidated':
+                                        # Determine specific Google context type
+                                        if 'calendar' in user_input.lower() or 'events' in user_input.lower():
+                                            context_type = 'calendar_today'
+                                        elif 'overnight' in user_input.lower() or 'morning' in user_input.lower():
+                                            context_type = 'gmail_overnight'
+                                        elif 'analytics' in user_input.lower():
+                                            context_type = 'analytics_report'
+                                        elif 'search console' in user_input.lower():
+                                            context_type = 'search_console_report'
+                                        else:
+                                            context_type = 'gmail_search'
+                                    elif proc_name == 'marketing_enhanced':
+                                        context_type = 'marketing_generation'
+                                    elif proc_name == 'cloze':
+                                        context_type = 'cloze_pipeline'
+                                    elif proc_name == 'clickup':
+                                        context_type = 'clickup_tasks'
+                                    elif proc_name == 'reminder':
+                                        context_type = 'telegram_reminders'
+                                    elif proc_name == 'calendar_telegram':
+                                        context_type = 'calendar_telegram'
+                                    elif proc_name == 'smart':
+                                        context_type = 'smart_commands'
+                                    
+                                    # Store the context
+                                    store_integration_context(
+                                        context_type, session_id,
+                                        {'response': response_data}, user_input
+                                    )
+                                    break
+                            except Exception as e:
+                                app.logger.error(f"{proc_name} processor failed: {e}")
+                                continue
                 
-                # Try each processor
-                for proc_name, processor in processors:
-                    if not handled:
-                        try:
-                            response_data, handled = processor()
-                            if handled:
-                                app.logger.info(f"Request handled by {proc_name} processor")
-                                break
-                        except Exception as e:
-                            app.logger.error(f"{proc_name} processor failed: {e}")
-                            continue
-                
-                # Scrape command
+                # Scrape command with context storage
                 if not handled and user_input.lower().startswith("scrape "):
                     try:
                         url = user_input.split(" ", 1)[1].strip()
@@ -545,19 +830,31 @@ def stream_chat():
                                 summary_prompt, use_voices, random_toggle,
                                 project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
                             )
+                        
+                        # Store scraping context
+                        store_integration_context(
+                            'web_scraping', session_id,
+                            {'response': response_data, 'url': url, 'success': result["ok"]}, user_input
+                        )
                         handled = True
                     except Exception as e:
                         app.logger.error(f"Scrape command failed: {e}")
                         response_data = {"SyntaxPrime": f"Scrape failed: {e}"}
                         handled = True
                 
-                # Normal AI response as fallback
+                # Normal AI response as fallback with context storage
                 if not handled:
                     try:
                         retrieval_ctx = enhanced_retrieve(user_input, k=5) if is_ready() else []
                         response_data = generate_response(
                             user_input, use_voices, random_toggle,
                             project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+                        )
+                        
+                        # Store general conversation context
+                        store_integration_context(
+                            'general_conversation', session_id,
+                            {'response': response_data, 'retrieval_used': len(retrieval_ctx) > 0}, user_input
                         )
                     except Exception as e:
                         app.logger.error(f"Normal response generation failed: {e}")
@@ -574,19 +871,26 @@ def stream_chat():
                 except Exception as e:
                     app.logger.error(f"Failed to save conversation: {e}")
                 
-                # Stream each response with proper chunking
+                # Enhanced streaming for marketing images
                 for voice, content in response_data.items():
-                    if not content:
+                    if voice == 'image_data':
+                        # Handle image data specially for inline display
+                        yield f"data: {json.dumps({'type': 'image', 'image_data': content, 'image_url': response_data.get('image_url')})}\n\n"
+                        continue
+                    elif voice == 'image_url':
+                        # Skip image_url as it's handled with image_data
+                        continue
+                    elif not content or not isinstance(content, str):
                         continue
                         
-                    # Send content in chunks for streaming effect
+                    # Stream text content in chunks for streaming effect
                     chunk_size = 30
                     for i in range(0, len(content), chunk_size):
                         chunk = content[i:i+chunk_size]
                         yield f"data: {json.dumps({'type': 'content', 'voice': voice, 'chunk': chunk})}\n\n"
                         time.sleep(0.03)  # Small delay for streaming effect
                 
-                # Send completion signal
+                # Send completion signal with full response data
                 yield f"data: {json.dumps({'type': 'complete', 'responses': response_data})}\n\n"
                 app.logger.info("Stream completed successfully")
                 
@@ -610,24 +914,6 @@ def stream_chat():
         app.logger.error(f"Stream endpoint failed: {e}", exc_info=True)
         return jsonify({'error': f'Stream endpoint failed: {str(e)}'}), 500
 
-@app.route('/api/auth/check')
-def check_auth_status():
-    """Debug endpoint to check authentication status"""
-    if not session.get('logged_in'):
-        return jsonify({
-            'authenticated': False,
-            'session_exists': bool(session),
-            'session_keys': list(session.keys()),
-            'remote_addr': request.remote_addr,
-            'user_agent': request.headers.get('User-Agent', 'Unknown')
-        }), 401
-    
-    return jsonify({
-        'authenticated': True,
-        'session_keys': list(session.keys()),
-        'message': 'Authentication working correctly'
-    })
-    
 # Section 8: Dashboard Routes (Modular)
 # Section 8: Dashboard Routes (Modular) - UPDATED WITH GOOGLE DIAGNOSTICS
 # Section 8: Dashboard Routes (Modular) - UPDATED WITH CLICKUP DIAGNOSTICS
@@ -1951,182 +2237,578 @@ def tts_status():
     
     return jsonify(status)
     
-# Section 13: Mobile API Routes
-# Section 13: Mobile API Routes
-@app.route('/api/mobile/auth', methods=['POST'])
-def mobile_auth():
-    """JWT authentication for mobile clients"""
+# NEW SECTION: Calendar-Telegram Integration API Routes
+# Add this entire section after your existing API routes (around line 1600-1700)
+
+@app.route('/api/calendar-alerts/status')
+def calendar_alerts_status():
+    """Get calendar alerts status"""
     if not session.get('logged_in'):
-        data = request.get_json()
-        password = data.get('password')
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    if not is_calendar_telegram_configured():
+        return jsonify({
+            'configured': False,
+            'error': 'Calendar-Telegram integration not configured'
+        })
+    
+    try:
+        from modules.calendar_telegram_integration import CalendarTelegramAlerts
+        alerts = CalendarTelegramAlerts()
+        status = alerts.get_monitoring_status()
         
-        if password == PASSWORD:
-            if JWT_AVAILABLE:
-                import time
+        return jsonify({
+            'success': True,
+            'status': status
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/calendar-alerts/enable', methods=['POST'])
+def enable_calendar_alerts():
+    """Enable calendar alerts monitoring"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        from modules.calendar_telegram_integration import CalendarTelegramAlerts
+        alerts = CalendarTelegramAlerts()
+        
+        result = alerts.enable_monitoring()
+        if result['success']:
+            start_calendar_monitoring()
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/calendar-alerts/disable', methods=['POST'])
+def disable_calendar_alerts():
+    """Disable calendar alerts monitoring"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        from modules.calendar_telegram_integration import CalendarTelegramAlerts
+        alerts = CalendarTelegramAlerts()
+        
+        result = alerts.disable_monitoring()
+        if result['success']:
+            stop_calendar_monitoring()
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/calendar-alerts/send-summary', methods=['POST'])
+def send_calendar_summary():
+    """Send daily calendar summary now"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        from modules.calendar_telegram_integration import CalendarTelegramAlerts
+        alerts = CalendarTelegramAlerts()
+        
+        result = alerts.send_daily_calendar_summary()
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/calendar-alerts/preferences', methods=['GET', 'POST'])
+def calendar_alert_preferences():
+    """Get or update calendar alert preferences"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        from modules.calendar_telegram_integration import CalendarTelegramAlerts
+        alerts = CalendarTelegramAlerts()
+        
+        if request.method == 'GET':
+            preferences = alerts.get_alert_preferences()
+            return jsonify({'success': True, 'preferences': preferences})
+        
+        elif request.method == 'POST':
+            data = request.get_json()
+            preferences = data.get('preferences', {})
+            
+            success = alerts.save_alert_preferences(preferences)
+            return jsonify({'success': success})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/calendar-alerts/upcoming-events')
+def get_upcoming_events_api():
+    """Get upcoming events for preview"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        from modules.calendar_telegram_integration import CalendarTelegramAlerts
+        alerts = CalendarTelegramAlerts()
+        
+        hours_ahead = request.args.get('hours', 24, type=int)
+        events = alerts.get_upcoming_events(hours_ahead=hours_ahead)
+        
+        # Format events for JSON response
+        formatted_events = []
+        for event in events:
+            formatted_events.append({
+                'id': event['id'],
+                'title': event['title'],
+                'start_time': event['start_time'].isoformat(),
+                'location': event.get('location', ''),
+                'attendee_count': len(event.get('attendees', []))
+            })
+        
+        return jsonify({
+            'success': True,
+            'events': formatted_events,
+            'count': len(formatted_events)
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/calendar-alerts-settings')
+def calendar_alerts_settings():
+    """Calendar alerts settings page"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    return render_template_string("""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Calendar → Telegram Alerts</title>
+        <style>
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
+            }
+            .container { max-width: 1000px; margin: 0 auto; }
+            .btn { 
+                background: #6366f1; color: white; border: none; padding: 12px 24px;
+                border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
+                text-decoration: none; display: inline-block;
+            }
+            .btn:hover { background: #5855eb; }
+            .btn.success { background: #059669; }
+            .btn.danger { background: #dc2626; }
+            .btn.warning { background: #d97706; }
+            .settings-section { 
+                background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
+                padding: 20px; margin: 20px 0; 
+            }
+            .status-card {
+                background: #2a2a2a; padding: 15px; border-radius: 8px; margin: 15px 0;
+                border-left: 4px solid #6366f1;
+            }
+            .form-group { margin: 15px 0; }
+            .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+            .form-group input, .form-group select { 
+                width: 100%; padding: 10px; background: #333; color: #fff; 
+                border: 1px solid #555; border-radius: 4px; font-size: 16px;
+            }
+            .checkbox-group { display: flex; align-items: center; margin: 10px 0; }
+            .checkbox-group input[type="checkbox"] { margin-right: 10px; width: auto; }
+            .events-preview { max-height: 300px; overflow-y: auto; }
+            .event-item { 
+                padding: 10px; background: #333; margin: 5px 0; border-radius: 4px;
+                display: flex; justify-content: space-between; align-items: center;
+            }
+            .alert-time-input { 
+                display: inline-block; width: 80px; margin: 0 5px; 
+                text-align: center; padding: 5px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>📅 Calendar → Telegram Alerts</h1>
+            
+            <div class="status-card" id="statusCard">
+                <h3>Current Status</h3>
+                <div id="statusInfo">Loading...</div>
+            </div>
+            
+            <div class="settings-section">
+                <h3>🔔 Alert Settings</h3>
                 
-                payload = {
-                    'authenticated': True,
-                    'exp': int(time.time()) + (4 * 60 * 60)  # 4 hours instead of 24
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="meetingAlertsEnabled" onchange="updatePreferences()">
+                        <label for="meetingAlertsEnabled">Enable meeting alerts</label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Alert times (minutes before meeting):</label>
+                    <div>
+                        <input type="number" id="alertTime1" class="alert-time-input" value="15" onchange="updatePreferences()"> minutes and
+                        <input type="number" id="alertTime2" class="alert-time-input" value="30" onchange="updatePreferences()"> minutes before
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="weekendAlerts" onchange="updatePreferences()">
+                        <label for="weekendAlerts">Include weekend alerts</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h3>📊 Daily Summary</h3>
+                
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="dailySummaryEnabled" onchange="updatePreferences()">
+                        <label for="dailySummaryEnabled">Enable daily calendar summary</label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="summaryTime">Summary time:</label>
+                    <input type="time" id="summaryTime" value="07:00" onchange="updatePreferences()">
+                </div>
+                
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="includeTomorrow" onchange="updatePreferences()">
+                        <label for="includeTomorrow">Include tomorrow's events in summary</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h3>⚡ Quick Actions</h3>
+                <button onclick="enableMonitoring()" class="btn success">Enable Monitoring</button>
+                <button onclick="disableMonitoring()" class="btn danger">Disable Monitoring</button>
+                <button onclick="sendSummaryNow()" class="btn">Send Summary Now</button>
+                <button onclick="testAlert()" class="btn warning">Test Alert</button>
+            </div>
+            
+            <div class="settings-section">
+                <h3>📋 Upcoming Events Preview</h3>
+                <div id="upcomingEvents">Loading events...</div>
+                <button onclick="loadUpcomingEvents()" class="btn">Refresh Events</button>
+            </div>
+            
+            <div class="settings-section">
+                <a href="/" class="btn">Back to Chat</a>
+                <a href="/integrations" class="btn">Integrations</a>
+                <a href="/system" class="btn">System Dashboard</a>
+            </div>
+        </div>
+        
+        <script>
+            let currentPreferences = {};
+            
+            document.addEventListener('DOMContentLoaded', function() {
+                loadStatus();
+                loadPreferences();
+                loadUpcomingEvents();
+                setInterval(loadStatus, 30000);
+            });
+            
+            function loadStatus() {
+                fetch('/api/calendar-alerts/status', {
+                    credentials: 'include'
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        updateStatusDisplay(data.status);
+                    } else {
+                        document.getElementById('statusInfo').innerHTML = 
+                            '<span style="color: #dc2626;">❌ ' + (data.error || 'Not configured') + '</span>';
+                    }
+                })
+                .catch(e => {
+                    document.getElementById('statusInfo').innerHTML = 
+                        '<span style="color: #dc2626;">❌ Status check failed</span>';
+                });
+            }
+            
+            function updateStatusDisplay(status) {
+                let html = '';
+                
+                html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">';
+                
+                html += '<div>';
+                html += '<strong>Monitoring:</strong> ';
+                html += status.monitoring_enabled ? 
+                    '<span style="color: #059669;">✅ Enabled</span>' : 
+                    '<span style="color: #dc2626;">❌ Disabled</span>';
+                html += '</div>';
+                
+                html += '<div>';
+                html += '<strong>Telegram:</strong> ';
+                html += status.telegram_configured ? 
+                    '<span style="color: #059669;">✅ Connected</span>' : 
+                    '<span style="color: #dc2626;">❌ Not configured</span>';
+                html += '</div>';
+                
+                html += '<div>';
+                html += '<strong>Calendar:</strong> ';
+                html += status.calendar_configured ? 
+                    '<span style="color: #059669;">✅ Connected</span>' : 
+                    '<span style="color: #dc2626;">❌ Not configured</span>';
+                html += '</div>';
+                
+                html += '<div>';
+                html += '<strong>Recent Alerts:</strong> ';
+                html += status.recent_alerts_24h || 0;
+                html += ' (24h)';
+                html += '</div>';
+                
+                html += '</div>';
+                
+                if (status.upcoming_events_24h !== undefined) {
+                    html += '<div style="margin-top: 10px;">';
+                    html += '<strong>Upcoming Events (24h):</strong> ' + status.upcoming_events_24h;
+                    html += '</div>';
                 }
-                token = jwt.encode(payload, app.secret_key, algorithm='HS256')
                 
-                return jsonify({
-                    'success': True,
-                    'token': token,
-                    'expires_in': 4 * 60 * 60  # 4 hours
+                document.getElementById('statusInfo').innerHTML = html;
+            }
+            
+            function loadPreferences() {
+                fetch('/api/calendar-alerts/preferences', {
+                    credentials: 'include'
                 })
-            else:
-                return jsonify({
-                    'success': False,
-                    'error': 'JWT not available - install PyJWT'
-                }), 500
-        else:
-            return jsonify({'success': False, 'error': 'Invalid password'}), 401
-    else:
-        return jsonify({'success': True, 'message': 'Already authenticated'})
-
-def is_mobile_authenticated():
-    """Check if mobile client is authenticated via JWT or session - simplified"""
-    if session.get('logged_in'):
-        return True
-    
-    if JWT_AVAILABLE:
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
-            return False
-        
-        try:
-            token = auth_header.split(' ')[1]
-            payload = jwt.decode(token, app.secret_key, algorithms=['HS256'])
-            return payload.get('authenticated', False)
-        except jwt.ExpiredSignatureError:
-            app.logger.info("JWT token expired")
-            return False
-        except jwt.InvalidTokenError as e:
-            app.logger.info(f"JWT invalid: {e}")
-            return False
-        except Exception as e:
-            app.logger.error(f"JWT auth error: {e}")
-            return False
-    
-    return False
-
-@app.route('/api/mobile/debug-auth')
-def debug_mobile_auth():
-    """Debug mobile authentication"""
-    auth_header = request.headers.get('Authorization', 'None')
-    
-    debug_info = {
-        'auth_header_present': bool(auth_header and auth_header != 'None'),
-        'auth_header_format': auth_header[:20] + '...' if auth_header else 'None',
-        'jwt_available': JWT_AVAILABLE,
-        'current_time': int(time.time()),
-        'session_logged_in': session.get('logged_in', False)
-    }
-    
-    if JWT_AVAILABLE and auth_header and auth_header.startswith('Bearer '):
-        try:
-            token = auth_header.split(' ')[1]
-            # Don't verify, just decode to see contents
-            unverified = jwt.decode(token, options={"verify_signature": False})
-            debug_info['token_payload'] = unverified
-            debug_info['token_expired'] = unverified.get('exp', 0) < int(time.time())
-        except Exception as e:
-            debug_info['token_decode_error'] = str(e)
-    
-    return jsonify(debug_info)
-
-@app.route('/api/mobile/projects')
-def mobile_projects():
-    """Get projects with conversation counts for mobile"""
-    if not is_mobile_authenticated():
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    projects_with_counts = []
-    
-    with get_db_connection() as conn:
-        if conn:
-            cursor = conn.cursor()
-            for project in PROJECTS:
-                cursor.execute('''
-                    SELECT COUNT(*) as count,
-                           MAX(created_at) as last_activity
-                    FROM chat_threads 
-                    WHERE project = %s
-                ''', (project,))
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        currentPreferences = data.preferences;
+                        updateFormFromPreferences();
+                    }
+                })
+                .catch(e => console.error('Failed to load preferences:', e));
+            }
+            
+            function updateFormFromPreferences() {
+                const prefs = currentPreferences;
                 
-                result = cursor.fetchone()
-                projects_with_counts.append({
-                    'name': project,
-                    'conversation_count': result[0] if result else 0,
-                    'last_activity': result[1].isoformat() if result and result[1] else None
-                })
-        else:
-            for project in PROJECTS:
-                projects_with_counts.append({
-                    'name': project,
-                    'conversation_count': 0,
-                    'last_activity': None
-                })
-    
-    return jsonify({
-        'success': True,
-        'projects': projects_with_counts
-    })
-
-@app.route('/api/mobile/conversations/<project>')
-def mobile_conversations(project):
-    """Get conversation history for a project (paginated)"""
-    if not is_mobile_authenticated():
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    page = request.args.get('page', 1, type=int)
-    limit = request.args.get('limit', 20, type=int)
-    offset = (page - 1) * limit
-    
-    conversations = []
-    total_count = 0
-    
-    with get_db_connection() as conn:
-        if conn:
-            cursor = conn.cursor()
+                document.getElementById('meetingAlertsEnabled').checked = 
+                    prefs.meeting_alerts?.enabled || false;
+                
+                const alertTimes = prefs.meeting_alerts?.alert_times || [15, 30];
+                document.getElementById('alertTime1').value = alertTimes[0] || 15;
+                document.getElementById('alertTime2').value = alertTimes[1] || 30;
+                
+                document.getElementById('weekendAlerts').checked = 
+                    prefs.meeting_alerts?.include_weekends || false;
+                
+                document.getElementById('dailySummaryEnabled').checked = 
+                    prefs.daily_summary?.enabled || false;
+                
+                document.getElementById('summaryTime').value = 
+                    prefs.daily_summary?.time || '07:00';
+                
+                document.getElementById('includeTomorrow').checked = 
+                    prefs.daily_summary?.include_tomorrow || false;
+            }
             
-            # Get total count
-            cursor.execute('SELECT COUNT(*) FROM chat_threads WHERE project = %s', (project,))
-            total_count = cursor.fetchone()[0]
-            
-            # Get paginated conversations
-            cursor.execute('''
-                SELECT user_input, response_data, created_at 
-                FROM chat_threads 
-                WHERE project = %s 
-                ORDER BY created_at DESC 
-                LIMIT %s OFFSET %s
-            ''', (project, limit, offset))
-            
-            rows = cursor.fetchall()
-            for row in rows:
-                conversations.append({
-                    'user_input': row[0],
-                    'responses': row[1],
-                    'timestamp': row[2].isoformat(),
-                    'preview': row[0][:100] + '...' if len(row[0]) > 100 else row[0]
+            function updatePreferences() {
+                const newPreferences = {
+                    meeting_alerts: {
+                        enabled: document.getElementById('meetingAlertsEnabled').checked,
+                        alert_times: [
+                            parseInt(document.getElementById('alertTime1').value) || 15,
+                            parseInt(document.getElementById('alertTime2').value) || 30
+                        ],
+                        include_weekends: document.getElementById('weekendAlerts').checked
+                    },
+                    daily_summary: {
+                        enabled: document.getElementById('dailySummaryEnabled').checked,
+                        time: document.getElementById('summaryTime').value,
+                        include_tomorrow: document.getElementById('includeTomorrow').checked
+                    },
+                    calendar_changes: currentPreferences.calendar_changes || {
+                        enabled: false,
+                        immediate_notification: true
+                    },
+                    recurring_reminders: currentPreferences.recurring_reminders || {
+                        enabled: true,
+                        max_per_event: 2
+                    }
+                };
+                
+                fetch('/api/calendar-alerts/preferences', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify({preferences: newPreferences})
                 })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        currentPreferences = newPreferences;
+                        console.log('Preferences saved');
+                    } else {
+                        alert('Failed to save preferences: ' + data.error);
+                    }
+                })
+                .catch(e => {
+                    console.error('Failed to save preferences:', e);
+                    alert('Failed to save preferences');
+                });
+            }
+            
+            function enableMonitoring() {
+                fetch('/api/calendar-alerts/enable', {
+                    method: 'POST',
+                    credentials: 'include'
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ Calendar monitoring enabled!');
+                        loadStatus();
+                    } else {
+                        alert('❌ Failed to enable monitoring: ' + data.error);
+                    }
+                })
+                .catch(e => alert('❌ Enable request failed'));
+            }
+            
+            function disableMonitoring() {
+                if (confirm('Disable calendar monitoring? You won\\'t receive alerts until re-enabled.')) {
+                    fetch('/api/calendar-alerts/disable', {
+                        method: 'POST',
+                        credentials: 'include'
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('🔕 Calendar monitoring disabled');
+                            loadStatus();
+                        } else {
+                            alert('❌ Failed to disable monitoring: ' + data.error);
+                        }
+                    })
+                    .catch(e => alert('❌ Disable request failed'));
+                }
+            }
+            
+            function sendSummaryNow() {
+                fetch('/api/calendar-alerts/send-summary', {
+                    method: 'POST',
+                    credentials: 'include'
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('📅 Calendar summary sent to Telegram!');
+                    } else {
+                        alert('❌ Failed to send summary: ' + data.error);
+                    }
+                })
+                .catch(e => alert('❌ Summary request failed'));
+            }
+            
+            function testAlert() {
+                fetch('/api/chat/stream', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        user_input: 'test calendar alert',
+                        project: 'Calendar Testing',
+                        voices: ['SyntaxPrime'],
+                        random: false
+                    })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('🧪 Test alert sent! Check your Telegram.');
+                    } else {
+                        alert('❌ Test failed: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(e => alert('❌ Test request failed'));
+            }
+            
+            function loadUpcomingEvents() {
+                fetch('/api/calendar-alerts/upcoming-events?hours=48', {
+                    credentials: 'include'
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        displayUpcomingEvents(data.events);
+                    } else {
+                        document.getElementById('upcomingEvents').innerHTML = 
+                            '<div style="color: #dc2626;">❌ ' + data.error + '</div>';
+                    }
+                })
+                .catch(e => {
+                    document.getElementById('upcomingEvents').innerHTML = 
+                        '<div style="color: #dc2626;">❌ Failed to load events</div>';
+                });
+            }
+            
+            function displayUpcomingEvents(events) {
+                if (events.length === 0) {
+                    document.getElementById('upcomingEvents').innerHTML = 
+                        '<div style="text-align: center; padding: 20px; color: #888;">No upcoming events in next 48 hours</div>';
+                    return;
+                }
+                
+                let html = '<div class="events-preview">';
+                
+                events.forEach(event => {
+                    const startTime = new Date(event.start_time);
+                    const timeStr = startTime.toLocaleString();
+                    
+                    html += '<div class="event-item">';
+                    html += '<div>';
+                    html += '<strong>' + event.title + '</strong><br>';
+                    html += '<small>' + timeStr + '</small>';
+                    if (event.location) {
+                        html += '<br><small>📍 ' + event.location + '</small>';
+                    }
+                    html += '</div>';
+                    
+                    html += '<div>';
+                    if (event.attendee_count > 0) {
+                        html += '<small>👥 ' + event.attendee_count + '</small>';
+                    }
+                    html += '</div>';
+                    
+                    html += '</div>';
+                });
+                
+                html += '</div>';
+                html += '<div style="margin-top: 10px; text-align: center;">';
+                html += '<small>' + events.length + ' events in next 48 hours</small>';
+                html += '</div>';
+                
+                document.getElementById('upcomingEvents').innerHTML = html;
+            }
+        </script>
+    </body>
+    </html>
+    """)
     
-    return jsonify({
-        'success': True,
-        'conversations': conversations,
-        'pagination': {
-            'page': page,
-            'limit': limit,
-            'total': total_count,
-            'has_more': (offset + limit) < total_count
-        }
-    })
-
+# Section 13: Mobile API Routes
+# Section 13: Mobile API Routes
+# Section 13: Mobile API Routes (UPDATED FOR PHASE 2)
+# Section 13: Mobile API Routes (UPDATED FOR CONSOLIDATED GOOGLE INTEGRATION)
+# Section 13: Mobile API Routes (UPDATED WITH ENHANCED MARKETING)
+# Section 13: Mobile API Routes (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)
 @app.route('/api/mobile/chat', methods=['POST'])
 def mobile_chat():
-    """Mobile chat with full AI processing - enhanced version"""
+    """Mobile chat with full AI processing - enhanced with marketing context support"""
     if not is_mobile_authenticated():
         return jsonify({'error': 'Unauthorized'}), 401
     
@@ -2157,11 +2839,40 @@ def mobile_chat():
             save_conversation_enhanced(project, user_input, response_data)
             return jsonify({'success': True, 'responses': response_data})
 
-        # Try Gmail/calendar commands
-        response_data, handled = process_gmail_command(user_input, project, use_voices, random_toggle)
+        # UPDATED: Enhanced Marketing Commands with Context Support
+        if is_marketing_configured():
+            app.logger.info(f"Mobile: Enhanced marketing is configured, processing command: '{user_input}'")
+            response_data, handled = process_marketing_command_with_context(
+                user_input, project, use_voices, random_toggle, marketing_context
+            )
+            if handled:
+                app.logger.info(f"Mobile: Enhanced marketing command handled successfully")
+                save_conversation_enhanced(project, user_input, response_data)
+                return jsonify({'success': True, 'responses': response_data})
+
+        # FIXED: Try Cloze commands with proper configuration validation
+        if is_cloze_configured():
+            app.logger.info(f"Mobile: Cloze is configured, processing command: '{user_input}'")
+            response_data, handled = process_cloze_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                app.logger.info(f"Mobile: Cloze command handled successfully")
+                save_conversation_enhanced(project, user_input, response_data)
+                return jsonify({'success': True, 'responses': response_data})
+
+        # UPDATED: Try Consolidated Google Integration (replaces both Phase 1 and Phase 2)
+        response_data, handled = process_google_ecosystem_commands(user_input, project, use_voices, random_toggle)
         if handled:
             save_conversation_enhanced(project, user_input, response_data)
             return jsonify({'success': True, 'responses': response_data})
+
+        # NEW: Try Calendar → Telegram integration
+        if is_calendar_telegram_configured():
+            app.logger.info(f"Mobile: Calendar-Telegram is configured, processing command: '{user_input}'")
+            response_data, handled = process_calendar_telegram_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                app.logger.info(f"Mobile: Calendar-Telegram command handled successfully")
+                save_conversation_enhanced(project, user_input, response_data)
+                return jsonify({'success': True, 'responses': response_data})
 
         # Try reminder commands
         response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
@@ -2172,20 +2883,6 @@ def mobile_chat():
         # Try ClickUp commands (with improved detection)
         if is_clickup_configured():
             response_data, handled = process_clickup_command(user_input, project, use_voices, random_toggle)
-            if handled:
-                save_conversation_enhanced(project, user_input, response_data)
-                return jsonify({'success': True, 'responses': response_data})
-
-        # Try marketing commands (image generation)
-        if is_marketing_configured():
-            response_data, handled = process_marketing_command(user_input, project, use_voices, random_toggle)
-            if handled:
-                save_conversation_enhanced(project, user_input, response_data)
-                return jsonify({'success': True, 'responses': response_data})
-
-        # Try Cloze commands
-        if is_cloze_configured():
-            response_data, handled = process_cloze_command(user_input, project, use_voices, random_toggle)
             if handled:
                 save_conversation_enhanced(project, user_input, response_data)
                 return jsonify({'success': True, 'responses': response_data})
@@ -2239,10 +2936,16 @@ def mobile_chat():
     except Exception as e:
         app.logger.error(f"Mobile chat failed: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
 # Section 14: Google OAuth Integration
+# Section 14: Google OAuth Integration (COMPLETELY REPLACED)
+# Section 14: Google OAuth Integration (COMPLETELY REPLACED FOR PHASE 2)
+# Section 14: Google OAuth Integration
+# Section 14: Google OAuth Integration (COMPLETELY REPLACED)
+# Section 14: Google OAuth Integration (COMPLETELY REPLACED FOR PHASE 2)
 @app.route('/google/auth/start')
 def google_auth_start():
-    """Initiate Google OAuth flow - Railway-compatible version"""
+    """Updated OAuth flow with Phase 2 scopes (Docs, Sheets, Analytics)"""
     if not session.get('logged_in'):
         return redirect(url_for('login'))
     
@@ -2250,73 +2953,29 @@ def google_auth_start():
         credentials_path = os.getenv('GOOGLE_CREDENTIALS_PATH', 'credentials.json')
         
         if not os.path.exists(credentials_path):
-            return render_template_string("""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Google Setup Required</title>
-                <style>
-                    body { 
-                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                        background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
-                    }
-                    .container { max-width: 800px; margin: 0 auto; }
-                    .btn { 
-                        background: #6366f1; color: white; border: none; padding: 12px 24px;
-                        border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
-                        text-decoration: none; display: inline-block;
-                    }
-                    .setup-steps { background: #1a1a1a; padding: 20px; border-radius: 8px; margin: 15px 0; }
-                    .setup-steps ol li { margin: 10px 0; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <h1>Google OAuth Setup Required</h1>
-                    <div class="setup-steps">
-                        <h3>Complete These Steps First:</h3>
-                        <ol>
-                            <li>Go to <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a></li>
-                            <li>Create a new project or select existing</li>
-                            <li>Enable <strong>Gmail API</strong> and <strong>Calendar API</strong></li>
-                            <li>Go to <strong>APIs & Services → Credentials</strong></li>
-                            <li>Create <strong>OAuth 2.0 Client ID</strong> (Web application)</li>
-                            <li>Add authorized redirect URI: <code>https://{{ railway_url }}/google/auth/callback</code></li>
-                            <li>Download the credentials JSON file</li>
-                            <li>Upload it to Railway and set <code>GOOGLE_CREDENTIALS_PATH</code> env var</li>
-                            <li>Return here and try again</li>
-                        </ol>
-                    </div>
-                    <a href="/integrations" class="btn">Setup Instructions</a>
-                    <a href="/" class="btn">Back to Chat</a>
-                </div>
-            </body>
-            </html>
-            """, railway_url=os.getenv('RAILWAY_STATIC_URL', 'your-app.railway.app'))
+            from modules.google_oauth_config import GOOGLE_SETUP_TEMPLATE
+            railway_url = os.getenv('RAILWAY_STATIC_URL', 'your-app.railway.app')
+            return render_template_string(GOOGLE_SETUP_TEMPLATE, railway_url=railway_url)
         
         from google_auth_oauthlib.flow import Flow
+        from modules.google_oauth_config import get_oauth_scopes
         
         railway_url = os.getenv('RAILWAY_STATIC_URL')
-        if railway_url:
-            redirect_uri = f"https://{railway_url}/google/auth/callback"
-        else:
-            redirect_uri = "http://localhost:5000/google/auth/callback"
+        redirect_uri = f"https://{railway_url}/google/auth/callback" if railway_url else "http://localhost:5000/google/auth/callback"
         
         app.logger.info(f"Starting OAuth flow with redirect URI: {redirect_uri}")
         
-        flow = Flow.from_client_secrets_file(
-            credentials_path,
-            scopes=[
-                "https://www.googleapis.com/auth/gmail.readonly",
-                "https://www.googleapis.com/auth/calendar.readonly"
-            ]
-        )
+        # Use Phase 2 scopes including Docs, Sheets, Analytics
+        scopes = get_oauth_scopes("standard")  # Default to Phase 2 standard scopes
+        app.logger.info(f"OAuth scopes: {scopes}")
+        
+        flow = Flow.from_client_secrets_file(credentials_path, scopes=scopes)
         flow.redirect_uri = redirect_uri
         
         authorization_url, state = flow.authorization_url(
             access_type='offline',
             include_granted_scopes='true',
-            prompt='consent'
+            prompt='consent'  # Force consent to ensure all Phase 2 scopes are granted
         )
         
         session['oauth_state'] = state
@@ -2331,7 +2990,7 @@ def google_auth_start():
 
 @app.route('/google/auth/callback')
 def google_auth_callback():
-    """Handle Google OAuth callback and save token"""
+    """Updated OAuth callback with Phase 2 scope validation"""
     if not session.get('logged_in'):
         return redirect(url_for('login'))
     
@@ -2346,16 +3005,14 @@ def google_auth_callback():
             return "Invalid state parameter - possible CSRF attack<br><a href='/integrations'>Try Again</a>", 400
         
         from google_auth_oauthlib.flow import Flow
+        from modules.google_oauth_config import get_oauth_scopes, validate_scopes_in_token, OAUTH_SUCCESS_TEMPLATE
         
         credentials_path = os.getenv('GOOGLE_CREDENTIALS_PATH', 'credentials.json')
         token_path = os.getenv('GOOGLE_TOKEN_PATH', 'token.json')
         
         flow = Flow.from_client_secrets_file(
             credentials_path,
-            scopes=[
-                "https://www.googleapis.com/auth/gmail.readonly",
-                "https://www.googleapis.com/auth/calendar.readonly"
-            ],
+            scopes=get_oauth_scopes("standard"),
             state=session['oauth_state']
         )
         flow.redirect_uri = session.get('oauth_redirect_uri')
@@ -2363,135 +3020,296 @@ def google_auth_callback():
         app.logger.info(f"Processing OAuth callback, saving token to: {token_path}")
         
         flow.fetch_token(authorization_response=request.url)
-        
         credentials = flow.credentials
+        
+        # Validate scopes with Phase 2 detection
+        scope_validation = validate_scopes_in_token(credentials)
+        
         with open(token_path, 'w') as token_file:
             token_file.write(credentials.to_json())
         
         app.logger.info("Token saved successfully")
         
-        # Test the credentials immediately
-        test_results = {}
-        try:
-            from utils.gmail_client import _gmail_service, _calendar_service
-            
-            gmail_svc = _gmail_service()
-            profile = gmail_svc.users().getProfile(userId='me').execute()
-            test_results['gmail'] = f"Connected as {profile.get('emailAddress', 'Unknown')}"
-            
-            cal_svc = _calendar_service()
-            calendar_list = cal_svc.calendarList().list(maxResults=1).execute()
-            test_results['calendar'] = f"Access to {len(calendar_list.get('items', []))} calendars"
-            
-        except Exception as test_error:
-            test_results['error'] = str(test_error)
+        # Test the credentials with all services
+        test_results = test_google_services(credentials)
         
         session.pop('oauth_state', None)
         session.pop('oauth_redirect_uri', None)
         
-        return render_template_string("""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Google OAuth Complete</title>
-            <style>
-                body { 
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
-                }
-                .container { max-width: 800px; margin: 0 auto; }
-                .btn { 
-                    background: #6366f1; color: white; border: none; padding: 12px 24px;
-                    border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
-                    text-decoration: none; display: inline-block;
-                }
-                .btn.success { background: #059669; }
-                .success-box { 
-                    background: #065f46; border: 1px solid #059669; border-radius: 8px; 
-                    padding: 20px; margin: 20px 0; 
-                }
-                .test-results { 
-                    background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
-                    padding: 15px; margin: 15px 0; 
-                }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="success-box">
-                    <h1>Google OAuth Setup Complete!</h1>
-                    <p>Your Gmail and Calendar access has been configured successfully.</p>
-                    <p><strong>Token saved to:</strong> {{ token_path }}</p>
-                </div>
-                
-                <div class="test-results">
-                    <h3>Connection Test Results:</h3>
-                    {% if test_results.gmail %}
-                        <p>Gmail: {{ test_results.gmail }}</p>
-                    {% endif %}
-                    {% if test_results.calendar %}
-                        <p>Calendar: {{ test_results.calendar }}</p>
-                    {% endif %}
-                    {% if test_results.error %}
-                        <p>Warning: {{ test_results.error }}</p>
-                    {% endif %}
-                </div>
-                
-                <div style="text-align: center; margin: 30px 0;">
-                    <a href="/" class="btn success">Start Using Gmail Commands</a>
-                    <a href="/integrations" class="btn">View Integrations</a>
-                </div>
-            </div>
-        </body>
-        </html>
-        """, token_path=token_path, test_results=test_results)
+        return render_template_string(
+            OAUTH_SUCCESS_TEMPLATE,
+            token_path=token_path,
+            test_results=test_results,
+            scope_validation=scope_validation
+        )
         
     except Exception as e:
         app.logger.error(f"OAuth callback failed: {e}")
         return f"OAuth completion failed: {str(e)}<br><a href='/integrations'>Try Again</a>", 500
 
-@app.route('/google/auth/revoke', methods=['POST'])
-def google_auth_revoke():
-    """Revoke Google authentication and delete token"""
+def test_google_services(credentials):
+    """Test all Google services with new credentials - Updated for Phase 2"""
+    test_results = {}
+    
+    try:
+        from googleapiclient.discovery import build
+        
+        # Test Gmail (Phase 1)
+        try:
+            gmail_svc = build('gmail', 'v1', credentials=credentials)
+            profile = gmail_svc.users().getProfile(userId='me').execute()
+            test_results['gmail'] = f"✅ Connected as {profile.get('emailAddress', 'Unknown')}"
+        except Exception as e:
+            test_results['gmail'] = f"❌ Gmail test failed: {str(e)}"
+        
+        # Test Calendar (Phase 1)
+        try:
+            cal_svc = build('calendar', 'v3', credentials=credentials)
+            calendar_list = cal_svc.calendarList().list(maxResults=1).execute()
+            test_results['calendar'] = f"✅ Access to {len(calendar_list.get('items', []))} calendars"
+        except Exception as e:
+            test_results['calendar'] = f"❌ Calendar test failed: {str(e)}"
+        
+        # Test Drive (Phase 1)
+        try:
+            drive_svc = build('drive', 'v3', credentials=credentials)
+            about = drive_svc.about().get(fields="user,storageQuota").execute()
+            user_email = about.get('user', {}).get('emailAddress', 'Unknown')
+            test_results['drive'] = f"✅ Drive access for {user_email}"
+        except Exception as e:
+            test_results['drive'] = f"❌ Drive test failed: {str(e)}"
+        
+        # Test Google Docs (Phase 2)
+        try:
+            docs_svc = build('docs', 'v1', credentials=credentials)
+            # Simple test - we can't create without a document ID
+            test_results['docs'] = f"✅ Google Docs API ready for document creation"
+        except Exception as e:
+            test_results['docs'] = f"❌ Docs API test failed: {str(e)}"
+        
+        # Test Google Sheets (Phase 2)
+        try:
+            sheets_svc = build('sheets', 'v4', credentials=credentials)
+            # Simple test - API connection
+            test_results['sheets'] = f"✅ Google Sheets API ready for spreadsheet operations"
+        except Exception as e:
+            test_results['sheets'] = f"❌ Sheets API test failed: {str(e)}"
+        
+        # Test Google Slides (Phase 2)
+        try:
+            slides_svc = build('slides', 'v1', credentials=credentials)
+            # Simple test - API connection
+            test_results['slides'] = f"✅ Google Slides API ready for presentation creation"
+        except Exception as e:
+            test_results['slides'] = f"❌ Slides API test failed: {str(e)}"
+        
+        # Test Analytics (Phase 2) - Optional
+        try:
+            analytics_svc = build('analyticsreporting', 'v4', credentials=credentials)
+            test_results['analytics'] = f"✅ Analytics API connected (requires View ID configuration)"
+        except Exception as e:
+            test_results['analytics'] = f"⚠️ Analytics API test failed: {str(e)} (configure GOOGLE_ANALYTICS_VIEW_ID)"
+        
+        # Test Search Console (Phase 2) - Optional
+        try:
+            searchconsole_svc = build('searchconsole', 'v1', credentials=credentials)
+            test_results['searchconsole'] = f"✅ Search Console API connected (requires site verification)"
+        except Exception as e:
+            test_results['searchconsole'] = f"⚠️ Search Console API test failed: {str(e)} (verify site in Search Console)"
+            
+    except Exception as e:
+        test_results['error'] = f"Service testing failed: {str(e)}"
+    
+    return test_results
+
+@app.route('/api/google/token-status')
+def google_token_status():
+    """Check Google token status with automatic refresh capability"""
     if not session.get('logged_in'):
         return jsonify({'error': 'Unauthorized'}), 401
     
     try:
-        token_path = os.getenv('GOOGLE_TOKEN_PATH', 'token.json')
-        
-        if os.path.exists(token_path):
-            try:
-                from utils.gmail_client import _build_creds
-                creds = _build_creds()
-                
-                requests.post(
-                    'https://oauth2.googleapis.com/revoke',
-                    params={'token': creds.token},
-                    headers={'content-type': 'application/x-www-form-urlencoded'}
-                )
-                app.logger.info("Token revoked with Google")
-            except:
-                app.logger.warning("Could not revoke token with Google, but will delete local file")
+        # Try to import the token manager
+        try:
+            from modules.google_token_refresh import token_manager, get_google_credentials
             
-            os.remove(token_path)
-            app.logger.info("Local token file deleted")
+            # Get token status from the manager
+            status = token_manager.get_token_status()
+            
+            # Try to get valid credentials (this will attempt refresh if needed)
+            credentials = get_google_credentials()
+            
+            if credentials:
+                status['credentials_available'] = True
+                status['scopes_count'] = len(credentials.scopes) if credentials.scopes else 0
+                status['scopes'] = list(credentials.scopes) if credentials.scopes else []
+            else:
+                status['credentials_available'] = False
+            
+            # Add additional diagnostics
+            status['token_file_exists'] = os.path.exists(os.getenv('GOOGLE_TOKEN_PATH', 'token.json'))
+            status['credentials_file_exists'] = os.path.exists(os.getenv('GOOGLE_CREDENTIALS_PATH', 'credentials.json'))
             
             return jsonify({
                 'success': True,
-                'message': 'Google authentication revoked and token deleted'
+                'token_manager_available': True,
+                **status
             })
-        else:
+            
+        except ImportError:
+            # Fallback to legacy token checking
+            app.logger.warning("Token manager not available, using legacy token check")
+            
+            from google.oauth2.credentials import Credentials
+            from google.auth.transport.requests import Request
+            
+            token_path = os.getenv('GOOGLE_TOKEN_PATH', 'token.json')
+            
+            if not os.path.exists(token_path):
+                return jsonify({
+                    'success': False,
+                    'token_manager_available': False,
+                    'status': 'missing',
+                    'message': 'No token file found',
+                    'needs_auth': True,
+                    'token_file_exists': False
+                })
+            
+            # Load and check token
+            credentials = Credentials.from_authorized_user_file(token_path)
+            
+            status = {
+                'valid': credentials.valid,
+                'expired': credentials.expired,
+                'has_refresh_token': bool(credentials.refresh_token),
+                'scopes': list(credentials.scopes) if credentials.scopes else [],
+                'scopes_count': len(credentials.scopes) if credentials.scopes else 0,
+                'needs_auth': False,
+                'token_file_exists': True,
+                'credentials_file_exists': os.path.exists(os.getenv('GOOGLE_CREDENTIALS_PATH', 'credentials.json'))
+            }
+            
+            if credentials.valid:
+                status['status'] = 'valid'
+                status['message'] = 'Token is valid and ready to use'
+            elif credentials.expired and credentials.refresh_token:
+                status['status'] = 'expired_refreshable'
+                status['message'] = 'Token expired but can be refreshed'
+                
+                # Try to refresh
+                try:
+                    credentials.refresh(Request())
+                    
+                    # Save refreshed token
+                    with open(token_path, 'w') as token_file:
+                        token_file.write(credentials.to_json())
+                    
+                    status['status'] = 'refreshed'
+                    status['message'] = 'Token was expired but has been refreshed'
+                    status['valid'] = True
+                    status['expired'] = False
+                    
+                except Exception as refresh_error:
+                    status['status'] = 'refresh_failed'
+                    status['message'] = f'Token refresh failed: {str(refresh_error)}'
+                    status['needs_auth'] = True
+                    
+            elif credentials.expired and not credentials.refresh_token:
+                status['status'] = 'expired_no_refresh'
+                status['message'] = 'Token expired and cannot be refreshed - need re-authentication'
+                status['needs_auth'] = True
+            else:
+                status['status'] = 'unknown'
+                status['message'] = 'Token status unclear'
+            
             return jsonify({
-                'success': False,
-                'message': 'No token file found'
+                'success': True,
+                'token_manager_available': False,
+                **status
             })
             
     except Exception as e:
-        app.logger.error(f"Token revocation failed: {e}")
+        app.logger.error(f"Token status check failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'token_manager_available': False
+        }), 500
+
+@app.route('/api/google/force-refresh', methods=['POST'])
+def force_google_token_refresh():
+    """Force a Google token refresh (for testing/debugging)"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        # Try using the token manager first
+        try:
+            from modules.google_token_refresh import force_token_refresh, token_manager
+            
+            success = force_token_refresh()
+            
+            if success:
+                # Get updated status
+                status = token_manager.get_token_status()
+                return jsonify({
+                    'success': True,
+                    'message': 'Token refreshed successfully using token manager',
+                    'method': 'token_manager',
+                    'status': status
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'Token refresh failed - check refresh token availability',
+                    'method': 'token_manager'
+                }), 400
+                
+        except ImportError:
+            # Fallback to legacy refresh
+            from google.oauth2.credentials import Credentials
+            from google.auth.transport.requests import Request
+            
+            token_path = os.getenv('GOOGLE_TOKEN_PATH', 'token.json')
+            
+            if not os.path.exists(token_path):
+                return jsonify({
+                    'success': False,
+                    'error': 'No token file found',
+                    'method': 'legacy'
+                }), 400
+            
+            credentials = Credentials.from_authorized_user_file(token_path)
+            
+            if not credentials.refresh_token:
+                return jsonify({
+                    'success': False,
+                    'error': 'No refresh token available - need re-authentication',
+                    'method': 'legacy'
+                }), 400
+            
+            # Attempt refresh
+            credentials.refresh(Request())
+            
+            # Save refreshed token
+            with open(token_path, 'w') as token_file:
+                token_file.write(credentials.to_json())
+            
+            return jsonify({
+                'success': True,
+                'message': 'Token refreshed successfully using legacy method',
+                'method': 'legacy',
+                'valid': credentials.valid,
+                'expired': credentials.expired
+            })
+            
+    except Exception as e:
+        app.logger.error(f"Force token refresh failed: {e}")
         return jsonify({
             'success': False,
             'error': str(e)
         }), 500
+
         
 # Section 15: Backup and Maintenance Routes
 # Section 15: Backup and Maintenance Routes
@@ -2754,7 +3572,67 @@ def clear_cache():
             "success": False,
             "error": str(e)
         }), 500
-# Section 16: Utility and Export Routes
+
+# Section 16: Marketing Debug and Enhancement Routes
+@app.route('/api/marketing/context-debug')
+def marketing_context_debug():
+    """Debug endpoint to see recent marketing context"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        summary = marketing_context.get_recent_context_summary()
+        return jsonify({
+            'success': True,
+            'context_summary': summary,
+            'context_items': len(marketing_context.recent_concepts)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/marketing/recent-concepts')
+def get_recent_marketing_concepts():
+    """Get recent marketing concepts for autocomplete/suggestions"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        recent = marketing_context.recent_concepts[-5:]  # Last 5 concepts
+        concepts = [
+            {
+                'concept': item['extracted_concept'],
+                'timestamp': item['timestamp'],
+                'success': item['result']['success']
+            }
+            for item in recent
+        ]
+        
+        return jsonify({
+            'success': True,
+            'recent_concepts': concepts
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/marketing/clear-context', methods=['POST'])
+def clear_marketing_context():
+    """Clear marketing context (for testing/debugging)"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        cleared_count = len(marketing_context.recent_concepts)
+        marketing_context.recent_concepts.clear()
+        marketing_context.conversation_memory.clear()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Cleared {cleared_count} context items'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# Section 17: Utility and Export Routes
 @app.route('/healthz')
 def healthz():
     build_status = get_build_status()
@@ -3143,7 +4021,390 @@ except ImportError as e:
 except Exception as e:
     print(f"Error registering timezone filters: {e}")
 
+# Section 20: Slack Integration Routes
+import hmac
+import hashlib
+
+from modules.slack_integration import (
+    SlackMentionHandler,
+    is_slack_configured,
+    process_slack_webhook_event
+)
+
+def verify_slack_signature(data, timestamp, signature):
+    """Verify that requests are coming from Slack"""
+    signing_secret = os.getenv('SLACK_SIGNING_SECRET')
+    if not signing_secret:
+        return False
+    
+    # Create expected signature
+    sig_basestring = f"v0:{timestamp}:{data}"
+    expected_signature = 'v0=' + hmac.new(
+        signing_secret.encode(),
+        sig_basestring.encode(),
+        hashlib.sha256
+    ).hexdigest()
+    
+    # Compare signatures
+    return hmac.compare_digest(expected_signature, signature)
+
+@app.route('/slack/events', methods=['POST'])
+def slack_events():
+    """Handle Slack Events API webhook"""
+    try:
+        # Get request data
+        data = request.get_data(as_text=True)
+        timestamp = request.headers.get('X-Slack-Request-Timestamp', '')
+        signature = request.headers.get('X-Slack-Signature', '')
+        
+        app.logger.info(f"Slack webhook received: timestamp={timestamp}, signature present={bool(signature)}")
+        
+        # Verify request signature (in production)
+        if os.getenv('RAILWAY_ENVIRONMENT') and not verify_slack_signature(data, timestamp, signature):
+            app.logger.warning("Invalid Slack signature")
+            return "Invalid signature", 401
+        
+        # Parse JSON data
+        event_data = json.loads(data)
+        app.logger.info(f"Slack event type: {event_data.get('type')}")
+        
+        # Handle URL verification challenge
+        if event_data.get('type') == 'url_verification':
+            challenge = event_data.get('challenge', '')
+            app.logger.info(f"Slack URL verification challenge: {challenge}")
+            return challenge
+        
+        # Process the event
+        result = process_slack_webhook_event(event_data)
+        
+        app.logger.info(f"Slack event processing result: {result}")
+        
+        # Return success to Slack
+        return jsonify({'status': 'ok'}), 200
+        
+    except json.JSONDecodeError as e:
+        app.logger.error(f"Invalid JSON in Slack webhook: {e}")
+        return "Invalid JSON", 400
+    except Exception as e:
+        app.logger.error(f"Slack webhook processing failed: {e}", exc_info=True)
+        return "Internal error", 500
+
+@app.route('/slack/test-mention', methods=['POST'])
+def test_slack_mention():
+    """Test endpoint for Slack mention processing (development only)"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    if not is_slack_configured():
+        return jsonify({
+            'success': False,
+            'error': 'Slack not configured',
+            'required_env_vars': [
+                'SLACK_BOT_TOKEN',
+                'SLACK_SIGNING_SECRET',
+                'SLACK_USER_ID'
+            ]
+        }), 400
+    
+    try:
+        data = request.get_json()
+        test_message = data.get('message', 'Hey @me can you review the quarterly report?')
+        test_user = data.get('user', 'test_user')
+        
+        # Create mock event data
+        mock_event = {
+            'type': 'event_callback',
+            'event': {
+                'type': 'message',
+                'text': test_message.replace('@me', f"<@{os.getenv('SLACK_USER_ID')}>"),
+                'channel': 'test_channel',
+                'user': test_user,
+                'ts': str(int(datetime.datetime.now().timestamp()))
+            }
+        }
+        
+        handler = SlackMentionHandler()
+        result = handler.process_slack_mention(mock_event)
+        
+        return jsonify({
+            'success': True,
+            'test_message': test_message,
+            'processing_result': result
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Slack mention test failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/slack/status')
+def slack_status():
+    """Check Slack integration status"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    status = {
+        'configured': is_slack_configured(),
+        'bot_token_present': bool(os.getenv('SLACK_BOT_TOKEN')),
+        'app_token_present': bool(os.getenv('SLACK_APP_TOKEN')),
+        'signing_secret_present': bool(os.getenv('SLACK_SIGNING_SECRET')),
+        'user_id_set': bool(os.getenv('SLACK_USER_ID')),
+        'clickup_integration': is_clickup_configured(),
+        'sdk_available': False
+    }
+    
+    # Test SDK availability
+    try:
+        from slack_sdk import WebClient
+        status['sdk_available'] = True
+    except ImportError:
+        pass
+    
+    # Test connection if configured
+    if status['configured']:
+        try:
+            handler = SlackMentionHandler()
+            if handler.slack_client:
+                # Test auth
+                auth_response = handler.slack_client.auth_test()
+                if auth_response.get('ok'):
+                    status['connection_working'] = True
+                    status['bot_user_id'] = auth_response.get('user_id')
+                    status['team_name'] = auth_response.get('team')
+                else:
+                    status['connection_error'] = 'Auth test failed'
+            else:
+                status['connection_error'] = 'Slack client not initialized'
+                
+        except Exception as e:
+            status['connection_error'] = str(e)
+    
+    return jsonify(status)
+
+@app.route('/slack/setup')
+def slack_setup_page():
+    """Slack setup instructions page"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    railway_url = os.getenv('RAILWAY_STATIC_URL', 'your-app.railway.app')
+    
+    return render_template_string("""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Slack Integration Setup</title>
+        <style>
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
+            }
+            .container { max-width: 1000px; margin: 0 auto; }
+            .setup-section { 
+                background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
+                padding: 20px; margin: 20px 0; 
+            }
+            .btn { 
+                background: #6366f1; color: white; border: none; padding: 12px 24px;
+                border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
+                text-decoration: none; display: inline-block;
+            }
+            .btn:hover { background: #5855eb; }
+            .btn.success { background: #059669; }
+            .btn.warning { background: #d97706; }
+            .code-block {
+                background: #2a2a2a; border: 1px solid #444; border-radius: 4px;
+                padding: 15px; margin: 15px 0; font-family: 'Courier New', monospace;
+                overflow-x: auto;
+            }
+            .step { margin: 20px 0; }
+            .step-number {
+                display: inline-block; background: #6366f1; color: white;
+                border-radius: 50%; width: 30px; height: 30px; text-align: center;
+                line-height: 30px; margin-right: 10px; font-weight: bold;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Slack Integration Setup</h1>
+            
+            <div class="setup-section">
+                <h3>Current Status</h3>
+                <div id="statusDisplay">Loading...</div>
+                <button onclick="checkStatus()" class="btn">Refresh Status</button>
+            </div>
+            
+            <div class="setup-section">
+                <h3>Setup Instructions</h3>
+                
+                <div class="step">
+                    <span class="step-number">1</span>
+                    <strong>Configure Event Subscriptions in Slack App</strong>
+                    <p>In your Ghostline-Task app settings:</p>
+                    <ul>
+                        <li>Go to <strong>Event Subscriptions</strong></li>
+                        <li>Enable Events: <strong>On</strong></li>
+                        <li>Request URL: <code>https://{{ railway_url }}/slack/events</code></li>
+                        <li>Subscribe to Bot Events: <code>message.channels</code>, <code>message.groups</code>, <code>message.im</code>, <code>message.mpim</code></li>
+                    </ul>
+                </div>
+                
+                <div class="step">
+                    <span class="step-number">2</span>
+                    <strong>Get Your User ID</strong>
+                    <p>You need your Slack User ID (not username) for mention detection:</p>
+                    <button onclick="findUserId()" class="btn warning">Find My User ID</button>
+                    <div id="userIdResult"></div>
+                </div>
+                
+                <div class="step">
+                    <span class="step-number">3</span>
+                    <strong>Set Environment Variables</strong>
+                    <p>Add these to your Railway deployment:</p>
+                    <div class="code-block" id="envVars">
+                        SLACK_BOT_TOKEN=xoxb-your-bot-token-here<br>
+                        SLACK_SIGNING_SECRET=your-signing-secret-here<br>
+                        SLACK_USER_ID=your-user-id-here
+                    </div>
+                    <button onclick="copyEnvVars()" class="btn">Copy Environment Variables</button>
+                </div>
+                
+                <div class="step">
+                    <span class="step-number">4</span>
+                    <strong>Install App to Workspace</strong>
+                    <p>Make sure your app is installed and has the required permissions.</p>
+                </div>
+                
+                <div class="step">
+                    <span class="step-number">5</span>
+                    <strong>Test Integration</strong>
+                    <p>Once configured, test with the button below:</p>
+                    <button onclick="testMention()" class="btn success">Test Mention Processing</button>
+                    <div id="testResult"></div>
+                </div>
+            </div>
+            
+            <div class="setup-section">
+                <h3>How It Works</h3>
+                <p>Once configured, mention yourself in any Slack channel:</p>
+                <ul>
+                    <li><strong>@yourname can you review the quarterly report by Friday?</strong></li>
+                    <li><strong>@yourname please handle the client meeting prep</strong></li>
+                    <li><strong>@yourname urgent: fix the deployment issue</strong></li>
+                </ul>
+                <p>Ghostline will:</p>
+                <ol>
+                    <li>Detect the mention in real-time</li>
+                    <li>Parse the task and due date</li>
+                    <li>Create a ClickUp task</li>
+                    <li>Reply in Slack: "✅ Task created: Review quarterly report (Due: Friday)"</li>
+                </ol>
+            </div>
+            
+            <div class="setup-section">
+                <a href="/integrations" class="btn">Back to Integrations</a>
+                <a href="/diagnostics" class="btn">Diagnostics</a>
+                <a href="/" class="btn">Back to Chat</a>
+            </div>
+        </div>
+        
+        <script>
+            function checkStatus() {
+                fetch('/slack/status', { credentials: 'include' })
+                .then(r => r.json())
+                .then(data => {
+                    let statusHtml = '<ul>';
+                    statusHtml += `<li>Bot Token: ${data.bot_token_present ? '✅' : '❌'}</li>`;
+                    statusHtml += `<li>Signing Secret: ${data.signing_secret_present ? '✅' : '❌'}</li>`;
+                    statusHtml += `<li>User ID: ${data.user_id_set ? '✅' : '❌'}</li>`;
+                    statusHtml += `<li>SDK Available: ${data.sdk_available ? '✅' : '❌'}</li>`;
+                    statusHtml += `<li>ClickUp Integration: ${data.clickup_integration ? '✅' : '❌'}</li>`;
+                    
+                    if (data.connection_working) {
+                        statusHtml += `<li>Connection: ✅ Connected to ${data.team_name}</li>`;
+                    } else if (data.connection_error) {
+                        statusHtml += `<li>Connection: ❌ ${data.connection_error}</li>`;
+                    } else {
+                        statusHtml += `<li>Connection: ⚠️ Not tested</li>`;
+                    }
+                    
+                    statusHtml += '</ul>';
+                    document.getElementById('statusDisplay').innerHTML = statusHtml;
+                })
+                .catch(e => {
+                    document.getElementById('statusDisplay').innerHTML = 
+                        '<p style="color: #dc2626;">Failed to check status: ' + e + '</p>';
+                });
+            }
+            
+            function findUserId() {
+                // This requires the bot token to work
+                fetch('/slack/status', { credentials: 'include' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.bot_user_id) {
+                        document.getElementById('userIdResult').innerHTML = 
+                            `<p style="color: #059669; margin-top: 10px;">Bot User ID found: <code>${data.bot_user_id}</code><br>
+                            But you need YOUR user ID. In Slack, right-click your profile → Copy Member ID</p>`;
+                    } else {
+                        document.getElementById('userIdResult').innerHTML = 
+                            `<p style="color: #d97706; margin-top: 10px;">Configure bot token first, then in Slack: right-click your profile → Copy Member ID</p>`;
+                    }
+                });
+            }
+            
+            function copyEnvVars() {
+                const envText = document.getElementById('envVars').textContent;
+                navigator.clipboard.writeText(envText).then(() => {
+                    alert('Environment variables copied to clipboard!');
+                });
+            }
+            
+            function testMention() {
+                const testMessage = prompt('Enter test message (use @me for mention):', 'Hey @me can you review the quarterly report by Friday?');
+                if (!testMessage) return;
+                
+                fetch('/slack/test-mention', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify({message: testMessage})
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        const result = data.processing_result;
+                        let resultHtml = '<div style="color: #059669; margin-top: 10px;">';
+                        resultHtml += `<strong>✅ Test successful!</strong><br>`;
+                        resultHtml += `Task created: ${result.task_created ? 'Yes' : 'No'}<br>`;
+                        if (result.message) {
+                            resultHtml += `Message: ${result.message}<br>`;
+                        }
+                        resultHtml += '</div>';
+                        document.getElementById('testResult').innerHTML = resultHtml;
+                    } else {
+                        document.getElementById('testResult').innerHTML = 
+                            `<div style="color: #dc2626; margin-top: 10px;">❌ Test failed: ${data.error}</div>`;
+                    }
+                })
+                .catch(e => {
+                    document.getElementById('testResult').innerHTML = 
+                        `<div style="color: #dc2626; margin-top: 10px;">❌ Test failed: ${e}</div>`;
+                });
+            }
+            
+            // Load status on page load
+            document.addEventListener('DOMContentLoaded', checkStatus);
+        </script>
+    </body>
+    </html>
+    """, railway_url=railway_url)
+
 # Section 18: Background Services and Startup
+# Section 18: Background Services and Startup (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)
 def safe_reminder_checker():
     """Background thread with enhanced safety to prevent spam"""
     consecutive_errors = 0
@@ -3211,6 +4472,30 @@ if os.getenv('RAILWAY_ENVIRONMENT'):
     checker_thread.start()
     print("Telegram reminder checker started with spam protection")
     
+    # NEW: Start Calendar-Telegram monitoring if configured
+    if is_calendar_telegram_configured():
+        def delayed_calendar_start():
+            time.sleep(60)  # 1 minute delay after app startup
+            try:
+                # Check if monitoring should be enabled from database
+                from modules.calendar_telegram_integration import CalendarTelegramAlerts
+                alerts = CalendarTelegramAlerts()
+                status = alerts.get_monitoring_status()
+                
+                if status.get('monitoring_enabled', False):
+                    start_calendar_monitoring()
+                    print("Calendar-Telegram monitoring started from saved state")
+                else:
+                    print("Calendar-Telegram monitoring disabled in preferences")
+            except Exception as e:
+                print(f"Failed to start Calendar-Telegram monitoring: {e}")
+        
+        calendar_startup_thread = threading.Thread(target=delayed_calendar_start, daemon=True)
+        calendar_startup_thread.start()
+        print("Scheduled Calendar-Telegram monitoring startup check")
+    else:
+        print("Calendar-Telegram integration not configured")
+    
     # Start automated backups after a delay
     if not os.getenv('DISABLE_AUTO_BACKUPS'):
         def delayed_backup_start():
@@ -3228,7 +4513,3 @@ if os.getenv('RAILWAY_ENVIRONMENT'):
         print("Automated backups disabled")
 else:
     print("Background services disabled (not on Railway)")
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)

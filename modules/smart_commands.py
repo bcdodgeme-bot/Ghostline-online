@@ -1,8 +1,10 @@
 # modules/smart_commands.py - COMPREHENSIVE FIX for command over-triggering
 # This fixes ALL overly aggressive keyword triggers causing false command activation
+# PATCH: Fix content creation mode loops with timeout and simpler exits
 
 import os
 import re
+import datetime
 from utils.ghostline_engine import generate_response
 from utils.rag_basic import is_ready
 from modules.database import save_conversation_enhanced, save_daily_log_enhanced
@@ -110,9 +112,10 @@ ANALYSIS_MODES = {
     }
 }
 
-# Global variables for mode tracking
+# UPDATED: Global variables for mode tracking with timeout
 _current_content_mode = None
 _current_context = {}
+_mode_start_time = None  # ADDED: Track when mode started
 
 def matches_pattern(text, patterns):
     """Check if text matches any of the regex patterns (case insensitive)"""
@@ -123,11 +126,36 @@ def matches_pattern(text, patterns):
     return False
 
 def detect_intent(user_input):
-    """ULTRA-PRECISE intent detection with bulletproof exit handling"""
-    global _current_content_mode
+    """ULTRA-PRECISE intent detection with bulletproof exit handling and timeout"""
+    global _current_content_mode, _current_context, _mode_start_time
     lower_input = user_input.lower().strip()
     
-    # FIXED: Ultra-specific exit pattern detection
+    # ADDED: Auto-exit after 10 minutes in any mode to prevent infinite loops
+    if _current_content_mode and _mode_start_time:
+        time_in_mode = (datetime.datetime.now() - _mode_start_time).total_seconds()
+        if time_in_mode > 600:  # 10 minutes
+            print(f"Auto-exiting {_current_content_mode} mode due to timeout ({time_in_mode/60:.1f} minutes)")
+            _current_content_mode = None
+            _current_context.clear()
+            _mode_start_time = None
+            return "casual"
+    
+    # ADDED: Simple, foolproof exit patterns that ALWAYS work
+    emergency_exits = [
+        r'^stop$', r'^exit$', r'^done$', r'^finished$', r'^cancel$',
+        r'^quit$', r'^end$', r'^abort$', r'^clear$', r'^reset$',
+        r'^new topic$', r'^different question$', r'^something else$',
+        r'^never mind$', r'^forget it$', r'^start over$'
+    ]
+    
+    if any(re.search(pattern, lower_input) for pattern in emergency_exits):
+        print(f"Emergency exit detected: '{user_input}'")
+        _current_content_mode = None
+        _current_context.clear()
+        _mode_start_time = None
+        return "casual"
+    
+    # IMPROVED: More reliable exit pattern detection with context awareness
     exit_patterns = [
         r'^that\'?s\s+done\.?$',
         r'^that\'?s\s+finished\.?$',
@@ -137,14 +165,37 @@ def detect_intent(user_input):
         r'^next\.?$',
         r'^now\s+let\'?s\b',
         r'^done\s+with\s+that\.?$',
-        r'^finished\s+with\s+(that|this)\.?$'
+        r'^finished\s+with\s+(that|this)\.?$',
+        r'^good,?\s+now\s+let\'?s\b',  # ADDED
+        r'^perfect,?\s+now\s+\w+',      # ADDED
+        r'^great,?\s+what\s+about\b'    # ADDED
     ]
     
     if any(re.search(pattern, lower_input) for pattern in exit_patterns):
         print(f"Exiting content mode due to completion signal: '{user_input}'")
         _current_content_mode = None
         _current_context.clear()
+        _mode_start_time = None
         return "casual"
+    
+    # ADDED: Board report specific exit patterns (the problematic loop)
+    if _current_content_mode == "board_report":
+        board_completion_signals = [
+            r'^that\'?s\s+the\s+report\.?$',
+            r'^that\'?s\s+enough\s+for\s+the\s+report\.?$',
+            r'^board\s+report\s+is\s+done\.?$',
+            r'^finished\s+with\s+the\s+board\s+report\.?$',
+            r'^report\s+complete\.?$',
+            r'^good\s+board\s+report$',  # ADDED
+            r'^that\s+works\s+for\s+the\s+board$'  # ADDED
+        ]
+        
+        if any(re.search(pattern, lower_input) for pattern in board_completion_signals):
+            print(f"Board report mode exit detected: '{user_input}'")
+            _current_content_mode = None
+            _current_context.clear()
+            _mode_start_time = None
+            return "casual"
     
     # FIXED: Ultra-precise content mode transitions (only when explicitly requested)
     transition_patterns = [
@@ -155,38 +206,44 @@ def detect_intent(user_input):
     
     if any(re.search(pattern, lower_input) for pattern in transition_patterns):
         _current_content_mode = "social"
+        _mode_start_time = datetime.datetime.now()  # ADDED: Set start time
         print(f"Transitioning to social content mode")
         return "content_creation"
     
     # If we're in content mode, check if this is still content-related
     if _current_content_mode:
-        # FIXED: Ultra-specific casual conversation indicators that ALWAYS break content mode
+        # IMPROVED: Ultra-specific casual conversation indicators that ALWAYS break content mode
         casual_conversation_indicators = [
             r'^(hello|hi|hey)(\s+\w+)?\.?$',  # Simple greetings only
             r'^(thanks?|thank\s+you)\.?$',
             r'^(good\s+morning|good\s+afternoon|good\s+evening)\.?$',
             r'^how\s+are\s+you(\s+doing)?\.?$',
             r'^what\'?s\s+up\.?$',
-            r'^(awesome|great|nice|cool)\.?$',
+            r'^(awesome|great|nice|cool|perfect)\.?$',  # UPDATED: added 'perfect'
             r'^(got\s+it|understood|perfect)\.?$',
             r'^\w*\s*praying\s+fajr\b',  # Religious activities
             r'^cup\s+(one|two|three|four|five|\d+)\b',  # Coffee references
             r'^(coffee|tea)\s+time\b',
             r'^taking\s+a\s+break\b',
-            r'^just\s+(checking|saying)\s+hi\b'
+            r'^just\s+(checking|saying)\s+hi\b',
+            r'^what\s+else\s+can\s+you\s+do\b',  # ADDED
+            r'^tell\s+me\s+about\s+\w+',         # ADDED
+            r'^how\s+do\s+i\s+\w+'               # ADDED
         ]
         
         if any(re.search(pattern, lower_input) for pattern in casual_conversation_indicators):
             print(f"Breaking out of {_current_content_mode} mode for casual conversation: '{lower_input}'")
             _current_content_mode = None
             _current_context.clear()
+            _mode_start_time = None
             return "casual"
         
         # Continue in current mode only if input is clearly content-related
         content_continuation_patterns = [
-            r'\b(write|draft|create|edit|revise|update|change)\b',
-            r'\b(add|include|mention|focus|emphasize)\b',
-            r'\b(tone|style|format|structure)\b'
+            r'\b(write|draft|create|edit|revise|update|change|modify)\b',  # UPDATED: added 'modify'
+            r'\b(add|include|mention|focus|emphasize|highlight)\b',        # UPDATED: added 'highlight'
+            r'\b(tone|style|format|structure|section|paragraph)\b',
+            r'\b(make\s+it|can\s+you|please|also)\b'  # ADDED
         ]
         
         if any(re.search(pattern, lower_input) for pattern in content_continuation_patterns):
@@ -197,6 +254,7 @@ def detect_intent(user_input):
             print(f"Exiting {_current_content_mode} mode - input not content-related: '{lower_input}'")
             _current_content_mode = None
             _current_context.clear()
+            _mode_start_time = None
             return "casual"
     
     # FIXED: Check for new content mode entry with ultra-precise patterns
@@ -204,7 +262,8 @@ def detect_intent(user_input):
         if matches_pattern(user_input, config["patterns"]):
             _current_content_mode = mode
             _current_context = {"initial_input": user_input}
-            print(f"Entering {mode} content mode")
+            _mode_start_time = datetime.datetime.now()  # ADDED: Set start time
+            print(f"Entering {mode} content mode at {_mode_start_time}")
             return "content_creation"
     
     # FIXED: Check for analysis mode entry with ultra-precise patterns
@@ -212,7 +271,8 @@ def detect_intent(user_input):
         if matches_pattern(user_input, config["patterns"]):
             _current_content_mode = mode
             _current_context = {"initial_input": user_input}
-            print(f"Entering {mode} analysis mode")
+            _mode_start_time = datetime.datetime.now()  # ADDED: Set start time
+            print(f"Entering {mode} analysis mode at {_mode_start_time}")
             return "analysis_mode"
     
     # FIXED: Ultra-specific casual/greeting patterns that NEVER trigger commands
@@ -362,21 +422,6 @@ def handle_analysis_mode(user_input, project, use_voices, random_toggle):
     
     mode_config = ANALYSIS_MODES[_current_content_mode]
     
-    # FIXED: Ultra-specific exit detection for board report loops
-    if "board_report" in _current_content_mode:
-        board_completion_signals = [
-            r'^that\'?s\s+the\s+report\.?$',
-            r'^that\'?s\s+enough\s+for\s+the\s+report\.?$',
-            r'^board\s+report\s+is\s+done\.?$',
-            r'^finished\s+with\s+the\s+board\s+report\.?$',
-            r'^report\s+complete\.?$'
-        ]
-        
-        if any(re.search(pattern, user_input.lower()) for pattern in board_completion_signals):
-            _current_content_mode = None
-            _current_context.clear()
-            return {"SyntaxPrime": "Board report completed! What else can I help you with?"}, True
-    
     try:
         from modules.brain import enhanced_retrieve
         retrieval_ctx = enhanced_retrieve(f"{_current_content_mode} {user_input}", k=8, project=project)
@@ -487,13 +532,37 @@ Please synthesize this into a concise executive summary focusing on top prioriti
         project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
     )
 
+# UPDATED: Helper function to check mode health with timing info
 def get_current_mode_status():
-    """Get current content/analysis mode for debugging"""
-    global _current_content_mode, _current_context
-    return {
+    """Get current content/analysis mode for debugging with timing info"""
+    global _current_content_mode, _current_context, _mode_start_time
+    
+    status = {
         "mode": _current_content_mode,
-        "context": _current_context
+        "context": _current_context,
+        "start_time": _mode_start_time.isoformat() if _mode_start_time else None
     }
+    
+    if _mode_start_time:
+        time_in_mode = (datetime.datetime.now() - _mode_start_time).total_seconds()
+        status["time_in_mode_seconds"] = time_in_mode
+        status["time_in_mode_minutes"] = time_in_mode / 60
+        status["will_timeout_at"] = (_mode_start_time + datetime.timedelta(minutes=10)).isoformat()
+    
+    return status
+
+# ADDED: Manual mode reset function for debugging
+def force_reset_content_mode():
+    """Force reset content mode - useful for debugging"""
+    global _current_content_mode, _current_context, _mode_start_time
+    
+    old_mode = _current_content_mode
+    _current_content_mode = None
+    _current_context.clear()
+    _mode_start_time = None
+    
+    print(f"Force reset: cleared mode '{old_mode}'")
+    return {"reset": True, "previous_mode": old_mode}
 
 def process_smart_command(user_input, project, use_voices, random_toggle):
     """ULTRA-PRECISE main smart command processor with bulletproof intent detection"""

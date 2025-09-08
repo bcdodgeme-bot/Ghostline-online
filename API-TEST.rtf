@@ -1,0 +1,811 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;\f1\fnil\fcharset0 HelveticaNeue;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\csgray\c0;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs22 \cf2 \CocoaLigature0 (base) b.c.dodge@BCs-MacBook-Pro TEST-Ghostline % python test_elevenlabs_api.py\
+ELEVENLABS API TESTING SCRIPT\
+This will test your ElevenLabs API access and explore audio pipeline capabilities\
+Make sure ELEVENLABS_API_KEY is set as an environment variable\
+------------------------------------------------------------\
+\
+============================================================\
+ELEVENLABS API PIPELINE CAPABILITIES ASSESSMENT\
+============================================================\
+============================================================\
+TESTING ELEVENLABS API CONNECTION\
+============================================================\
+\uc0\u9989  Connection successful!\
+User ID: mKBG2IoGFQMs7KhLlQ5popHv2663\
+Email: Unknown\
+Tier: starter\
+Character Count: 206\
+Character Limit: 40000\
+Can Extend Character Limit: False\
+Allowed To Extend Character Limit: False\
+Next Character Count Reset: 1759323701\
+\
+============================================================\
+EXPLORING AVAILABLE VOICES\
+============================================================\
+\uc0\u9989  Found 22 voices\
+\
+\uc0\u55356 \u57261  VOICE BREAKDOWN:\
+   Premade voices: 22\
+   Cloned voices: 0\
+   Professional voices: 0\
+\
+\uc0\u55356 \u57263  SAMPLE PREMADE VOICES:\
+   \'95 Rachel (21m00Tcm4TlvDq8ikWAM)\
+     Gender: female\
+     Age: young\
+     Accent: american\
+     Use case: Unknown\
+   \'95 Clyde (2EiwWnXFnvU5JabPnv8n)\
+     Gender: male\
+     Age: middle_aged\
+     Accent: american\
+     Use case: Unknown\
+   \'95 Roger (CwhRBWXzGAHq8TQ4Fs17)\
+     Gender: male\
+     Age: middle_aged\
+     Accent: american\
+     Use case: Unknown\
+\
+============================================================\
+TESTING TEXT-TO-SPEECH GENERATION\
+============================================================\
+\uc0\u55356 \u57261  Using default voice: Rachel (ID: 21m00Tcm4TlvDq8ikWAM)\
+\uc0\u55357 \u56803 \u65039   Generating speech for text: 'Hello! This is a test of the ElevenLabs text-to-sp...'\
+\uc0\u9989  Text-to-speech successful!\
+   Audio size: 96593 bytes\
+   Content type: audio/mpeg\
+   Saved test audio: elevenlabs_test_20250906_075545.mp3\
+   You can play this file to verify audio quality\
+\
+============================================================\
+TESTING AVAILABLE VOICE MODELS\
+============================================================\
+\uc0\u10060  Failed to get models: 401\
+\
+============================================================\
+TESTING VOICE CLONING CAPABILITIES\
+============================================================\
+\uc0\u55357 \u56541  Voice cloning available but no cloned voices found\
+   You can create cloned voices by uploading audio samples\
+\
+============================================================\
+TESTING SPEECH-TO-SPEECH CAPABILITIES\
+============================================================\
+\uc0\u55357 \u56580  Speech-to-speech endpoint accessible\
+   Note: Actual STS testing requires audio file upload\
+   This feature converts speech from one voice to another\
+   Useful for: Voice conversion, accent modification, speaker adaptation\
+\
+============================================================\
+TESTING VOICE SETTINGS & CUSTOMIZATION\
+============================================================\
+\uc0\u9989  Voice settings accessible\
+   Stability: 0.5\
+   Similarity Boost: 0.75\
+   Style: 0.0\
+   Use Speaker Boost: True\
+\
+\uc0\u55356 \u57243 \u65039   VOICE CUSTOMIZATION OPTIONS:\
+   Stability (0.0-1.0): Controls randomness vs consistency\
+   Similarity Boost (0.0-1.0): How closely to match original voice\
+   Style (0.0-1.0): Exaggeration of the style\
+   Speaker Boost: Improves similarity for short audio\
+\
+============================================================\
+INTEGRATION PIPELINE ASSESSMENT\
+============================================================\
+\uc0\u9989  API Connection: Available\
+\uc0\u9989  Voice Library Access: Available\
+\uc0\u9989  Text-to-Speech Generation: Available\
+\uc0\u10060  Voice Models Access: Limited/Failed\
+\uc0\u9989  Voice Cloning: Available\
+\uc0\u9989  Speech-to-Speech: Available\
+\uc0\u9989  Voice Customization: Available\
+\
+\uc0\u55356 \u57263  ELEVENLABS INTEGRATION CAPABILITIES:\
+\uc0\u9989  Convert text content to natural speech\
+\uc0\u9989  Generate audio content from written material\
+\uc0\u9989  Create custom voices for brand consistency\
+\uc0\u9989  Clone specific speakers for personalized content\
+\uc0\u9989  Convert existing audio to different voices\
+\uc0\u9989  Fine-tune voice characteristics for different contexts\
+\
+\uc0\u55357 \u56599  INTEGRATION RECOMMENDATIONS:\
+\uc0\u55357 \u56960  FULL AUDIO PIPELINE READY:\
+   \'95 Convert any text to high-quality speech\
+   \'95 Create branded voice experiences\
+   \'95 Automate audio content generation\
+   \'95 Voice conversion and adaptation\
+\
+\uc0\u55357 \u56522  USAGE STATISTICS:\
+   Characters used: 206\
+   Character limit: 40,000\
+   Usage: 0.5%\
+   \uc0\u9989  Good usage headroom available\
+\
+\uc0\u55356 \u57261  VOICE RECOMMENDATIONS:\
+   Available premade voices: 22\
+   Consider creating cloned voices for unique brand voice\
+\
+============================================================\
+ELEVENLABS PIPELINE TESTING COMPLETE\
+Save this output to plan your audio automation pipeline\
+============================================================\
+(base) b.c.dodge@BCs-MacBook-Pro TEST-Ghostline % export REPLICATE_API_TOKEN="r8_3mFnubywpbmVwypEIMxBdmM6PlfTFBX1tv2Mo"\
+(base) b.c.dodge@BCs-MacBook-Pro TEST-Ghostline % python test_replicate_api.py\
+REPLICATE API TESTING SCRIPT\
+This will test your Replicate API access and explore AI model capabilities\
+Make sure REPLICATE_API_TOKEN is set as an environment variable\
+------------------------------------------------------------\
+\
+============================================================\
+REPLICATE API PIPELINE CAPABILITIES ASSESSMENT\
+============================================================\
+============================================================\
+TESTING REPLICATE API CONNECTION\
+============================================================\
+\uc0\u9989  Connection successful!\
+API responding correctly\
+Account Type: user\
+Username: bcdodgeme-bot\
+Name: \
+\
+============================================================\
+EXPLORING POPULAR MODELS\
+============================================================\
+\uc0\u9989  Found 25 models in first page\
+\uc0\u10060  Error getting models: 'NoneType' object has no attribute 'lower'\
+\
+============================================================\
+TESTING SPECIFIC MODEL ACCESS\
+============================================================\
+\
+\uc0\u55357 \u56589  Testing model: stability-ai/stable-diffusion\
+   \uc0\u9989  Accessible\
+   Description: A latent text-to-image diffusion model capable of generating photo-realistic images given any text i...\
+   Run count: 110,668,475\
+   Input parameters: 9 available\
+\
+\uc0\u55357 \u56589  Testing model: meta/llama-2-70b-chat\
+   \uc0\u9989  Accessible\
+   Description: A 70 billion parameter language model from Meta, fine tuned for chat completions...\
+   Run count: 9,823,174\
+   Input parameters: 11 available\
+\
+\uc0\u55357 \u56589  Testing model: openai/whisper-large-v3\
+   \uc0\u9888 \u65039   Model not found or moved\
+\
+\uc0\u55357 \u56589  Testing model: replicate/cog-sdxl\
+   \uc0\u9888 \u65039   Model not found or moved\
+\
+\uc0\u55357 \u56589  Testing model: meta/musicgen\
+   \uc0\u9989  Accessible\
+   Description: Generate music from a prompt or melody...\
+   Run count: 2,993,021\
+   Input parameters: 15 available\
+\
+\uc0\u55357 \u56589  Testing model: riffusion/riffusion\
+   \uc0\u9989  Accessible\
+   Description: Stable diffusion for real-time music generation...\
+   Run count: 1,042,681\
+   Input parameters: 6 available\
+\
+============================================================\
+TESTING PREDICTION CAPABILITIES\
+============================================================\
+\uc0\u55357 \u56960  Testing prediction creation with: replicate/hello-world\
+\uc0\u9989  Prediction created successfully!\
+   Prediction ID: h6z197wv39rm80cs3vhr91n7h0\
+   Status: starting\
+\
+\uc0\u9203  Monitoring prediction progress...\
+   Status: starting\
+   Status: starting\
+   Status: starting\
+   Status: starting\
+   Status: succeeded\
+   \uc0\u9989  Prediction completed successfully!\
+   Output: hello Hello World API Test...\
+\
+============================================================\
+EXPLORING MODEL COLLECTIONS\
+============================================================\
+\uc0\u9989  Found 31 collections\
+\
+\uc0\u55357 \u56538  COLLECTION: Use Qwen-Image fine-tunes\
+   Description: Browse the diverse range of qwen-image fine-tunes the community has custom-trained on Replicate...\
+   Models: 0\
+\
+\uc0\u55357 \u56538  COLLECTION: Videos from images\
+   Description: Use AI To Generate Videos from images with an API...\
+   Models: 0\
+\
+\uc0\u55357 \u56538  COLLECTION: Use Kontext fine-tunes\
+   Description: Browse the diverse range of fine-tunes the community has custom-trained on Replicate...\
+   Models: 0\
+\
+\uc0\u55357 \u56538  COLLECTION: Edit Videos\
+   Description: Tools for editing videos....\
+   Models: 0\
+\
+\uc0\u55357 \u56538  COLLECTION: Try for free\
+   Description: Get started with these models without adding a credit card. Whether you're making videos, generating...\
+   Models: 0\
+\
+============================================================\
+TESTING HARDWARE AVAILABILITY\
+============================================================\
+\uc0\u9888 \u65039   Hardware endpoint not accessible: 'list' object has no attribute 'get'\
+\
+============================================================\
+CHECKING ACCOUNT LIMITS & USAGE\
+============================================================\
+\uc0\u9989  Recent predictions accessible\
+   Recent predictions: 6\
+   Predictions last 24h: 1\
+   Predictions last week: 6\
+\
+============================================================\
+TESTING WEBHOOK CAPABILITIES\
+============================================================\
+\uc0\u55357 \u56545  Webhook support: Available per prediction\
+   \'95 Webhooks can be set when creating predictions\
+   \'95 Useful for async processing notifications\
+   \'95 Supports completion and error notifications\
+   \'95 Requires publicly accessible endpoint\
+\
+============================================================\
+INTEGRATION PIPELINE ASSESSMENT\
+============================================================\
+\uc0\u9989  API Connection: Available\
+\uc0\u10060  Model Discovery: Limited/Failed\
+\uc0\u9989  Prediction Creation: Available\
+\uc0\u9989  Collections Access: Available\
+\uc0\u10060  Hardware Information: Limited/Failed\
+\uc0\u9989  Usage Monitoring: Available\
+\uc0\u9989  Webhook Support: Available\
+\
+\uc0\u55356 \u57263  Model Access: 4/6 tested models accessible\
+\
+\uc0\u55357 \u56960  REPLICATE INTEGRATION CAPABILITIES:\
+\uc0\u9989  Create and monitor AI model predictions\
+\uc0\u9989  Automate complex AI workflows\
+\uc0\u9989  Async processing with webhook notifications\
+\uc0\u9989  Monitor and track API usage\
+\
+\uc0\u55357 \u56599  INTEGRATION RECOMMENDATIONS:\
+\uc0\u9889  STRONG AI PIPELINE POSSIBLE:\
+   \'95 Core AI automation available\
+   \'95 Good model access and prediction capabilities\
+   \'95 Some monitoring and webhook features\
+\
+\uc0\u55356 \u57263  RECOMMENDED USE CASES:\
+   \uc0\u55356 \u57256  Automated image creation and editing\
+   \uc0\u55357 \u56764 \u65039   Content generation for marketing materials\
+   \uc0\u55357 \u56541  Advanced text analysis and generation\
+   \uc0\u55357 \u56492  Conversational AI integration\
+   \uc0\u55356 \u57269  Music and sound effect generation\
+\
+\uc0\u55357 \u56496  COST OPTIMIZATION TIPS:\
+   \'95 Use webhooks for async processing to avoid polling\
+   \'95 Choose appropriate hardware for your use case\
+   \'95 Monitor prediction costs through usage tracking\
+   \'95 Consider batch processing for efficiency\
+\
+============================================================\
+REPLICATE PIPELINE TESTING COMPLETE\
+Save this output to plan your AI automation pipeline\
+============================================================\
+\
+\
+\pard\pardeftab560\slleading20\pardirnatural\partightenfactor0
+
+\f1\fs26 \cf0 \CocoaLigature1 (base) b.c.dodge@BCs-MacBook-Pro TEST-Ghostline % python test_cloze_api.py\
+CLOZE API TESTING SCRIPT\
+This will test your Cloze API access and explore available data\
+Make sure CLOZE_API_KEY is set as an environment variable\
+------------------------------------------------------------\
+\
+============================================================\
+CLOZE API CAPABILITIES SUMMARY\
+============================================================\
+============================================================\
+TESTING CLOZE API CONNECTION\
+============================================================\
+\uc0\u9989  Connection successful!\
+User: Unknown\
+Email: Unknown\
+Company: Not set\
+\
+============================================================\
+EXPLORING USER ACTIVITY (Last 3 days)\
+============================================================\
+\uc0\u10060  Activity query failed: 404\
+Response: \{"errorcode":404,"message":"Resource Not Found"\}\
+\
+============================================================\
+EXPLORING PEOPLE/CONTACTS DATA\
+============================================================\
+\uc0\u9989  People data retrieved\
+Total people (limited to 10): 0\
+\
+============================================================\
+EXPLORING PROJECT/PIPELINE DATA\
+============================================================\
+\uc0\u10060  Pipeline query failed: 404\
+Response: \{"errorcode":404,"message":"Resource Not Found"\}\
+\
+============================================================\
+EXPLORING EMAIL OPENS/TRACKING DATA\
+============================================================\
+\uc0\u9989  Email opens data retrieved\
+Recent opens (7 days): 0\
+\
+============================================================\
+EXPLORING AGENDA/REMINDER DATA\
+============================================================\
+\
+Testing endpoint: /user/agenda\
+\uc0\u9888 \u65039   /user/agenda - Not found (endpoint may not exist)\
+\
+Testing endpoint: /user/reminders\
+\uc0\u9888 \u65039   /user/reminders - Not found (endpoint may not exist)\
+\
+Testing endpoint: /user/todos\
+\uc0\u9888 \u65039   /user/todos - Not found (endpoint may not exist)\
+\
+Testing endpoint: /user/schedule\
+\uc0\u9888 \u65039   /user/schedule - Not found (endpoint may not exist)\
+\
+============================================================\
+FINAL CAPABILITY ASSESSMENT\
+============================================================\
+\uc0\u9989  Connection: Available\
+\uc0\u10060  User Activity: Not Available/Failed\
+\uc0\u9989  People Data: Available\
+\uc0\u10060  Project Data: Not Available/Failed\
+\uc0\u9989  Email Tracking: Available\
+\
+\uc0\u55357 \u56523  INTEGRATION RECOMMENDATIONS:\
+\uc0\u9989  Relationship-based prioritization is possible (people data with stages available)\
+\uc0\u9989  Email engagement tracking is possible (opens data available)\
+\
+\uc0\u55357 \u56960  RECOMMENDATION: Proceed with Option 4 (Hybrid Intelligence Flow)\
+   You have sufficient API access for a comprehensive integration\
+\
+============================================================\
+TESTING COMPLETE\
+Review the results above to understand your API capabilities\
+============================================================\
+\
+\
+\pard\pardeftab560\slleading20\partightenfactor0
+\cf0 (base) b.c.dodge@BCs-MacBook-Pro TEST-Ghostline % python test_clickup_api.py\
+\pard\pardeftab560\slleading20\pardirnatural\partightenfactor0
+\cf0 CLICKUP API TESTING SCRIPT\
+This will test your ClickUp API access and explore data pipeline capabilities\
+Make sure CLICKUP_API_TOKEN is set as an environment variable\
+------------------------------------------------------------\
+\
+============================================================\
+CLICKUP API PIPELINE CAPABILITIES ASSESSMENT\
+============================================================\
+============================================================\
+TESTING CLICKUP API CONNECTION\
+============================================================\
+\uc0\u9989  Connection successful!\
+User: B.C. Dodge\
+Email: carl@bcdodge.me\
+ID: 120284829\
+\
+============================================================\
+EXPLORING CLICKUP WORKSPACE STRUCTURE\
+============================================================\
+\uc0\u9989  Found 1 team(s)/workspace(s)\
+\
+\uc0\u55357 \u56513  TEAM: Rose and Angel Consulting  (ID: 9013453647)\
+   \uc0\u55357 \u56514  6 space(s)\
+      \uc0\u55357 \u56514  SPACE: Team Space (ID: 90131962967)\
+         \uc0\u55357 \u56523  0 list(s)\
+      \uc0\u55357 \u56514  SPACE: Personal Time Management (ID: 90131963354)\
+         \uc0\u55357 \u56523  1 list(s)\
+            \uc0\u55357 \u56523  LIST: List (ID: 901306635049)\
+      \uc0\u55357 \u56514  SPACE: AMCF (ID: 90131963368)\
+         \uc0\u55357 \u56523  1 list(s)\
+            \uc0\u55357 \u56523  LIST: List (ID: 901306635069)\
+      \uc0\u55357 \u56514  SPACE: We Serve  (ID: 90131966025)\
+         \uc0\u55357 \u56523  1 list(s)\
+            \uc0\u55357 \u56523  LIST: List (ID: 901306639436)\
+      \uc0\u55357 \u56514  SPACE: Influence Brand Agency (ID: 90132366475)\
+         \uc0\u55357 \u56523  1 list(s)\
+            \uc0\u55357 \u56523  LIST: List (ID: 901307308517)\
+      \uc0\u55357 \u56514  SPACE: Ghostline (ID: 901310128941)\
+         \uc0\u55357 \u56523  1 list(s)\
+            \uc0\u55357 \u56523  LIST: List (ID: 901319349361)\
+\
+============================================================\
+TESTING TASK OPERATIONS\
+============================================================\
+\uc0\u9888 \u65039   No list ID provided - will try to find one automatically\
+\
+============================================================\
+EXPLORING CLICKUP WORKSPACE STRUCTURE\
+============================================================\
+\uc0\u9989  Found 1 team(s)/workspace(s)\
+\
+\uc0\u55357 \u56513  TEAM: Rose and Angel Consulting  (ID: 9013453647)\
+   \uc0\u55357 \u56514  6 space(s)\
+      \uc0\u55357 \u56514  SPACE: Team Space (ID: 90131962967)\
+         \uc0\u55357 \u56523  0 list(s)\
+      \uc0\u55357 \u56514  SPACE: Personal Time Management (ID: 90131963354)\
+         \uc0\u55357 \u56523  1 list(s)\
+            \uc0\u55357 \u56523  LIST: List (ID: 901306635049)\
+      \uc0\u55357 \u56514  SPACE: AMCF (ID: 90131963368)\
+         \uc0\u55357 \u56523  1 list(s)\
+            \uc0\u55357 \u56523  LIST: List (ID: 901306635069)\
+      \uc0\u55357 \u56514  SPACE: We Serve  (ID: 90131966025)\
+         \uc0\u55357 \u56523  1 list(s)\
+            \uc0\u55357 \u56523  LIST: List (ID: 901306639436)\
+      \uc0\u55357 \u56514  SPACE: Influence Brand Agency (ID: 90132366475)\
+         \uc0\u55357 \u56523  1 list(s)\
+            \uc0\u55357 \u56523  LIST: List (ID: 901307308517)\
+      \uc0\u55357 \u56514  SPACE: Ghostline (ID: 901310128941)\
+         \uc0\u55357 \u56523  1 list(s)\
+            \uc0\u55357 \u56523  LIST: List (ID: 901319349361)\
+\uc0\u55357 \u56523  Using list: List (ID: 901306635049)\
+\
+\uc0\u55357 \u56523  Getting existing tasks from list 901306635049...\
+\uc0\u9989  Found 11 existing tasks\
+   First task structure:\
+\{'assignees': [\{'color': '',\
+                'email': 'carl@bcdodge.me',\
+                'id': 120284829,\
+                'initials': 'BD',\
+                'profilePicture': 'https://attachments.clickup.com/profilePictures/120284829_i7i.jpg',\
+                'username': 'B.C. Dodge'\}],\
+ 'due_date': None,\
+ 'id': '86a6g7jnh',\
+ 'name': 'Job Applications (1 per day, Mon-Wed)',\
+ 'priority': None,\
+ 'status': \{'color': '#87909e',\
+            'id': 'p90131963354_l2HlDjRr',\
+            'orderindex': 0,\
+            'status': 'to do',\
+            'type': 'open'\}\}\
+\
+\uc0\u10133  Creating test task...\
+\uc0\u9989  Test task created successfully!\
+   Task ID: 86abkdqcm\
+   Task URL: https://app.clickup.com/t/86abkdqcm\
+\
+\uc0\u9999 \u65039   Updating test task...\
+\uc0\u9989  Task updated successfully!\
+\
+\uc0\u55357 \u56785 \u65039   Cleaning up test task...\
+\uc0\u9888 \u65039   Test task deletion failed: 204\
+   You may need to manually delete the test task\
+\
+============================================================\
+TESTING TIME TRACKING CAPABILITIES\
+============================================================\
+\uc0\u55357 \u56522  Using team: Rose and Angel Consulting  (ID: 9013453647)\
+\uc0\u9989  Time tracking data retrieved\
+   Time entries (last 7 days): 8\
+   Total time tracked: 9.92 hours\
+\
+   First time entry structure:\
+\{'duration': '4864036',\
+ 'end': '1756771673696',\
+ 'id': '4713905627268343598',\
+ 'start': '1756766809660',\
+ 'task': \{'custom_type': None,\
+          'id': '86a6r1yad',\
+          'name': "Women's Giving Circle newsletter",\
+          'status': \{'color': '#87909e',\
+                     'orderindex': 0,\
+                     'status': 'to do',\
+                     'type': 'open'\}\},\
+ 'user': \{'color': '',\
+          'email': 'carl@bcdodge.me',\
+          'id': 120284829,\
+          'initials': 'BD',\
+          'profilePicture': 'https://attachments.clickup.com/profilePictures/120284829_i7i.jpg',\
+          'username': 'B.C. Dodge'\}\}\
+\
+============================================================\
+TESTING WEBHOOK CAPABILITIES\
+============================================================\
+\uc0\u9989  Webhook API accessible\
+   Existing webhooks: 0\
+\
+============================================================\
+INTEGRATION PIPELINE ASSESSMENT\
+============================================================\
+\uc0\u9989  Connection: Available\
+\uc0\u9989  Workspace Access: Available\
+\uc0\u9989  Task Operations: Available\
+\uc0\u9989  Time Tracking: Available\
+\uc0\u9989  Webhooks: Available\
+\
+\uc0\u55357 \u56522  DATA PIPELINE CAPABILITIES:\
+\uc0\u9989  Bi-directional task sync possible (create/read/update/delete)\
+\uc0\u9989  Time tracking data integration possible\
+\uc0\u9989  Real-time webhooks available for instant sync\
+\uc0\u9989  Full workspace structure mapping possible\
+\
+\uc0\u55357 \u56599  CLOZE INTEGRATION RECOMMENDATIONS:\
+\uc0\u55357 \u56960  FULL PIPELINE READY:\
+   \'95 Cloze \uc0\u8594  ClickUp task automation\
+   \'95 ClickUp \uc0\u8594  Cloze outcome tracking\
+   \'95 Real-time sync via webhooks\
+   \'95 Time tracking correlation with relationship data\
+\
+\uc0\u9881 \u65039   WORKSPACE CONFIGURATION SUGGESTIONS:\
+   Total lists available: 5\
+\
+============================================================\
+CLICKUP PIPELINE TESTING COMPLETE\
+Save this output to compare with your Cloze API test results\
+============================================================\
+\
+\pard\pardeftab560\slleading20\partightenfactor0
+\cf0 (base) b.c.dodge@BCs-MacBook-Pro TEST-Ghostline % python test_elevenlabs_api.py\
+ELEVENLABS API TESTING SCRIPT\
+This will test your ElevenLabs API access and explore audio pipeline capabilities\
+Make sure ELEVENLABS_API_KEY is set as an environment variable\
+------------------------------------------------------------\
+\
+============================================================\
+ELEVENLABS API PIPELINE CAPABILITIES ASSESSMENT\
+============================================================\
+============================================================\
+TESTING ELEVENLABS API CONNECTION\
+============================================================\
+\uc0\u9989  Connection successful!\
+User ID: mKBG2IoGFQMs7KhLlQ5popHv2663\
+Email: Unknown\
+Tier: starter\
+Character Count: 206\
+Character Limit: 40000\
+Can Extend Character Limit: False\
+Allowed To Extend Character Limit: False\
+Next Character Count Reset: 1759323701\
+\
+============================================================\
+EXPLORING AVAILABLE VOICES\
+============================================================\
+\uc0\u9989  Found 22 voices\
+\
+\uc0\u55356 \u57261  VOICE BREAKDOWN:\
+   Premade voices: 22\
+   Cloned voices: 0\
+   Professional voices: 0\
+\
+\uc0\u55356 \u57263  SAMPLE PREMADE VOICES:\
+   \'95 Rachel (21m00Tcm4TlvDq8ikWAM)\
+     Gender: female\
+     Age: young\
+     Accent: american\
+     Use case: Unknown\
+   \'95 Clyde (2EiwWnXFnvU5JabPnv8n)\
+     Gender: male\
+     Age: middle_aged\
+     Accent: american\
+     Use case: Unknown\
+   \'95 Roger (CwhRBWXzGAHq8TQ4Fs17)\
+     Gender: male\
+     Age: middle_aged\
+     Accent: american\
+     Use case: Unknown\
+\
+============================================================\
+TESTING TEXT-TO-SPEECH GENERATION\
+============================================================\
+\uc0\u55356 \u57261  Using default voice: Rachel (ID: 21m00Tcm4TlvDq8ikWAM)\
+\uc0\u55357 \u56803 \u65039   Generating speech for text: 'Hello! This is a test of the ElevenLabs text-to-sp...'\
+\uc0\u9989  Text-to-speech successful!\
+   Audio size: 96593 bytes\
+   Content type: audio/mpeg\
+   Saved test audio: elevenlabs_test_20250906_075545.mp3\
+   You can play this file to verify audio quality\
+\
+============================================================\
+TESTING AVAILABLE VOICE MODELS\
+============================================================\
+\uc0\u10060  Failed to get models: 401\
+\
+============================================================\
+TESTING VOICE CLONING CAPABILITIES\
+============================================================\
+\uc0\u55357 \u56541  Voice cloning available but no cloned voices found\
+   You can create cloned voices by uploading audio samples\
+\
+============================================================\
+TESTING SPEECH-TO-SPEECH CAPABILITIES\
+============================================================\
+\uc0\u55357 \u56580  Speech-to-speech endpoint accessible\
+   Note: Actual STS testing requires audio file upload\
+   This feature converts speech from one voice to another\
+   Useful for: Voice conversion, accent modification, speaker adaptation\
+\
+============================================================\
+TESTING VOICE SETTINGS & CUSTOMIZATION\
+============================================================\
+\uc0\u9989  Voice settings accessible\
+   Stability: 0.5\
+   Similarity Boost: 0.75\
+   Style: 0.0\
+   Use Speaker Boost: True\
+\
+\uc0\u55356 \u57243 \u65039   VOICE CUSTOMIZATION OPTIONS:\
+   Stability (0.0-1.0): Controls randomness vs consistency\
+   Similarity Boost (0.0-1.0): How closely to match original voice\
+   Style (0.0-1.0): Exaggeration of the style\
+   Speaker Boost: Improves similarity for short audio\
+\
+============================================================\
+INTEGRATION PIPELINE ASSESSMENT\
+============================================================\
+\uc0\u9989  API Connection: Available\
+\uc0\u9989  Voice Library Access: Available\
+\uc0\u9989  Text-to-Speech Generation: Available\
+\uc0\u10060  Voice Models Access: Limited/Failed\
+\uc0\u9989  Voice Cloning: Available\
+\uc0\u9989  Speech-to-Speech: Available\
+\uc0\u9989  Voice Customization: Available\
+\
+\uc0\u55356 \u57263  ELEVENLABS INTEGRATION CAPABILITIES:\
+\uc0\u9989  Convert text content to natural speech\
+\uc0\u9989  Generate audio content from written material\
+\uc0\u9989  Create custom voices for brand consistency\
+\uc0\u9989  Clone specific speakers for personalized content\
+\uc0\u9989  Convert existing audio to different voices\
+\uc0\u9989  Fine-tune voice characteristics for different contexts\
+\
+\uc0\u55357 \u56599  INTEGRATION RECOMMENDATIONS:\
+\uc0\u55357 \u56960  FULL AUDIO PIPELINE READY:\
+   \'95 Convert any text to high-quality speech\
+   \'95 Create branded voice experiences\
+   \'95 Automate audio content generation\
+   \'95 Voice conversion and adaptation\
+\
+\uc0\u55357 \u56522  USAGE STATISTICS:\
+   Characters used: 206\
+   Character limit: 40,000\
+   Usage: 0.5%\
+   \uc0\u9989  Good usage headroom available\
+\
+\uc0\u55356 \u57261  VOICE RECOMMENDATIONS:\
+   Available premade voices: 22\
+   Consider creating cloned voices for unique brand voice\
+\
+============================================================\
+ELEVENLABS PIPELINE TESTING COMPLETE\
+Save this output to plan your audio automation pipeline\
+============================================================\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs22 \cf2 \CocoaLigature0 (base) b.c.dodge@BCs-MacBook-Pro TEST-Ghostline % python test_google_apis.py\
+GOOGLE APIS TESTING SCRIPT\
+This will test your Google API access using your existing token.json\
+No additional authentication required - using your existing permissions\
+------------------------------------------------------------\
+============================================================\
+LOADING GOOGLE API CREDENTIALS\
+============================================================\
+\uc0\u9989  Found token.json\
+\uc0\u9989  Authentication successful\
+Client ID: 301236765855-ke8llqt...\
+Scopes granted: 2\
+\
+\uc0\u55357 \u56592  CURRENT PERMISSIONS:\
+   \uc0\u9989  Gmail Read Access\
+   \uc0\u9989  Calendar Read Access\
+\
+============================================================\
+GOOGLE APIS PIPELINE CAPABILITIES ASSESSMENT\
+============================================================\
+\
+============================================================\
+TESTING GMAIL API ACCESS\
+============================================================\
+\uc0\u9989  Gmail API accessible\
+   Email: carl@bcdodge.me\
+   Messages Total: 23,519\
+   Threads Total: 20,341\
+   History ID: 27840729\
+   Recent messages accessible: 5\
+   Message reading: \uc0\u9989  (Sample: 'Meet Lena, a 4-year-old black and tan beauty who&#...')\
+   Labels accessible: 41\
+\
+============================================================\
+TESTING GOOGLE CALENDAR API ACCESS\
+============================================================\
+\uc0\u9989  Calendar API accessible\
+   Calendars found: 11\
+   \uc0\u55357 \u56517  Holidays in United States\
+   \uc0\u55357 \u56517  Work\
+   \uc0\u55357 \u56517  Home\
+   \uc0\u55357 \u56517  Calendar 2\
+   \uc0\u55357 \u56517  Outlook\
+   Upcoming events (next 7 days): 10\
+   \uc0\u55357 \u56523  Home (2025-09-06)\
+   \uc0\u55357 \u56523  Home (2025-09-07)\
+   \uc0\u55357 \u56523  Home (2025-09-08)\
+\
+============================================================\
+TESTING GOOGLE DRIVE API ACCESS\
+============================================================\
+\uc0\u10060  Drive API error: <HttpError 403 when requesting https://www.googleapis.com/drive/v3/about?fields=storageQuota%2Cuser&alt=json returned "Request had insufficient authentication scopes.". Details: "[\{'message': 'Insufficient Permission', 'domain': 'global', 'reason': 'insufficientPermissions'\}]">\
+\
+============================================================\
+TESTING GOOGLE SHEETS API ACCESS\
+============================================================\
+\uc0\u9989  Google Sheets API accessible\
+   Spreadsheet discovery: \uc0\u10060  (<HttpError 403 when requesting https://www.googlea...)\
+\
+============================================================\
+TESTING GOOGLE DOCS API ACCESS\
+============================================================\
+\uc0\u9989  Google Docs API accessible\
+   Document discovery: \uc0\u10060  (<HttpError 403 when requesting https://www.googlea...)\
+\
+============================================================\
+TESTING GOOGLE CONTACTS API ACCESS\
+============================================================\
+\uc0\u10060  People API error: <HttpError 403 when requesting https://people.googleapis.com/v1/people/me/connections?personFields=names%2CemailAddresses%2CphoneNumbers&pageSize=10&alt=json returned "Request had insufficient authentication scopes.". Details: "[\{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_SCOPE_INSUFFICIENT', 'domain': 'googleapis.com', 'metadata': \{'service': 'people.googleapis.com', 'method': 'google.people.v1.PeopleService.ListConnections'\}\}]">\
+\
+============================================================\
+TESTING GOOGLE TASKS API ACCESS\
+============================================================\
+\uc0\u10060  Tasks API error: <HttpError 403 when requesting https://tasks.googleapis.com/tasks/v1/users/@me/lists?alt=json returned "Request had insufficient authentication scopes.". Details: "[\{'message': 'Insufficient Permission', 'domain': 'global', 'reason': 'insufficientPermissions'\}]">\
+\
+============================================================\
+INTEGRATION PIPELINE ASSESSMENT\
+============================================================\
+\uc0\u9989  Gmail API: Available\
+\uc0\u9989  Calendar API: Available\
+\uc0\u10060  Drive API: Limited/Failed\
+\uc0\u9989  Sheets API: Available\
+\uc0\u9989  Docs API: Available\
+\uc0\u10060  Contacts API: Limited/Failed\
+\uc0\u10060  Tasks API: Limited/Failed\
+\
+\uc0\u55357 \u56960  GOOGLE WORKSPACE INTEGRATION CAPABILITIES:\
+\uc0\u9989  Email automation and monitoring\
+\uc0\u9989  Message classification and processing\
+\uc0\u9989  Meeting scheduling and management\
+\uc0\u9989  Calendar-based triggers and automation\
+\uc0\u9989  Spreadsheet data automation\
+\uc0\u9989  Reporting and analytics pipelines\
+\uc0\u9989  Document generation and editing\
+\uc0\u9989  Template-based content creation\
+\
+\uc0\u55357 \u56599  CROSS-PLATFORM INTEGRATION POTENTIAL:\
+\uc0\u9889  STRONG GOOGLE INTEGRATION POSSIBLE:\
+   \'95 Core productivity automation available\
+   \'95 Good data synchronization capabilities\
+   \'95 Most workflow requirements achievable\
+\
+\uc0\u55356 \u57263  RECOMMENDED INTEGRATIONS:\
+\uc0\u55357 \u56551 \u10145 \u65039 \u55357 \u56517  Email-to-Calendar: Auto-schedule from email requests\
+\
+\uc0\u55357 \u56592  SECURITY & BEST PRACTICES:\
+\uc0\u9989  Using existing authenticated token (secure)\
+\uc0\u9989  No additional OAuth flow required\
+\uc0\u9888 \u65039   Monitor token expiration and refresh cycles\
+\uc0\u9888 \u65039   Audit API usage regularly for optimization\
+\
+============================================================\
+GOOGLE APIS PIPELINE TESTING COMPLETE\
+Save this output to plan your Google Workspace automation\
+============================================================}

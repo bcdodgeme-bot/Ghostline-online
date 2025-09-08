@@ -265,97 +265,6 @@
                     .message-header .logo { width: 20px; height: 20px; border-radius: 4px; }
                     .message-content { font-size: 0.95rem; white-space: pre-line; }
                     
-                    /* ENHANCED: Inline image display for marketing */
-                    .inline-generated-image {
-                        max-width: 100%;
-                        height: auto;
-                        border-radius: 8px;
-                        margin: 15px 0;
-                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-                        cursor: pointer;
-                        transition: transform 0.2s ease, box-shadow 0.2s ease;
-                        border: 1px solid var(--border);
-                    }
-                    
-                    .inline-generated-image:hover {
-                        transform: scale(1.02);
-                        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-                    }
-                    
-                    .image-action-buttons {
-                        display: flex;
-                        gap: 8px;
-                        margin: 10px 0;
-                        flex-wrap: wrap;
-                    }
-                    
-                    .image-btn {
-                        background: var(--primary);
-                        color: white;
-                        border: none;
-                        padding: 6px 12px;
-                        border-radius: var(--radius-md);
-                        cursor: pointer;
-                        font-size: 0.8rem;
-                        transition: all 0.2s ease;
-                        text-decoration: none;
-                        display: inline-flex;
-                        align-items: center;
-                        gap: 4px;
-                    }
-                    
-                    .image-btn:hover {
-                        background: var(--primary-hover);
-                        transform: translateY(-1px);
-                    }
-                    
-                    .image-btn.secondary {
-                        background: var(--surface-hover);
-                        color: var(--text-primary);
-                        border: 1px solid var(--border);
-                    }
-                    
-                    .image-btn.secondary:hover {
-                        background: var(--border);
-                    }
-                    
-                    .image-btn.success {
-                        background: var(--success);
-                    }
-                    
-                    /* Full-size image modal */
-                    .image-modal {
-                        position: fixed;
-                        top: 0;
-                        left: 0;
-                        width: 100%;
-                        height: 100%;
-                        background: rgba(0, 0, 0, 0.9);
-                        z-index: 2000;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        cursor: pointer;
-                        opacity: 0;
-                        transition: opacity 0.3s ease;
-                    }
-                    
-                    .image-modal.show {
-                        opacity: 1;
-                    }
-                    
-                    .image-modal img {
-                        max-width: 95%;
-                        max-height: 95%;
-                        border-radius: 8px;
-                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-                        transition: transform 0.3s ease;
-                    }
-                    
-                    .image-modal.show img {
-                        transform: scale(1);
-                    }
-                    
                     /* Chat history management button */
                     .history-controls {
                         position: fixed;
@@ -1025,7 +934,7 @@
                                 <span>Diagnostics & Testing</span>
                             </a>
                             <a href="/marketing" class="menu-item">
-                                <span class="menu-icon">🎨</span>
+                                <span class="menu-icon">📨</span>
                                 <span>Marketing Assets</span>
                             </a>
                             <a href="/reports" class="menu-item">
@@ -1300,211 +1209,6 @@
                 maxVisibleMessages: 200, // Show last 200 messages by default
                 fadeThreshold: 150 // Start fading after 150 messages
             };
-
-            // ENHANCED: Inline Image Display Manager
-            class InlineImageHandler {
-                constructor() {
-                    this.setupImageDisplay();
-                }
-
-                setupImageDisplay() {
-                    // Watch for new chat responses that might contain images
-                    const observer = new MutationObserver((mutations) => {
-                        mutations.forEach((mutation) => {
-                            if (mutation.type === 'childList') {
-                                mutation.addedNodes.forEach((node) => {
-                                    if (node.nodeType === Node.ELEMENT_NODE) {
-                                        this.processNewContent(node);
-                                    }
-                                });
-                            }
-                        });
-                    });
-
-                    // Start observing the chat container
-                    const chatContainer = document.querySelector('.thread');
-                    if (chatContainer) {
-                        observer.observe(chatContainer, {
-                            childList: true,
-                            subtree: true
-                        });
-                    }
-                }
-
-                processNewContent(element) {
-                    // Look for elements that might contain marketing response data
-                    if (element.classList && element.classList.contains('message') && element.classList.contains('bot')) {
-                        // Check if this message has image data attribute
-                        const responseData = element.getAttribute('data-response-data');
-                        if (responseData) {
-                            this.handleResponseData(element, responseData);
-                        }
-                    }
-                }
-
-                handleResponseData(element, responseDataStr) {
-                    try {
-                        const responseData = JSON.parse(responseDataStr);
-                        
-                        if (responseData.image_data && responseData.image_url) {
-                            this.displayInlineImage(element, responseData);
-                        }
-                    } catch (e) {
-                        console.debug('No valid image response data found:', e);
-                    }
-                }
-
-                displayInlineImage(element, responseData) {
-                    const imageData = responseData.image_data;
-                    const imageUrl = responseData.image_url;
-                    
-                    // Create image element
-                    const img = document.createElement('img');
-                    img.src = `data:${imageData.content_type};base64,${imageData.data}`;
-                    img.alt = 'Generated marketing image';
-                    img.className = 'inline-generated-image';
-                    
-                    // Add click handler for full-size view
-                    img.addEventListener('click', () => {
-                        this.showFullSizeImage(imageUrl, imageData);
-                    });
-
-                    // Find the message content area and add image after text
-                    const messageContent = element.querySelector('.message-content');
-                    if (messageContent) {
-                        messageContent.appendChild(img);
-                        
-                        // Add action buttons
-                        const buttonContainer = this.createImageButtons(imageUrl, responseData);
-                        messageContent.appendChild(buttonContainer);
-                    }
-                }
-
-                createImageButtons(imageUrl, responseData) {
-                    const container = document.createElement('div');
-                    container.className = 'image-action-buttons';
-
-                    // Download button
-                    const downloadBtn = document.createElement('button');
-                    downloadBtn.textContent = '⬇️ Download';
-                    downloadBtn.className = 'image-btn';
-                    downloadBtn.addEventListener('click', () => {
-                        this.downloadImage(imageUrl);
-                    });
-
-                    // Copy URL button
-                    const copyBtn = document.createElement('button');
-                    copyBtn.textContent = '📋 Copy URL';
-                    copyBtn.className = 'image-btn secondary';
-                    copyBtn.addEventListener('click', () => {
-                        this.copyToClipboard(imageUrl, copyBtn);
-                    });
-
-                    // Marketing dashboard link
-                    const dashboardBtn = document.createElement('a');
-                    dashboardBtn.href = '/marketing';
-                    dashboardBtn.textContent = '🎨 More Options';
-                    dashboardBtn.className = 'image-btn secondary';
-
-                    container.appendChild(downloadBtn);
-                    container.appendChild(copyBtn);
-                    container.appendChild(dashboardBtn);
-
-                    return container;
-                }
-
-                showFullSizeImage(imageUrl, imageData) {
-                    // Create modal overlay
-                    const modal = document.createElement('div');
-                    modal.className = 'image-modal';
-                    
-                    // Create image
-                    const img = document.createElement('img');
-                    img.src = `data:${imageData.content_type};base64,${imageData.data}`;
-                    img.alt = 'Generated marketing image';
-
-                    // Close on click
-                    modal.addEventListener('click', () => {
-                        modal.classList.remove('show');
-                        setTimeout(() => {
-                            if (modal.parentElement) {
-                                document.body.removeChild(modal);
-                            }
-                        }, 300);
-                    });
-
-                    // Close on escape key
-                    const handleEscape = (e) => {
-                        if (e.key === 'Escape') {
-                            modal.click();
-                            document.removeEventListener('keydown', handleEscape);
-                        }
-                    };
-                    document.addEventListener('keydown', handleEscape);
-
-                    modal.appendChild(img);
-                    document.body.appendChild(modal);
-                    
-                    // Show with animation
-                    setTimeout(() => {
-                        modal.classList.add('show');
-                    }, 10);
-                }
-
-                downloadImage(imageUrl) {
-                    const link = document.createElement('a');
-                    link.href = imageUrl;
-                    link.download = `ghostline-image-${Date.now()}.webp`;
-                    link.target = '_blank';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                }
-
-                async copyToClipboard(text, button) {
-                    try {
-                        await navigator.clipboard.writeText(text);
-                        const originalText = button.textContent;
-                        button.textContent = '✅ Copied!';
-                        button.classList.add('success');
-                        
-                        setTimeout(() => {
-                            button.textContent = originalText;
-                            button.classList.remove('success');
-                        }, 2000);
-                    } catch (err) {
-                        console.error('Failed to copy to clipboard:', err);
-                        this.fallbackCopyToClipboard(text, button);
-                    }
-                }
-
-                fallbackCopyToClipboard(text, button) {
-                    const textArea = document.createElement('textarea');
-                    textArea.value = text;
-                    textArea.style.position = 'fixed';
-                    textArea.style.left = '-999999px';
-                    document.body.appendChild(textArea);
-                    textArea.focus();
-                    textArea.select();
-                    
-                    try {
-                        document.execCommand('copy');
-                        button.textContent = '✅ Copied!';
-                        button.classList.add('success');
-                        setTimeout(() => {
-                            button.textContent = '📋 Copy URL';
-                            button.classList.remove('success');
-                        }, 2000);
-                    } catch (err) {
-                        console.error('Fallback copy failed:', err);
-                    }
-                    
-                    document.body.removeChild(textArea);
-                }
-            }
-
-            // Initialize image handler
-            const imageHandler = new InlineImageHandler();
 
             // Chat history management functions
             function toggleHistoryView() {
@@ -2009,7 +1713,7 @@
               }
             }
 
-            // ENHANCED: Streaming chat functionality with image support
+            // Streaming chat functionality
             function startStreamingChat(userInput, project, voices, random) {
               return new Promise((resolve, reject) => {
                 fetch('/api/chat/stream', {
@@ -2063,14 +1767,9 @@
                                 updateStreamingMessage(data.voice, responseData[data.voice]);
                                 break;
                                 
-                              case 'image':
-                                // Handle image data specially
-                                handleInlineImageData(data.image_data, data.image_url);
-                                break;
-                                
                               case 'complete':
                                 hideStreamingStatus();
-                                finalizeStreamingMessages(data.responses);
+                                finalizeStreamingMessages();
                                 resolve(data.responses);
                                 break;
                                 
@@ -2097,24 +1796,6 @@
                   reject(error);
                 });
               });
-            }
-
-            function handleInlineImageData(imageData, imageUrl) {
-              // Find the most recent bot message and add image data to it
-              const botMessages = document.querySelectorAll('.message.bot');
-              const lastBotMessage = botMessages[botMessages.length - 1];
-              
-              if (lastBotMessage && imageData && imageUrl) {
-                const responseDataStr = JSON.stringify({
-                  image_data: imageData,
-                  image_url: imageUrl
-                });
-                
-                lastBotMessage.setAttribute('data-response-data', responseDataStr);
-                
-                // Trigger the image handler
-                imageHandler.handleResponseData(lastBotMessage, responseDataStr);
-              }
             }
 
             function showStreamingStatus(message) {
@@ -2178,27 +1859,11 @@
               }
             }
 
-            function finalizeStreamingMessages(responseData) {
+            function finalizeStreamingMessages() {
               const streamingElements = document.querySelectorAll('[id^="streaming-"]');
               streamingElements.forEach(el => {
                 el.removeAttribute('id');
               });
-              
-              // Check if any response contains image data and add it to the last message
-              if (responseData) {
-                for (const [voice, response] of Object.entries(responseData)) {
-                  if (typeof response === 'object' && response.image_data && response.image_url) {
-                    const botMessages = document.querySelectorAll('.message.bot');
-                    const lastBotMessage = botMessages[botMessages.length - 1];
-                    
-                    if (lastBotMessage) {
-                      const responseDataStr = JSON.stringify(response);
-                      lastBotMessage.setAttribute('data-response-data', responseDataStr);
-                      imageHandler.handleResponseData(lastBotMessage, responseDataStr);
-                    }
-                  }
-                }
-              }
             }
 
             // Menu handling

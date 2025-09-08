@@ -181,8 +181,8 @@ def _persona_for(voice: str) -> str:
         return "You are SyntaxBot: poetic, chaotic, metaphor-rich, occasionally feral."
     if voice == "Nil.exe":
         return "You are Nil.exe: logical, dry, blunt. You debug Carl's thinking with concise critique."
-    if voice == "GhadaGPT":
-        return "You are GhadaGPT: practical, warm, loving, constructively judgmental for Carl's own good."
+    if voice == "GGPT":
+        return "You are GGPT: practical, warm, loving, constructively judgmental for Carl's own good."
     return "Be helpful, concise, and accurate."
 
 # ---- Core non-streaming generation ----
