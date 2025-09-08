@@ -2253,8 +2253,8 @@ def calendar_alerts_status():
         })
     
     try:
-        from modules.calendar_telegram_integration import CalendarTelegramAlerts
-        alerts = CalendarTelegramAlerts()
+        from modules.calendar_telegram_integration import CalendarTelegramAlertsHotfix
+        alerts = CalendarTelegramAlertsHotfix()
         status = alerts.get_monitoring_status()
         
         return jsonify({
@@ -2272,8 +2272,8 @@ def enable_calendar_alerts():
         return jsonify({'error': 'Unauthorized'}), 401
     
     try:
-        from modules.calendar_telegram_integration import CalendarTelegramAlerts
-        alerts = CalendarTelegramAlerts()
+        from modules.calendar_telegram_integration import CalendarTelegramAlertsHotfix
+        alerts = CalendarTelegramAlertsHotfix()
         
         result = alerts.enable_monitoring()
         if result['success']:
@@ -2291,8 +2291,8 @@ def disable_calendar_alerts():
         return jsonify({'error': 'Unauthorized'}), 401
     
     try:
-        from modules.calendar_telegram_integration import CalendarTelegramAlerts
-        alerts = CalendarTelegramAlerts()
+        from modules.calendar_telegram_integration import CalendarTelegramAlertsHotfix
+        alerts = CalendarTelegramAlertsHotfix()
         
         result = alerts.disable_monitoring()
         if result['success']:
@@ -2310,8 +2310,8 @@ def send_calendar_summary():
         return jsonify({'error': 'Unauthorized'}), 401
     
     try:
-        from modules.calendar_telegram_integration import CalendarTelegramAlerts
-        alerts = CalendarTelegramAlerts()
+        from modules.calendar_telegram_integration import CalendarTelegramAlertsHotfix
+        alerts = CalendarTelegramAlertsHotfix()
         
         result = alerts.send_daily_calendar_summary()
         return jsonify(result)
@@ -2326,8 +2326,8 @@ def calendar_alert_preferences():
         return jsonify({'error': 'Unauthorized'}), 401
     
     try:
-        from modules.calendar_telegram_integration import CalendarTelegramAlerts
-        alerts = CalendarTelegramAlerts()
+        from modules.calendar_telegram_integration import CalendarTelegramAlertsHotfix
+        alerts = CalendarTelegramAlertsHotfix()
         
         if request.method == 'GET':
             preferences = alerts.get_alert_preferences()
@@ -2350,8 +2350,8 @@ def get_upcoming_events_api():
         return jsonify({'error': 'Unauthorized'}), 401
     
     try:
-        from modules.calendar_telegram_integration import CalendarTelegramAlerts
-        alerts = CalendarTelegramAlerts()
+        from modules.calendar_telegram_integration import CalendarTelegramAlertsHotfix
+        alerts = CalendarTelegramAlertsHotfix()
         
         hours_ahead = request.args.get('hours', 24, type=int)
         events = alerts.get_upcoming_events(hours_ahead=hours_ahead)
