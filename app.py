@@ -4405,111 +4405,350 @@ def slack_setup_page():
 
 # Section 18: Background Services and Startup
 # Section 18: Background Services and Startup (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)
+# Section 18: Background Services and Startup
+import signal
+import sys
+
 def safe_reminder_checker():
-    """Background thread with enhanced safety to prevent spam"""
+    """Enhanced background reminder checker with comprehensive safety features"""
     consecutive_errors = 0
-    max_errors = 3
+    max_consecutive_errors = 5
     last_check_time = datetime.datetime.now()
     daily_send_count = 0
     last_reset_date = datetime.datetime.now().date()
+    hourly_send_count = 0
+    last_hour_reset = datetime.datetime.now().hour
+    
+    # Safety limits
+    MAX_DAILY_SENDS = 100
+    MAX_HOURLY_SENDS = 10
+    MIN_CHECK_INTERVAL = 120  # 2 minutes minimum between checks
+    ERROR_BACKOFF_TIME = 1800  # 30 minutes pause after max errors
+    
+    print("Telegram reminder checker started with enhanced safety controls")
     
     while True:
         try:
             current_time = datetime.datetime.now()
             current_date = current_time.date()
+            current_hour = current_time.hour
             
-            # Reset daily counter
+            # Reset daily counter at midnight
             if current_date != last_reset_date:
                 daily_send_count = 0
                 last_reset_date = current_date
+                print(f"Daily reminder counter reset for {current_date}")
             
-            # Safety check: don't run too frequently
-            if (current_time - last_check_time).total_seconds() < 90:
+            # Reset hourly counter
+            if current_hour != last_hour_reset:
+                hourly_send_count = 0
+                last_hour_reset = current_hour
+            
+            # Safety check: minimum interval between checks
+            time_since_last = (current_time - last_check_time).total_seconds()
+            if time_since_last < MIN_CHECK_INTERVAL:
                 time.sleep(30)
                 continue
             
-            # Safety check: don't send too many per day
-            if daily_send_count > 50:
-                print(f"Daily send limit reached ({daily_send_count}), pausing until tomorrow")
-                time.sleep(3600)  # Wait 1 hour
+            # Safety check: daily send limit
+            if daily_send_count >= MAX_DAILY_SENDS:
+                print(f"Daily send limit reached ({daily_send_count}/{MAX_DAILY_SENDS})")
+                time.sleep(3600)  # Wait 1 hour before checking again
                 continue
             
-            if is_telegram_configured() and consecutive_errors < max_errors:
+            # Safety check: hourly send limit
+            if hourly_send_count >= MAX_HOURLY_SENDS:
+                print(f"Hourly send limit reached ({hourly_send_count}/{MAX_HOURLY_SENDS})")
+                time.sleep(600)  # Wait 10 minutes
+                continue
+            
+            # Safety check: too many consecutive errors
+            if consecutive_errors >= max_consecutive_errors:
+                print(f"Too many consecutive errors ({consecutive_errors}), backing off for {ERROR_BACKOFF_TIME/60} minutes")
+                time.sleep(ERROR_BACKOFF_TIME)
+                consecutive_errors = 0
+                continue
+            
+            # Check if Telegram is properly configured
+            if not is_telegram_configured():
+                time.sleep(300)  # Check configuration every 5 minutes
+                continue
+            
+            # Perform reminder check
+            try:
                 reminders = GhostlineTelegramReminders()
                 result = reminders.check_and_send_reminders()
                 
-                if result["sent"] > 0:
-                    daily_send_count += result["sent"]
-                    print(f"Sent {result['sent']} reminders (daily total: {daily_send_count})")
-                    consecutive_errors = 0
+                if result.get("success", False):
+                    sent_count = result.get("sent", 0)
+                    if sent_count > 0:
+                        daily_send_count += sent_count
+                        hourly_send_count += sent_count
+                        print(f"Sent {sent_count} reminders (daily: {daily_send_count}, hourly: {hourly_send_count})")
+                    
+                    consecutive_errors = 0  # Reset error counter on success
+                    last_check_time = current_time
+                    
                 elif "error" in result:
                     consecutive_errors += 1
-                    print(f"Reminder check error #{consecutive_errors}: {result['error']}")
-                
-                last_check_time = current_time
-                
-            else:
-                if consecutive_errors >= max_errors:
-                    print(f"Too many errors ({consecutive_errors}), pausing for 30 minutes")
-                    time.sleep(1800)
-                    consecutive_errors = 0
+                    error_msg = result.get("error", "Unknown error")
+                    print(f"Reminder check error #{consecutive_errors}: {error_msg}")
                     
-        except Exception as e:
+                    # Exponential backoff for errors
+                    error_sleep_time = min(60 * (2 ** consecutive_errors), 900)  # Max 15 minutes
+                    time.sleep(error_sleep_time)
+                    continue
+                
+            except Exception as check_error:
+                consecutive_errors += 1
+                print(f"Reminder check exception #{consecutive_errors}: {check_error}")
+                
+                # Exponential backoff for exceptions
+                error_sleep_time = min(60 * (2 ** consecutive_errors), 900)
+                time.sleep(error_sleep_time)
+                continue
+                
+        except Exception as outer_error:
             consecutive_errors += 1
-            print(f"Reminder checker crashed #{consecutive_errors}: {e}")
+            print(f"Reminder checker outer exception #{consecutive_errors}: {outer_error}")
             
-            if consecutive_errors >= max_errors:
-                time.sleep(1800)  # 30 minute pause
+            # Long pause for outer exceptions
+            time.sleep(300)
+            
+            if consecutive_errors >= max_consecutive_errors:
+                time.sleep(ERROR_BACKOFF_TIME)
                 consecutive_errors = 0
         
-        # Standard interval - longer to prevent spam
-        time.sleep(180)  # Check every 3 minutes instead of 2
+        # Standard interval - check every 3 minutes
+        time.sleep(180)
 
-# Start background services only on Railway
-if os.getenv('RAILWAY_ENVIRONMENT'):
-    # Start Telegram reminder checker
-    checker_thread = threading.Thread(target=safe_reminder_checker, daemon=True)
-    checker_thread.start()
-    print("Telegram reminder checker started with spam protection")
+def safe_calendar_monitor():
+    """Enhanced calendar monitoring with safety controls"""
+    consecutive_errors = 0
+    max_consecutive_errors = 3
+    last_check_time = datetime.datetime.now()
     
-    # NEW: Start Calendar-Telegram monitoring if configured
-    if is_calendar_telegram_configured():
-        def delayed_calendar_start():
-            time.sleep(60)  # 1 minute delay after app startup
+    print("Calendar-Telegram monitor started")
+    
+    while True:
+        try:
+            current_time = datetime.datetime.now()
+            
+            # Don't run too frequently
+            if (current_time - last_check_time).total_seconds() < 300:  # 5 minutes minimum
+                time.sleep(60)
+                continue
+            
+            # Check if calendar-telegram integration is configured and enabled
+            if not is_calendar_telegram_configured():
+                time.sleep(600)  # Check every 10 minutes
+                continue
+            
             try:
-                # Check if monitoring should be enabled from database
+                from modules.calendar_telegram_integration import CalendarTelegramAlerts
+                alerts = CalendarTelegramAlerts()
+                
+                # Check if monitoring is enabled
+                status = alerts.get_monitoring_status()
+                if not status.get('monitoring_enabled', False):
+                    time.sleep(600)  # Check every 10 minutes if disabled
+                    continue
+                
+                # Perform calendar monitoring tasks
+                result = alerts.check_upcoming_events()
+                
+                if result.get("success", False):
+                    consecutive_errors = 0
+                    last_check_time = current_time
+                    
+                    if result.get("alerts_sent", 0) > 0:
+                        print(f"Calendar monitor: sent {result['alerts_sent']} alerts")
+                        
+                else:
+                    consecutive_errors += 1
+                    print(f"Calendar monitor error #{consecutive_errors}: {result.get('error', 'Unknown')}")
+                    
+            except ImportError:
+                print("Calendar-Telegram integration module not available")
+                time.sleep(3600)  # Check hourly if module missing
+                continue
+                
+            except Exception as monitor_error:
+                consecutive_errors += 1
+                print(f"Calendar monitor exception #{consecutive_errors}: {monitor_error}")
+                
+                if consecutive_errors >= max_consecutive_errors:
+                    time.sleep(1800)  # 30 minute pause
+                    consecutive_errors = 0
+                
+        except Exception as outer_error:
+            consecutive_errors += 1
+            print(f"Calendar monitor outer exception #{consecutive_errors}: {outer_error}")
+            time.sleep(300)
+        
+        # Standard interval - check every 10 minutes
+        time.sleep(600)
+
+def graceful_shutdown_handler(signum, frame):
+    """Handle graceful shutdown of background services"""
+    print(f"\nReceived signal {signum}, shutting down gracefully...")
+    
+    try:
+        # Stop calendar monitoring
+        stop_calendar_monitoring()
+        print("Calendar monitoring stopped")
+    except Exception as e:
+        print(f"Error stopping calendar monitoring: {e}")
+    
+    try:
+        # Stop automated backups
+        stop_automated_backups()
+        print("Automated backups stopped")
+    except Exception as e:
+        print(f"Error stopping backups: {e}")
+    
+    print("Graceful shutdown complete")
+    sys.exit(0)
+
+def start_background_services():
+    """Start all background services with proper error handling"""
+    if not os.getenv('RAILWAY_ENVIRONMENT'):
+        print("Background services disabled (not on Railway)")
+        return
+    
+    print("Starting background services for Railway environment...")
+    
+    # Register signal handlers for graceful shutdown
+    signal.signal(signal.SIGTERM, graceful_shutdown_handler)
+    signal.signal(signal.SIGINT, graceful_shutdown_handler)
+    
+    # Start Telegram reminder checker
+    try:
+        if is_telegram_configured():
+            reminder_thread = threading.Thread(
+                target=safe_reminder_checker,
+                daemon=True,
+                name="TelegramReminderChecker"
+            )
+            reminder_thread.start()
+            print("✅ Telegram reminder checker started")
+        else:
+            print("⏭️  Telegram reminder checker skipped (not configured)")
+    except Exception as e:
+        print(f"❌ Failed to start Telegram reminder checker: {e}")
+    
+    # Start Calendar-Telegram monitoring with delay
+    def delayed_calendar_start():
+        time.sleep(120)  # 2 minute delay after app startup
+        try:
+            if is_calendar_telegram_configured():
                 from modules.calendar_telegram_integration import CalendarTelegramAlerts
                 alerts = CalendarTelegramAlerts()
                 status = alerts.get_monitoring_status()
                 
                 if status.get('monitoring_enabled', False):
-                    start_calendar_monitoring()
-                    print("Calendar-Telegram monitoring started from saved state")
+                    # Start the monitoring thread
+                    calendar_thread = threading.Thread(
+                        target=safe_calendar_monitor,
+                        daemon=True,
+                        name="CalendarTelegramMonitor"
+                    )
+                    calendar_thread.start()
+                    print("✅ Calendar-Telegram monitoring started")
                 else:
-                    print("Calendar-Telegram monitoring disabled in preferences")
-            except Exception as e:
-                print(f"Failed to start Calendar-Telegram monitoring: {e}")
-        
-        calendar_startup_thread = threading.Thread(target=delayed_calendar_start, daemon=True)
-        calendar_startup_thread.start()
-        print("Scheduled Calendar-Telegram monitoring startup check")
-    else:
-        print("Calendar-Telegram integration not configured")
+                    print("⏭️  Calendar-Telegram monitoring disabled in preferences")
+            else:
+                print("⏭️  Calendar-Telegram integration not configured")
+        except Exception as e:
+            print(f"❌ Failed to start Calendar-Telegram monitoring: {e}")
     
-    # Start automated backups after a delay
-    if not os.getenv('DISABLE_AUTO_BACKUPS'):
-        def delayed_backup_start():
-            time.sleep(300)  # 5 minute delay
-            try:
-                start_automated_backups()
-                print("Automated backups started successfully")
-            except Exception as e:
-                print(f"Failed to start automated backups: {e}")
-        
-        backup_startup_thread = threading.Thread(target=delayed_backup_start, daemon=True)
+    try:
+        calendar_startup_thread = threading.Thread(
+            target=delayed_calendar_start,
+            daemon=True,
+            name="CalendarStartupDelay"
+        )
+        calendar_startup_thread.start()
+        print("⏳ Scheduled Calendar-Telegram monitoring startup check")
+    except Exception as e:
+        print(f"❌ Failed to schedule calendar monitoring: {e}")
+    
+    # Start automated backups with delay
+    def delayed_backup_start():
+        time.sleep(300)  # 5 minute delay
+        try:
+            if not os.getenv('DISABLE_AUTO_BACKUPS'):
+                success = start_automated_backups()
+                if success:
+                    print("✅ Automated backups started")
+                else:
+                    print("⚠️  Automated backups failed to start")
+            else:
+                print("⏭️  Automated backups disabled by environment variable")
+        except Exception as e:
+            print(f"❌ Failed to start automated backups: {e}")
+    
+    try:
+        backup_startup_thread = threading.Thread(
+            target=delayed_backup_start,
+            daemon=True,
+            name="BackupStartupDelay"
+        )
         backup_startup_thread.start()
-        print("Scheduled automated backup startup in 5 minutes")
+        print("⏳ Scheduled automated backup startup in 5 minutes")
+    except Exception as e:
+        print(f"❌ Failed to schedule backup startup: {e}")
+
+# Application startup and server configuration
+def run_application():
+    """Run the Flask application with proper configuration"""
+    port = int(os.getenv('PORT', 5000))
+    
+    if os.getenv('RAILWAY_ENVIRONMENT'):
+        # Production configuration for Railway
+        host = '0.0.0.0'  # Must bind to all interfaces for Railway
+        debug = False
+        
+        print(f"🚀 Starting Ghostline on Railway")
+        print(f"📡 Server: {host}:{port}")
+        print(f"🗄️  Database: {'Connected' if DATABASE_URL else 'Not configured'}")
+        print(f"🧠 Brain: {'Ready' if is_ready() else 'Building...'}")
+        
+        # Start background services
+        start_background_services()
+        
+        # Run Flask app
+        app.run(
+            host=host,
+            port=port,
+            debug=debug,
+            threaded=True,
+            use_reloader=False  # Prevents duplicate processes
+        )
     else:
-        print("Automated backups disabled")
-else:
-    print("Background services disabled (not on Railway)")
+        # Local development configuration
+        host = '127.0.0.1'
+        debug = True
+        
+        print(f"🔧 Starting Ghostline in development mode")
+        print(f"📡 Server: http://{host}:{port}")
+        print(f"🗄️  Database: {'Connected' if DATABASE_URL else 'SQLite fallback'}")
+        print(f"🧠 Brain: {'Ready' if is_ready() else 'Building...'}")
+        
+        app.run(
+            host=host,
+            port=port,
+            debug=debug,
+            threaded=True
+        )
+
+# Start the application
+if __name__ == '__main__':
+    try:
+        run_application()
+    except KeyboardInterrupt:
+        print("\n🛑 Application stopped by user")
+        graceful_shutdown_handler(signal.SIGINT, None)
+    except Exception as e:
+        print(f"💥 Application startup failed: {e}")
+        sys.exit(1)
