@@ -33,7 +33,6 @@ from modules.telegram_notifications import (
     parse_reminder_command,
     is_telegram_configured
 )
-from modules.smart_commands import process_smart_command
 from modules.personalities import GhostlinePersonalities, PersonalityIntegration
 
 # UPDATED: Enhanced Marketing Integration with Context
@@ -84,6 +83,7 @@ try:
     load_dotenv()
 except Exception:
     pass
+
 
 # Section 2: Database and Module Initialization
 app = Flask(__name__)
@@ -398,6 +398,7 @@ If this is about popular culture, TV shows, movies, books, or well-known topics,
 # Section 4: Main Chat Route (UPDATED WITH ENHANCED MARKETING)
 # Section 4: Main Chat Route (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)
 # Section 4: Main Chat Route (UPDATED WITH UNIFIED CONVERSATION CONTEXT)
+# Section 4: Main Chat Route (UPDATED WITH SLACK INTEGRATION)
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if not session.get('logged_in'):
@@ -421,38 +422,18 @@ def index():
             session_id = str(uuid.uuid4())
             session['session_id'] = session_id
 
-        # NEW: Import unified context system
-        from modules.unified_conversation_context import (
-            unified_context,
-            check_for_follow_up,
-            store_integration_context
-        )
-
-        # NEW: Check for follow-up questions first
-        follow_up_response, is_follow_up = check_for_follow_up(
-            user_input, session_id, project, use_voices, random_toggle
-        )
-        if is_follow_up:
-            save_conversation_enhanced(project, user_input, follow_up_response)
-            return _render_enhanced(project, follow_up_response)
-
         # Auto-refresh brain context periodically
         try:
             refresh_brain_context()
         except Exception as e:
             print(f"Brain context refresh failed: {e}")
 
-        # Try Cloze + ClickUp integration commands FIRST (before smart commands)
+        # Try Cloze + ClickUp integration commands FIRST (before other commands)
         if is_cloze_configured() and is_clickup_configured():
             try:
                 from modules.cloze_clickup_integration import process_cloze_clickup_command
                 response_data, handled = process_cloze_clickup_command(user_input, project, use_voices, random_toggle)
                 if handled:
-                    # Store context for follow-up questions
-                    store_integration_context(
-                        'cloze_clickup_integration', session_id,
-                        {'response': response_data}, user_input
-                    )
                     save_conversation_enhanced(project, user_input, response_data)
                     return _render_enhanced(project, response_data)
             except ImportError as e:
@@ -468,36 +449,9 @@ def index():
                     save_conversation_enhanced(project, user_input, response_data)
                     return _render_enhanced(project, response_data)
 
-        # Try smart commands SECOND (after integration commands)
-        response_data, handled = process_smart_command(user_input, project, use_voices, random_toggle)
-        if handled:
-            # Store context for follow-up questions
-            store_integration_context(
-                'smart_commands', session_id,
-                {'response': response_data}, user_input
-            )
-            save_conversation_enhanced(project, user_input, response_data)
-            return _render_enhanced(project, response_data)
-
-        # Try Consolidated Google Integration (replaces both Phase 1 and Phase 2)
+        # Try Consolidated Google Integration
         response_data, handled = process_google_ecosystem_commands(user_input, project, use_voices, random_toggle)
         if handled:
-            # Determine Google context type based on response content
-            context_type = 'gmail_search'
-            if 'calendar' in user_input.lower() or 'events' in user_input.lower():
-                context_type = 'calendar_today'
-            elif 'overnight' in user_input.lower() or 'morning' in user_input.lower():
-                context_type = 'gmail_overnight'
-            elif 'analytics' in user_input.lower():
-                context_type = 'analytics_report'
-            elif 'search console' in user_input.lower():
-                context_type = 'search_console_report'
-            
-            # Store context with detected type
-            store_integration_context(
-                context_type, session_id,
-                {'response': response_data, 'query_type': context_type}, user_input
-            )
             save_conversation_enhanced(project, user_input, response_data)
             return _render_enhanced(project, response_data)
 
@@ -505,20 +459,12 @@ def index():
         if is_calendar_telegram_configured():
             response_data, handled = process_calendar_telegram_command(user_input, project, use_voices, random_toggle)
             if handled:
-                store_integration_context(
-                    'calendar_telegram', session_id,
-                    {'response': response_data}, user_input
-                )
                 save_conversation_enhanced(project, user_input, response_data)
                 return _render_enhanced(project, response_data)
 
         # Try reminder commands
         response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
         if handled:
-            store_integration_context(
-                'telegram_reminders', session_id,
-                {'response': response_data}, user_input
-            )
             save_conversation_enhanced(project, user_input, response_data)
             return _render_enhanced(project, response_data)
 
@@ -528,10 +474,6 @@ def index():
                 user_input, project, use_voices, random_toggle, marketing_context
             )
             if handled:
-                store_integration_context(
-                    'marketing_generation', session_id,
-                    {'response': response_data, 'concept': user_input}, user_input
-                )
                 save_conversation_enhanced(project, user_input, response_data)
                 return _render_enhanced(project, response_data)
 
@@ -541,10 +483,6 @@ def index():
             response_data, handled = process_cloze_command(user_input, project, use_voices, random_toggle)
             if handled:
                 app.logger.info(f"Cloze command handled successfully")
-                store_integration_context(
-                    'cloze_pipeline', session_id,
-                    {'response': response_data, 'contacts': response_data.get('contacts', [])}, user_input
-                )
                 save_conversation_enhanced(project, user_input, response_data)
                 return _render_enhanced(project, response_data)
             else:
@@ -554,10 +492,6 @@ def index():
         if is_clickup_configured():
             response_data, handled = process_clickup_command(user_input, project, use_voices, random_toggle)
             if handled:
-                store_integration_context(
-                    'clickup_tasks', session_id,
-                    {'response': response_data, 'tasks': response_data.get('tasks', [])}, user_input
-                )
                 save_conversation_enhanced(project, user_input, response_data)
                 return _render_enhanced(project, response_data)
 
@@ -579,12 +513,6 @@ def index():
                         summary_prompt, use_voices, random_toggle,
                         project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
                     )
-                
-                # Store scrape context
-                store_integration_context(
-                    'web_scraping', session_id,
-                    {'response': response_data, 'url': url, 'success': result["ok"]}, user_input
-                )
             except Exception as e:
                 app.logger.error(f"Scrape command failed: {e}")
                 response_data = {"SyntaxPrime": f"Scrape failed: {e}"}
@@ -600,12 +528,6 @@ def index():
             response_data = generate_response_with_context_check(
                 user_input, use_voices, random_toggle,
                 project, CHAT_MODEL, retrieval_ctx
-            )
-            
-            # Store general conversation context for follow-ups
-            store_integration_context(
-                'general_conversation', session_id,
-                {'response': response_data, 'retrieval_used': len(retrieval_ctx) > 0}, user_input
             )
             
             save_conversation_enhanced(project, user_input, response_data)
@@ -669,9 +591,10 @@ def upload_file():
 # Section 7: Streaming Chat API (UPDATED WITH ENHANCED MARKETING)
 # Section 7: Streaming Chat API (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)
 # Section 7: Streaming Chat API (UPDATED WITH UNIFIED CONVERSATION CONTEXT)
+# Section 7: Streaming Chat API (UPDATED WITH SLACK INTEGRATION)
 @app.route('/api/chat/stream', methods=['POST'])
 def stream_chat():
-    """Enhanced streaming chat endpoint with unified context support"""
+    """Enhanced streaming chat endpoint with Slack integration support"""
     
     # Enhanced logging for debugging auth issues
     app.logger.info(f"Stream request from {request.remote_addr}")
@@ -718,101 +641,49 @@ def stream_chat():
                 # Send initial message
                 yield f"data: {json.dumps({'type': 'start', 'message': 'Processing your request...'})}\n\n"
                 
-                # NEW: Import unified context system
-                from modules.unified_conversation_context import (
-                    unified_context,
-                    check_for_follow_up,
-                    store_integration_context
-                )
-                
                 # Initialize response data
                 response_data = {}
                 handled = False
                 
-                # NEW: Check for follow-up questions first
-                follow_up_response, is_follow_up = check_for_follow_up(
-                    user_input, session_id, project, use_voices, random_toggle
-                )
-                if is_follow_up:
-                    app.logger.info(f"Stream: Detected follow-up question")
-                    response_data = follow_up_response
-                    handled = True
+                # Try command processors
+                processors = [
+                    ('google_consolidated', lambda: process_google_ecosystem_commands(user_input, project, use_voices, random_toggle)),
+                    ('reminder', lambda: handle_reminder_command(user_input, project, use_voices, random_toggle)),
+                ]
                 
-                # Continue with normal processors if not a follow-up
-                if not handled:
-                    # Try command processors with enhanced context storage
-                    processors = [
-                        ('smart', lambda: process_smart_command(user_input, project, use_voices, random_toggle)),
-                        ('google_consolidated', lambda: process_google_ecosystem_commands(user_input, project, use_voices, random_toggle)),
-                        ('reminder', lambda: handle_reminder_command(user_input, project, use_voices, random_toggle)),
-                    ]
-                    
-                    # Add Calendar → Telegram processor
-                    if is_calendar_telegram_configured():
-                        app.logger.info(f"Adding Calendar-Telegram processor to stream pipeline")
-                        processors.insert(2, ('calendar_telegram', lambda: process_calendar_telegram_command(user_input, project, use_voices, random_toggle)))
-                    
-                    # Add enhanced marketing processor with context
-                    if is_marketing_configured():
-                        app.logger.info(f"Adding enhanced marketing processor to stream pipeline")
-                        processors.insert(1, ('marketing_enhanced', lambda: process_marketing_command_with_context(user_input, project, use_voices, random_toggle, marketing_context)))
-                    
-                    # Add Cloze processor with proper configuration check
-                    if is_cloze_configured():
-                        app.logger.info(f"Adding Cloze processor to stream pipeline")
-                        processors.insert(2, ('cloze', lambda: process_cloze_command(user_input, project, use_voices, random_toggle)))
-                    
-                    # Add other conditional processors
-                    if is_clickup_configured():
-                        processors.append(('clickup', lambda: process_clickup_command(user_input, project, use_voices, random_toggle)))
-                    
-                    # Try each processor and store context
-                    for proc_name, processor in processors:
-                        if not handled:
-                            try:
-                                app.logger.info(f"Trying {proc_name} processor")
-                                response_data, handled = processor()
-                                if handled:
-                                    app.logger.info(f"Request handled by {proc_name} processor")
-                                    
-                                    # Store context based on processor type
-                                    context_type = proc_name
-                                    if proc_name == 'google_consolidated':
-                                        # Determine specific Google context type
-                                        if 'calendar' in user_input.lower() or 'events' in user_input.lower():
-                                            context_type = 'calendar_today'
-                                        elif 'overnight' in user_input.lower() or 'morning' in user_input.lower():
-                                            context_type = 'gmail_overnight'
-                                        elif 'analytics' in user_input.lower():
-                                            context_type = 'analytics_report'
-                                        elif 'search console' in user_input.lower():
-                                            context_type = 'search_console_report'
-                                        else:
-                                            context_type = 'gmail_search'
-                                    elif proc_name == 'marketing_enhanced':
-                                        context_type = 'marketing_generation'
-                                    elif proc_name == 'cloze':
-                                        context_type = 'cloze_pipeline'
-                                    elif proc_name == 'clickup':
-                                        context_type = 'clickup_tasks'
-                                    elif proc_name == 'reminder':
-                                        context_type = 'telegram_reminders'
-                                    elif proc_name == 'calendar_telegram':
-                                        context_type = 'calendar_telegram'
-                                    elif proc_name == 'smart':
-                                        context_type = 'smart_commands'
-                                    
-                                    # Store the context
-                                    store_integration_context(
-                                        context_type, session_id,
-                                        {'response': response_data}, user_input
-                                    )
-                                    break
-                            except Exception as e:
-                                app.logger.error(f"{proc_name} processor failed: {e}")
-                                continue
+                # Add Calendar → Telegram processor
+                if is_calendar_telegram_configured():
+                    app.logger.info(f"Adding Calendar-Telegram processor to stream pipeline")
+                    processors.insert(1, ('calendar_telegram', lambda: process_calendar_telegram_command(user_input, project, use_voices, random_toggle)))
                 
-                # Scrape command with context storage
+                # Add enhanced marketing processor with context
+                if is_marketing_configured():
+                    app.logger.info(f"Adding enhanced marketing processor to stream pipeline")
+                    processors.insert(0, ('marketing_enhanced', lambda: process_marketing_command_with_context(user_input, project, use_voices, random_toggle, marketing_context)))
+                
+                # Add Cloze processor with proper configuration check
+                if is_cloze_configured():
+                    app.logger.info(f"Adding Cloze processor to stream pipeline")
+                    processors.insert(1, ('cloze', lambda: process_cloze_command(user_input, project, use_voices, random_toggle)))
+                
+                # Add other conditional processors
+                if is_clickup_configured():
+                    processors.append(('clickup', lambda: process_clickup_command(user_input, project, use_voices, random_toggle)))
+                
+                # Try each processor
+                for proc_name, processor in processors:
+                    if not handled:
+                        try:
+                            app.logger.info(f"Trying {proc_name} processor")
+                            response_data, handled = processor()
+                            if handled:
+                                app.logger.info(f"Request handled by {proc_name} processor")
+                                break
+                        except Exception as e:
+                            app.logger.error(f"{proc_name} processor failed: {e}")
+                            continue
+                
+                # Scrape command
                 if not handled and user_input.lower().startswith("scrape "):
                     try:
                         url = user_input.split(" ", 1)[1].strip()
@@ -830,31 +701,19 @@ def stream_chat():
                                 summary_prompt, use_voices, random_toggle,
                                 project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
                             )
-                        
-                        # Store scraping context
-                        store_integration_context(
-                            'web_scraping', session_id,
-                            {'response': response_data, 'url': url, 'success': result["ok"]}, user_input
-                        )
                         handled = True
                     except Exception as e:
                         app.logger.error(f"Scrape command failed: {e}")
                         response_data = {"SyntaxPrime": f"Scrape failed: {e}"}
                         handled = True
                 
-                # Normal AI response as fallback with context storage
+                # Normal AI response as fallback
                 if not handled:
                     try:
                         retrieval_ctx = enhanced_retrieve(user_input, k=5) if is_ready() else []
                         response_data = generate_response(
                             user_input, use_voices, random_toggle,
                             project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
-                        )
-                        
-                        # Store general conversation context
-                        store_integration_context(
-                            'general_conversation', session_id,
-                            {'response': response_data, 'retrieval_used': len(retrieval_ctx) > 0}, user_input
                         )
                     except Exception as e:
                         app.logger.error(f"Normal response generation failed: {e}")
@@ -2806,6 +2665,7 @@ def calendar_alerts_settings():
 # Section 13: Mobile API Routes (UPDATED FOR CONSOLIDATED GOOGLE INTEGRATION)
 # Section 13: Mobile API Routes (UPDATED WITH ENHANCED MARKETING)
 # Section 13: Mobile API Routes (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)
+# Section 13: Mobile API Routes (UPDATED WITH SLACK INTEGRATION)
 @app.route('/api/mobile/chat', methods=['POST'])
 def mobile_chat():
     """Mobile chat with full AI processing - enhanced with marketing context support"""
@@ -2832,12 +2692,6 @@ def mobile_chat():
             refresh_brain_context()
         except Exception as e:
             app.logger.warning(f"Brain context refresh failed: {e}")
-
-        # Try smart commands FIRST (same as web version)
-        response_data, handled = process_smart_command(user_input, project, use_voices, random_toggle)
-        if handled:
-            save_conversation_enhanced(project, user_input, response_data)
-            return jsonify({'success': True, 'responses': response_data})
 
         # UPDATED: Enhanced Marketing Commands with Context Support
         if is_marketing_configured():
@@ -4022,6 +3876,7 @@ except Exception as e:
     print(f"Error registering timezone filters: {e}")
 
 # Section 20: Slack Integration Routes
+# Section 20: Slack Integration Routes (UPDATED)
 import hmac
 import hashlib
 
@@ -4052,41 +3907,32 @@ def verify_slack_signature(data, timestamp, signature):
 def slack_events():
     """Handle Slack Events API webhook"""
     try:
-        # Get request data
         data = request.get_data(as_text=True)
         timestamp = request.headers.get('X-Slack-Request-Timestamp', '')
         signature = request.headers.get('X-Slack-Signature', '')
         
-        app.logger.info(f"Slack webhook received: timestamp={timestamp}, signature present={bool(signature)}")
+        app.logger.info(f"Slack webhook received")
         
-        # Verify request signature (in production)
+        # Verify signature in production
         if os.getenv('RAILWAY_ENVIRONMENT') and not verify_slack_signature(data, timestamp, signature):
-            app.logger.warning("Invalid Slack signature")
             return "Invalid signature", 401
         
-        # Parse JSON data
         event_data = json.loads(data)
-        app.logger.info(f"Slack event type: {event_data.get('type')}")
         
-        # Handle URL verification challenge
+        # Handle URL verification
         if event_data.get('type') == 'url_verification':
-            challenge = event_data.get('challenge', '')
-            app.logger.info(f"Slack URL verification challenge: {challenge}")
-            return challenge
+            return event_data.get('challenge', '')
         
         # Process the event
         result = process_slack_webhook_event(event_data)
         
-        app.logger.info(f"Slack event processing result: {result}")
+        if result.get('success') and result.get('task_created'):
+            app.logger.info("✅ AMCF task created from Slack mention")
         
-        # Return success to Slack
         return jsonify({'status': 'ok'}), 200
         
-    except json.JSONDecodeError as e:
-        app.logger.error(f"Invalid JSON in Slack webhook: {e}")
-        return "Invalid JSON", 400
     except Exception as e:
-        app.logger.error(f"Slack webhook processing failed: {e}", exc_info=True)
+        app.logger.error(f"Slack webhook failed: {e}")
         return "Internal error", 500
 
 @app.route('/slack/test-mention', methods=['POST'])

@@ -79,7 +79,7 @@ def enhanced_retrieve(query_text, k=5, project=None):
             if conn:
                 cursor = conn.cursor(cursor_factory=RealDictCursor)
                 
-                # Search user inputs AND responses for personal context
+                # Smart multi-tier search filtering SQL
                 conversation_sql = """
                 SELECT 
                     'conversation_' || id as source_id,
@@ -92,7 +92,34 @@ def enhanced_retrieve(query_text, k=5, project=None):
                 FROM chat_threads 
                 WHERE (user_input ILIKE %s OR response_data::text ILIKE %s)
                     AND user_input IS NOT NULL
-                    AND LENGTH(user_input) > 20
+                    AND (
+                        -- Tier 1: High-value short queries (questions about people, places, things)
+                        (LENGTH(user_input) BETWEEN 10 AND 100 AND (
+                            user_input ILIKE '%%who is%%' OR 
+                            user_input ILIKE '%%what is%%' OR 
+                            user_input ILIKE '%%where is%%' OR 
+                            user_input ILIKE '%%when is%%' OR 
+                            user_input ILIKE '%%how is%%' OR
+                            user_input ILIKE '%%tell me about%%' OR
+                            user_input ILIKE '%%ghada%%' OR
+                            user_input ILIKE '%%dead like me%%' OR
+                            user_input ~* '\\b(favorite|love|like|enjoy|watch|show|movie|book|person|friend|family)\\b'
+                        ))
+                        OR
+                        -- Tier 2: Medium-length conversational content (detailed but not overwhelming)
+                        (LENGTH(user_input) BETWEEN 100 AND 500 AND (
+                            user_input ~* '\\b(remember|mentioned|told|said|discussed|talked about)\\b' OR
+                            user_input ~* '\\b(preference|opinion|think|feel|believe)\\b' OR
+                            user_input ~* '\\b(project|work|plan|idea|goal)\\b'
+                        ))
+                        OR
+                        -- Tier 3: Substantial content with context markers (your detailed brain dumps)
+                        (LENGTH(user_input) > 500 AND (
+                            user_input ~* '\\b(context|background|history|detail|explain|describe)\\b' OR
+                            user_input ~* '\\b(important|significant|key|main|primary)\\b' OR
+                            (user_input ~* '\\b(i|me|my|mine)\\b' AND LENGTH(user_input) > 200)
+                        ))
+                    )
                 ORDER BY created_at DESC
                 LIMIT %s
                 """
@@ -157,15 +184,20 @@ def enhanced_retrieve(query_text, k=5, project=None):
     except Exception as e:
         print(f"Brain documents search failed: {e}")
     
-    # PRIORITY 3: Smart context search as fallback
+    # PRIORITY 3: Smart context search as fallback with improved filtering
     if len(all_results) < k:
         try:
             conversation_context = []
             if project:
                 conversation_context = get_conversation_context(project, limit=5)
             
-            smart_results = smart_context_search(query_text, k=k-len(all_results),
-                                               conversation_context=conversation_context)
+            # Apply smart filtering to fallback search as well
+            smart_results = smart_context_search(
+                query_text,
+                k=k-len(all_results),
+                conversation_context=conversation_context,
+                apply_smart_filter=True  # Enable smart filtering for fallback
+            )
             
             if smart_results:
                 print(f"Found {len(smart_results)} smart context results")
@@ -403,7 +435,8 @@ def get_brain_diagnostics():
         "health_status": {},
         "file_system": {},
         "test_searches": {},
-        "conversation_search": {}
+        "conversation_search": {},
+        "smart_filtering": {}
     }
     
     # Check database
@@ -449,6 +482,74 @@ def get_brain_diagnostics():
                 }
     except Exception as e:
         diagnostics["conversation_search"]["error"] = str(e)
+    
+    # Test smart filtering effectiveness
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                cursor = conn.cursor()
+                
+                # Test different tier queries
+                test_queries = [
+                    ("who is ghada", "tier1_question"),
+                    ("what is dead like me", "tier1_question"),
+                    ("tell me about", "tier1_context"),
+                    ("remember when we talked", "tier2_conversational"),
+                    ("project details and background", "tier2_work"),
+                    ("detailed explanation and context", "tier3_substantial")
+                ]
+                
+                smart_filter_results = {}
+                
+                for query, query_type in test_queries:
+                    # Test the smart filtering SQL
+                    test_sql = """
+                    SELECT COUNT(*) FROM chat_threads 
+                    WHERE user_input ILIKE %s
+                        AND user_input IS NOT NULL
+                        AND (
+                            -- Tier 1: High-value short queries
+                            (LENGTH(user_input) BETWEEN 10 AND 100 AND (
+                                user_input ILIKE '%%who is%%' OR 
+                                user_input ILIKE '%%what is%%' OR 
+                                user_input ILIKE '%%tell me about%%' OR
+                                user_input ILIKE '%%ghada%%' OR
+                                user_input ILIKE '%%dead like me%%'
+                            ))
+                            OR
+                            -- Tier 2: Medium-length conversational content
+                            (LENGTH(user_input) BETWEEN 100 AND 500 AND (
+                                user_input ~* '\\b(remember|mentioned|project|work)\\b'
+                            ))
+                            OR
+                            -- Tier 3: Substantial content
+                            (LENGTH(user_input) > 500 AND (
+                                user_input ~* '\\b(context|background|detail|explain)\\b'
+                            ))
+                        )
+                    """
+                    
+                    cursor.execute(test_sql, (f'%{query}%',))
+                    filtered_count = cursor.fetchone()[0]
+                    
+                    # Also get unfiltered count for comparison
+                    cursor.execute("SELECT COUNT(*) FROM chat_threads WHERE user_input ILIKE %s AND user_input IS NOT NULL", (f'%{query}%',))
+                    total_count = cursor.fetchone()[0]
+                    
+                    smart_filter_results[query_type] = {
+                        "query": query,
+                        "filtered_results": filtered_count,
+                        "total_results": total_count,
+                        "filter_effectiveness": f"{filtered_count}/{total_count}"
+                    }
+                
+                diagnostics["smart_filtering"] = {
+                    "test_results": smart_filter_results,
+                    "filtering_active": True
+                }
+                
+    except Exception as e:
+        diagnostics["smart_filtering"]["error"] = str(e)
     
     # Test searches with focus on personal queries
     test_queries = ["Ghada", "who is ghada", "Dead Like Me", "tv show", "personal"]
@@ -525,7 +626,7 @@ def get_brain_status():
         "percentage": 100 if brain_status["ready"] else (50 if _brain_building else 0),
         "chunks": brain_status["document_count"],
         "conversations": brain_status.get("conversation_count", 0),
-        "method": "database_dual_search",
+        "method": "database_dual_search_smart_filtered",
         "health": health_status,
         "last_refresh": _last_brain_refresh.isoformat() if _last_brain_refresh else None
     }
@@ -538,7 +639,7 @@ def get_brain_control_dashboard():
     <!DOCTYPE html>
     <html>
     <head>
-        <title>Ghostline Brain Control - Dual Search Edition</title>
+        <title>Ghostline Brain Control - Smart Filtered Dual Search</title>
         <style>
             body { 
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -618,7 +719,7 @@ def get_brain_control_dashboard():
             
             .feature-badge {
                 display: inline-block;
-                background: #dc2626;
+                background: #10b981;
                 color: white;
                 padding: 4px 8px;
                 border-radius: 12px;
@@ -655,8 +756,8 @@ def get_brain_control_dashboard():
     </head>
     <body>
         <div class="container">
-            <h1>Brain Control - Dual Search <span class="feature-badge">FIXED</span></h1>
-            <p>Enhanced brain system with conversation history + knowledge base dual search. Personal context restored.</p>
+            <h1>Brain Control - Smart Filtered Dual Search <span class="feature-badge">SMART</span></h1>
+            <p>Enhanced brain system with intelligent multi-tier search filtering. Catches "Who is Ghada?" while preserving detailed context.</p>
             
             <div class="status-box">
                 <h3>Brain Status</h3>
@@ -676,7 +777,7 @@ def get_brain_control_dashboard():
                         <div class="stat-label">Conversations</div>
                     </div>
                     <div class="stat-box">
-                        <div class="stat-number" id="method">Dual Search</div>
+                        <div class="stat-number" id="method">Smart Filter</div>
                         <div class="stat-label">Method</div>
                     </div>
                     <div class="stat-box">
@@ -717,7 +818,7 @@ def get_brain_control_dashboard():
                         const statsDiv = document.getElementById('stats');
                         
                         if (data.ready) {
-                            statusDiv.innerHTML = '<span class="success">Dual Search Brain Ready</span><br><small>Conversation history + knowledge base search active</small>';
+                            statusDiv.innerHTML = '<span class="success">Smart Filtered Dual Search Brain Ready</span><br><small>Multi-tier conversation filtering + knowledge base search active</small>';
                             buildBtn.disabled = false;  // Allow rebuilds
                             serverBuildBtn.disabled = false;
                             progressDiv.classList.add('hidden');
@@ -752,7 +853,7 @@ def get_brain_control_dashboard():
             function updateStats(data) {
                 document.getElementById('document-count').textContent = data.chunks || 0;
                 document.getElementById('conversation-count').textContent = data.conversations || 0;
-                document.getElementById('method').textContent = data.method || 'Dual Search';
+                document.getElementById('method').textContent = 'Smart Filter';
                 
                 const healthElement = document.getElementById('health-status');
                 if (data.health && data.health.status) {
@@ -845,5 +946,5 @@ def get_build_status():
         "chunks_processed": brain_status["document_count"],
         "embeddings_created": brain_status["document_count"],
         "conversations_available": brain_status["conversation_count"],
-        "method": "database_dual_search"
+        "method": "database_dual_search_smart_filtered"
     }

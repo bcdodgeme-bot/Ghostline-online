@@ -34,6 +34,56 @@ def get_db_connection():
         if conn:
             conn.close()
 
+def get_content_tier(content: str) -> str:
+    """Classify content by length and substance into tiers"""
+    if not content or not content.strip():
+        return "minimal"
+    
+    content = content.strip()
+    length = len(content)
+    word_count = len(content.split())
+    
+    # Count sentences (rough approximation)
+    sentence_count = content.count('.') + content.count('!') + content.count('?')
+    
+    # Minimal: Very short responses, greetings, confirmations
+    if (length < 50 or word_count < 8 or
+        any(greeting in content.lower() for greeting in ['hi', 'hello', 'thanks', 'ok', 'yes', 'no'])):
+        return "minimal"
+    
+    # Basic: Short but substantial responses
+    elif length < 200 or word_count < 30 or sentence_count <= 2:
+        return "basic"
+    
+    # Substantial: Medium-length informative content
+    elif length < 800 or word_count < 120 or sentence_count <= 5:
+        return "substantial"
+    
+    # Comprehensive: Long, detailed responses
+    else:
+        return "comprehensive"
+
+def should_include_content(content: str, context_type: str = "mixed") -> bool:
+    """Smart filter to determine if content should be included based on tier and context"""
+    tier = get_content_tier(content)
+    
+    # Context-aware filtering
+    if context_type == "personal_context":
+        # For personal context, include more content types
+        return tier in ["basic", "substantial", "comprehensive"]
+    
+    elif context_type == "knowledge_base":
+        # For knowledge base, prioritize substantial content
+        return tier in ["substantial", "comprehensive"]
+    
+    elif context_type == "recent_priority":
+        # For recent high-priority searches, include most content
+        return tier in ["basic", "substantial", "comprehensive"]
+    
+    else:  # mixed or default
+        # Standard filtering - exclude only minimal content
+        return tier != "minimal"
+
 def init_database():
     """Create necessary database tables"""
     if not DATABASE_URL:
@@ -151,14 +201,14 @@ def classify_search_intent(query_text: str, conversation_context: List[str] = No
         
         # Current status/updates
         "update me", "catch me up", "where are we", "current status", "latest on",
-        "how are things", "what's happening with", 
+        "how are things", "what's happening with",
         
         # Recent activities (contextual)
         "today", "yesterday", "this week", "recently", "just now", "right now",
         "currently", "at the moment", "these days",
         
         # Personal references
-        "my family", "my daughter", "my work", "my company", "shazeen", "ghada", 
+        "my family", "my daughter", "my work", "my company", "shazeen", "ghada",
         "amcf", "my mom", "my projects"
     ]
     
@@ -209,7 +259,7 @@ def classify_search_intent(query_text: str, conversation_context: List[str] = No
         return "knowledge_base"   # Longer queries often seek information
 
 def search_recent_conversations(query_text: str, k: int = 3, days: int = 7) -> List[Dict[str, Any]]:
-    """Search only recent conversation history"""
+    """Search only recent conversation history with smart filtering"""
     
     with get_db_connection() as conn:
         if not conn:
@@ -235,29 +285,40 @@ def search_recent_conversations(query_text: str, k: int = 3, days: int = 7) -> L
                 LIMIT %s
             '''
             
-            cursor.execute(search_sql, (query_text, cutoff_date, query_text, k))
+            cursor.execute(search_sql, (query_text, cutoff_date, query_text, k * 2))  # Get more for filtering
             rows = cursor.fetchall()
             
             print(f"Recent conversation search found {len(rows)} results from last {days} days")
             
-            # Convert to RAG format
+            # Convert to RAG format with smart filtering
             results = []
             for row in rows:
-                # Combine user input and AI response for context
-                combined_text = f"User: {row['user_input']}\nResponse: {row['response_data'].get('SyntaxPrime', '')}"
+                # Get response content for filtering
+                response_content = row['response_data'].get('SyntaxPrime', '') if row['response_data'] else ''
                 
-                results.append({
-                    'text': combined_text[:1200],  # Reasonable chunk size
-                    'source': f"Recent conversation - {row['project']} ({row['created_at'].strftime('%m/%d')})",
-                    'id': f"conversation_{row['created_at'].timestamp()}",
-                    'score': float(row['rank']),
-                    'metadata': {
-                        'type': 'recent_conversation',
-                        'project': row['project'],
-                        'date': row['created_at'].isoformat()
-                    }
-                })
+                # Apply smart filtering - prioritize substantial content for recent conversations
+                if should_include_content(response_content, "personal_context"):
+                    # Combine user input and AI response for context
+                    combined_text = f"User: {row['user_input']}\nResponse: {response_content}"
+                    
+                    results.append({
+                        'text': combined_text[:1200],  # Reasonable chunk size
+                        'source': f"Recent conversation - {row['project']} ({row['created_at'].strftime('%m/%d')})",
+                        'id': f"conversation_{row['created_at'].timestamp()}",
+                        'score': float(row['rank']),
+                        'metadata': {
+                            'type': 'recent_conversation',
+                            'project': row['project'],
+                            'date': row['created_at'].isoformat(),
+                            'content_tier': get_content_tier(response_content)
+                        }
+                    })
+                    
+                    # Stop when we have enough quality results
+                    if len(results) >= k:
+                        break
             
+            print(f"After smart filtering: {len(results)} quality results retained")
             return results
             
         except Exception as e:
@@ -265,7 +326,7 @@ def search_recent_conversations(query_text: str, k: int = 3, days: int = 7) -> L
             return []
 
 def search_knowledge_base_only(query_text: str, k: int = 5) -> List[Dict[str, Any]]:
-    """Search only knowledge base documents (exclude conversations)"""
+    """Search only knowledge base documents with smart filtering"""
     
     with get_db_connection() as conn:
         if not conn:
@@ -284,13 +345,11 @@ def search_knowledge_base_only(query_text: str, k: int = 5) -> List[Dict[str, An
                       @@ plainto_tsquery('english', %s)
                 -- Exclude conversation-like content
                 AND NOT (content LIKE '%User:%' OR content LIKE '%Assistant:%' OR content LIKE '%Response:%')
-                -- Prioritize longer, informational content
-                AND LENGTH(content) > 100
                 ORDER BY rank DESC
                 LIMIT %s
             '''
             
-            cursor.execute(search_sql, (query_text, query_text, k))
+            cursor.execute(search_sql, (query_text, query_text, k * 2))  # Get more for filtering
             rows = cursor.fetchall()
             
             if not rows:
@@ -299,33 +358,42 @@ def search_knowledge_base_only(query_text: str, k: int = 5) -> List[Dict[str, An
                     SELECT document_id, title, content, metadata, 1.0 as rank
                     FROM brain_documents 
                     WHERE LOWER(content) LIKE %s OR LOWER(title) LIKE %s
-                    AND LENGTH(content) > 100
                     ORDER BY LENGTH(content) DESC
                     LIMIT %s
                 '''
                 
                 like_pattern = f'%{query_text.lower()}%'
-                cursor.execute(fallback_sql, (like_pattern, like_pattern, k))
+                cursor.execute(fallback_sql, (like_pattern, like_pattern, k * 2))
                 rows = cursor.fetchall()
                 
                 print(f"Knowledge base fallback search found {len(rows)} results")
             else:
                 print(f"Knowledge base search found {len(rows)} results")
             
-            # Convert to RAG format
+            # Convert to RAG format with smart filtering
             results = []
             for row in rows:
-                results.append({
-                    'text': row['content'][:1500],
-                    'source': row['title'] or f"Document {row['document_id']}",
-                    'id': row['document_id'],
-                    'score': float(row['rank']),
-                    'metadata': {
-                        'type': 'knowledge_base',
-                        **(row['metadata'] or {})
-                    }
-                })
+                content = row['content']
+                
+                # Apply smart filtering - prioritize substantial content for knowledge base
+                if should_include_content(content, "knowledge_base"):
+                    results.append({
+                        'text': content[:1500],
+                        'source': row['title'] or f"Document {row['document_id']}",
+                        'id': row['document_id'],
+                        'score': float(row['rank']),
+                        'metadata': {
+                            'type': 'knowledge_base',
+                            'content_tier': get_content_tier(content),
+                            **(row['metadata'] or {})
+                        }
+                    })
+                    
+                    # Stop when we have enough quality results
+                    if len(results) >= k:
+                        break
             
+            print(f"After smart filtering: {len(results)} quality knowledge base results")
             return results
             
         except Exception as e:
@@ -399,7 +467,10 @@ def get_conversation_context(project: str, limit: int = 5) -> List[str]:
             for row in rows:
                 context.append(row[0])  # user input
                 if row[1] and 'SyntaxPrime' in row[1]:
-                    context.append(row[1]['SyntaxPrime'][:200])  # truncated response
+                    response_content = row[1]['SyntaxPrime']
+                    # Only include substantial responses in context
+                    if should_include_content(response_content, "recent_priority"):
+                        context.append(response_content[:200])  # truncated response
             
             return context
             
@@ -408,7 +479,7 @@ def get_conversation_context(project: str, limit: int = 5) -> List[str]:
             return []
 
 def search_brain_database(query_text, k=5):
-    """Enhanced search with debugging and fallback strategies"""
+    """Enhanced search with debugging, smart filtering, and fallback strategies"""
     with get_db_connection() as conn:
         if not conn:
             print(f"No DB connection for query: '{query_text}'")
@@ -434,7 +505,7 @@ def search_brain_database(query_text, k=5):
                 LIMIT %s
             '''
             
-            cursor.execute(search_sql, (query_text, query_text, k))
+            cursor.execute(search_sql, (query_text, query_text, k * 2))  # Get more for filtering
             rows = cursor.fetchall()
             
             if rows:
@@ -453,7 +524,7 @@ def search_brain_database(query_text, k=5):
                 '''
                 
                 like_pattern = f'%{query_text.lower()}%'
-                cursor.execute(fallback_sql, (like_pattern, like_pattern, k))
+                cursor.execute(fallback_sql, (like_pattern, like_pattern, k * 2))
                 rows = cursor.fetchall()
                 
                 if rows:
@@ -461,15 +532,28 @@ def search_brain_database(query_text, k=5):
                 else:
                     print("No results found with any search strategy")
             
-            # Convert to format expected by RAG system
+            # Convert to format expected by RAG system with smart filtering
             for row in rows:
-                results.append({
-                    'text': row['content'][:1500],  # Increased chunk size
-                    'source': row['title'] or f"Document {row['document_id']}",
-                    'id': row['document_id'],
-                    'score': float(row['rank']),
-                    'metadata': row['metadata'] or {}
-                })
+                content = row['content']
+                
+                # Apply smart filtering for general brain database search
+                if should_include_content(content, "mixed"):
+                    results.append({
+                        'text': content[:1500],  # Increased chunk size
+                        'source': row['title'] or f"Document {row['document_id']}",
+                        'id': row['document_id'],
+                        'score': float(row['rank']),
+                        'metadata': {
+                            'content_tier': get_content_tier(content),
+                            **(row['metadata'] or {})
+                        }
+                    })
+                    
+                    # Stop when we have enough quality results
+                    if len(results) >= k:
+                        break
+            
+            print(f"After smart filtering: {len(results)} quality results retained")
             
             # Log search results for monitoring
             update_brain_health(query_text, len(results))
@@ -650,7 +734,7 @@ def track_uploaded_file(filename: str, file_type: str, project: str, content_pre
                 conn.rollback()
 
 def save_brain_to_database(corpus_data):
-    """Save processed brain corpus to database with progress tracking"""
+    """Save processed brain corpus to database with progress tracking and smart filtering"""
     with get_db_connection() as conn:
         if not conn:
             print("No database connection - brain will only be saved to file")
@@ -663,34 +747,44 @@ def save_brain_to_database(corpus_data):
             cursor.execute('DELETE FROM brain_documents')
             print("Cleared existing brain documents from database")
             
-            # Insert new brain data in batches
+            # Insert new brain data in batches with smart filtering
             saved_count = 0
+            filtered_count = 0
             batch_size = 100
             
             for i in range(0, len(corpus_data), batch_size):
                 batch = corpus_data[i:i + batch_size]
                 
                 for item in batch:
-                    cursor.execute('''
-                        INSERT INTO brain_documents (document_id, title, content, chunk_index, metadata)
-                        VALUES (%s, %s, %s, %s, %s)
-                    ''', (
-                        item.get('id', 'unknown'),
-                        item.get('title', '')[:500],
-                        item.get('content', ''),
-                        item.get('chunk_index', 0),
-                        psycopg2.extras.Json(item.get('metadata', {}))
-                    ))
-                    saved_count += 1
+                    content = item.get('content', '')
+                    
+                    # Apply smart filtering during save process
+                    if should_include_content(content, "knowledge_base"):
+                        cursor.execute('''
+                            INSERT INTO brain_documents (document_id, title, content, chunk_index, metadata)
+                            VALUES (%s, %s, %s, %s, %s)
+                        ''', (
+                            item.get('id', 'unknown'),
+                            item.get('title', '')[:500],
+                            content,
+                            item.get('chunk_index', 0),
+                            psycopg2.extras.Json({
+                                **item.get('metadata', {}),
+                                'content_tier': get_content_tier(content)
+                            })
+                        ))
+                        saved_count += 1
+                    else:
+                        filtered_count += 1
                 
                 # Commit each batch
                 conn.commit()
-                print(f"Saved batch {i//batch_size + 1}: {saved_count} total documents")
+                print(f"Saved batch {i//batch_size + 1}: {saved_count} saved, {filtered_count} filtered")
             
             # Update brain health
             update_brain_health(results_count=saved_count)
             
-            print(f"Successfully saved {saved_count} brain documents to database")
+            print(f"Successfully saved {saved_count} brain documents to database ({filtered_count} filtered out)")
             return True
             
         except Exception as e:
