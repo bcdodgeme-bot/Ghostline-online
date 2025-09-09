@@ -258,7 +258,7 @@ app.jinja_env.filters['markdown'] = markdown_filter
 # Add this to the bottom of Section 2 in modules/enhanced_google_integration.py
 # This provides better error handling for the ClickUp integration
 
-    def handle_super_morning_command(self, project, use_voices, random_toggle):
+    def handle_super_morning_command(project, use_voices, random_toggle):
         """
         SUPER MORNING BRIEFING: Calendar + Inbox + ClickUp + Priorities
         Single command that gives you EVERYTHING you need to start the day
