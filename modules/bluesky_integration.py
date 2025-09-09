@@ -8,7 +8,8 @@ import requests
 import time
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
-from modules.database import get_db_connection, enhanced_retrieve
+from modules.database import get_db_connection
+from modules.brain import enhanced_retrieve
 from psycopg2.extras import RealDictCursor
 
 class BlueSkyIntegration:
@@ -71,7 +72,7 @@ class BlueSkyIntegration:
             params = {"limit": limit}
             
             response = requests.get(
-                timeline_url, 
+                timeline_url,
                 headers=self.get_auth_headers(),
                 params=params
             )
