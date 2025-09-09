@@ -1070,6 +1070,26 @@ def brain_diagnostics():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# Add this right after your existing debug routes in Section 8
+@app.route('/debug/bluesky-import')
+def debug_bluesky_import():
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    try:
+        from modules.bluesky_integration import is_bluesky_configured, process_bluesky_command
+        configured = is_bluesky_configured()
+        test_response = process_bluesky_command("bluesky test")
+        
+        return f"""
+        BlueSky Import Test:<br>
+        - Import successful: ✅<br>
+        - is_bluesky_configured(): {configured}<br>
+        - Test command response: {test_response[:200]}...
+        """
+    except Exception as e:
+        return f"BlueSky import failed: {str(e)}"
+
 # Google Integration Diagnostics Routes
 @app.route('/diagnostics/google-integration')
 def google_integration_diagnostics():

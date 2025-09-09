@@ -1604,6 +1604,277 @@ Morning Briefing Data:
         
         return {}, False
 
+
+# Add this BEFORE the final process_google_ecosystem_commands function
+# This is the missing GoogleIntegration class
+
+class GoogleIntegration:
+    """Complete Google Ecosystem Integration - All services in one class"""
+    
+    def __init__(self):
+        self.timezone = self._get_user_timezone()
+        self.credentials = None
+        self.services = {}
+        self.sites_config = self._load_sites_config()
+        
+        if GOOGLE_APIS_AVAILABLE:
+            self._initialize_services()
+    
+    def _get_user_timezone(self):
+        """Get user's timezone with proper fallback"""
+        try:
+            from flask import has_request_context, session
+            if has_request_context() and session:
+                user_tz = session.get('user_timezone')
+                if user_tz:
+                    return pytz.timezone(user_tz)
+        except:
+            pass
+        return pytz.timezone('America/New_York')
+    
+    def _initialize_services(self):
+        """Initialize all Google API services with automatic token refresh"""
+        try:
+            # Import the token manager if available
+            try:
+                from modules.google_token_refresh import get_google_credentials, token_manager
+                # Get valid credentials with automatic refresh
+                self.credentials = get_google_credentials()
+            except ImportError:
+                # Fallback to direct credential loading
+                from utils.gmail_client import _build_creds
+                self.credentials = _build_creds()
+            
+            if not self.credentials:
+                print("No valid Google credentials available - authentication required")
+                return
+            
+            print("Valid Google credentials obtained")
+            
+            # Initialize all services with refreshed credentials
+            try:
+                # Core services
+                self.services['gmail'] = build('gmail', 'v1', credentials=self.credentials, cache_discovery=False)
+                self.services['calendar'] = build('calendar', 'v3', credentials=self.credentials, cache_discovery=False)
+                self.services['drive'] = build('drive', 'v3', credentials=self.credentials, cache_discovery=False)
+                self.services['docs'] = build('docs', 'v1', credentials=self.credentials, cache_discovery=False)
+                self.services['sheets'] = build('sheets', 'v4', credentials=self.credentials, cache_discovery=False)
+                
+                print("Google services initialized: ['gmail', 'calendar', 'drive', 'docs', 'sheets']")
+                
+            except Exception as e:
+                print(f"Error initializing Google services: {e}")
+                
+        except Exception as e:
+            print(f"Failed to initialize Google integration: {e}")
+    
+    def _load_sites_config(self) -> Dict[str, Dict]:
+        """Load multi-site configuration from environment variables"""
+        sites = {}
+        
+        # Method 1: JSON configuration (recommended)
+        sites_json = os.getenv('GOOGLE_SITES_CONFIG')
+        if sites_json:
+            try:
+                return json.loads(sites_json)
+            except json.JSONDecodeError as e:
+                print(f"Invalid GOOGLE_SITES_CONFIG JSON: {e}")
+        
+        # Method 2: Legacy single site support
+        legacy_view_id = os.getenv('GOOGLE_ANALYTICS_VIEW_ID')
+        legacy_search_url = os.getenv('SEARCH_CONSOLE_SITE_URL')
+        
+        if legacy_view_id or legacy_search_url:
+            sites['default'] = {
+                'name': 'Default Site',
+                'analytics_view_id': legacy_view_id,
+                'search_console_url': legacy_search_url,
+                'aliases': []
+            }
+        
+        return sites
+    
+    # Include all the methods from the other sections - for now just the critical ones:
+    
+    def process_google_commands(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
+        """Main command processor for all Google services with enhanced context handling"""
+        user_lower = user_input.lower().strip()
+        
+        # PRIORITY: Gmail/Calendar commands
+        gmail_triggers = [
+            'overnight', 'mail', 'emails', 'inbox', 'check mail',
+            'calendar', 'today', 'meetings', 'schedule',
+            'next meeting', 'next', 'upcoming',
+            'good morning', 'morning', 'gm'
+        ]
+        
+        # Super morning commands
+        super_morning_commands = [
+            "today", "daily", "briefing", "morning briefing",
+            "super morning", "full briefing", "start my day", "what's up today",
+            "daily briefing", "complete briefing", "everything"
+        ]
+        
+        if user_lower in super_morning_commands:
+            response_data = self.handle_super_morning_command(project, use_voices, random_toggle)
+            save_conversation_enhanced(project, user_input, response_data)
+            return response_data, True
+        
+        if any(trigger in user_lower for trigger in gmail_triggers):
+            response_data, handled = self.handle_gmail_commands(user_input, project, use_voices, random_toggle)
+            if handled:
+                return response_data, True
+        
+        return {}, False
+    
+    def handle_gmail_commands(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
+        """Handle Gmail and Calendar commands with enhanced multi-calendar support"""
+        user_lower = user_input.lower().strip()
+        
+        # Import the enhanced functions from our updated gmail_client
+        from utils.gmail_client import list_today_events_all_calendars, format_calendar_summary_enhanced
+        
+        # Calendar commands - FIXED TO USE ALL CALENDARS
+        if user_lower in ["calendar", "today", "meetings", "schedule"]:
+            try:
+                print("Fetching today's calendar events from all calendars...")
+                # Use the new all-calendars approach
+                events = list_today_events_all_calendars(max_results=20)
+                
+                if not events or not isinstance(events, list):
+                    response_data = {"SyntaxPrime": "Calendar service unavailable. Check your Google OAuth setup."}
+                    save_conversation_enhanced(project, user_input, response_data)
+                    return response_data, True
+                
+                if len(events) == 0:
+                    summary_prompt = "No events found for today across all your calendars. Your schedule is completely clear."
+                else:
+                    # Use the enhanced formatter that shows calendar names
+                    calendar_summary = format_calendar_summary_enhanced(events, "Today's Calendar (All Calendars)")
+                    summary_prompt = f"Here's your complete calendar for today:\n\n{calendar_summary}"
+                
+                retrieval_ctx = enhanced_retrieve(summary_prompt, k=5) if is_ready() else []
+                response_data = generate_response(
+                    summary_prompt, use_voices, random_toggle,
+                    project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+                )
+                
+                save_conversation_enhanced(project, user_input, response_data)
+                return response_data, True
+                
+            except Exception as e:
+                print(f"Calendar check failed: {e}")
+                response_data = {"SyntaxPrime": f"Calendar integration error: {str(e)}. Please check your Google OAuth setup."}
+                save_conversation_enhanced(project, user_input, response_data)
+                return response_data, True
+        
+        return {}, False
+    
+    def handle_super_morning_command(self, project, use_voices, random_toggle):
+        """
+        SUPER MORNING BRIEFING: Calendar + Inbox + ClickUp + Priorities
+        Single command that gives you EVERYTHING you need to start the day
+        """
+        print("=== SUPER MORNING BRIEFING TRIGGERED ===")
+        
+        # Import the enhanced functions
+        from utils.gmail_client import list_today_events_all_calendars, format_calendar_summary_enhanced
+        
+        # Track all integrations
+        integrations = {
+            'emails': {'success': False, 'data': None, 'error': None},
+            'calendar': {'success': False, 'data': None, 'error': None},
+            'next_meeting': {'success': False, 'data': None, 'error': None},
+            'clickup': {'success': False, 'data': None, 'error': None}
+        }
+        
+        # 2. TODAY'S CALENDAR (ALL CALENDARS)
+        try:
+            print("📅 Fetching today's calendar events...")
+            events = list_today_events_all_calendars(max_results=20)
+            if events and len(events) > 0:
+                integrations['calendar']['success'] = True
+                integrations['calendar']['data'] = events
+                print(f"✅ Got {len(events)} calendar events")
+            else:
+                integrations['calendar']['error'] = "No events today"
+        except Exception as e:
+            integrations['calendar']['error'] = str(e)
+            print(f"❌ Calendar fetch failed: {e}")
+        
+        # BUILD COMPREHENSIVE BRIEFING
+        briefing_lines = ["🌅 **SUPER MORNING BRIEFING**", ""]
+        
+        # Calendar Section
+        briefing_lines.append("📅 **TODAY'S SCHEDULE**")
+        if integrations['calendar']['success']:
+            events = integrations['calendar']['data']
+            briefing_lines.append(f"✅ {len(events)} events scheduled today")
+            
+            # Use our enhanced formatter
+            calendar_summary = format_calendar_summary_enhanced(events, "")
+            briefing_lines.append(calendar_summary)
+        else:
+            briefing_lines.append(f"❌ {integrations['calendar']['error']}")
+        briefing_lines.append("")
+        
+        # Generate the final briefing
+        morning_briefing = "\n".join(briefing_lines)
+        
+        try:
+            print("🤖 Generating AI response...")
+            retrieval_ctx = enhanced_retrieve(morning_briefing, k=8) if is_ready() else []
+            
+            ai_prompt = f"""Analyze this super morning briefing and provide a concise summary of the calendar events.
+
+Morning Briefing Data:
+{morning_briefing}"""
+            
+            response_data = generate_response(
+                ai_prompt, use_voices, random_toggle,
+                project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+            )
+            
+            print("✅ Super morning briefing completed successfully")
+            return response_data
+            
+        except Exception as e:
+            print(f"❌ AI response generation failed: {e}")
+            # Fallback - return the raw briefing
+            return {"SyntaxPrime": f"Super morning briefing compiled:\n\n{morning_briefing}"}
+    
+    def _extract_email_sender(self, msg):
+        """Extract sender from email message"""
+        if not isinstance(msg, dict):
+            return None
+        
+        # Try different possible field names for sender
+        for sender_field in ['sender', 'from', 'From', 'fromEmail', 'senderEmail', 'author']:
+            if sender_field in msg:
+                sender = msg[sender_field]
+                if sender:
+                    # Clean up sender (remove email brackets if present)
+                    if '<' in sender and '>' in sender:
+                        sender = sender.split('<')[0].strip()
+                        if not sender:  # If no name, use email
+                            sender = sender.split('<')[1].split('>')[0].strip()
+                    return sender
+        
+        return "Unknown Sender"
+
+    def _extract_email_subject(self, msg):
+        """Extract subject from email message"""
+        if not isinstance(msg, dict):
+            return None
+        
+        # Try different possible field names for subject
+        for subject_field in ['subject', 'Subject', 'title', 'summary', 'snippet']:
+            if subject_field in msg:
+                subject = msg[subject_field]
+                if subject:
+                    return subject
+        
+        return "No Subject"
 # =============================================================================
 # MAIN INTEGRATION FUNCTION
 # =============================================================================
