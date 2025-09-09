@@ -1,4 +1,4 @@
-# utils/gmail_client.py - Debug-enhanced version
+# utils/gmail_client.py - WITH MULTI-CALENDAR FIX
 # This version includes detailed error logging to identify the exact Google API issue
 
 from __future__ import annotations
@@ -53,145 +53,88 @@ def _build_creds() -> Credentials:
             print(f"DEBUG: Failed to load existing token: {e}")
             creds = None
 
-    # Check if credentials are valid
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
+    # If token invalid/expired, try to refresh
+    if creds and not creds.valid:
+        if creds.expired and creds.refresh_token:
             try:
-                print("DEBUG: Refreshing expired credentials...")
+                print("DEBUG: Refreshing expired token...")
                 creds.refresh(Request())
-                print("DEBUG: Credentials refreshed successfully")
+                print("DEBUG: Token refreshed successfully")
                 
-                # Save refreshed credentials
-                with open(TOKEN_PATH, "w") as f:
-                    f.write(creds.to_json())
+                # Save the refreshed token
+                with open(TOKEN_PATH, "w") as token_file:
+                    token_file.write(creds.to_json())
                 print("DEBUG: Refreshed token saved")
                 
             except Exception as e:
-                print(f"DEBUG: Failed to refresh credentials: {e}")
+                print(f"DEBUG: Token refresh failed: {e}")
                 creds = None
-        
-        # If we still don't have valid credentials, show error
-        if not creds:
-            print("DEBUG: No valid credentials available")
-            if not os.path.exists(CREDENTIALS_PATH):
-                raise FileNotFoundError(
-                    f"Missing Google OAuth credentials at '{CREDENTIALS_PATH}'. "
-                    "Set GOOGLE_CREDENTIALS_PATH or place credentials.json."
-                )
-            
-            # Don't try to create new creds in server environment
-            raise RuntimeError(
-                "No valid token available. Please regenerate token.json locally and upload it."
-            )
+        else:
+            print("DEBUG: Token invalid and cannot refresh")
+            creds = None
 
-    print("DEBUG: Final credentials check - valid:", creds.valid)
+    # If no valid credentials, start OAuth flow
+    if not creds:
+        print("DEBUG: No valid credentials - OAuth flow needed")
+        if not os.path.exists(CREDENTIALS_PATH):
+            raise FileNotFoundError(f"Credentials file not found: {CREDENTIALS_PATH}")
+        
+        print("DEBUG: Starting OAuth flow...")
+        flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, ALL_SCOPES)
+        creds = flow.run_local_server(port=0)
+        
+        # Save the credentials for next time
+        with open(TOKEN_PATH, "w") as token_file:
+            token_file.write(creds.to_json())
+        print("DEBUG: New credentials saved")
+
+    print(f"DEBUG: Final credentials check - valid: {creds.valid}")
     return creds
 
 
 def _gmail_service():
-    """Build Gmail service with shared credentials"""
-    try:
-        print("DEBUG: Creating Gmail service...")
-        creds = _build_creds()
-        service = build("gmail", "v1", credentials=creds)
-        print("DEBUG: Gmail service created successfully")
-        return service
-    except Exception as e:
-        print(f"DEBUG: Failed to create Gmail service: {type(e).__name__}: {e}")
-        raise
+    """Build Gmail API service"""
+    print("DEBUG: Creating Gmail service...")
+    creds = _build_creds()
+    return build("gmail", "v1", credentials=creds)
 
 
 def _calendar_service():
-    """Build Calendar service with shared credentials"""
-    try:
-        print("DEBUG: Creating Calendar service...")
-        creds = _build_creds()
-        service = build("calendar", "v3", credentials=creds)
-        print("DEBUG: Calendar service created successfully")
-        return service
-    except Exception as e:
-        print(f"DEBUG: Failed to create Calendar service: {type(e).__name__}: {e}")
-        raise
+    """Build Calendar API service"""
+    print("DEBUG: Creating Calendar service...")
+    creds = _build_creds()
+    return build("calendar", "v3", credentials=creds)
 
 
-# --------------------------- Gmail helpers ---------------------------
+# --------------------------- Time helpers ---------------------------
 
-@dataclass
-class GmailMessage:
-    id: str
-    thread_id: str
-
-def _gmail_list(query: str, user_id: str = "me", max_pages: int = 10) -> List[GmailMessage]:
-    try:
-        svc = _gmail_service()
-        messages: List[GmailMessage] = []
-        page_token: Optional[str] = None
-        pages = 0
-        
-        print(f"DEBUG: Gmail search query: '{query}'")
-        
-        while True:
-            try:
-                resp = svc.users().messages().list(
-                    userId=user_id, q=query, pageToken=page_token, maxResults=100
-                ).execute()
-                
-                message_batch = resp.get("messages", [])
-                print(f"DEBUG: Found {len(message_batch)} messages in this batch")
-                
-                for m in message_batch:
-                    messages.append(GmailMessage(id=m["id"], thread_id=m["threadId"]))
-                
-                page_token = resp.get("nextPageToken")
-                pages += 1
-                if not page_token or pages >= max_pages:
-                    break
-                    
-            except HttpError as e:
-                print(f"DEBUG: Gmail API HttpError: Status {e.resp.status}, Reason: {e.resp.reason}")
-                print(f"DEBUG: Gmail API Error content: {e.content}")
-                raise
-        
-        print(f"DEBUG: Total Gmail messages found: {len(messages)}")
-        return messages
-        
-    except Exception as e:
-        print(f"DEBUG: Gmail list error - Type: {type(e).__name__}, Details: {e}")
-        raise
+def _iso_bounds_today_local() -> tuple[str, str, str]:
+    """ISO time bounds for 'local today': 00:00 to 23:59:59, with timezone name."""
+    now = datetime.now(DEFAULT_TZ)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_day = now.replace(hour=23, minute=59, second=59, microsecond=999999)
+    return start_of_day.isoformat(), end_of_day.isoformat(), str(DEFAULT_TZ)
 
 
-def _overnight_query(include_unread: bool, include_primary: bool, query_extra: Optional[str]) -> str:
-    # Local midnight today in DEFAULT_TZ; Gmail date format YYYY/MM/DD
-    today_start = datetime.now(DEFAULT_TZ).replace(hour=0, minute=0, second=0, microsecond=0)
-    after_str = today_start.strftime("%Y/%m/%d")
-    parts = [f"after:{after_str}", "in:inbox"]
+def _overnight_query(include_unread: bool = False, include_primary: bool = False, query_extra: Optional[str] = None) -> str:
+    """Build Gmail query for messages since local midnight."""
+    now_local = datetime.now(DEFAULT_TZ)
+    midnight_local = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
+    after_str = midnight_local.strftime("%Y/%m/%d")
+    
+    parts = [f"after:{after_str}"]
     if include_unread:
         parts.append("is:unread")
     if include_primary:
         parts.append("category:primary")
     if query_extra:
-        parts.append(query_extra.strip())
-    query = " ".join(parts)
-    print(f"DEBUG: Overnight query: '{query}'")
-    return query
+        parts.append(query_extra)
+    
+    return " ".join(parts)
 
 
-# --------------------------- Calendar helpers ---------------------------
-
-def _iso_bounds_today_local():
-    start = datetime.now(DEFAULT_TZ).replace(hour=0, minute=0, second=0, microsecond=0)
-    end = start + timedelta(days=1)
-    return start.isoformat(), end.isoformat(), str(DEFAULT_TZ)
-
-
-def _iso_bounds_tomorrow_local():
-    start = (datetime.now(DEFAULT_TZ).replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1))
-    end = start + timedelta(days=1)
-    return start.isoformat(), end.isoformat(), str(DEFAULT_TZ)
-
-
-def _to_local(dt_str: str) -> Optional[datetime]:
-    """Parse RFC3339 string to tz-aware datetime in DEFAULT_TZ."""
+def _to_local(dt_str: Optional[str]) -> Optional[datetime]:
+    """Parse ISO datetime string to local timezone."""
     if not dt_str:
         return None
     try:
@@ -221,6 +164,8 @@ def _event_item(e: Dict) -> Dict:
         "summary": summary,
         "start": start_iso,
         "start_formatted": start_formatted,
+        "date_formatted": start_dt_local.strftime("%A, %B %d, %Y") if start_dt_local else "",
+        "time_formatted": start_formatted
     }
 
 
@@ -333,11 +278,17 @@ def search(query: str) -> List[Dict]:
         raise
 
 
-def list_today_events(max_results: int = 10, calendar_id: str = "primary") -> List[Dict]:
-    """Calendar events from local today 00:00 to tomorrow 00:00, tz-aware."""
+# =============================================================================
+# CALENDAR FUNCTIONS - WITH MULTI-CALENDAR FIX
+# =============================================================================
+
+def list_today_events_all_calendars(max_results: int = 50) -> List[Dict]:
+    """
+    FIXED: Calendar events from ALL calendars for today (local timezone)
+    This fixes the issue where events in secondary calendars weren't showing
+    """
     try:
-        print("DEBUG: === Starting list_today_events ===")
-        print(f"DEBUG: Requesting {max_results} events for calendar '{calendar_id}'")
+        print("DEBUG: === Starting list_today_events_all_calendars ===")
         
         svc = _calendar_service()
         timeMin, timeMax, tzname = _iso_bounds_today_local()
@@ -345,59 +296,98 @@ def list_today_events(max_results: int = 10, calendar_id: str = "primary") -> Li
         print(f"DEBUG: Time bounds - Min: {timeMin}, Max: {timeMax}")
         print(f"DEBUG: Timezone: {tzname}")
         
-        # Make the actual API call with detailed error handling
-        try:
-            print("DEBUG: Making Calendar API call...")
-            resp = svc.events().list(
-                calendarId=calendar_id,
-                timeMin=timeMin,
-                timeMax=timeMax,
-                singleEvents=True,
-                orderBy="startTime",
-                timeZone=tzname,
-                maxResults=max_results,
-            ).execute()
-            print("DEBUG: Calendar API call successful")
-            
-        except HttpError as he:
-            print(f"DEBUG: Calendar API HttpError Details:")
-            print(f"DEBUG: - Status Code: {he.resp.status}")
-            print(f"DEBUG: - Reason: {he.resp.reason}")
-            print(f"DEBUG: - Error Content: {he.content}")
-            
-            # Try to parse the error content for more details
-            try:
-                error_details = json.loads(he.content.decode('utf-8'))
-                print(f"DEBUG: - Parsed Error: {error_details}")
-            except:
-                pass
-                
-            raise
+        # Get all calendars first
+        print("DEBUG: Fetching all accessible calendars...")
+        calendar_list = svc.calendarList().list().execute()
+        calendars = calendar_list.get('items', [])
         
-        items = resp.get("items", [])
-        result = [_event_item(e) for e in items]
-        print(f"DEBUG: Successfully processed {len(result)} events for today")
-        print("DEBUG: === Completed list_today_events ===")
-        return result
+        print(f"DEBUG: Found {len(calendars)} calendars")
+        for cal in calendars:
+            cal_name = cal.get('summary', 'Unnamed')
+            cal_id = cal.get('id', 'No ID')
+            is_primary = cal.get('primary', False)
+            print(f"DEBUG: - {'[PRIMARY]' if is_primary else '[SECONDARY]'} {cal_name}")
+        
+        # Collect events from all calendars
+        all_events = []
+        
+        for calendar in calendars:
+            cal_id = calendar.get('id')
+            cal_name = calendar.get('summary', 'Unnamed Calendar')
+            
+            # Skip certain calendar types that are usually not relevant
+            if 'holiday' in cal_name.lower() or 'birthday' in cal_name.lower():
+                print(f"DEBUG: Skipping calendar: {cal_name}")
+                continue
+            
+            try:
+                print(f"DEBUG: Fetching events from calendar: {cal_name}")
+                
+                resp = svc.events().list(
+                    calendarId=cal_id,
+                    timeMin=timeMin,
+                    timeMax=timeMax,
+                    singleEvents=True,
+                    orderBy="startTime",
+                    timeZone=tzname,
+                    maxResults=max_results,
+                ).execute()
+                
+                items = resp.get("items", [])
+                print(f"DEBUG: Found {len(items)} events in {cal_name}")
+                
+                # Process each event and add calendar context
+                for item in items:
+                    event = _event_item(item)
+                    event['calendar_name'] = cal_name
+                    event['calendar_id'] = cal_id
+                    all_events.append(event)
+                    
+            except Exception as e:
+                print(f"DEBUG: Error fetching from calendar {cal_name}: {e}")
+                # Continue with other calendars even if one fails
+                continue
+        
+        # Sort all events by start time
+        all_events.sort(key=lambda x: x.get('start', ''))
+        
+        print(f"DEBUG: Successfully processed {len(all_events)} total events from all calendars")
+        
+        # Log event details for debugging
+        for event in all_events:
+            print(f"DEBUG: Event - {event.get('start_formatted', 'No time')}: {event.get('summary', 'No title')} (from {event.get('calendar_name', 'Unknown calendar')})")
+        
+        print("DEBUG: === Completed list_today_events_all_calendars ===")
+        return all_events
         
     except Exception as e:
-        print(f"DEBUG: list_today_events FAILED - Type: {type(e).__name__}")
+        print(f"DEBUG: list_today_events_all_calendars FAILED - Type: {type(e).__name__}")
         print(f"DEBUG: Error details: {str(e)}")
         import traceback
         print(f"DEBUG: Full traceback: {traceback.format_exc()}")
         raise
 
 
-def list_tomorrow_events(max_results: int = 10, calendar_id: str = "primary") -> List[Dict]:
-    """Calendar events for tomorrow, local day bounds."""
-    try:
-        print("DEBUG: Getting tomorrow's calendar events...")
-        svc = _calendar_service()
-        timeMin, timeMax, tzname = _iso_bounds_tomorrow_local()
-        
-        print(f"DEBUG: Tomorrow bounds - Min: {timeMin}, Max: {timeMax}")
-        
+def list_today_events(max_results: int = 10, calendar_id: str = "primary") -> List[Dict]:
+    """
+    UPDATED: Calendar events for today - now checks all calendars by default
+    Maintains backward compatibility but uses the improved multi-calendar approach
+    """
+    if calendar_id == "primary":
+        # Use the new all-calendars approach for better results
+        return list_today_events_all_calendars(max_results)
+    else:
+        # Keep original single-calendar logic for specific calendar requests
         try:
+            print("DEBUG: === Starting list_today_events (single calendar) ===")
+            print(f"DEBUG: Requesting {max_results} events for calendar '{calendar_id}'")
+            
+            svc = _calendar_service()
+            timeMin, timeMax, tzname = _iso_bounds_today_local()
+            
+            print(f"DEBUG: Time bounds - Min: {timeMin}, Max: {timeMax}")
+            print(f"DEBUG: Timezone: {tzname}")
+            
             resp = svc.events().list(
                 calendarId=calendar_id,
                 timeMin=timeMin,
@@ -408,92 +398,169 @@ def list_tomorrow_events(max_results: int = 10, calendar_id: str = "primary") ->
                 maxResults=max_results,
             ).execute()
             
-        except HttpError as he:
-            print(f"DEBUG: Tomorrow events HttpError: Status {he.resp.status}, Content: {he.content}")
-            raise
-        
-        items = resp.get("items", [])
-        result = [_event_item(e) for e in items]
-        print(f"DEBUG: Found {len(result)} events for tomorrow")
-        return result
-        
-    except Exception as e:
-        print(f"DEBUG: list_tomorrow_events error - Type: {type(e).__name__}, Details: {e}")
-        raise
-
-
-def search_calendar(query: str, days_ahead: int = 90, max_results: int = 50, calendar_id: str = "primary") -> List[Dict]:
-    """Free-text search in upcoming window."""
-    try:
-        print(f"DEBUG: Searching calendar for: '{query}'")
-        svc = _calendar_service()
-        start = datetime.now(DEFAULT_TZ)
-        end = start + timedelta(days=days_ahead)
-        
-        try:
-            resp = svc.events().list(
-                calendarId=calendar_id,
-                q=query,
-                timeMin=start.isoformat(),
-                timeMax=end.isoformat(),
-                singleEvents=True,
-                orderBy="startTime",
-                timeZone=str(DEFAULT_TZ),
-                maxResults=max_results,
-            ).execute()
+            items = resp.get("items", [])
+            result = [_event_item(e) for e in items]
+            print(f"DEBUG: Successfully processed {len(result)} events for {calendar_id}")
+            return result
             
-        except HttpError as he:
-            print(f"DEBUG: Calendar search HttpError: Status {he.resp.status}, Content: {he.content}")
+        except Exception as e:
+            print(f"DEBUG: Single calendar list_today_events FAILED: {e}")
             raise
-        
-        items = resp.get("items", [])
-        result = [_event_item(e) for e in items]
-        print(f"DEBUG: Calendar search found {len(result)} events")
-        return result
-        
-    except Exception as e:
-        print(f"DEBUG: search_calendar error - Type: {type(e).__name__}, Details: {e}")
-        raise
 
 
-def get_next_meeting(calendar_id: str = "primary") -> Dict:
-    """Return the next upcoming meeting after now."""
+def list_tomorrow_events(max_results: int = 10, calendar_id: str = "primary") -> List[Dict]:
+    """Calendar events for tomorrow, local day bounds."""
     try:
-        print("DEBUG: Getting next meeting...")
         svc = _calendar_service()
         now = datetime.now(DEFAULT_TZ)
-        
-        try:
-            resp = svc.events().list(
-                calendarId=calendar_id,
-                timeMin=now.isoformat(),
-                singleEvents=True,
-                orderBy="startTime",
-                timeZone=str(DEFAULT_TZ),
-                maxResults=1,
-            ).execute()
-            
-        except HttpError as he:
-            print(f"DEBUG: Next meeting HttpError: Status {he.resp.status}, Content: {he.content}")
-            raise
-        
+        tomorrow = now + timedelta(days=1)
+        start_of_day = tomorrow.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day = tomorrow.replace(hour=23, minute=59, second=59, microsecond=999999)
+        timeMin = start_of_day.isoformat()
+        timeMax = end_of_day.isoformat()
+        tzname = str(DEFAULT_TZ)
+
+        resp = svc.events().list(
+            calendarId=calendar_id,
+            timeMin=timeMin,
+            timeMax=timeMax,
+            singleEvents=True,
+            orderBy="startTime",
+            timeZone=tzname,
+            maxResults=max_results,
+        ).execute()
         items = resp.get("items", [])
-        result = _event_item(items[0]) if items else {}
-        print(f"DEBUG: Next meeting: {result.get('summary', 'None')}")
-        return result
-        
+        return [_event_item(e) for e in items]
     except Exception as e:
-        print(f"DEBUG: get_next_meeting error - Type: {type(e).__name__}, Details: {e}")
+        print(f"DEBUG: list_tomorrow_events error: {e}")
         raise
 
 
-def format_calendar_summary(events: List[Dict], header: str = "") -> str:
-    """Format bullet list summary expected by app.py."""
+def search_calendar(query: str) -> List[Dict]:
+    """Search calendar events by text."""
+    try:
+        svc = _calendar_service()
+        resp = svc.events().list(
+            calendarId="primary",
+            q=query,
+            singleEvents=True,
+            orderBy="startTime",
+            maxResults=20,
+        ).execute()
+        items = resp.get("items", [])
+        return [_event_item(e) for e in items]
+    except Exception as e:
+        print(f"DEBUG: search_calendar error: {e}")
+        raise
+
+
+def get_next_meeting() -> Optional[Dict]:
+    """Get the next upcoming calendar event."""
+    try:
+        svc = _calendar_service()
+        now_iso = datetime.now(DEFAULT_TZ).isoformat()
+        
+        # Check all calendars for next meeting
+        calendar_list = svc.calendarList().list().execute()
+        calendars = calendar_list.get('items', [])
+        
+        all_upcoming = []
+        
+        for calendar in calendars:
+            cal_id = calendar.get('id')
+            cal_name = calendar.get('summary', 'Unnamed Calendar')
+            
+            # Skip holidays/birthdays
+            if 'holiday' in cal_name.lower() or 'birthday' in cal_name.lower():
+                continue
+            
+            try:
+                resp = svc.events().list(
+                    calendarId=cal_id,
+                    timeMin=now_iso,
+                    singleEvents=True,
+                    orderBy="startTime",
+                    maxResults=5,  # Get first few from each calendar
+                ).execute()
+                
+                items = resp.get("items", [])
+                for item in items:
+                    event = _event_item(item)
+                    event['calendar_name'] = cal_name
+                    all_upcoming.append(event)
+                    
+            except Exception as e:
+                print(f"DEBUG: Error getting next meeting from {cal_name}: {e}")
+                continue
+        
+        if all_upcoming:
+            # Sort by start time and return the earliest
+            all_upcoming.sort(key=lambda x: x.get('start', ''))
+            return all_upcoming[0]
+        
+        return None
+        
+    except Exception as e:
+        print(f"DEBUG: get_next_meeting error: {e}")
+        return None
+
+
+def format_calendar_summary(events: List[Dict], title: str = "") -> str:
+    """Format calendar events for display."""
     if not events:
-        return "(No events)"
-    lines = []
-    if header:
-        lines.append(header.strip())
-    for e in events:
-        lines.append(f"• {e.get('start_formatted','')} — {e.get('summary','')}".strip())
-    return "\n".join(lines)
+        return f"{title}\n\nNo events scheduled.\n"
+    
+    lines = [title] if title else []
+    lines.append("")
+    
+    current_date = None
+    for event in events:
+        event_date = event.get('date_formatted', '')
+        event_time = event.get('time_formatted', event.get('start_formatted', ''))
+        event_title = event.get('summary', 'Untitled Event')
+        
+        # Add date header if date changed
+        if current_date != event_date and event_date:
+            if current_date is not None:  # Add spacing between dates
+                lines.append("")
+            lines.append(f"📅 {event_date}")
+            current_date = event_date
+        
+        lines.append(f"   {event_time} - {event_title}")
+    
+    return "\n".join(lines) + "\n"
+
+
+def format_calendar_summary_enhanced(events: List[Dict], title: str = "") -> str:
+    """
+    Enhanced calendar summary that shows which calendar each event is from
+    """
+    if not events:
+        return f"{title}\n\nNo events scheduled.\n"
+    
+    lines = [title] if title else []
+    lines.append("")
+    
+    current_date = None
+    for event in events:
+        event_date = event.get('date_formatted', '')
+        event_time = event.get('time_formatted', event.get('start_formatted', ''))
+        event_title = event.get('summary', 'Untitled Event')
+        calendar_name = event.get('calendar_name', '')
+        
+        # Add date header if date changed
+        if current_date != event_date and event_date:
+            if current_date is not None:  # Add spacing between dates
+                lines.append("")
+            lines.append(f"📅 {event_date}")
+            current_date = event_date
+        
+        # Format the event line with calendar context
+        if calendar_name and calendar_name != 'Primary':
+            event_line = f"   {event_time} - {event_title} ({calendar_name})"
+        else:
+            event_line = f"   {event_time} - {event_title}"
+        
+        lines.append(event_line)
+    
+    return "\n".join(lines) + "\n"

@@ -14,7 +14,8 @@ import pytz
 from utils.gmail_client import (
     list_overnight, search as gmail_search,
     list_today_events, list_tomorrow_events, search_calendar,
-    get_next_meeting, format_calendar_summary
+    get_next_meeting, format_calendar_summary,
+    list_today_events_all_calendars, format_calendar_summary_enhanced
 )
 from utils.ghostline_engine import generate_response
 from utils.rag_basic import is_ready
@@ -231,315 +232,436 @@ class EnhancedConversationalContext:
      
 # Section 2: Context Methods and GoogleIntegration Class Setup
 # Section 2: Context Methods and GoogleIntegration Class Setup
+# Section 2: Gmail and Calendar Command Handlers - UPDATED WITH MULTI-CALENDAR FIX AND SUPER MORNING BRIEFING
 
-    def generate_contextual_response(self, user_input: str, context: dict, project: str, use_voices: list, random_toggle: bool) -> Dict:
-        """Generate response with full context"""
-        context_prompt = self._build_context_prompt(user_input, context)
+    def handle_gmail_commands(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
+        """Handle Gmail and Calendar commands with enhanced multi-calendar support"""
+        user_lower = user_input.lower().strip()
         
-        # Get relevant background information
-        retrieval_ctx = enhanced_retrieve(context_prompt, k=5, project=project) if is_ready() else []
+        # Import the enhanced functions from our updated gmail_client
+        from utils.gmail_client import list_today_events_all_calendars, format_calendar_summary_enhanced
         
-        response_data = generate_response(
-            context_prompt, use_voices, random_toggle,
-            project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
-        )
+        # SUPER MORNING COMMANDS - Multiple aliases for ultimate briefing
+        super_morning_commands = [
+            "today","daily", "briefing", "morning briefing",
+            "super morning", "full briefing", "start my day", "what's up today",
+            "daily briefing", "complete briefing", "everything"
+        ]
         
-        return response_data
-    
-    def _build_context_prompt(self, user_input: str, context: dict) -> str:
-        """Build comprehensive context prompt"""
-        prompt = f"User just asked: '{user_input}'\n\n"
-        prompt += f"This is a follow-up question about a recent report I provided.\n\n"
+        if user_lower in super_morning_commands:
+            response_data = self.handle_super_morning_command(project, use_voices, random_toggle)
+            save_conversation_enhanced(project, user_input, response_data)
+            return response_data, True
         
-        if context['type'] == 'search_console_report':
-            prompt += f"**Recent Search Console Report for {context['site_name']}:**\n"
-            prompt += f"Original query: {context['original_query']}\n"
-            prompt += context['summary']
-            
-            data = context['report_data'].get('data', [])
-            if data and len(data) > 0:
-                prompt += f"\n\n**Detailed Search Data:**\n"
-                prompt += f"- Total Clicks: {sum(row.get('clicks', 0) for row in data):,}\n"
-                prompt += f"- Total Impressions: {sum(row.get('impressions', 0) for row in data):,}\n"
-                prompt += f"- Number of Queries: {len(data)}\n\n"
-                
-                prompt += f"**Top Search Queries:**\n"
-                for i, row in enumerate(data[:10], 1):
-                    query = row.get('query', 'Unknown')
-                    clicks = row.get('clicks', 0)
-                    impressions = row.get('impressions', 0)
-                    ctr = row.get('ctr', 0.0) * 100
-                    prompt += f"{i}. '{query}' - {clicks} clicks, {impressions} impressions, {ctr:.2f}% CTR\n"
-        
-        elif context['type'] == 'analytics_report':
-            prompt += f"**Recent Analytics Report for {context['site_name']}:**\n"
-            prompt += f"Original query: {context['original_query']}\n"
-            prompt += context['summary']
-            
-            data = context['report_data'].get('data', [])
-            if data:
-                total_sessions = sum(row.get('sessions', 0) for row in data)
-                total_users = sum(row.get('users', 0) for row in data)
-                total_pageviews = sum(row.get('pageviews', 0) for row in data)
-                
-                prompt += f"\n\n**Detailed Analytics Data:**\n"
-                prompt += f"- Total Sessions: {total_sessions:,}\n"
-                prompt += f"- Total Users: {total_users:,}\n"
-                prompt += f"- Total Pageviews: {total_pageviews:,}\n"
-                prompt += f"- Days of Data: {len(data)}\n"
-        
-        elif context['type'].startswith('gmail_'):
-            prompt += f"**Recent Gmail Report ({context['type'].replace('gmail_', '').title()}):**\n"
-            prompt += context['summary']
-            
-            if context.get('emails'):
-                prompt += f"\n\n**Email Details:**\n"
-                for i, email in enumerate(context['emails'][:10], 1):
-                    sender = email.get('sender', 'Unknown')
-                    subject = email.get('subject', 'No Subject')
-                    prompt += f"{i}. From: {sender} - Subject: {subject}\n"
-        
-        elif context['type'].startswith('calendar_'):
-            prompt += f"**Recent Calendar Report ({context['type'].replace('calendar_', '').title()}):**\n"
-            prompt += context['summary']
-        
-        prompt += f"\n\nPlease provide insights, analysis, or recommendations based on this data and the user's follow-up question."
-        
-        return prompt
-    
-    def _generate_analytics_summary(self, data: list) -> str:
-        """Generate summary for analytics data"""
-        if not data:
-            return "No analytics data available."
-        
-        total_sessions = sum(row.get('sessions', 0) for row in data)
-        total_users = sum(row.get('users', 0) for row in data)
-        total_pageviews = sum(row.get('pageviews', 0) for row in data)
-        
-        return f"Analytics Summary: {total_sessions:,} sessions, {total_users:,} users, {total_pageviews:,} pageviews over {len(data)} days"
-    
-    def _generate_search_console_summary(self, data: list) -> str:
-        """Generate summary for search console data"""
-        if not data:
-            return "No search console data available."
-        
-        total_clicks = sum(row.get('clicks', 0) for row in data)
-        total_impressions = sum(row.get('impressions', 0) for row in data)
-        avg_ctr = (total_clicks / total_impressions * 100) if total_impressions > 0 else 0
-        
-        return f"Search Console Summary: {total_clicks:,} clicks, {total_impressions:,} impressions, {avg_ctr:.2f}% CTR across {len(data)} queries"
-    
-    def _generate_gmail_summary(self, emails: list, report_type: str) -> str:
-        """Generate summary for Gmail data"""
-        if not emails:
-            return f"No emails found for {report_type}."
-        
-        senders = list(set(email.get('sender', 'Unknown') for email in emails))
-        return f"Gmail {report_type.title()} Summary: {len(emails)} emails from {len(senders)} unique senders"
-    
-    def _generate_calendar_summary(self, events: list, report_type: str) -> str:
-        """Generate summary for calendar data"""
-        if not events:
-            return f"No calendar events found for {report_type}."
-        
-        return f"Calendar {report_type.title()} Summary: {len(events)} scheduled events"
-
-
-# Global instance for conversation context
-enhanced_conversation_context = EnhancedConversationalContext()
-
-
-class GoogleIntegration:
-    """Complete Google Ecosystem Integration - All services in one class"""
-    
-    def __init__(self):
-        self.timezone = self._get_user_timezone()
-        self.credentials = None
-        self.services = {}
-        self.sites_config = self._load_sites_config()
-        
-        if GOOGLE_APIS_AVAILABLE:
-            self._initialize_services()
-    
-    def _get_user_timezone(self):
-        """Get user's timezone with proper fallback"""
-        try:
-            from flask import has_request_context, session
-            if has_request_context() and session:
-                user_tz = session.get('user_timezone')
-                if user_tz:
-                    return pytz.timezone(user_tz)
-        except:
-            pass
-        return pytz.timezone('America/New_York')
-    
-    def _initialize_services(self):
-        """Initialize all Google API services with automatic token refresh"""
-        try:
-            # Import the token manager
-            from modules.google_token_refresh import get_google_credentials, token_manager
-            
-            # Get valid credentials with automatic refresh
-            self.credentials = get_google_credentials()
-            
-            if not self.credentials:
-                print("No valid Google credentials available - authentication required")
-                print("Visit /google/auth/start to re-authenticate")
-                return
-            
-            print("Valid Google credentials obtained")
-            
-            # Initialize all services with refreshed credentials
+        # Gmail overnight (multiple aliases)
+        if user_lower in ["overnight", "mail", "emails", "inbox", "check mail"]:
             try:
-                # Core services (Phase 1)
-                self.services['gmail'] = build('gmail', 'v1', credentials=self.credentials, cache_discovery=False)
-                self.services['calendar'] = build('calendar', 'v3', credentials=self.credentials, cache_discovery=False)
-                self.services['drive'] = build('drive', 'v3', credentials=self.credentials, cache_discovery=False)
+                print("Fetching overnight emails...")
+                msgs = list_overnight(include_unread=True, include_primary=False)
                 
-                # Content creation services (Phase 2)
-                self.services['docs'] = build('docs', 'v1', credentials=self.credentials, cache_discovery=False)
-                self.services['sheets'] = build('sheets', 'v4', credentials=self.credentials, cache_discovery=False)
-                self.services['slides'] = build('slides', 'v1', credentials=self.credentials, cache_discovery=False)
+                if not msgs or not isinstance(msgs, list):
+                    response_data = {"SyntaxPrime": "Gmail service unavailable. Check your Google OAuth setup."}
+                    save_conversation_enhanced(project, user_input, response_data)
+                    return response_data, True
                 
-                # Analytics services (Phase 2) - UPDATED FOR GA4
-                self.services['analyticsdata'] = build('analyticsdata', 'v1beta', credentials=self.credentials, cache_discovery=False)
-                self.services['searchconsole'] = build('searchconsole', 'v1', credentials=self.credentials, cache_discovery=False)
-                
-                print(f"Google services initialized: {list(self.services.keys())}")
-                
-                # Get token status for debugging
-                token_status = token_manager.get_token_status()
-                print(f"Token status: {token_status['status']} - {token_status['message']}")
-                
-            except Exception as service_error:
-                print(f"Failed to initialize some Google services: {service_error}")
-                # Continue with partial services if some fail
-                
-        except ImportError:
-            print("Google token refresh module not available - falling back to legacy token handling")
-            self._initialize_services_legacy()
-        except Exception as e:
-            print(f"Failed to initialize Google services with token manager: {e}")
-            self._initialize_services_legacy()
-    
-    def _initialize_services_legacy(self):
-        """Legacy service initialization (fallback)"""
-        try:
-            token_path = os.getenv('GOOGLE_TOKEN_PATH', 'token.json')
-            if os.path.exists(token_path):
-                # Load credentials
-                self.credentials = Credentials.from_authorized_user_file(token_path)
-                
-                # CRITICAL: Always check and refresh if needed
-                if self.credentials:
-                    if self.credentials.expired and self.credentials.refresh_token:
-                        try:
-                            self.credentials.refresh(Request())
-                            
-                            # Save the refreshed token back to file
-                            with open(token_path, 'w') as token_file:
-                                token_file.write(self.credentials.to_json())
-                            
-                            print("Token refreshed successfully (legacy method)")
-                        except Exception as refresh_error:
-                            print(f"Token refresh failed: {refresh_error}")
-                            print("   You may need to re-authenticate")
-                            return
-                    
-                    elif self.credentials.expired and not self.credentials.refresh_token:
-                        print("Token expired and no refresh token available")
-                        print("   Run the manual token creation script with prompt='consent'")
-                        return
-                    
-                    if self.credentials.valid:
-                        # Initialize all services
-                        self.services['gmail'] = build('gmail', 'v1', credentials=self.credentials)
-                        self.services['calendar'] = build('calendar', 'v3', credentials=self.credentials)
-                        self.services['drive'] = build('drive', 'v3', credentials=self.credentials)
-                        
-                        # Content creation services
-                        try:
-                            self.services['docs'] = build('docs', 'v1', credentials=self.credentials)
-                            self.services['sheets'] = build('sheets', 'v4', credentials=self.credentials)
-                            self.services['slides'] = build('slides', 'v1', credentials=self.credentials)
-                        except Exception as e:
-                            print(f"Content creation APIs failed: {e}")
-                        
-                        # Analytics services - UPDATED FOR GA4
-                        try:
-                            # GA4 Data API instead of old Reporting API
-                            self.services['analyticsdata'] = build('analyticsdata', 'v1beta', credentials=self.credentials)
-                            self.services['searchconsole'] = build('searchconsole', 'v1', credentials=self.credentials)
-                            print("GA4 Analytics Data API initialized (legacy)")
-                        except Exception as e:
-                            print(f"Analytics APIs failed: {e}")
-                        
-                        print(f"Google services initialized (legacy): {list(self.services.keys())}")
-                    else:
-                        print("Google credentials invalid after refresh attempt")
+                if len(msgs) == 0:
+                    summary_prompt = "No new emails since midnight. Your inbox is caught up."
                 else:
-                    print("Could not load Google credentials")
-            else:
-                print(f"No Google token file found at: {token_path}")
-        except Exception as e:
-            print(f"Failed to initialize Google services (legacy): {e}")
-    
-    def refresh_credentials_if_needed(self):
-        """Public method to refresh credentials when needed - UPDATED"""
-        try:
-            from modules.google_token_refresh import get_google_credentials, force_token_refresh
-            
-            # Try to get fresh credentials
-            fresh_credentials = get_google_credentials()
-            
-            if fresh_credentials:
-                # Update stored credentials
-                self.credentials = fresh_credentials
+                    # Store context for follow-ups
+                    ConversationalEmailContext.store_morning_briefing_emails(
+                        session_id=project,
+                        emails=[{
+                            'sender': self._extract_email_sender(msg),
+                            'subject': self._extract_email_subject(msg),
+                            'original_msg': msg
+                        } for msg in msgs[:10]]
+                    )
+                    
+                    summary_prompt = f"Found {len(msgs)} overnight emails:\n\n"
+                    for i, msg in enumerate(msgs[:5], 1):
+                        sender = self._extract_email_sender(msg)
+                        subject = self._extract_email_subject(msg)
+                        summary_prompt += f"{i}. {sender}: {subject}\n"
+                    
+                    if len(msgs) > 5:
+                        summary_prompt += f"\n... and {len(msgs) - 5} more emails"
                 
-                # Clear service cache to force recreation with new credentials
-                self.services.clear()
+                retrieval_ctx = enhanced_retrieve(summary_prompt, k=5) if is_ready() else []
+                response_data = generate_response(
+                    summary_prompt, use_voices, random_toggle,
+                    project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+                )
                 
-                # Re-initialize services
-                self._initialize_services()
+                save_conversation_enhanced(project, user_input, response_data)
+                return response_data, True
                 
-                print("Credentials refreshed and services reinitialized")
-                return True
-            else:
-                print("Could not obtain valid credentials")
-                return False
+            except Exception as e:
+                print(f"Overnight emails check failed: {e}")
+                response_data = {"SyntaxPrime": f"Gmail integration error: {str(e)}. Please check your Google OAuth setup."}
+                save_conversation_enhanced(project, user_input, response_data)
+                return response_data, True
+
+        # Gmail search (multiple aliases)
+        if user_lower.startswith(("search ", "find ", "email about ")):
+            try:
+                # Extract search term
+                search_term = user_input[user_input.find(' ') + 1:]  # Get everything after first space
+                print(f"Gmail search for: {search_term}")
                 
-        except ImportError:
-            # Fall back to legacy refresh
-            if not self.credentials:
-                return False
+                msgs = gmail_search(search_term)
                 
-            if self.credentials.expired and self.credentials.refresh_token:
+                if not msgs or not isinstance(msgs, list):
+                    response_data = {"SyntaxPrime": f"Gmail search unavailable. Check your Google OAuth setup."}
+                    save_conversation_enhanced(project, user_input, response_data)
+                    return response_data, True
+                
+                if len(msgs) == 0:
+                    summary_prompt = f"No emails found matching '{search_term}'"
+                else:
+                    summary_prompt = f"Found {len(msgs)} emails matching '{search_term}':\n\n"
+                    for i, msg in enumerate(msgs[:5], 1):
+                        sender = self._extract_email_sender(msg)
+                        subject = self._extract_email_subject(msg)
+                        summary_prompt += f"{i}. {sender}: {subject}\n"
+                
+                retrieval_ctx = enhanced_retrieve(summary_prompt, k=5) if is_ready() else []
+                response_data = generate_response(
+                    summary_prompt, use_voices, random_toggle,
+                    project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+                )
+                
+                save_conversation_enhanced(project, user_input, response_data)
+                return response_data, True
+                
+            except Exception as e:
+                print(f"Gmail search failed: {e}")
+                response_data = {"SyntaxPrime": f"Gmail search error: {str(e)}. Please check your Google OAuth setup."}
+                save_conversation_enhanced(project, user_input, response_data)
+                return response_data, True
+        
+        # Calendar commands - FIXED TO USE ALL CALENDARS
+        if user_lower in ["calendar", "today", "meetings", "schedule"]:
+            try:
+                print("Fetching today's calendar events from all calendars...")
+                # Use the new all-calendars approach
+                events = list_today_events_all_calendars(max_results=20)
+                
+                if not events or not isinstance(events, list):
+                    response_data = {"SyntaxPrime": "Calendar service unavailable. Check your Google OAuth setup."}
+                    save_conversation_enhanced(project, user_input, response_data)
+                    return response_data, True
+                
+                if len(events) == 0:
+                    summary_prompt = "No events found for today across all your calendars. Your schedule is completely clear."
+                else:
+                    # Use the enhanced formatter that shows calendar names
+                    calendar_summary = format_calendar_summary_enhanced(events, "Today's Calendar (All Calendars)")
+                    summary_prompt = f"Here's your complete calendar for today:\n\n{calendar_summary}"
+                    
+                    # Store context for follow-ups
+                    enhanced_conversation_context.store_calendar_report(
+                        session_id=project,
+                        events=events,
+                        report_type='today'
+                    )
+                
+                retrieval_ctx = enhanced_retrieve(summary_prompt, k=5) if is_ready() else []
+                response_data = generate_response(
+                    summary_prompt, use_voices, random_toggle,
+                    project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+                )
+                
+                save_conversation_enhanced(project, user_input, response_data)
+                return response_data, True
+                
+            except Exception as e:
+                print(f"Calendar check failed: {e}")
+                response_data = {"SyntaxPrime": f"Calendar integration error: {str(e)}. Please check your Google OAuth setup."}
+                save_conversation_enhanced(project, user_input, response_data)
+                return response_data, True
+        
+        # Next meeting command
+        if user_lower in ["next meeting", "next", "upcoming"]:
+            try:
+                print("Getting next meeting...")
+                next_meeting = get_next_meeting()
+                
+                if not next_meeting or isinstance(next_meeting, dict) and "error" in next_meeting:
+                    summary_prompt = "No upcoming meetings found in your calendar."
+                elif next_meeting and next_meeting.get('summary'):
+                    calendar_name = next_meeting.get('calendar_name', '')
+                    calendar_suffix = f" ({calendar_name})" if calendar_name else ""
+                    summary_prompt = f"Next meeting: {next_meeting['summary']} at {next_meeting.get('start_formatted', 'Unknown time')}{calendar_suffix}"
+                else:
+                    summary_prompt = "Next meeting lookup completed but no readable meeting data found."
+                
+                retrieval_ctx = enhanced_retrieve(summary_prompt, k=5) if is_ready() else []
+                response_data = generate_response(
+                    summary_prompt, use_voices, random_toggle,
+                    project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+                )
+                
+                save_conversation_enhanced(project, user_input, response_data)
+                return response_data, True
+                
+            except Exception as e:
+                print(f"Next meeting check failed: {e}")
+                response_data = {"SyntaxPrime": f"Next meeting error: {str(e)}. Please check your Google OAuth setup."}
+                save_conversation_enhanced(project, user_input, response_data)
+                return response_data, True
+        
+        # Good morning briefing - Keep original for backward compatibility
+        if user_lower in ["good morning", "morning", "gm"]:
+            try:
+                print("Good Morning command triggered")
+                
+                # Build comprehensive morning briefing
+                morning_briefing = "Good morning! Here's your daily briefing:\n\n"
+                
+                # Email section
                 try:
-                    self.credentials.refresh(Request())
-                    
-                    # Save refreshed token
-                    token_path = os.getenv('GOOGLE_TOKEN_PATH', 'token.json')
-                    with open(token_path, 'w') as token_file:
-                        token_file.write(self.credentials.to_json())
-                    
-                    print("Credentials refreshed successfully (legacy)")
-                    return True
+                    msgs = list_overnight(include_unread=True, include_primary=False)
+                    morning_briefing += "**OVERNIGHT EMAILS**\n"
+                    if msgs and isinstance(msgs, list) and len(msgs) > 0:
+                        morning_briefing += f"Found {len(msgs)} overnight emails\n"
+                        
+                        # Store context for follow-ups
+                        ConversationalEmailContext.store_morning_briefing_emails(
+                            session_id=project,
+                            emails=[{
+                                'sender': self._extract_email_sender(msg),
+                                'subject': self._extract_email_subject(msg),
+                                'original_msg': msg
+                            } for msg in msgs[:10]]
+                        )
+                    else:
+                        morning_briefing += "No overnight emails found\n"
                 except Exception as e:
-                    print(f"Credential refresh failed: {e}")
-                    return False
-            
-            return self.credentials.valid if self.credentials else False
+                    morning_briefing += f"Email check failed: {str(e)}\n"
+                
+                # Calendar section - UPDATED TO USE ALL CALENDARS
+                try:
+                    events = list_today_events_all_calendars(max_results=20)
+                    morning_briefing += "\n**TODAY'S CALENDAR (ALL CALENDARS)**\n"
+                    if events and isinstance(events, list) and len(events) > 0:
+                        calendar_summary = format_calendar_summary_enhanced(events, "")
+                        morning_briefing += calendar_summary + "\n"
+                    else:
+                        morning_briefing += "No events scheduled for today across any calendar\n"
+                except Exception as e:
+                    morning_briefing += f"Calendar check failed: {str(e)}\n"
+                
+                # Next meeting section
+                try:
+                    next_meeting = get_next_meeting()
+                    morning_briefing += "\n**NEXT MEETING**\n"
+                    if next_meeting and next_meeting.get('summary'):
+                        calendar_name = next_meeting.get('calendar_name', '')
+                        calendar_suffix = f" ({calendar_name})" if calendar_name else ""
+                        morning_briefing += f"{next_meeting.get('summary', 'Unknown')} at {next_meeting.get('start_formatted', 'Unknown time')}{calendar_suffix}\n"
+                    else:
+                        morning_briefing += "No upcoming meetings found\n"
+                except Exception as e:
+                    morning_briefing += f"Next meeting check failed: {str(e)}\n"
+                
+                # Save daily log
+                try:
+                    save_daily_log_enhanced("morning", morning_briefing)
+                except Exception as e:
+                    print(f"Failed to save daily log: {e}")
+                
+                retrieval_ctx = enhanced_retrieve(morning_briefing, k=5) if is_ready() else []
+                response_data = generate_response(
+                    f"Summarize this morning briefing and suggest 3 key priorities:\n\n{morning_briefing}",
+                    use_voices, random_toggle,
+                    project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+                )
+                
+                save_conversation_enhanced(project, user_input, response_data)
+                return response_data, True
+                
+            except Exception as e:
+                print(f"Morning briefing failed: {e}")
+                response_data = {"SyntaxPrime": f"Morning briefing failed: {str(e)}. Please check your Google OAuth setup."}
+                save_conversation_enhanced(project, user_input, response_data)
+                return response_data, True
+        
+        return {}, False
+
+    def handle_super_morning_command(self, project, use_voices, random_toggle):
+        """
+        SUPER MORNING BRIEFING: Calendar + Inbox + ClickUp + Priorities
+        Single command that gives you EVERYTHING you need to start the day
+        """
+        print("=== SUPER MORNING BRIEFING TRIGGERED ===")
+        
+        # Import the enhanced functions
+        from utils.gmail_client import list_today_events_all_calendars, format_calendar_summary_enhanced
+        
+        # Track all integrations
+        integrations = {
+            'emails': {'success': False, 'data': None, 'error': None},
+            'calendar': {'success': False, 'data': None, 'error': None},
+            'next_meeting': {'success': False, 'data': None, 'error': None},
+            'clickup': {'success': False, 'data': None, 'error': None}
+        }
+        
+        # 1. OVERNIGHT EMAILS
+        try:
+            print("📧 Fetching overnight emails...")
+            msgs = list_overnight(include_unread=True, include_primary=False)
+            if msgs and len(msgs) > 0:
+                integrations['emails']['success'] = True
+                integrations['emails']['data'] = msgs
+                print(f"✅ Got {len(msgs)} overnight emails")
+            else:
+                integrations['emails']['error'] = "No overnight emails"
         except Exception as e:
-            print(f"Credential refresh error: {e}")
-            return False
-    
-    def ensure_valid_credentials(self):
-        """Ensure we have valid credentials before making API calls"""
-        if not self.credentials or self.credentials.expired:
-            success = self.refresh_credentials_if_needed()
-            if not success:
-                raise Exception("Google authentication required - visit /google/auth/start to re-authenticate")
-        return True
+            integrations['emails']['error'] = str(e)
+            print(f"❌ Email fetch failed: {e}")
+        
+        # 2. TODAY'S CALENDAR (ALL CALENDARS)
+        try:
+            print("📅 Fetching today's calendar events...")
+            events = list_today_events_all_calendars(max_results=20)
+            if events and len(events) > 0:
+                integrations['calendar']['success'] = True
+                integrations['calendar']['data'] = events
+                print(f"✅ Got {len(events)} calendar events")
+            else:
+                integrations['calendar']['error'] = "No events today"
+        except Exception as e:
+            integrations['calendar']['error'] = str(e)
+            print(f"❌ Calendar fetch failed: {e}")
+        
+        # 3. NEXT MEETING
+        try:
+            print("⏰ Fetching next meeting...")
+            next_meeting = get_next_meeting()
+            if next_meeting and next_meeting.get('summary'):
+                integrations['next_meeting']['success'] = True
+                integrations['next_meeting']['data'] = next_meeting
+                print(f"✅ Next meeting: {next_meeting.get('summary')}")
+            else:
+                integrations['next_meeting']['error'] = "No upcoming meetings"
+        except Exception as e:
+            integrations['next_meeting']['error'] = str(e)
+            print(f"❌ Next meeting fetch failed: {e}")
+        
+        # 4. CLICKUP TASKS
+        try:
+            print("📋 Fetching ClickUp tasks...")
+            from modules.clickup_integration import get_clickup_morning_briefing, is_clickup_configured
+            
+            if is_clickup_configured():
+                clickup_briefing = get_clickup_morning_briefing()
+                integrations['clickup']['success'] = True
+                integrations['clickup']['data'] = clickup_briefing
+                print("✅ Got ClickUp morning briefing")
+            else:
+                integrations['clickup']['error'] = "ClickUp not configured"
+        except Exception as e:
+            integrations['clickup']['error'] = str(e)
+            print(f"❌ ClickUp fetch failed: {e}")
+        
+        # BUILD COMPREHENSIVE BRIEFING
+        briefing_lines = ["🌅 **SUPER MORNING BRIEFING**", ""]
+        
+        # Email Section
+        briefing_lines.append("📧 **OVERNIGHT EMAILS**")
+        if integrations['emails']['success']:
+            email_count = len(integrations['emails']['data'])
+            briefing_lines.append(f"✅ Found {email_count} overnight emails")
+            
+            # Show top 3 email previews
+            for i, msg in enumerate(integrations['emails']['data'][:3]):
+                sender = self._extract_email_sender(msg)
+                subject = self._extract_email_subject(msg)
+                if subject and len(subject) > 50:
+                    subject = subject[:50] + "..."
+                briefing_lines.append(f"   {i+1}. {sender}: {subject}")
+        else:
+            briefing_lines.append(f"❌ {integrations['emails']['error']}")
+        briefing_lines.append("")
+        
+        # Calendar Section
+        briefing_lines.append("📅 **TODAY'S SCHEDULE**")
+        if integrations['calendar']['success']:
+            events = integrations['calendar']['data']
+            briefing_lines.append(f"✅ {len(events)} events scheduled today")
+            
+            # Use our enhanced formatter
+            calendar_summary = format_calendar_summary_enhanced(events, "")
+            briefing_lines.append(calendar_summary)
+        else:
+            briefing_lines.append(f"❌ {integrations['calendar']['error']}")
+        briefing_lines.append("")
+        
+        # Next Meeting Section
+        briefing_lines.append("⏰ **NEXT MEETING**")
+        if integrations['next_meeting']['success']:
+            meeting = integrations['next_meeting']['data']
+            meeting_time = meeting.get('start_formatted', 'Unknown time')
+            meeting_title = meeting.get('summary', 'Untitled Meeting')
+            calendar_name = meeting.get('calendar_name', '')
+            calendar_suffix = f" ({calendar_name})" if calendar_name else ""
+            briefing_lines.append(f"✅ {meeting_title} at {meeting_time}{calendar_suffix}")
+        else:
+            briefing_lines.append(f"❌ {integrations['next_meeting']['error']}")
+        briefing_lines.append("")
+        
+        # ClickUp Section
+        briefing_lines.append("📋 **CLICKUP TASKS**")
+        if integrations['clickup']['success']:
+            briefing_lines.append("✅ ClickUp integration active")
+            briefing_lines.append(integrations['clickup']['data'])
+        else:
+            briefing_lines.append(f"❌ {integrations['clickup']['error']}")
+        briefing_lines.append("")
+        
+        # Integration Health Check
+        successful_integrations = sum(1 for i in integrations.values() if i['success'])
+        total_integrations = len(integrations)
+        
+        briefing_lines.append("🔧 **SYSTEM STATUS**")
+        briefing_lines.append(f"✅ {successful_integrations}/{total_integrations} integrations working")
+        
+        if successful_integrations == total_integrations:
+            briefing_lines.append("🎉 All systems operational!")
+        elif successful_integrations >= 2:
+            briefing_lines.append("⚠️ Partial functionality - some integrations down")
+        else:
+            briefing_lines.append("❌ Multiple integration failures - check authentication")
+        
+        # Generate the final briefing
+        morning_briefing = "\n".join(briefing_lines)
+        
+        try:
+            print("🤖 Generating AI response...")
+            retrieval_ctx = enhanced_retrieve(morning_briefing, k=8) if is_ready() else []
+            
+            ai_prompt = f"""Analyze this super morning briefing and provide:
+1. A concise executive summary 
+2. Top 3 priorities for the day
+3. Any urgent items that need immediate attention
+
+Be specific about actual data provided, but don't reference details not explicitly mentioned.
+
+Morning Briefing Data:
+{morning_briefing}"""
+            
+            response_data = generate_response(
+                ai_prompt, use_voices, random_toggle,
+                project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+            )
+            
+            print("✅ Super morning briefing completed successfully")
+            return response_data
+            
+        except Exception as e:
+            print(f"❌ AI response generation failed: {e}")
+            # Fallback - return the raw briefing
+            return {"SyntaxPrime": f"Super morning briefing compiled (AI processing failed):\n\n{morning_briefing}"}
         
 # Section 3: Site Configuration and Date Parsing Methods
 
