@@ -435,6 +435,7 @@ If this is about popular culture, TV shows, movies, books, or well-known topics,
 # Section 4: Main Chat Route (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)
 # Section 4: Main Chat Route (UPDATED WITH UNIFIED CONVERSATION CONTEXT)
 # Section 4: Main Chat Route (UPDATED WITH SLACK INTEGRATION)
+# Section 4: Main Chat Route (UPDATED WITH BLUESKY INTEGRATION)
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if not session.get('logged_in'):
@@ -531,6 +532,17 @@ def index():
                 save_conversation_enhanced(project, user_input, response_data)
                 return _render_enhanced(project, response_data)
 
+        # NEW: Try BlueSky commands
+        if is_bluesky_configured():
+            try:
+                response_content = process_bluesky_command(user_input)
+                if response_content and "Available BlueSky commands" not in response_content:
+                    response_data = {"SyntaxPrime": response_content}
+                    save_conversation_enhanced(project, user_input, response_data)
+                    return _render_enhanced(project, response_data)
+            except Exception as e:
+                app.logger.error(f"BlueSky processing failed: {e}")
+
         # Handle scrape command
         if user_input.lower().startswith("scrape "):
             url = user_input.split(" ", 1)[1].strip()
@@ -573,7 +585,6 @@ def index():
             save_conversation_enhanced(project, user_input, response_data)
 
     return _render_enhanced(selected_project, response_data)
-
     
 # Section 5: Brain Building Routes
 from modules.brain import handle_build_brain, handle_build_new_brain, get_brain_status, get_brain_control_dashboard
