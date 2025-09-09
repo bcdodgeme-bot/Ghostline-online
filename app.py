@@ -54,6 +54,8 @@ from modules.calendar_telegram_integration import (
     calendar_monitor_hotfix as calendar_monitor
 )
 
+from modules.bluesky_integration import process_bluesky_command, is_bluesky_configured
+
 # OCR/File Parsing
 from PIL import Image
 import fitz
@@ -254,204 +256,6 @@ setup_easyocr_environment()
 
 # Register markdown filter
 app.jinja_env.filters['markdown'] = markdown_filter
-
-# Add this to the bottom of Section 2 in modules/enhanced_google_integration.py
-# This provides better error handling for the ClickUp integration
-
-    def handle_super_morning_command(project, use_voices, random_toggle):
-        """
-        SUPER MORNING BRIEFING: Calendar + Inbox + ClickUp + Priorities
-        Single command that gives you EVERYTHING you need to start the day
-        ENHANCED VERSION WITH BETTER ERROR HANDLING
-        """
-        print("=== SUPER MORNING BRIEFING TRIGGERED ===")
-        
-        # Import the enhanced functions
-        from utils.gmail_client import list_today_events_all_calendars, format_calendar_summary_enhanced
-        
-        # Track all integrations
-        integrations = {
-            'emails': {'success': False, 'data': None, 'error': None},
-            'calendar': {'success': False, 'data': None, 'error': None},
-            'next_meeting': {'success': False, 'data': None, 'error': None},
-            'clickup': {'success': False, 'data': None, 'error': None}
-        }
-        
-        # 1. OVERNIGHT EMAILS
-        try:
-            print("📧 Fetching overnight emails...")
-            msgs = list_overnight(include_unread=True, include_primary=False)
-            if msgs and len(msgs) > 0:
-                integrations['emails']['success'] = True
-                integrations['emails']['data'] = msgs
-                print(f"✅ Got {len(msgs)} overnight emails")
-            else:
-                integrations['emails']['error'] = "No overnight emails"
-        except Exception as e:
-            integrations['emails']['error'] = str(e)
-            print(f"❌ Email fetch failed: {e}")
-        
-        # 2. TODAY'S CALENDAR (ALL CALENDARS)
-        try:
-            print("📅 Fetching today's calendar events...")
-            events = list_today_events_all_calendars(max_results=20)
-            if events and len(events) > 0:
-                integrations['calendar']['success'] = True
-                integrations['calendar']['data'] = events
-                print(f"✅ Got {len(events)} calendar events")
-            else:
-                integrations['calendar']['error'] = "No events today"
-        except Exception as e:
-            integrations['calendar']['error'] = str(e)
-            print(f"❌ Calendar fetch failed: {e}")
-        
-        # 3. NEXT MEETING
-        try:
-            print("⏰ Fetching next meeting...")
-            next_meeting = get_next_meeting()
-            if next_meeting and next_meeting.get('summary'):
-                integrations['next_meeting']['success'] = True
-                integrations['next_meeting']['data'] = next_meeting
-                print(f"✅ Next meeting: {next_meeting.get('summary')}")
-            else:
-                integrations['next_meeting']['error'] = "No upcoming meetings"
-        except Exception as e:
-            integrations['next_meeting']['error'] = str(e)
-            print(f"❌ Next meeting fetch failed: {e}")
-        
-        # 4. CLICKUP TASKS - Enhanced error handling
-        try:
-            print("📋 Fetching ClickUp tasks...")
-            # Try to import ClickUp integration safely
-            try:
-                from modules.clickup_integration import get_clickup_morning_briefing, is_clickup_configured
-                clickup_available = True
-            except ImportError as e:
-                print(f"❌ ClickUp module not available: {e}")
-                clickup_available = False
-            
-            if clickup_available and is_clickup_configured():
-                try:
-                    clickup_briefing = get_clickup_morning_briefing()
-                    if clickup_briefing and "error" not in clickup_briefing.lower():
-                        integrations['clickup']['success'] = True
-                        integrations['clickup']['data'] = clickup_briefing
-                        print("✅ Got ClickUp morning briefing")
-                    else:
-                        integrations['clickup']['error'] = "ClickUp briefing returned error"
-                except Exception as clickup_error:
-                    integrations['clickup']['error'] = f"ClickUp function failed: {str(clickup_error)}"
-                    print(f"❌ ClickUp function failed: {clickup_error}")
-            else:
-                integrations['clickup']['error'] = "ClickUp not configured or not available"
-        except Exception as e:
-            integrations['clickup']['error'] = str(e)
-            print(f"❌ ClickUp fetch failed: {e}")
-        
-        # BUILD COMPREHENSIVE BRIEFING
-        briefing_lines = ["🌅 **SUPER MORNING BRIEFING**", ""]
-        
-        # Email Section
-        briefing_lines.append("📧 **OVERNIGHT EMAILS**")
-        if integrations['emails']['success']:
-            email_count = len(integrations['emails']['data'])
-            briefing_lines.append(f"✅ Found {email_count} overnight emails")
-            
-            # Show top 3 email previews
-            for i, msg in enumerate(integrations['emails']['data'][:3]):
-                sender = self._extract_email_sender(msg)
-                subject = self._extract_email_subject(msg)
-                if subject and len(subject) > 50:
-                    subject = subject[:50] + "..."
-                briefing_lines.append(f"   {i+1}. {sender}: {subject}")
-        else:
-            briefing_lines.append(f"❌ {integrations['emails']['error']}")
-        briefing_lines.append("")
-        
-        # Calendar Section
-        briefing_lines.append("📅 **TODAY'S SCHEDULE**")
-        if integrations['calendar']['success']:
-            events = integrations['calendar']['data']
-            briefing_lines.append(f"✅ {len(events)} events scheduled today")
-            
-            # Use our enhanced formatter
-            calendar_summary = format_calendar_summary_enhanced(events, "")
-            briefing_lines.append(calendar_summary)
-        else:
-            briefing_lines.append(f"❌ {integrations['calendar']['error']}")
-        briefing_lines.append("")
-        
-        # Next Meeting Section
-        briefing_lines.append("⏰ **NEXT MEETING**")
-        if integrations['next_meeting']['success']:
-            meeting = integrations['next_meeting']['data']
-            meeting_time = meeting.get('start_formatted', 'Unknown time')
-            meeting_title = meeting.get('summary', 'Untitled Meeting')
-            calendar_name = meeting.get('calendar_name', '')
-            calendar_suffix = f" ({calendar_name})" if calendar_name else ""
-            briefing_lines.append(f"✅ {meeting_title} at {meeting_time}{calendar_suffix}")
-        else:
-            briefing_lines.append(f"❌ {integrations['next_meeting']['error']}")
-        briefing_lines.append("")
-        
-        # ClickUp Section - Enhanced display
-        briefing_lines.append("📋 **CLICKUP TASKS**")
-        if integrations['clickup']['success']:
-            briefing_lines.append("✅ ClickUp integration active")
-            # Clean up the ClickUp briefing display
-            clickup_data = integrations['clickup']['data']
-            if isinstance(clickup_data, str):
-                # Remove any redundant headers or markdown
-                clickup_data = clickup_data.replace("**CLICKUP MORNING BRIEFING**\n", "")
-                clickup_data = clickup_data.replace("📋 **CLICKUP MORNING BRIEFING**", "")
-                briefing_lines.append(clickup_data.strip())
-        else:
-            briefing_lines.append(f"❌ {integrations['clickup']['error']}")
-        briefing_lines.append("")
-        
-        # Integration Health Check
-        successful_integrations = sum(1 for i in integrations.values() if i['success'])
-        total_integrations = len(integrations)
-        
-        briefing_lines.append("🔧 **SYSTEM STATUS**")
-        briefing_lines.append(f"✅ {successful_integrations}/{total_integrations} integrations working")
-        
-        if successful_integrations == total_integrations:
-            briefing_lines.append("🎉 All systems operational!")
-        elif successful_integrations >= 2:
-            briefing_lines.append("⚠️ Some integrations offline - core functionality available")
-        else:
-            briefing_lines.append("❌ Multiple integration failures - check authentication")
-        
-        # Generate the final briefing
-        morning_briefing = "\n".join(briefing_lines)
-        
-        try:
-            print("🤖 Generating AI response...")
-            retrieval_ctx = enhanced_retrieve(morning_briefing, k=8) if is_ready() else []
-            
-            ai_prompt = f"""Analyze this super morning briefing and provide:
-1. A concise executive summary 
-2. Top 3 priorities for the day
-3. Any urgent items that need immediate attention
-
-Be specific about actual data provided, but don't reference details not explicitly mentioned.
-
-Morning Briefing Data:
-{morning_briefing}"""
-            
-            response_data = generate_response(
-                ai_prompt, use_voices, random_toggle,
-                project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
-            )
-            
-            print("✅ Super morning briefing completed successfully")
-            return response_data
-            
-        except Exception as e:
-            print(f"❌ AI response generation failed: {e}")
-            # Fallback - return the raw briefing
-            return {"SyntaxPrime": f"Super morning briefing compiled (AI processing failed):\n\n{morning_briefing}"}
 
 # Section 3: Helper Functions for Chat Processing
 # Section 3: Helper Functions for Chat Processing - FIXED VERSION
@@ -3137,6 +2941,7 @@ def calendar_alerts_settings():
 # Section 13: Mobile API Routes (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)
 # Section 13: Mobile API Routes (UPDATED WITH SLACK INTEGRATION)
 # Section 13: Mobile API Routes (ENHANCED WITH JWT AUTHENTICATION FOR iOS)
+# Section 13: Mobile API Routes (ENHANCED WITH JWT AUTHENTICATION FOR iOS + BLUESKY)
 
 def generate_mobile_jwt(username: str) -> str:
     """Generate JWT token for mobile authentication"""
@@ -3281,7 +3086,7 @@ def mobile_get_conversations(project):
 
 @app.route('/api/mobile/chat', methods=['POST'])
 def mobile_chat():
-    """Mobile chat with full AI processing - ENHANCED with JWT auth + all integrations"""
+    """Mobile chat with full AI processing - ENHANCED with JWT auth + all integrations + BlueSky"""
     if not is_mobile_authenticated():
         return jsonify({'error': 'Unauthorized'}), 401
     
@@ -3307,7 +3112,21 @@ def mobile_chat():
         except Exception as e:
             app.logger.warning(f"Brain context refresh failed: {e}")
 
-        # UPDATED: Enhanced Marketing Commands with Context Support
+        # NEW: Try BlueSky commands first
+        if is_bluesky_configured():
+            app.logger.info(f"Mobile: BlueSky is configured, processing command: '{user_input}'")
+            try:
+                response_content = process_bluesky_command(user_input)
+                if response_content and "Available BlueSky commands" not in response_content:
+                    response_data = {"SyntaxPrime": response_content}
+                    handled = True
+                    app.logger.info(f"Mobile: BlueSky command handled successfully")
+                    save_conversation_enhanced(project, user_input, response_data)
+                    return jsonify({'success': True, 'responses': response_data})
+            except Exception as e:
+                app.logger.error(f"Mobile BlueSky processing failed: {e}")
+
+        # Enhanced Marketing Commands with Context Support
         if is_marketing_configured():
             app.logger.info(f"Mobile: Enhanced marketing is configured, processing command: '{user_input}'")
             response_data, handled = process_marketing_command_with_context(
@@ -3318,7 +3137,7 @@ def mobile_chat():
                 save_conversation_enhanced(project, user_input, response_data)
                 return jsonify({'success': True, 'responses': response_data})
 
-        # FIXED: Try Cloze commands with proper configuration validation
+        # Try Cloze commands with proper configuration validation
         if is_cloze_configured():
             app.logger.info(f"Mobile: Cloze is configured, processing command: '{user_input}'")
             response_data, handled = process_cloze_command(user_input, project, use_voices, random_toggle)
@@ -3327,14 +3146,13 @@ def mobile_chat():
                 save_conversation_enhanced(project, user_input, response_data)
                 return jsonify({'success': True, 'responses': response_data})
 
-        # UPDATED: Try Consolidated Google Integration (replaces both Phase 1 and Phase 2)
-        # This now includes your super morning briefing and fixed calendar integration!
+        # Try Consolidated Google Integration (replaces both Phase 1 and Phase 2)
         response_data, handled = process_google_ecosystem_commands(user_input, project, use_voices, random_toggle)
         if handled:
             save_conversation_enhanced(project, user_input, response_data)
             return jsonify({'success': True, 'responses': response_data})
 
-        # NEW: Try Calendar → Telegram integration
+        # Try Calendar → Telegram integration
         if is_calendar_telegram_configured():
             app.logger.info(f"Mobile: Calendar-Telegram is configured, processing command: '{user_input}'")
             response_data, handled = process_calendar_telegram_command(user_input, project, use_voices, random_toggle)
@@ -3424,7 +3242,8 @@ def mobile_status():
                 'cloze': is_cloze_configured(),
                 'clickup': is_clickup_configured(),
                 'telegram': is_telegram_configured(),
-                'calendar_telegram': is_calendar_telegram_configured()
+                'calendar_telegram': is_calendar_telegram_configured(),
+                'bluesky': is_bluesky_configured()  # NEW: BlueSky status
             },
             'projects': PROJECTS,
             'timestamp': datetime.datetime.utcnow().isoformat()
@@ -3441,6 +3260,7 @@ def mobile_status():
             'success': False,
             'error': f'Status check failed: {str(e)}'
         }), 500
+
 # Section 14: Google OAuth Integration
 # Section 14: Google OAuth Integration (COMPLETELY REPLACED)
 # Section 14: Google OAuth Integration (COMPLETELY REPLACED FOR PHASE 2)
