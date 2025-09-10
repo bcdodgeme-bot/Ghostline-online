@@ -14,6 +14,10 @@ from utils.gmail_client import (
     list_today_events, list_tomorrow_events, search_calendar,
     get_next_meeting, format_calendar_summary
 )
+# Add these imports to the top of app.py
+from modules.feedback_system import record_response_feedback, get_feedback_dashboard_data
+from modules.hybrid_analysis import generate_content_strategy_command
+from modules.settings_persistence import get_default_voice, apply_session_preferences
 import os, json, io
 import threading
 import time
@@ -70,6 +74,8 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
 import urllib.parse
+
+
 
 # JWT for mobile API
 try:
@@ -436,6 +442,8 @@ If this is about popular culture, TV shows, movies, books, or well-known topics,
 # Section 4: Main Chat Route (UPDATED WITH UNIFIED CONVERSATION CONTEXT)
 # Section 4: Main Chat Route (UPDATED WITH SLACK INTEGRATION)
 # Section 4: Main Chat Route (UPDATED WITH BLUESKY INTEGRATION)
+# Section 4: Main Chat Route (UPDATED WITH FIXED BLUESKY INTEGRATION - HIGHEST PRIORITY)
+# Section 4: Main Chat Route (UPDATED WITH FIXED BLUESKY INTEGRATION + CONTENT STRATEGY - HIGHEST PRIORITY)
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if not session.get('logged_in'):
@@ -465,7 +473,85 @@ def index():
         except Exception as e:
             print(f"Brain context refresh failed: {e}")
 
-        # Try Cloze + ClickUp integration commands FIRST (before other commands)
+        # FIXED: BlueSky commands with enhanced pattern matching (HIGHEST PRIORITY)
+        if is_bluesky_configured():
+            app.logger.info(f"Checking BlueSky command patterns for: '{user_input}'")
+            try:
+                # Enhanced BlueSky command detection with more flexible patterns
+                user_lower = user_input.lower().strip()
+                
+                # Comprehensive BlueSky trigger patterns
+                bluesky_patterns = [
+                    # Direct BlueSky mentions
+                    'bluesky', 'bsky', 'blue sky',
+                    # Action patterns
+                    'analyze bluesky', 'check bluesky', 'my bluesky', 'bluesky feed',
+                    'bluesky timeline', 'bluesky posts', 'bluesky analysis',
+                    # Engagement patterns
+                    'bluesky engagement', 'bluesky suggestions', 'who should i follow',
+                    'bluesky opportunities', 'social engagement', 'feed analysis',
+                    # High priority patterns
+                    'bluesky high priority', 'best bluesky posts', 'top bluesky',
+                    # Test patterns
+                    'bluesky test', 'test bluesky', 'bluesky connection'
+                ]
+                
+                # Check if input matches any BlueSky pattern
+                bluesky_detected = False
+                for pattern in bluesky_patterns:
+                    if pattern in user_lower:
+                        bluesky_detected = True
+                        app.logger.info(f"BlueSky pattern matched: '{pattern}'")
+                        break
+                
+                # Also check for standalone keywords that might be BlueSky related
+                standalone_keywords = ['bsky', 'bluesky']
+                if not bluesky_detected:
+                    for keyword in standalone_keywords:
+                        if user_lower == keyword or user_lower.startswith(keyword + ' ') or user_lower.endswith(' ' + keyword):
+                            bluesky_detected = True
+                            app.logger.info(f"BlueSky standalone keyword matched: '{keyword}'")
+                            break
+                
+                if bluesky_detected:
+                    app.logger.info(f"Processing BlueSky command: '{user_input}'")
+                    response_content = process_bluesky_command(user_input)
+                    
+                    # Check if we got a real response (not just the help menu)
+                    if response_content and "Available BlueSky commands" not in response_content:
+                        app.logger.info(f"BlueSky command successfully processed")
+                        response_data = {"SyntaxPrime": response_content}
+                        save_conversation_enhanced(project, user_input, response_data)
+                        return _render_enhanced(project, response_data)
+                    else:
+                        # If it's just the help menu, let it fall through to normal processing
+                        # but log that we tried BlueSky
+                        app.logger.info(f"BlueSky returned help menu, falling through to normal processing")
+                
+            except Exception as e:
+                app.logger.error(f"BlueSky processing failed: {e}")
+                # Don't fail the whole request, just log and continue
+                pass
+
+        # Try hybrid content strategy commands
+        try:
+            response_data, handled = generate_content_strategy_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+        except Exception as e:
+            app.logger.error(f"Content strategy command failed: {e}")
+
+        # Handle reminder commands with proper error handling
+        try:
+            response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+        except Exception as e:
+            app.logger.error(f"Reminder handler failed: {e}")
+
+        # Try Cloze + ClickUp integration commands
         if is_cloze_configured() and is_clickup_configured():
             try:
                 from modules.cloze_clickup_integration import process_cloze_clickup_command
@@ -479,69 +565,13 @@ def index():
                     response_data = {"SyntaxPrime": f"Integration module import failed: {str(e)}\nCheck if modules/cloze_clickup_integration.py exists and has no syntax errors."}
                     save_conversation_enhanced(project, user_input, response_data)
                     return _render_enhanced(project, response_data)
-            except Exception as e:
-                app.logger.error(f"Cloze integration error: {e}")
-                if user_input.lower() in ['relationship priorities', 'cloze productivity', 'productivity briefing']:
-                    response_data = {"SyntaxPrime": f"Integration error: {str(e)}"}
-                    save_conversation_enhanced(project, user_input, response_data)
-                    return _render_enhanced(project, response_data)
 
-        # Try Consolidated Google Integration
-        response_data, handled = process_google_ecosystem_commands(user_input, project, use_voices, random_toggle)
-        if handled:
-            save_conversation_enhanced(project, user_input, response_data)
-            return _render_enhanced(project, response_data)
-
-        # Try Calendar → Telegram integration commands
-        if is_calendar_telegram_configured():
-            response_data, handled = process_calendar_telegram_command(user_input, project, use_voices, random_toggle)
-            if handled:
-                save_conversation_enhanced(project, user_input, response_data)
-                return _render_enhanced(project, response_data)
-
-        # Try reminder commands
-        response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
-        if handled:
-            save_conversation_enhanced(project, user_input, response_data)
-            return _render_enhanced(project, response_data)
-
-        # Enhanced Marketing Commands with Context Support
-        if is_marketing_configured():
-            response_data, handled = process_marketing_command_with_context(
-                user_input, project, use_voices, random_toggle, marketing_context
-            )
-            if handled:
-                save_conversation_enhanced(project, user_input, response_data)
-                return _render_enhanced(project, response_data)
-
-        # Try Cloze commands with proper feature flag validation
-        if is_cloze_configured():
-            app.logger.info(f"Cloze is configured, processing command: '{user_input}'")
-            response_data, handled = process_cloze_command(user_input, project, use_voices, random_toggle)
-            if handled:
-                app.logger.info(f"Cloze command handled successfully")
-                save_conversation_enhanced(project, user_input, response_data)
-                return _render_enhanced(project, response_data)
-            else:
-                app.logger.info(f"Cloze command not recognized as Cloze-specific")
-
-        # Try ClickUp commands (with improved detection)
+        # Try ClickUp-only commands
         if is_clickup_configured():
             response_data, handled = process_clickup_command(user_input, project, use_voices, random_toggle)
             if handled:
                 save_conversation_enhanced(project, user_input, response_data)
                 return _render_enhanced(project, response_data)
-
-        # NEW: Try BlueSky commands
-        if is_bluesky_configured():
-            try:
-                response_content = process_bluesky_command(user_input)
-                if response_content and "Available BlueSky commands" not in response_content:
-                    response_data = {"SyntaxPrime": response_content}
-                    save_conversation_enhanced(project, user_input, response_data)
-                    return _render_enhanced(project, response_data)
-            except Exception as e:
-                app.logger.error(f"BlueSky processing failed: {e}")
 
         # Handle scrape command
         if user_input.lower().startswith("scrape "):
@@ -561,31 +591,92 @@ def index():
                         summary_prompt, use_voices, random_toggle,
                         project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
                     )
+                handled = True
             except Exception as e:
                 app.logger.error(f"Scrape command failed: {e}")
                 response_data = {"SyntaxPrime": f"Scrape failed: {e}"}
+                handled = True
             
             save_conversation_enhanced(project, user_input, response_data)
             return _render_enhanced(project, response_data)
 
-        # Normal flow with enhanced context checking
-        try:
-            retrieval_ctx = enhanced_retrieve(user_input, k=5, project=project) if is_ready() else []
-            
-            # Use enhanced response generation with context validation
-            response_data = generate_response_with_context_check(
-                user_input, use_voices, random_toggle,
-                project, CHAT_MODEL, retrieval_ctx
-            )
-            
-            save_conversation_enhanced(project, user_input, response_data)
-        except Exception as e:
-            app.logger.error(f"Normal flow failed: {e}")
-            response_data = {"SyntaxPrime": f"Response generation failed: {e}"}
-            save_conversation_enhanced(project, user_input, response_data)
+        # Try Unified Google Integration (Gmail, Calendar, Analytics, Search Console, Docs, Sheets)
+        if is_google_configured():
+            try:
+                from modules.enhanced_google_integration import EnhancedGoogleIntegration
+                google_integration = EnhancedGoogleIntegration()
+                response_data, handled = google_integration.process_google_commands(
+                    user_input, project, use_voices, random_toggle
+                )
+                if handled:
+                    save_conversation_enhanced(project, user_input, response_data)
+                    return _render_enhanced(project, response_data)
+            except Exception as e:
+                app.logger.error(f"Google integration processing failed: {e}")
 
-    return _render_enhanced(selected_project, response_data)
-    
+        # Try Slack integration
+        if is_slack_configured():
+            response_data, handled = process_slack_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+
+        # Try Enhanced Marketing Commands with Context Support
+        if is_marketing_configured():
+            try:
+                # Get marketing context for better responses
+                marketing_context = get_marketing_context()
+                response_data, handled = process_marketing_command_with_context(
+                    user_input, project, use_voices, random_toggle, marketing_context
+                )
+                if handled:
+                    save_conversation_enhanced(project, user_input, response_data)
+                    return _render_enhanced(project, response_data)
+            except Exception as e:
+                app.logger.error(f"Enhanced marketing processing failed: {e}")
+
+        # Try Cloze commands with proper configuration validation
+        if is_cloze_configured():
+            response_data, handled = process_cloze_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+
+        # Try Telegram integration
+        if is_telegram_configured():
+            response_data, handled = process_telegram_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+
+        # Try Calendar-Telegram integration
+        if is_calendar_telegram_configured():
+            response_data, handled = process_calendar_telegram_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+
+        # Normal AI response as fallback (same enhanced logic as web version)
+        if not response_data:
+            try:
+                retrieval_ctx = enhanced_retrieve(user_input, k=5, project=project) if is_ready() else []
+                
+                # Use enhanced response generation with context validation
+                response_data = generate_response_with_context_check(
+                    user_input, use_voices, random_toggle,
+                    project, CHAT_MODEL, retrieval_ctx
+                )
+                
+                save_conversation_enhanced(project, user_input, response_data)
+            except Exception as e:
+                app.logger.error(f"Normal response generation failed: {e}")
+                response_data = {"SyntaxPrime": f"Response generation failed: {e}"}
+                save_conversation_enhanced(project, user_input, response_data)
+
+        return _render_enhanced(project, response_data)
+
+    # GET request - render the chat interface
+    return render_template('index.html', projects=PROJECTS, selected_project=selected_project, response_data=response_data)
 # Section 5: Brain Building Routes
 from modules.brain import handle_build_brain, handle_build_new_brain, get_brain_status, get_brain_control_dashboard
 
@@ -1681,6 +1772,64 @@ def system_admin_dashboard():
     </body>
     </html>
     """)
+# Add this right before the "# Section 9: PDF Report Generation" line
+
+@app.route('/api/feedback', methods=['POST'])
+def record_feedback():
+    """Record user feedback for AI responses"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        response_id = data.get('response_id')
+        feedback_type = data.get('feedback_type')
+        timestamp = data.get('timestamp')
+        
+        if not response_id or not feedback_type:
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        
+        # Store feedback in database
+        from modules.database import get_db_connection
+        
+        with get_db_connection() as conn:
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO user_feedback (response_id, feedback_type, timestamp, session_id)
+                    VALUES (%s, %s, %s, %s)
+                """, (response_id, feedback_type, timestamp, session.get('session_id')))
+                conn.commit()
+                
+                app.logger.info(f"Feedback recorded: {feedback_type} for response {response_id}")
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Feedback recorded successfully'
+                })
+            else:
+                return jsonify({'success': False, 'error': 'Database connection failed'}), 500
+                
+    except Exception as e:
+        app.logger.error(f"Feedback recording failed: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/feedback/<feedback_type>', methods=['POST'])
+def record_feedback_legacy(feedback_type):
+    """Legacy feedback endpoint for backward compatibility"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json() or {}
+        response_id = data.get('response_id', 'unknown')
+        
+        # Use the main feedback endpoint
+        return record_feedback()
+        
+    except Exception as e:
+        app.logger.error(f"Legacy feedback recording failed: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # Section 9: PDF Report Generation
 from modules.pdf_generation import (
@@ -3117,7 +3266,7 @@ def mobile_get_conversations(project):
 
 @app.route('/api/mobile/chat', methods=['POST'])
 def mobile_chat():
-    """Mobile chat with full AI processing - ENHANCED with JWT auth + all integrations + BlueSky"""
+    """Mobile chat with full AI processing - ENHANCED with JWT auth + all integrations + FIXED BlueSky"""
     if not is_mobile_authenticated():
         return jsonify({'error': 'Unauthorized'}), 401
     
@@ -3143,30 +3292,81 @@ def mobile_chat():
         except Exception as e:
             app.logger.warning(f"Brain context refresh failed: {e}")
 
-        # NEW: Try BlueSky commands first
+        # FIXED: BlueSky commands with enhanced pattern matching (moved higher in priority)
         if is_bluesky_configured():
-            app.logger.info(f"Mobile: BlueSky is configured, processing command: '{user_input}'")
+            app.logger.info(f"Mobile: Checking BlueSky command patterns for: '{user_input}'")
             try:
-                response_content = process_bluesky_command(user_input)
-                if response_content and "Available BlueSky commands" not in response_content:
-                    response_data = {"SyntaxPrime": response_content}
-                    handled = True
-                    app.logger.info(f"Mobile: BlueSky command handled successfully")
-                    save_conversation_enhanced(project, user_input, response_data)
-                    return jsonify({'success': True, 'responses': response_data})
+                # Enhanced BlueSky command detection with more flexible patterns
+                user_lower = user_input.lower().strip()
+                
+                # Comprehensive BlueSky trigger patterns
+                bluesky_patterns = [
+                    # Direct BlueSky mentions
+                    'bluesky', 'bsky', 'blue sky',
+                    # Action patterns
+                    'analyze bluesky', 'check bluesky', 'my bluesky', 'bluesky feed',
+                    'bluesky timeline', 'bluesky posts', 'bluesky analysis',
+                    # Engagement patterns
+                    'bluesky engagement', 'bluesky suggestions', 'who should i follow',
+                    'bluesky opportunities', 'social engagement', 'feed analysis',
+                    # High priority patterns
+                    'bluesky high priority', 'best bluesky posts', 'top bluesky',
+                    # Test patterns
+                    'bluesky test', 'test bluesky', 'bluesky connection'
+                ]
+                
+                # Check if input matches any BlueSky pattern
+                bluesky_detected = False
+                for pattern in bluesky_patterns:
+                    if pattern in user_lower:
+                        bluesky_detected = True
+                        app.logger.info(f"Mobile: BlueSky pattern matched: '{pattern}'")
+                        break
+                
+                # Also check for standalone keywords that might be BlueSky related
+                standalone_keywords = ['bsky', 'bluesky']
+                if not bluesky_detected:
+                    for keyword in standalone_keywords:
+                        if user_lower == keyword or user_lower.startswith(keyword + ' ') or user_lower.endswith(' ' + keyword):
+                            bluesky_detected = True
+                            app.logger.info(f"Mobile: BlueSky standalone keyword matched: '{keyword}'")
+                            break
+                
+                if bluesky_detected:
+                    app.logger.info(f"Mobile: Processing BlueSky command: '{user_input}'")
+                    response_content = process_bluesky_command(user_input)
+                    
+                    # Check if we got a real response (not just the help menu)
+                    if response_content and "Available BlueSky commands" not in response_content:
+                        app.logger.info(f"Mobile: BlueSky command successfully processed")
+                        response_data = {"SyntaxPrime": response_content}
+                        handled = True
+                        save_conversation_enhanced(project, user_input, response_data)
+                        return jsonify({'success': True, 'responses': response_data})
+                    else:
+                        # If it's just the help menu, let it fall through to normal processing
+                        # but log that we tried BlueSky
+                        app.logger.info(f"Mobile: BlueSky returned help menu, falling through to normal processing")
+                
             except Exception as e:
-                app.logger.error(f"Mobile BlueSky processing failed: {e}")
+                app.logger.error(f"Mobile: BlueSky processing failed: {e}")
+                # Don't fail the whole request, just log and continue
+                pass
 
         # Enhanced Marketing Commands with Context Support
         if is_marketing_configured():
             app.logger.info(f"Mobile: Enhanced marketing is configured, processing command: '{user_input}'")
-            response_data, handled = process_marketing_command_with_context(
-                user_input, project, use_voices, random_toggle, marketing_context
-            )
-            if handled:
-                app.logger.info(f"Mobile: Enhanced marketing command handled successfully")
-                save_conversation_enhanced(project, user_input, response_data)
-                return jsonify({'success': True, 'responses': response_data})
+            try:
+                marketing_context = get_marketing_context()
+                response_data, handled = process_marketing_command_with_context(
+                    user_input, project, use_voices, random_toggle, marketing_context
+                )
+                if handled:
+                    app.logger.info(f"Mobile: Enhanced marketing command handled successfully")
+                    save_conversation_enhanced(project, user_input, response_data)
+                    return jsonify({'success': True, 'responses': response_data})
+            except Exception as e:
+                app.logger.error(f"Mobile: Enhanced marketing processing failed: {e}")
 
         # Try Cloze commands with proper configuration validation
         if is_cloze_configured():
@@ -3177,13 +3377,41 @@ def mobile_chat():
                 save_conversation_enhanced(project, user_input, response_data)
                 return jsonify({'success': True, 'responses': response_data})
 
-        # Try Consolidated Google Integration (replaces both Phase 1 and Phase 2)
-        response_data, handled = process_google_ecosystem_commands(user_input, project, use_voices, random_toggle)
-        if handled:
-            save_conversation_enhanced(project, user_input, response_data)
-            return jsonify({'success': True, 'responses': response_data})
+        # Try Google integration
+        if is_google_configured():
+            app.logger.info(f"Mobile: Google is configured, processing command: '{user_input}'")
+            try:
+                from modules.enhanced_google_integration import EnhancedGoogleIntegration
+                google_integration = EnhancedGoogleIntegration()
+                response_data, handled = google_integration.process_google_commands(
+                    user_input, project, use_voices, random_toggle
+                )
+                if handled:
+                    app.logger.info(f"Mobile: Google command handled successfully")
+                    save_conversation_enhanced(project, user_input, response_data)
+                    return jsonify({'success': True, 'responses': response_data})
+            except Exception as e:
+                app.logger.error(f"Mobile: Google integration processing failed: {e}")
 
-        # Try Calendar → Telegram integration
+        # Try Slack integration
+        if is_slack_configured():
+            app.logger.info(f"Mobile: Slack is configured, processing command: '{user_input}'")
+            response_data, handled = process_slack_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                app.logger.info(f"Mobile: Slack command handled successfully")
+                save_conversation_enhanced(project, user_input, response_data)
+                return jsonify({'success': True, 'responses': response_data})
+
+        # Try Telegram integration
+        if is_telegram_configured():
+            app.logger.info(f"Mobile: Telegram is configured, processing command: '{user_input}'")
+            response_data, handled = process_telegram_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                app.logger.info(f"Mobile: Telegram command handled successfully")
+                save_conversation_enhanced(project, user_input, response_data)
+                return jsonify({'success': True, 'responses': response_data})
+
+        # Try Calendar-Telegram integration
         if is_calendar_telegram_configured():
             app.logger.info(f"Mobile: Calendar-Telegram is configured, processing command: '{user_input}'")
             response_data, handled = process_calendar_telegram_command(user_input, project, use_voices, random_toggle)
@@ -3192,16 +3420,12 @@ def mobile_chat():
                 save_conversation_enhanced(project, user_input, response_data)
                 return jsonify({'success': True, 'responses': response_data})
 
-        # Try reminder commands
-        response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
-        if handled:
-            save_conversation_enhanced(project, user_input, response_data)
-            return jsonify({'success': True, 'responses': response_data})
-
-        # Try ClickUp commands (with improved detection)
+        # Try ClickUp commands
         if is_clickup_configured():
+            app.logger.info(f"Mobile: ClickUp is configured, processing command: '{user_input}'")
             response_data, handled = process_clickup_command(user_input, project, use_voices, random_toggle)
             if handled:
+                app.logger.info(f"Mobile: ClickUp command handled successfully")
                 save_conversation_enhanced(project, user_input, response_data)
                 return jsonify({'success': True, 'responses': response_data})
 

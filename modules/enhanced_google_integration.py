@@ -944,17 +944,50 @@ Morning Briefing Data:
             return {'success': False, 'error': str(e)}
             
 # Section 6: GA4 Analytics and Search Console Integration
+# Section 6: GA4 Analytics and Search Console Integration - FIXED DATA INTEGRITY
 
     # =============================================================================
-    # GA4 ANALYTICS INTEGRATION - COMPLETELY REWRITTEN FOR GA4 DATA API
+    # GA4 ANALYTICS INTEGRATION - COMPLETELY REWRITTEN FOR GA4 DATA API WITH DATA VALIDATION
     # =============================================================================
     
+    def _validate_analytics_response(self, response_data, operation, property_id):
+        """Strict validation to prevent fabricated analytics data"""
+        if not response_data:
+            return False, f"AUTHENTICATION FAILED: {operation} - No data returned from Google Analytics for property {property_id}. Check your GA4 property ID and permissions."
+        
+        if 'error' in response_data:
+            return False, f"API ERROR: {operation} failed - {response_data['error']}"
+        
+        # Validate GA4 response structure
+        if not isinstance(response_data, dict):
+            return False, f"INVALID DATA: {operation} returned malformed response (not a dictionary)"
+        
+        # Check for GA4 specific structure
+        if 'rows' not in response_data and 'rowCount' not in response_data:
+            return False, f"NO REAL DATA: GA4 {operation} returned empty or invalid response structure"
+        
+        # If we have rowCount, check it's a real number
+        if 'rowCount' in response_data:
+            try:
+                row_count = int(response_data.get('rowCount', 0))
+                if row_count == 0:
+                    return True, f"VALID EMPTY: No data found for property {property_id} in specified date range"
+            except (ValueError, TypeError):
+                return False, f"INVALID DATA: rowCount is not a valid number"
+        
+        return True, None
+    
     def get_ga4_analytics_report(self, property_id: str, start_date: str = "7daysAgo", end_date: str = "today") -> Dict:
-        """Get GA4 Analytics report using the Data API"""
+        """Get GA4 Analytics report using the Data API with strict validation"""
         if 'analyticsdata' not in self.services:
-            return {'success': False, 'error': 'GA4 Analytics Data API not available'}
+            return {
+                'success': False,
+                'error': 'GA4 Analytics Data API not available. Check your Google Cloud Console - Analytics Data API v1 must be enabled.'
+            }
         
         try:
+            print(f"🔍 GA4 Analytics API: Fetching data for property {property_id}")
+            
             # GA4 Data API request format
             request_body = {
                 'dateRanges': [{'startDate': start_date, 'endDate': end_date}],
@@ -978,9 +1011,35 @@ Morning Briefing Data:
                 body=request_body
             ).execute()
             
-            # Process GA4 response format
+            print(f"📊 GA4 Raw Response: {response}")
+            
+            # CRITICAL: Validate response before processing
+            is_valid, validation_error = self._validate_analytics_response(response, "GA4 Analytics", property_id)
+            if not is_valid:
+                return {'success': False, 'error': validation_error}
+            
+            # Process GA4 response format - ONLY if validation passed
             analytics_data = []
             rows = response.get('rows', [])
+            
+            # If no rows, this is legitimate (no traffic)
+            if len(rows) == 0:
+                return {
+                    'success': True,
+                    'data': [],
+                    'total_sessions': 0,
+                    'total_users': 0,
+                    'total_pageviews': 0,
+                    'avg_bounce_rate': 0,
+                    'date_range': f"{start_date} to {end_date}",
+                    'property_id': property_id,
+                    'message': f"No analytics data found for property {property_id} in the specified date range. This could be normal for new sites or quiet periods."
+                }
+            
+            total_sessions = 0
+            total_users = 0
+            total_pageviews = 0
+            bounce_rates = []
             
             for row in rows:
                 # GA4 uses different response structure
@@ -988,53 +1047,79 @@ Morning Briefing Data:
                 metric_values = row.get('metricValues', [])
                 
                 if dimension_values and metric_values:
-                    date_value = dimension_values[0].get('value', '')
+                    date = dimension_values[0].get('value', 'Unknown')
                     
-                    # Parse metrics safely
-                    sessions = int(metric_values[0].get('value', '0')) if len(metric_values) > 0 else 0
-                    users = int(metric_values[1].get('value', '0')) if len(metric_values) > 1 else 0
-                    pageviews = int(metric_values[2].get('value', '0')) if len(metric_values) > 2 else 0
-                    bounce_rate = float(metric_values[3].get('value', '0.0')) * 100 if len(metric_values) > 3 else 0.0  # GA4 returns decimal, convert to percentage
+                    # Extract metrics safely
+                    sessions = int(metric_values[0].get('value', '0') or '0')
+                    users = int(metric_values[1].get('value', '0') or '0')
+                    pageviews = int(metric_values[2].get('value', '0') or '0')
+                    bounce_rate = float(metric_values[3].get('value', '0') or '0')
                     
                     analytics_data.append({
-                        'date': date_value,
+                        'date': date,
                         'sessions': sessions,
                         'users': users,
                         'pageviews': pageviews,
                         'bounce_rate': bounce_rate
                     })
+                    
+                    # Accumulate totals
+                    total_sessions += sessions
+                    total_users += users
+                    total_pageviews += pageviews
+                    if bounce_rate > 0:
+                        bounce_rates.append(bounce_rate)
+            
+            avg_bounce_rate = sum(bounce_rates) / len(bounce_rates) if bounce_rates else 0
+            
+            print(f"✅ GA4 Analytics: Processed {len(analytics_data)} days of REAL data")
+            print(f"   📈 Totals: {total_sessions} sessions, {total_users} users, {total_pageviews} pageviews")
             
             return {
                 'success': True,
                 'data': analytics_data,
+                'total_sessions': total_sessions,
+                'total_users': total_users,
+                'total_pageviews': total_pageviews,
+                'avg_bounce_rate': round(avg_bounce_rate, 2),
                 'date_range': f"{start_date} to {end_date}",
-                'total_rows': len(analytics_data)
+                'property_id': property_id,
+                'raw_response_rows': len(rows)  # For debugging
             }
             
         except Exception as e:
-            return {'success': False, 'error': str(e)}
-    
-    def get_analytics_data(self, site_key: str = None, start_date: str = "7daysAgo", end_date: str = "today") -> Dict:
-        """Get analytics data for a specific site using multi-site config"""
-        if not site_key:
-            # Use default site or first available
-            if 'default' in self.sites_config:
-                site_key = 'default'
-            elif self.sites_config:
-                site_key = list(self.sites_config.keys())[0]
+            error_msg = str(e)
+            print(f"❌ GA4 Analytics API Error: {error_msg}")
+            
+            # Provide specific guidance based on common errors
+            if "403" in error_msg:
+                detailed_error = f"Permission denied for GA4 property {property_id}. Check: 1) Property ID is correct, 2) You have Analytics Admin/Viewer access, 3) Analytics Data API v1 is enabled in Google Cloud Console."
+            elif "404" in error_msg:
+                detailed_error = f"GA4 property {property_id} not found. Verify the property ID in your GA4 dashboard (Admin > Property Settings)."
+            elif "invalid_grant" in error_msg:
+                detailed_error = "OAuth token expired or invalid. Please re-authenticate via /google/auth/start"
             else:
-                return {'success': False, 'error': 'No sites configured'}
-        
+                detailed_error = f"GA4 API error: {error_msg}"
+            
+            return {'success': False, 'error': detailed_error}
+    
+    def get_analytics_data(self, site_key: str, start_date: str = "7daysAgo", end_date: str = "today") -> Dict:
+        """Get analytics for a specific site - wrapper for GA4"""
         if site_key not in self.sites_config:
-            return {'success': False, 'error': f'Site "{site_key}" not found'}
+            return {'success': False, 'error': f'Site "{site_key}" not found in configuration'}
         
         site_config = self.sites_config[site_key]
-        property_id = site_config.get('analytics_view_id')  # This is actually a GA4 Property ID now
+        property_id = site_config.get('analytics_view_id')
         
         if not property_id:
-            return {'success': False, 'error': f'GA4 Property ID not configured for site "{site_config["name"]}"'}
+            return {
+                'success': False,
+                'error': f'No GA4 property ID configured for site "{site_config["name"]}". Add analytics_view_id to your GOOGLE_SITES_CONFIG.'
+            }
         
         result = self.get_ga4_analytics_report(property_id, start_date, end_date)
+        
+        # Add site information to successful results
         if result['success']:
             result['site_name'] = site_config['name']
             result['site_key'] = site_key
@@ -1042,34 +1127,82 @@ Morning Briefing Data:
         return result
     
     def get_all_sites_analytics(self, start_date: str = "7daysAgo", end_date: str = "today") -> Dict:
-        """Get analytics for all configured sites"""
+        """Get analytics for all configured sites with data validation"""
         results = {}
+        successful_sites = 0
+        failed_sites = 0
         
         for site_key, site_config in self.sites_config.items():
             if site_config.get('analytics_view_id'):
+                print(f"🔍 Fetching analytics for {site_config['name']}...")
                 result = self.get_analytics_data(site_key, start_date, end_date)
                 results[site_key] = result
+                
+                if result['success']:
+                    successful_sites += 1
+                    print(f"   ✅ Success: {result.get('total_sessions', 0)} sessions")
+                else:
+                    failed_sites += 1
+                    print(f"   ❌ Failed: {result['error']}")
+            else:
+                results[site_key] = {
+                    'success': False,
+                    'error': f'No analytics property ID configured for {site_config["name"]}'
+                }
+                failed_sites += 1
         
         return {
             'success': True,
             'sites': results,
-            'total_sites': len(results)
+            'total_sites': len(results),
+            'successful_sites': successful_sites,
+            'failed_sites': failed_sites,
+            'summary': f"Analytics retrieved for {successful_sites}/{len(results)} configured sites"
         }
 
     # =============================================================================
-    # SEARCH CONSOLE INTEGRATION (UNCHANGED)
+    # SEARCH CONSOLE INTEGRATION - ENHANCED WITH DATA VALIDATION
     # =============================================================================
     
+    def _validate_search_console_response(self, response_data, operation, site_url):
+        """Strict validation to prevent fabricated search console data"""
+        if not response_data:
+            return False, f"AUTHENTICATION FAILED: {operation} - No data returned from Search Console for {site_url}. Check site verification and permissions."
+        
+        if 'error' in response_data:
+            return False, f"API ERROR: {operation} failed - {response_data['error']}"
+        
+        # Validate Search Console response structure
+        if not isinstance(response_data, dict):
+            return False, f"INVALID DATA: {operation} returned malformed response"
+        
+        # Search Console can legitimately return no rows for new sites or quiet periods
+        rows = response_data.get('rows', [])
+        if len(rows) == 0:
+            return True, f"VALID EMPTY: No search data found for {site_url}. This is normal for new sites or sites with no search traffic."
+        
+        # Validate row structure if we have data
+        for i, row in enumerate(rows[:3]):  # Check first 3 rows
+            if not isinstance(row, dict) or 'keys' not in row:
+                return False, f"INVALID DATA: Row {i} missing required 'keys' field"
+        
+        return True, None
+    
     def get_search_console_data(self, site_url: str, start_date: str = None, end_date: str = None) -> Dict:
-        """Get Search Console performance data"""
+        """Get Search Console performance data with strict validation"""
         if 'searchconsole' not in self.services:
-            return {'success': False, 'error': 'Search Console API not available'}
+            return {
+                'success': False,
+                'error': 'Search Console API not available. Check your Google Cloud Console - Search Console API must be enabled.'
+            }
         
         try:
             if not start_date:
                 start_date = (datetime.datetime.now() - datetime.timedelta(days=7)).strftime('%Y-%m-%d')
             if not end_date:
                 end_date = datetime.datetime.now().strftime('%Y-%m-%d')
+            
+            print(f"🔍 Search Console API: Fetching data for {site_url}")
             
             request_body = {
                 'startDate': start_date,
@@ -1083,56 +1216,120 @@ Morning Briefing Data:
                 body=request_body
             ).execute()
             
+            print(f"📊 Search Console Raw Response: {response}")
+            
+            # CRITICAL: Validate response before processing
+            is_valid, validation_error = self._validate_search_console_response(response, "Search Console", site_url)
+            if not is_valid:
+                return {'success': False, 'error': validation_error}
+            
+            # Process response - ONLY if validation passed
             rows = response.get('rows', [])
             search_data = []
             
+            # If no rows, this is legitimate (no search traffic yet)
+            if len(rows) == 0:
+                return {
+                    'success': True,
+                    'data': [],
+                    'total_clicks': 0,
+                    'total_impressions': 0,
+                    'total_queries': 0,
+                    'average_ctr': 0,
+                    'average_position': 0,
+                    'date_range': f"{start_date} to {end_date}",
+                    'site_url': site_url,
+                    'message': f"No search console data found for {site_url}. This is normal for new sites or sites with no search visibility yet."
+                }
+            
+            total_clicks = 0
+            total_impressions = 0
+            total_queries = len(rows)
+            ctr_values = []
+            position_values = []
+            
             for row in rows:
+                query = row['keys'][0]
+                page = row['keys'][1] if len(row['keys']) > 1 else ''
+                clicks = row.get('clicks', 0)
+                impressions = row.get('impressions', 0)
+                ctr = row.get('ctr', 0.0)
+                position = row.get('position', 0.0)
+                
                 search_data.append({
-                    'query': row['keys'][0],
-                    'page': row['keys'][1] if len(row['keys']) > 1 else '',
-                    'clicks': row.get('clicks', 0),
-                    'impressions': row.get('impressions', 0),
-                    'ctr': row.get('ctr', 0.0),
-                    'position': row.get('position', 0.0)
+                    'query': query,
+                    'page': page,
+                    'clicks': clicks,
+                    'impressions': impressions,
+                    'ctr': round(ctr * 100, 2),  # Convert to percentage
+                    'position': round(position, 1)
                 })
+                
+                # Accumulate totals
+                total_clicks += clicks
+                total_impressions += impressions
+                if ctr > 0:
+                    ctr_values.append(ctr)
+                if position > 0:
+                    position_values.append(position)
+            
+            avg_ctr = (sum(ctr_values) / len(ctr_values) * 100) if ctr_values else 0
+            avg_position = sum(position_values) / len(position_values) if position_values else 0
+            
+            print(f"✅ Search Console: Processed {len(search_data)} queries of REAL data")
+            print(f"   📈 Totals: {total_clicks} clicks, {total_impressions} impressions")
             
             return {
                 'success': True,
                 'data': search_data,
+                'total_clicks': total_clicks,
+                'total_impressions': total_impressions,
+                'total_queries': total_queries,
+                'average_ctr': round(avg_ctr, 2),
+                'average_position': round(avg_position, 1),
                 'date_range': f"{start_date} to {end_date}",
-                'total_queries': len(search_data)
+                'site_url': site_url,
+                'raw_response_rows': len(rows)  # For debugging
             }
             
         except Exception as e:
-            return {'success': False, 'error': str(e)}
-    
-    def get_search_console_data_for_site(self, site_key: str = None, start_date: str = None, end_date: str = None) -> Dict:
-        """Get search console data for a specific site using multi-site config"""
-        if not site_key:
-            # Use default site or first available
-            if 'default' in self.sites_config:
-                site_key = 'default'
-            elif self.sites_config:
-                site_key = list(self.sites_config.keys())[0]
+            error_msg = str(e)
+            print(f"❌ Search Console API Error: {error_msg}")
+            
+            # Provide specific guidance based on common errors
+            if "403" in error_msg:
+                detailed_error = f"Permission denied for {site_url}. Check: 1) Site is verified in Search Console, 2) You have Owner/Full User access, 3) Search Console API is enabled in Google Cloud Console."
+            elif "404" in error_msg:
+                detailed_error = f"Site {site_url} not found in Search Console. Add and verify the site first."
+            elif "invalid_grant" in error_msg:
+                detailed_error = "OAuth token expired or invalid. Please re-authenticate via /google/auth/start"
             else:
-                return {'success': False, 'error': 'No sites configured'}
-        
+                detailed_error = f"Search Console API error: {error_msg}"
+            
+            return {'success': False, 'error': detailed_error}
+    
+    def get_search_console_data_for_site(self, site_key: str, start_date: str = None, end_date: str = None) -> Dict:
+        """Get search console data for a specific site"""
         if site_key not in self.sites_config:
-            return {'success': False, 'error': f'Site "{site_key}" not found'}
+            return {'success': False, 'error': f'Site "{site_key}" not found in configuration'}
         
         site_config = self.sites_config[site_key]
         site_url = site_config.get('search_console_url')
         
         if not site_url:
-            return {'success': False, 'error': f'Search Console not configured for site "{site_config["name"]}"'}
+            return {
+                'success': False,
+                'error': f'No Search Console URL configured for site "{site_config["name"]}". Add search_console_url to your GOOGLE_SITES_CONFIG.'
+            }
         
         result = self.get_search_console_data(site_url, start_date, end_date)
+        
+        # Add site information to successful results
         if result['success']:
             result['site_name'] = site_config['name']
             result['site_key'] = site_key
         
         return result
-        
 # Section 7: Command Handlers (COMPLETELY REWRITTEN - FIXED Regex Error)
 
     # =============================================================================
