@@ -15,7 +15,7 @@ from utils.gmail_client import (
     get_next_meeting, format_calendar_summary
 )
 # Add these imports to the top of app.py
-from modules.feedback_system import record_response_feedback, get_feedback_dashboard_data
+from modules.feedback_system import submit_user_feedback as record_response_feedback, get_feedback_dashboard as get_feedback_dashboard_data
 from modules.hybrid_analysis import generate_content_strategy_command
 from modules.settings_persistence import get_default_voice, apply_session_preferences
 import os, json, io
