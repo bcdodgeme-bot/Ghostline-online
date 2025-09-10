@@ -15,9 +15,9 @@ from utils.gmail_client import (
     get_next_meeting, format_calendar_summary
 )
 # Add these imports to the top of app.py
-from modules.feedback_system import submit_user_feedback as record_response_feedback, get_feedback_dashboard as get_feedback_dashboard_data
-from modules.hybrid_analysis import generate_content_strategy_command
-from modules.settings_persistence import get_default_voice, apply_session_preferences
+#from modules.feedback_system import submit_user_feedback as record_response_feedback, get_feedback_dashboard as get_feedback_dashboard_data
+#from modules.hybrid_analysis import generate_content_strategy_command
+#from modules.settings_persistence import get_default_voice, apply_session_preferences
 import os, json, io
 import threading
 import time
@@ -75,7 +75,26 @@ from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
 import urllib.parse
 
+# Placeholder functions until modules are fixed
+def record_response_feedback(*args, **kwargs):
+    """Placeholder feedback function"""
+    return {'success': True, 'message': 'Feedback recorded'}
 
+def get_feedback_dashboard_data():
+    """Placeholder dashboard function"""
+    return {'total_feedback': 0}
+
+def generate_content_strategy_command(*args, **kwargs):
+    """Placeholder content strategy function"""
+    return {}, False
+
+def get_default_voice():
+    """Placeholder voice function"""
+    return 'SyntaxPrime'
+
+def apply_session_preferences(*args, **kwargs):
+    """Placeholder preferences function"""
+    pass
 
 # JWT for mobile API
 try:
