@@ -6,7 +6,7 @@
 # Section 1: Imports and Flask Setup (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)
 from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify, render_template_string, Response
 from flask_cors import CORS
-from utils.ghostline_engine import generate_response, stream_generate
+from utils.ghostline_engine import generate_response, generate_streaming_response as stream_generate
 from utils.rag_basic import retrieve, is_ready, load_corpus, get_build_status
 from utils.scraper import scrape_url
 from utils.gmail_client import (
