@@ -615,17 +615,15 @@ def index():
 
         # Try Unified Google Integration (Gmail, Calendar, Analytics, Search Console, Docs, Sheets)
         if is_google_configured():
-            try:
-                from modules.enhanced_google_integration import EnhancedGoogleIntegration
-                google_integration = EnhancedGoogleIntegration()
-                response_data, handled = google_integration.process_google_commands(
-                    user_input, project, use_voices, random_toggle
-                )
-                if handled:
-                    save_conversation_enhanced(project, user_input, response_data)
-                    return _render_enhanced(project, response_data)
-            except Exception as e:
-                app.logger.error(f"Google integration processing failed: {e}")
+    try:
+        response_data, handled = process_google_ecosystem_commands(
+            user_input, project, use_voices, random_toggle
+        )
+        if handled:
+            save_conversation_enhanced(project, user_input, response_data)
+            return _render_enhanced(project, response_data)
+    except Exception as e:
+        app.logger.error(f"Google integration processing failed: {e}")
 
         # Try Slack integration
         if is_slack_configured():
