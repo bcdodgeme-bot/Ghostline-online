@@ -946,9 +946,10 @@ def stream_chat():
 # Section 8: Dashboard Routes (Modular) - UPDATED WITH CLICKUP DIAGNOSTICS
 # Section 8: Dashboard Routes (Modular) - UPDATED WITH ADMIN CONTROLS
 # Section 8: Feedback System Routes (NEW) 9/11/25
+# Section 8: Feedback System Routes (FIXED DIRECT VERSION) 9/11/25
 @app.route('/api/feedback', methods=['POST'])
 def record_feedback():
-    """Record user feedback for AI responses (👍👎🖕 buttons)"""
+    """Record user feedback for AI responses (👍👎🖕 buttons) - FIXED DIRECT VERSION"""
     if not session.get('logged_in'):
         return jsonify({'error': 'Unauthorized'}), 401
     
@@ -962,19 +963,29 @@ def record_feedback():
         if not response_id or not feedback_type:
             return jsonify({'success': False, 'error': 'Missing required fields'}), 400
         
-        # Record feedback using the imported function
-        result = record_response_feedback(
+        # FIXED: Use the feedback system directly instead of the broken imported function
+        from modules.feedback_system import _feedback_system
+        
+        if not _feedback_system:
+            return jsonify({'success': False, 'error': 'Feedback system not initialized'}), 500
+        
+        # Call the working feedback system directly
+        result = _feedback_system.submit_feedback(
             response_id=response_id,
             feedback_type=feedback_type,
             project=project,
             user_comment=user_comment
         )
         
-        app.logger.info(f"Feedback recorded: {feedback_type} for response {response_id}")
+        if result.get('success'):
+            app.logger.info(f"Feedback successfully recorded: {feedback_type} for response {response_id}")
+        else:
+            app.logger.error(f"Feedback recording failed: {result.get('error', 'Unknown error')}")
+        
         return jsonify(result)
         
     except Exception as e:
-        app.logger.error(f"Feedback recording failed: {e}")
+        app.logger.error(f"Feedback recording failed with exception: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/feedback/<feedback_type>', methods=['POST'])
@@ -987,8 +998,13 @@ def record_feedback_legacy(feedback_type):
         data = request.get_json() or {}
         response_id = data.get('response_id', f"legacy_{int(datetime.datetime.now().timestamp())}")
         
-        # Convert legacy format to new format
-        result = record_response_feedback(
+        # Use the direct feedback system approach
+        from modules.feedback_system import _feedback_system
+        
+        if not _feedback_system:
+            return jsonify({'success': False, 'error': 'Feedback system not initialized'}), 500
+        
+        result = _feedback_system.submit_feedback(
             response_id=response_id,
             feedback_type=feedback_type,
             project=session.get('current_project', 'General'),
@@ -1008,7 +1024,13 @@ def feedback_dashboard():
         return redirect(url_for('login'))
     
     try:
-        dashboard_data = get_feedback_dashboard_data()
+        # Use the direct feedback system for dashboard data too
+        from modules.feedback_system import _feedback_system
+        
+        if not _feedback_system:
+            dashboard_data = {'total_feedback': 0, 'error': 'Feedback system not initialized'}
+        else:
+            dashboard_data = _feedback_system.get_dashboard_data()
         
         return render_template_string("""
         <!DOCTYPE html>
@@ -1037,9 +1059,14 @@ def feedback_dashboard():
                 <div class="stat-box">
                     <h2>📊 Overview</h2>
                     <div class="emoji-stat">Total Feedback: {{ dashboard_data.total_feedback }}</div>
-                    {% for emoji, count in dashboard_data.emoji_stats.items() %}
-                    <div class="emoji-stat">{{ emoji }}: {{ count }}</div>
-                    {% endfor %}
+                    {% if dashboard_data.emoji_stats %}
+                        {% for emoji, count in dashboard_data.emoji_stats.items() %}
+                        <div class="emoji-stat">{{ emoji }}: {{ count }}</div>
+                        {% endfor %}
+                    {% endif %}
+                    {% if dashboard_data.error %}
+                        <div style="color: #ff4444;">Error: {{ dashboard_data.error }}</div>
+                    {% endif %}
                 </div>
                 
                 {% if dashboard_data.recent_feedback %}
