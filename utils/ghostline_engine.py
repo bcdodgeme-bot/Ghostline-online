@@ -335,7 +335,7 @@ Current project context: {project}
     if retrieval_context and len(retrieval_context) > 0:
         system_context += "\n\nRelevant knowledge base context:\n"
         for i, ctx in enumerate(retrieval_context[:3], 1):  # Limit to 3 most relevant
-            system_context += f"{i}. {ctx.get('content', '')[:200]}...\n"
+            system_context += f"{i}. {ctx.get('text', '')[:200]}...\n"
     
     # Prepare messages for API
     messages = [
