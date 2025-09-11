@@ -1,5 +1,8 @@
-# modules/enhanced_google_integration.py - Section 1: Imports and Base Classes
-# Consolidated Google Ecosystem Integration with GA4 Data API
+# =============================================================================
+# SECTION 1: IMPORTS AND BASE CLASSES
+# =============================================================================
+
+# modules/enhanced_google_integration.py - Consolidated Google Ecosystem Integration with GA4 Data API
 
 import os
 import datetime
@@ -24,7 +27,6 @@ from modules.brain import enhanced_retrieve
 # Add the analytics validation import
 from modules.analytics_validation_enhanced import validate_analytics_data_comprehensive, should_block_ai_suggestions_enhanced
 
-
 # Google API imports
 try:
     from googleapiclient.discovery import build
@@ -40,7 +42,6 @@ CHAT_MODEL = os.getenv("CHAT_MODEL", os.getenv("OPENROUTER_MODEL", "openrouter/a
 
 # Global context storage for conversational follow-ups
 email_context_cache = {}
-
 
 class ConversationalEmailContext:
     """Manages conversational context for email follow-ups"""
@@ -86,7 +87,6 @@ class ConversationalEmailContext:
         
         return matching_emails
 
-
 def is_likely_person_name(text: str) -> bool:
     """Simple heuristic to determine if text looks like a person's name"""
     if not text or len(text) < 2:
@@ -122,6 +122,9 @@ def is_likely_person_name(text: str) -> bool:
     
     return True
 
+# =============================================================================
+# SECTION 2: ENHANCED CONVERSATIONAL CONTEXT CLASS
+# =============================================================================
 
 class EnhancedConversationalContext:
     """Enhanced conversational context for all Google integrations"""
@@ -232,17 +235,297 @@ class EnhancedConversationalContext:
                 return True
         
         return False
-     
-# Section 2: Context Methods and GoogleIntegration Class Setup
-# Section 2: Context Methods and GoogleIntegration Class Setup
-# Section 2: Gmail and Calendar Command Handlers - UPDATED WITH MULTI-CALENDAR FIX AND SUPER MORNING BRIEFING
+    
+    def _generate_analytics_summary(self, data: list) -> str:
+        """Generate summary for analytics data"""
+        if not data:
+            return "No analytics data available"
+        
+        total_sessions = sum(row.get('sessions', 0) for row in data)
+        total_users = sum(row.get('users', 0) for row in data)
+        return f"{total_sessions} sessions, {total_users} users over {len(data)} days"
+    
+    def _generate_search_console_summary(self, data: list) -> str:
+        """Generate summary for search console data"""
+        if not data:
+            return "No search console data available"
+        
+        total_clicks = sum(row.get('clicks', 0) for row in data)
+        total_impressions = sum(row.get('impressions', 0) for row in data)
+        return f"{total_clicks} clicks, {total_impressions} impressions from {len(data)} queries"
+    
+    def _generate_gmail_summary(self, emails: list, report_type: str) -> str:
+        """Generate summary for Gmail data"""
+        return f"{len(emails)} emails in {report_type} report"
+    
+    def _generate_calendar_summary(self, events: list, report_type: str) -> str:
+        """Generate summary for calendar data"""
+        return f"{len(events)} events in {report_type} calendar report"
+
+# Initialize global context manager
+enhanced_conversation_context = EnhancedConversationalContext()
+
+# =============================================================================
+# SECTION 3: GOOGLE INTEGRATION MAIN CLASS
+# =============================================================================
+
+class GoogleIntegration:
+    """Complete Google Ecosystem Integration - All services in one class"""
+    
+    def __init__(self):
+        self.timezone = self._get_user_timezone()
+        self.credentials = None
+        self.services = {}
+        self.sites_config = self._load_sites_config()
+        
+        if GOOGLE_APIS_AVAILABLE:
+            self._initialize_services()
+    
+    def _get_user_timezone(self):
+        """Get user's timezone with proper fallback"""
+        try:
+            from flask import has_request_context, session
+            if has_request_context() and session:
+                user_tz = session.get('user_timezone')
+                if user_tz:
+                    return pytz.timezone(user_tz)
+        except:
+            pass
+        return pytz.timezone('America/New_York')
+    
+    def _initialize_services(self):
+        """Initialize all Google API services with automatic token refresh"""
+        try:
+            # Import the token manager if available
+            try:
+                from modules.google_token_refresh import get_google_credentials, token_manager
+                # Get valid credentials with automatic refresh
+                self.credentials = get_google_credentials()
+            except ImportError:
+                # Fallback to direct credential loading
+                from utils.gmail_client import _build_creds
+                self.credentials = _build_creds()
+            
+            if not self.credentials:
+                print("No valid Google credentials available - authentication required")
+                return
+            
+            print("Valid Google credentials obtained")
+            
+            # Initialize all services with refreshed credentials
+            try:
+                # Core services
+                self.services['gmail'] = build('gmail', 'v1', credentials=self.credentials, cache_discovery=False)
+                self.services['calendar'] = build('calendar', 'v3', credentials=self.credentials, cache_discovery=False)
+                self.services['drive'] = build('drive', 'v3', credentials=self.credentials, cache_discovery=False)
+                self.services['docs'] = build('docs', 'v1', credentials=self.credentials, cache_discovery=False)
+                self.services['sheets'] = build('sheets', 'v4', credentials=self.credentials, cache_discovery=False)
+                
+                # Analytics services
+                try:
+                    self.services['analyticsdata'] = build('analyticsdata', 'v1beta', credentials=self.credentials, cache_discovery=False)
+                    self.services['searchconsole'] = build('searchconsole', 'v1', credentials=self.credentials, cache_discovery=False)
+                    print("Analytics services initialized: ['analyticsdata', 'searchconsole']")
+                except Exception as e:
+                    print(f"Analytics services failed to initialize: {e}")
+                
+                print("Google services initialized: ['gmail', 'calendar', 'drive', 'docs', 'sheets']")
+                
+            except Exception as e:
+                print(f"Error initializing Google services: {e}")
+                
+        except Exception as e:
+            print(f"Failed to initialize Google integration: {e}")
+    
+    def _extract_email_sender(self, msg):
+        """Extract sender from email message"""
+        if not isinstance(msg, dict):
+            return "Unknown Sender"
+        
+        # Try different possible field names for sender
+        for sender_field in ['sender', 'from', 'From', 'fromEmail', 'senderEmail', 'author']:
+            if sender_field in msg:
+                sender = msg[sender_field]
+                if sender:
+                    # Clean up sender (remove email brackets if present)
+                    if '<' in sender and '>' in sender:
+                        sender = sender.split('<')[0].strip()
+                        if not sender:  # If no name, use email
+                            sender = sender.split('<')[1].split('>')[0].strip()
+                    return sender
+        
+        return "Unknown Sender"
+
+    def _extract_email_subject(self, msg):
+        """Extract subject from email message"""
+        if not isinstance(msg, dict):
+            return "No Subject"
+        
+        # Try different possible field names for subject
+        for subject_field in ['subject', 'Subject', 'title', 'summary', 'snippet']:
+            if subject_field in msg:
+                subject = msg[subject_field]
+                if subject:
+                    return subject
+        
+        return "No Subject"
+        
+# =============================================================================
+# SECTION 4: SITE CONFIGURATION AND DATE PARSING METHODS
+# =============================================================================
+
+    def _load_sites_config(self) -> Dict[str, Dict]:
+        """Load multi-site configuration from environment variables"""
+        sites = {}
+        
+        # Method 1: JSON configuration (recommended)
+        sites_json = os.getenv('GOOGLE_SITES_CONFIG')
+        if sites_json:
+            try:
+                return json.loads(sites_json)
+            except json.JSONDecodeError as e:
+                print(f"Invalid GOOGLE_SITES_CONFIG JSON: {e}")
+        
+        # Method 2: Individual environment variables (fallback)
+        site_index = 1
+        while True:
+            site_name = os.getenv(f'SITE_{site_index}_NAME')
+            if not site_name:
+                break
+            
+            analytics_view_id = os.getenv(f'SITE_{site_index}_ANALYTICS_VIEW_ID')
+            search_console_url = os.getenv(f'SITE_{site_index}_SEARCH_CONSOLE_URL')
+            aliases_str = os.getenv(f'SITE_{site_index}_ALIASES', '')
+            aliases = [alias.strip() for alias in aliases_str.split(',') if alias.strip()]
+            
+            if analytics_view_id or search_console_url:
+                sites[site_name.lower().replace(' ', '_')] = {
+                    'name': site_name,
+                    'analytics_view_id': analytics_view_id,
+                    'search_console_url': search_console_url,
+                    'aliases': aliases
+                }
+            
+            site_index += 1
+        
+        # Method 3: Legacy single site support
+        if not sites:
+            legacy_view_id = os.getenv('GOOGLE_ANALYTICS_VIEW_ID')
+            legacy_search_url = os.getenv('SEARCH_CONSOLE_SITE_URL')
+            
+            if legacy_view_id or legacy_search_url:
+                sites['default'] = {
+                    'name': 'Default Site',
+                    'analytics_view_id': legacy_view_id,
+                    'search_console_url': legacy_search_url,
+                    'aliases': []
+                }
+        
+        return sites
+
+    def get_available_sites(self) -> List[Dict]:
+        """Get list of all configured sites"""
+        return [
+            {
+                'key': key,
+                'name': config['name'],
+                'has_analytics': bool(config.get('analytics_view_id')),
+                'has_search_console': bool(config.get('search_console_url')),
+                'aliases': config.get('aliases', [])
+            }
+            for key, config in self.sites_config.items()
+        ]
+    
+    def find_site_by_name(self, site_query: str) -> Optional[str]:
+        """Find site key by name or alias"""
+        site_query_lower = site_query.lower().strip()
+        
+        # Direct key match
+        if site_query_lower in self.sites_config:
+            return site_query_lower
+        
+        # Name match
+        for key, config in self.sites_config.items():
+            if config['name'].lower() == site_query_lower:
+                return key
+        
+        # Alias match
+        for key, config in self.sites_config.items():
+            aliases = [alias.strip().lower() for alias in config.get('aliases', [])]
+            if site_query_lower in aliases:
+                return key
+        
+        # Partial name match
+        for key, config in self.sites_config.items():
+            if site_query_lower in config['name'].lower():
+                return key
+        
+        return None
+
+    def parse_date_range_from_input(self, user_input: str) -> Tuple[str, str]:
+        """Parse flexible date ranges from user input for GA4"""
+        user_lower = user_input.lower().strip()
+        
+        # Default to last 7 days
+        start_date = "7daysAgo"
+        end_date = "today"
+        
+        # Flexible date range patterns
+        if 'last 6 months' in user_lower or 'past 6 months' in user_lower:
+            start_date, end_date = "180daysAgo", "today"
+        elif 'last year' in user_lower or 'past year' in user_lower:
+            start_date, end_date = "365daysAgo", "today"
+        elif 'last 3 months' in user_lower or 'past 3 months' in user_lower:
+            start_date, end_date = "90daysAgo", "today"
+        elif 'last 2 months' in user_lower or 'past 2 months' in user_lower:
+            start_date, end_date = "60daysAgo", "today"
+        elif 'last 30 days' in user_lower or 'past 30 days' in user_lower:
+            start_date, end_date = "30daysAgo", "today"
+        elif 'last 90 days' in user_lower or 'past 90 days' in user_lower:
+            start_date, end_date = "90daysAgo", "today"
+        elif 'last week' in user_lower:
+            start_date, end_date = "7daysAgo", "today"
+        elif 'last month' in user_lower:
+            start_date, end_date = "30daysAgo", "today"
+        elif 'yesterday' in user_lower:
+            start_date, end_date = "yesterday", "yesterday"
+        elif 'this month' in user_lower:
+            # First day of current month to today
+            today = datetime.date.today()
+            first_day = today.replace(day=1)
+            start_date = first_day.strftime('%Y-%m-%d')
+            end_date = "today"
+        elif 'this year' in user_lower:
+            # First day of current year to today
+            today = datetime.date.today()
+            first_day = today.replace(month=1, day=1)
+            start_date = first_day.strftime('%Y-%m-%d')
+            end_date = "today"
+        
+        # Look for specific number patterns like "last 45 days"
+        days_match = re.search(r'last (\d+) days?', user_lower)
+        if days_match:
+            days = int(days_match.group(1))
+            start_date = f"{days}daysAgo"
+            end_date = "today"
+        
+        # Look for specific months
+        months_match = re.search(r'last (\d+) months?', user_lower)
+        if months_match:
+            months = int(months_match.group(1))
+            days = months * 30  # Approximate
+            start_date = f"{days}daysAgo"
+            end_date = "today"
+        
+        return start_date, end_date
+
+# =============================================================================
+# SECTION 5: GMAIL AND CALENDAR COMMAND HANDLERS
+# =============================================================================
 
     def handle_gmail_commands(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
         """Handle Gmail and Calendar commands with enhanced multi-calendar support"""
         user_lower = user_input.lower().strip()
-        
-        # Import the enhanced functions from our updated gmail_client
-        from utils.gmail_client import list_today_events_all_calendars, format_calendar_summary_enhanced
         
         # SUPER MORNING COMMANDS - Multiple aliases for ultimate briefing
         super_morning_commands = [
@@ -413,82 +696,6 @@ class EnhancedConversationalContext:
                 save_conversation_enhanced(project, user_input, response_data)
                 return response_data, True
         
-        # Good morning briefing - Keep original for backward compatibility
-        if user_lower in ["good morning", "morning", "gm"]:
-            try:
-                print("Good Morning command triggered")
-                
-                # Build comprehensive morning briefing
-                morning_briefing = "Good morning! Here's your daily briefing:\n\n"
-                
-                # Email section
-                try:
-                    msgs = list_overnight(include_unread=True, include_primary=False)
-                    morning_briefing += "**OVERNIGHT EMAILS**\n"
-                    if msgs and isinstance(msgs, list) and len(msgs) > 0:
-                        morning_briefing += f"Found {len(msgs)} overnight emails\n"
-                        
-                        # Store context for follow-ups
-                        ConversationalEmailContext.store_morning_briefing_emails(
-                            session_id=project,
-                            emails=[{
-                                'sender': self._extract_email_sender(msg),
-                                'subject': self._extract_email_subject(msg),
-                                'original_msg': msg
-                            } for msg in msgs[:10]]
-                        )
-                    else:
-                        morning_briefing += "No overnight emails found\n"
-                except Exception as e:
-                    morning_briefing += f"Email check failed: {str(e)}\n"
-                
-                # Calendar section - UPDATED TO USE ALL CALENDARS
-                try:
-                    events = list_today_events_all_calendars(max_results=20)
-                    morning_briefing += "\n**TODAY'S CALENDAR (ALL CALENDARS)**\n"
-                    if events and isinstance(events, list) and len(events) > 0:
-                        calendar_summary = format_calendar_summary_enhanced(events, "")
-                        morning_briefing += calendar_summary + "\n"
-                    else:
-                        morning_briefing += "No events scheduled for today across any calendar\n"
-                except Exception as e:
-                    morning_briefing += f"Calendar check failed: {str(e)}\n"
-                
-                # Next meeting section
-                try:
-                    next_meeting = get_next_meeting()
-                    morning_briefing += "\n**NEXT MEETING**\n"
-                    if next_meeting and next_meeting.get('summary'):
-                        calendar_name = next_meeting.get('calendar_name', '')
-                        calendar_suffix = f" ({calendar_name})" if calendar_name else ""
-                        morning_briefing += f"{next_meeting.get('summary', 'Unknown')} at {next_meeting.get('start_formatted', 'Unknown time')}{calendar_suffix}\n"
-                    else:
-                        morning_briefing += "No upcoming meetings found\n"
-                except Exception as e:
-                    morning_briefing += f"Next meeting check failed: {str(e)}\n"
-                
-                # Save daily log
-                try:
-                    save_daily_log_enhanced("morning", morning_briefing)
-                except Exception as e:
-                    print(f"Failed to save daily log: {e}")
-                
-                retrieval_ctx = enhanced_retrieve(morning_briefing, k=5) if is_ready() else []
-                response_data = generate_response(
-                    f"Summarize this morning briefing and suggest 3 key priorities:\n\n{morning_briefing}",
-                    use_voices, random_toggle,
-                    project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
-                )
-                
-                save_conversation_enhanced(project, user_input, response_data)
-                return response_data, True
-                
-            except Exception as e:
-                print(f"Morning briefing failed: {e}")
-                response_data = {"SyntaxPrime": f"Morning briefing failed: {str(e)}. Please check your Google OAuth setup."}
-                save_conversation_enhanced(project, user_input, response_data)
-                return response_data, True
-        
         return {}, False
 
     def handle_super_morning_command(self, project, use_voices, random_toggle):
@@ -497,9 +704,6 @@ class EnhancedConversationalContext:
         Single command that gives you EVERYTHING you need to start the day
         """
         print("=== SUPER MORNING BRIEFING TRIGGERED ===")
-        
-        # Import the enhanced functions
-        from utils.gmail_client import list_today_events_all_calendars, format_calendar_summary_enhanced
         
         # Track all integrations
         integrations = {
@@ -600,42 +804,6 @@ class EnhancedConversationalContext:
             briefing_lines.append(f"❌ {integrations['calendar']['error']}")
         briefing_lines.append("")
         
-        # Next Meeting Section
-        briefing_lines.append("⏰ **NEXT MEETING**")
-        if integrations['next_meeting']['success']:
-            meeting = integrations['next_meeting']['data']
-            meeting_time = meeting.get('start_formatted', 'Unknown time')
-            meeting_title = meeting.get('summary', 'Untitled Meeting')
-            calendar_name = meeting.get('calendar_name', '')
-            calendar_suffix = f" ({calendar_name})" if calendar_name else ""
-            briefing_lines.append(f"✅ {meeting_title} at {meeting_time}{calendar_suffix}")
-        else:
-            briefing_lines.append(f"❌ {integrations['next_meeting']['error']}")
-        briefing_lines.append("")
-        
-        # ClickUp Section
-        briefing_lines.append("📋 **CLICKUP TASKS**")
-        if integrations['clickup']['success']:
-            briefing_lines.append("✅ ClickUp integration active")
-            briefing_lines.append(integrations['clickup']['data'])
-        else:
-            briefing_lines.append(f"❌ {integrations['clickup']['error']}")
-        briefing_lines.append("")
-        
-        # Integration Health Check
-        successful_integrations = sum(1 for i in integrations.values() if i['success'])
-        total_integrations = len(integrations)
-        
-        briefing_lines.append("🔧 **SYSTEM STATUS**")
-        briefing_lines.append(f"✅ {successful_integrations}/{total_integrations} integrations working")
-        
-        if successful_integrations == total_integrations:
-            briefing_lines.append("🎉 All systems operational!")
-        elif successful_integrations >= 2:
-            briefing_lines.append("⚠️ Partial functionality - some integrations down")
-        else:
-            briefing_lines.append("❌ Multiple integration failures - check authentication")
-        
         # Generate the final briefing
         morning_briefing = "\n".join(briefing_lines)
         
@@ -665,201 +833,362 @@ Morning Briefing Data:
             print(f"❌ AI response generation failed: {e}")
             # Fallback - return the raw briefing
             return {"SyntaxPrime": f"Super morning briefing compiled (AI processing failed):\n\n{morning_briefing}"}
-        
-# Section 3: Site Configuration and Date Parsing Methods
+            
+# =============================================================================
+# SECTION 6: MAIN COMMAND PROCESSOR (WITH YOUR UPDATED CODE)
+# =============================================================================
+# =============================================================================
+# SECTION 6: MAIN COMMAND PROCESSOR AND MISSING METHODS 9/11/25
+# =============================================================================
 
-    def _load_sites_config(self) -> Dict[str, Dict]:
-        """Load multi-site configuration from environment variables"""
-        sites = {}
-        
-        # Method 1: JSON configuration (recommended)
-        sites_json = os.getenv('GOOGLE_SITES_CONFIG')
-        if sites_json:
-            try:
-                return json.loads(sites_json)
-            except json.JSONDecodeError as e:
-                print(f"Invalid GOOGLE_SITES_CONFIG JSON: {e}")
-        
-        # Method 2: Individual environment variables (fallback)
-        site_index = 1
-        while True:
-            site_name = os.getenv(f'SITE_{site_index}_NAME')
-            if not site_name:
-                break
-            
-            analytics_view_id = os.getenv(f'SITE_{site_index}_ANALYTICS_VIEW_ID')
-            search_console_url = os.getenv(f'SITE_{site_index}_SEARCH_CONSOLE_URL')
-            aliases_str = os.getenv(f'SITE_{site_index}_ALIASES', '')
-            aliases = [alias.strip() for alias in aliases_str.split(',') if alias.strip()]
-            
-            if analytics_view_id or search_console_url:
-                sites[site_name.lower().replace(' ', '_')] = {
-                    'name': site_name,
-                    'analytics_view_id': analytics_view_id,
-                    'search_console_url': search_console_url,
-                    'aliases': aliases
-                }
-            
-            site_index += 1
-        
-        # Method 3: Legacy single site support
-        if not sites:
-            legacy_view_id = os.getenv('GOOGLE_ANALYTICS_VIEW_ID')
-            legacy_search_url = os.getenv('SEARCH_CONSOLE_SITE_URL')
-            
-            if legacy_view_id or legacy_search_url:
-                sites['default'] = {
-                    'name': 'Default Site',
-                    'analytics_view_id': legacy_view_id,
-                    'search_console_url': legacy_search_url,
-                    'aliases': []
-                }
-        
-        return sites
-
-    def get_available_sites(self) -> List[Dict]:
-        """Get list of all configured sites"""
-        return [
-            {
-                'key': key,
-                'name': config['name'],
-                'has_analytics': bool(config.get('analytics_view_id')),
-                'has_search_console': bool(config.get('search_console_url')),
-                'aliases': config.get('aliases', [])
-            }
-            for key, config in self.sites_config.items()
-        ]
-    
-    def find_site_by_name(self, site_query: str) -> Optional[str]:
-        """Find site key by name or alias"""
-        site_query_lower = site_query.lower().strip()
-        
-        # Direct key match
-        if site_query_lower in self.sites_config:
-            return site_query_lower
-        
-        # Name match
-        for key, config in self.sites_config.items():
-            if config['name'].lower() == site_query_lower:
-                return key
-        
-        # Alias match
-        for key, config in self.sites_config.items():
-            aliases = [alias.strip().lower() for alias in config.get('aliases', [])]
-            if site_query_lower in aliases:
-                return key
-        
-        # Partial name match
-        for key, config in self.sites_config.items():
-            if site_query_lower in config['name'].lower():
-                return key
-        
-        return None
-
-    def parse_date_range_from_input(self, user_input: str) -> Tuple[str, str]:
-        """Parse flexible date ranges from user input for GA4"""
+    def process_google_commands(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
+        """Main command processor for all Google services with enhanced context handling"""
         user_lower = user_input.lower().strip()
         
-        # Default to last 7 days
-        start_date = "7daysAgo"
-        end_date = "today"
+        # PRIORITY 0: Check for follow-up questions first
+        context = enhanced_conversation_context.get_context(project)
+        if context and enhanced_conversation_context.detect_follow_up_question(user_input, context):
+            response_data = enhanced_conversation_context.generate_contextual_response(
+                user_input, context, project, use_voices, random_toggle
+            )
+            save_conversation_enhanced(project, user_input, response_data)
+            return response_data, True
         
-        # Flexible date range patterns
-        if 'last 6 months' in user_lower or 'past 6 months' in user_lower:
-            start_date, end_date = "180daysAgo", "today"
-        elif 'last year' in user_lower or 'past year' in user_lower:
-            start_date, end_date = "365daysAgo", "today"
-        elif 'last 3 months' in user_lower or 'past 3 months' in user_lower:
-            start_date, end_date = "90daysAgo", "today"
-        elif 'last 2 months' in user_lower or 'past 2 months' in user_lower:
-            start_date, end_date = "60daysAgo", "today"
-        elif 'last 30 days' in user_lower or 'past 30 days' in user_lower:
-            start_date, end_date = "30daysAgo", "today"
-        elif 'last 90 days' in user_lower or 'past 90 days' in user_lower:
-            start_date, end_date = "90daysAgo", "today"
-        elif 'last week' in user_lower:
-            start_date, end_date = "7daysAgo", "today"
-        elif 'last month' in user_lower:
-            start_date, end_date = "30daysAgo", "today"
-        elif 'yesterday' in user_lower:
-            start_date, end_date = "yesterday", "yesterday"
-        elif 'this month' in user_lower:
-            # First day of current month to today
-            today = datetime.date.today()
-            first_day = today.replace(day=1)
-            start_date = first_day.strftime('%Y-%m-%d')
-            end_date = "today"
-        elif 'this year' in user_lower:
-            # First day of current year to today
-            today = datetime.date.today()
-            first_day = today.replace(month=1, day=1)
-            start_date = first_day.strftime('%Y-%m-%d')
-            end_date = "today"
+        # Blog suggestions commands - WITH VALIDATION BLOCKING
+        blog_patterns = [
+            'blog suggestions', 'blog ideas', 'content ideas', 'what to write',
+            'blog suggestions for', 'content suggestions', 'post ideas'
+        ]
         
-        # Look for specific number patterns like "last 45 days"
-        days_match = re.search(r'last (\d+) days?', user_lower)
-        if days_match:
-            days = int(days_match.group(1))
-            start_date = f"{days}daysAgo"
-            end_date = "today"
+        if any(pattern in user_lower for pattern in blog_patterns):
+            print("✏️ Detected blog suggestions command - will validate data first")
+            response_data, handled = self.handle_blog_suggestions_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                save_conversation_enhanced(project, user_input, response_data)
+            return response_data, handled
         
-        # Look for specific months
-        months_match = re.search(r'last (\d+) months?', user_lower)
-        if months_match:
-            months = int(months_match.group(1))
-            days = months * 30  # Approximate
-            start_date = f"{days}daysAgo"
-            end_date = "today"
+        # PRIORITY 1: Multi-site search console commands
+        multi_search_triggers = ['search console for', 'seo for', 'search console', 'seo data']
+        if any(trigger in user_lower for trigger in multi_search_triggers):
+            return self.handle_multi_site_search_console_command(user_input, project, use_voices, random_toggle)
         
-        return start_date, end_date
+        # PRIORITY 2: Multi-site analytics commands
+        multi_analytics_triggers = [
+            'analytics for', 'all sites analytics', 'list sites', 'available sites',
+            'analytics report', 'website analytics', 'site traffic'
+        ]
+        if any(trigger in user_lower for trigger in multi_analytics_triggers):
+            return self.handle_multi_site_analytics_command(user_input, project, use_voices, random_toggle)
         
-# Section 4: Gmail Integration - FIXED SEARCH COMMAND CONFLICTS
+        # PRIORITY 3: Gmail/Calendar commands
+        gmail_triggers = [
+            'overnight', 'mail', 'emails', 'inbox', 'check mail',
+            'calendar', 'today', 'meetings', 'schedule',
+            'next meeting', 'next', 'upcoming',
+            'good morning', 'morning', 'gm'
+        ]
+        
+        # Gmail search commands (more specific patterns to avoid conflicts)
+        gmail_search_triggers = ['search email', 'find email', 'email about']
+        
+        if any(trigger in user_lower for trigger in gmail_triggers):
+            response_data, handled = self.handle_gmail_commands(user_input, project, use_voices, random_toggle)
+            if handled:
+                return response_data, True
+        elif any(trigger in user_lower for trigger in gmail_search_triggers) or (user_lower.startswith('search ') and 'console' not in user_lower):
+            # Only treat as Gmail search if it starts with 'search ' and doesn't contain 'console'
+            response_data, handled = self.handle_gmail_commands(user_input, project, use_voices, random_toggle)
+            if handled:
+                return response_data, True
+        
+        # PRIORITY 4: Document creation commands
+        docs_triggers = ['create document', 'create doc', 'add to document', 'append to document']
+        if any(trigger in user_lower for trigger in docs_triggers):
+            return self.handle_docs_command(user_input, project, use_voices, random_toggle)
+        
+        # PRIORITY 5: Spreadsheet commands
+        sheets_triggers = ['create spreadsheet', 'create sheet', 'read sheet', 'get data from sheet']
+        if any(trigger in user_lower for trigger in sheets_triggers):
+            return self.handle_sheets_command(user_input, project, use_voices, random_toggle)
+        
+        return {}, False
 
+    def handle_multi_site_search_console_command(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
+        """Handle search console commands with multi-site support and flexible dates"""
+        user_lower = user_input.lower().strip()
         
-# Section 5: Google Docs and Sheets Integration
+        # Parse site specification from command
+        site_key = None
+        
+        # Look for site specification patterns
+        site_patterns = [
+            r'search console for (.+?)(?:\s+last|\s+this|\s+from|\s+past|$)',
+            r'seo for (.+?)(?:\s+last|\s+this|\s+from|\s+past|$)',
+            r'(.+?) search console',
+            r'(.+?) seo'
+        ]
+        
+        for pattern in site_patterns:
+            match = re.search(pattern, user_lower)
+            if match:
+                potential_site = match.group(1).strip()
+                found_site = self.find_site_by_name(potential_site)
+                if found_site:
+                    site_key = found_site
+                    break
+        
+        # Parse date range
+        start_date, end_date = self.parse_date_range_from_input(user_input)
+        
+        # Convert Google Analytics format to Search Console format (YYYY-MM-DD)
+        if start_date.endswith('daysAgo'):
+            days_ago = int(start_date.replace('daysAgo', ''))
+            start_date_obj = datetime.date.today() - datetime.timedelta(days=days_ago)
+            start_date = start_date_obj.strftime('%Y-%m-%d')
+        elif start_date == 'yesterday':
+            start_date_obj = datetime.date.today() - datetime.timedelta(days=1)
+            start_date = start_date_obj.strftime('%Y-%m-%d')
+        elif start_date == 'today':
+            start_date = datetime.date.today().strftime('%Y-%m-%d')
+        
+        if end_date == 'today':
+            end_date = datetime.date.today().strftime('%Y-%m-%d')
+        
+        result = self.get_search_console_data_for_site(site_key, start_date, end_date)
+        
+        if result['success']:
+            data = result['data']
+            site_name = result.get('site_name', 'Unknown Site')
+            
+            # Store context for follow-up questions
+            enhanced_conversation_context.store_search_console_report(
+                session_id=project,
+                site_name=site_name,
+                report_data=result,
+                user_query=user_input
+            )
+            
+            response_text = f"**Search Console Report for {site_name} ({result['date_range']})**\n\n"
+            
+            if data:
+                total_clicks = sum(row['clicks'] for row in data)
+                total_impressions = sum(row['impressions'] for row in data)
+                avg_ctr = (total_clicks / total_impressions * 100) if total_impressions > 0 else 0
+                
+                response_text += f"**Summary:**\n"
+                response_text += f"- Total Clicks: {total_clicks:,}\n"
+                response_text += f"- Total Impressions: {total_impressions:,}\n"
+                response_text += f"- Average CTR: {avg_ctr:.2f}%\n"
+                response_text += f"- Total Queries: {result['total_queries']}\n\n"
+                
+                response_text += f"**Top Performing Queries:**\n"
+                sorted_data = sorted(data, key=lambda x: x['clicks'], reverse=True)
+                for i, row in enumerate(sorted_data[:10], 1):
+                    response_text += f"{i}. {row['query']} - {row['clicks']} clicks, {row['impressions']} impressions\n"
+            else:
+                response_text += "No search console data found for the specified period."
+        else:
+            response_text = f"Failed to retrieve search console data: {result['error']}"
+            
+            # Show available sites if site not found
+            if "not found" in result['error'].lower():
+                sites = self.get_available_sites()
+                if sites:
+                    response_text += f"\n\n**Available sites:**\n"
+                    for site in sites:
+                        if site['has_search_console']:
+                            response_text += f"- {site['name']} ({site['key']})\n"
+        
+        response_data = {"SyntaxPrime": response_text}
+        save_conversation_enhanced(project, user_input, response_data)
+        return response_data, True
 
-    # =============================================================================
-    # GOOGLE DOCS INTEGRATION
-    # =============================================================================
-    
-    def create_document(self, title: str, content: str = "") -> Dict:
-        """Create a new Google Doc"""
-        if 'docs' not in self.services:
-            return {'success': False, 'error': 'Google Docs API not available'}
+    def get_search_console_data_for_site(self, site_key: str, start_date: str = None, end_date: str = None) -> Dict:
+        """Get search console data for a specific site with ENHANCED VALIDATION"""
+        if site_key not in self.sites_config:
+            return {'success': False, 'error': f'Site "{site_key}" not found in configuration'}
+        
+        site_config = self.sites_config[site_key]
+        site_url = site_config.get('search_console_url')
+        
+        if not site_url:
+            return {
+                'success': False,
+                'error': f'No Search Console URL configured for site "{site_config["name"]}". Add search_console_url to your GOOGLE_SITES_CONFIG.'
+            }
+        
+        # Get the raw search console data
+        result = self.get_search_console_data(site_url, start_date, end_date)
+        
+        # ENHANCED: Add comprehensive validation to prevent fabricated data disasters
+        if result.get('success'):
+            try:
+                # Validate the data before returning
+                validation_results = validate_analytics_data_comprehensive(
+                    site_config,
+                    search_console_result=result
+                )
+                
+                sc_validation = validation_results.get('search_console')
+                if sc_validation:
+                    # Add validation metadata to the result
+                    result['validation'] = {
+                        'is_valid': sc_validation.is_valid,
+                        'confidence_score': sc_validation.confidence_score,
+                        'site_relevance_score': sc_validation.site_relevance_score,
+                        'warnings': sc_validation.warnings,
+                        'recommendation': sc_validation.recommendation
+                    }
+                    
+                    # Log validation issues
+                    if not sc_validation.is_valid or sc_validation.site_relevance_score < 0.7:
+                        print(f"🚨 Search Console validation issues for {site_config['name']}:")
+                        print(f"   - Valid: {'✅' if sc_validation.is_valid else '❌'}")
+                        print(f"   - Confidence: {sc_validation.confidence_score:.2f}/1.0")
+                        print(f"   - Relevance: {sc_validation.site_relevance_score:.2f}/1.0")
+                        
+                        if sc_validation.validation_errors:
+                            for error in sc_validation.validation_errors:
+                                print(f"   - ❌ {error}")
+                    
+                    # Add validation info to result for user display
+                    if sc_validation.site_relevance_score < 0.7:
+                        result['relevance_warning'] = f"Query relevance score: {sc_validation.site_relevance_score:.1f}/1.0 - Check if data matches expected site content"
+                        
+            except Exception as e:
+                print(f"Search Console validation failed: {e}")
+                # Don't fail the entire request if validation fails
+        
+        # Add site information to successful results
+        if result['success']:
+            result['site_name'] = site_config['name']
+            result['site_key'] = site_key
+        
+        return result
+
+    def get_search_console_data(self, site_url: str, start_date: str = None, end_date: str = None) -> Dict:
+        """Get Search Console performance data with strict validation"""
+        if 'searchconsole' not in self.services:
+            return {
+                'success': False,
+                'error': 'Search Console API not available. Check your Google Cloud Console - Search Console API must be enabled.'
+            }
         
         try:
-            # Create the document
-            document = self.services['docs'].documents().create(body={'title': title}).execute()
-            document_id = document.get('documentId')
+            if not start_date:
+                start_date = (datetime.datetime.now() - datetime.timedelta(days=7)).strftime('%Y-%m-%d')
+            if not end_date:
+                end_date = datetime.datetime.now().strftime('%Y-%m-%d')
             
-            # Add content if provided
-            if content:
-                requests = [
-                    {
-                        'insertText': {
-                            'location': {'index': 1},
-                            'text': content
-                        }
-                    }
-                ]
+            print(f"🔍 Search Console API: Fetching data for {site_url}")
+            
+            request_body = {
+                'startDate': start_date,
+                'endDate': end_date,
+                'dimensions': ['query', 'page'],
+                'rowLimit': 100
+            }
+            
+            response = self.services['searchconsole'].searchanalytics().query(
+                siteUrl=site_url,
+                body=request_body
+            ).execute()
+            
+            print(f"📊 Search Console Raw Response: {response}")
+            
+            # CRITICAL: Validate response before processing
+            is_valid, validation_error = self._validate_search_console_response(response, "Search Console", site_url)
+            if not is_valid:
+                return {'success': False, 'error': validation_error}
+            
+            # Process response - ONLY if validation passed
+            rows = response.get('rows', [])
+            search_data = []
+            
+            # If no rows, this is legitimate (no search traffic yet)
+            if len(rows) == 0:
+                return {
+                    'success': True,
+                    'data': [],
+                    'total_clicks': 0,
+                    'total_impressions': 0,
+                    'total_queries': 0,
+                    'average_ctr': 0,
+                    'average_position': 0,
+                    'date_range': f"{start_date} to {end_date}",
+                    'site_url': site_url,
+                    'message': f"No search console data found for {site_url}. This is normal for new sites or sites with no search visibility yet."
+                }
+            
+            total_clicks = 0
+            total_impressions = 0
+            total_queries = len(rows)
+            ctr_values = []
+            position_values = []
+            
+            for row in rows:
+                query = row['keys'][0]
+                page = row['keys'][1] if len(row['keys']) > 1 else ''
+                clicks = row.get('clicks', 0)
+                impressions = row.get('impressions', 0)
+                ctr = row.get('ctr', 0.0)
+                position = row.get('position', 0.0)
                 
-                self.services['docs'].documents().batchUpdate(
-                    documentId=document_id,
-                    body={'requests': requests}
-                ).execute()
+                search_data.append({
+                    'query': query,
+                    'page': page,
+                    'clicks': clicks,
+                    'impressions': impressions,
+                    'ctr': round(ctr * 100, 2),  # Convert to percentage
+                    'position': round(position, 1)
+                })
+                
+                # Accumulate totals
+                total_clicks += clicks
+                total_impressions += impressions
+                if ctr > 0:
+                    ctr_values.append(ctr)
+                if position > 0:
+                    position_values.append(position)
             
-            document_url = f"https://docs.google.com/document/d/{document_id}"
+            avg_ctr = (sum(ctr_values) / len(ctr_values) * 100) if ctr_values else 0
+            avg_position = sum(position_values) / len(position_values) if position_values else 0
+            
+            print(f"✅ Search Console: Processed {len(search_data)} queries of REAL data")
+            print(f"   📈 Totals: {total_clicks} clicks, {total_impressions} impressions")
             
             return {
                 'success': True,
-                'document_id': document_id,
-                'document_url': document_url,
-                'title': title
+                'data': search_data,
+                'total_clicks': total_clicks,
+                'total_impressions': total_impressions,
+                'total_queries': total_queries,
+                'average_ctr': round(avg_ctr, 2),
+                'average_position': round(avg_position, 1),
+                'date_range': f"{start_date} to {end_date}",
+                'site_url': site_url,
+                'raw_response_rows': len(rows)  # For debugging
             }
             
         except Exception as e:
-            return {'success': False, 'error': str(e)}
-    
+            error_msg = str(e)
+            print(f"❌ Search Console API Error: {error_msg}")
+            
+            # Provide specific guidance based on common errors
+            if "403" in error_msg:
+                detailed_error = f"Permission denied for {site_url}. Check: 1) Site is verified in Search Console, 2) You have Owner/Full User access, 3) Search Console API is enabled in Google Cloud Console."
+            elif "404" in error_msg:
+                detailed_error = f"Site {site_url} not found in Search Console. Add and verify the site first."
+            elif "invalid_grant" in error_msg:
+                detailed_error = "OAuth token expired or invalid. Please re-authenticate via /google/auth/start"
+            else:
+                detailed_error = f"Search Console API error: {error_msg}"
+            
+            return {'success': False, 'error': detailed_error}
+# =============================================================================
+# SECTION 7: GOOGLE DOCS AND SHEETS INTEGRATION
+# =============================================================================
+
     def append_to_document(self, document_id: str, content: str) -> Dict:
         """Append content to an existing Google Doc"""
         if 'docs' not in self.services:
@@ -893,36 +1222,6 @@ Morning Briefing Data:
         except Exception as e:
             return {'success': False, 'error': str(e)}
 
-    # =============================================================================
-    # GOOGLE SHEETS INTEGRATION
-    # =============================================================================
-    
-    def create_spreadsheet(self, title: str) -> Dict:
-        """Create a new Google Sheet"""
-        if 'sheets' not in self.services:
-            return {'success': False, 'error': 'Google Sheets API not available'}
-        
-        try:
-            spreadsheet = {
-                'properties': {
-                    'title': title
-                }
-            }
-            
-            result = self.services['sheets'].spreadsheets().create(body=spreadsheet).execute()
-            spreadsheet_id = result.get('spreadsheetId')
-            spreadsheet_url = result.get('spreadsheetUrl')
-            
-            return {
-                'success': True,
-                'spreadsheet_id': spreadsheet_id,
-                'spreadsheet_url': spreadsheet_url,
-                'title': title
-            }
-            
-        except Exception as e:
-            return {'success': False, 'error': str(e)}
-    
     def read_sheet_data(self, spreadsheet_id: str, range_name: str = "A1:Z1000") -> Dict:
         """Read data from a Google Sheet - FIXED: Preserve case in spreadsheet_id"""
         if 'sheets' not in self.services:
@@ -945,14 +1244,109 @@ Morning Briefing Data:
             
         except Exception as e:
             return {'success': False, 'error': str(e)}
-            
-# Section 6: GA4 Analytics and Search Console Integration
-# Section 6: GA4 Analytics and Search Console Integration - FIXED DATA INTEGRITY
 
-    # =============================================================================
-    # GA4 ANALYTICS INTEGRATION - COMPLETELY REWRITTEN FOR GA4 DATA API WITH DATA VALIDATION
-    # =============================================================================
-    
+    def handle_sheets_command(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
+        """Handle Google Sheets commands with enhanced URL/name parsing"""
+        user_lower = user_input.lower().strip()
+        
+        # Create spreadsheet command
+        if 'create spreadsheet' in user_lower or 'create sheet' in user_lower:
+            title_match = re.search(r'create (?:spreadsheet|sheet) (?:called |titled |named )?["\']?([^"\']+)["\']?', user_lower)
+            if title_match:
+                title = title_match.group(1).strip()
+                
+                result = self.create_spreadsheet(title)
+                
+                if result['success']:
+                    response_text = f"**Spreadsheet Created Successfully!**\n\n"
+                    response_text += f"**Title:** {result['title']}\n"
+                    response_text += f"**Spreadsheet ID:** {result['spreadsheet_id']}\n"
+                    response_text += f"**URL:** {result['spreadsheet_url']}\n\n"
+                    response_text += f"You can now add data or read it using commands like:\n"
+                    response_text += f"- 'read sheet {result['title']}' (by name)\n"
+                    response_text += f"- 'read sheet {result['spreadsheet_url']}' (by URL)"
+                else:
+                    response_text = f"Failed to create spreadsheet: {result['error']}"
+                
+                response_data = {"SyntaxPrime": response_text}
+                save_conversation_enhanced(project, user_input, response_data)
+                return response_data, True
+        
+        # Enhanced read spreadsheet command - supports URL, ID, and name
+        if 'read sheet' in user_lower or 'get data from sheet' in user_lower:
+            spreadsheet_id = None
+            
+            # Try to parse Google Sheets URL
+            url_match = re.search(r'(?:read sheet|get data from sheet)\s+https://docs\.google\.com/spreadsheets/d/([a-zA-Z0-9_-]+)', user_input)
+            if url_match:
+                spreadsheet_id = url_match.group(1)
+            else:
+                # Try direct ID or name format
+                sheet_match = re.search(r'(?:read sheet|get data from sheet)\s+(.+)', user_input)
+                if sheet_match:
+                    sheet_identifier = sheet_match.group(1).strip()
+                    
+                    # Check if it looks like a spreadsheet ID
+                    if re.match(r'^[a-zA-Z0-9_-]+$', sheet_identifier) and len(sheet_identifier) > 20:
+                        spreadsheet_id = sheet_identifier
+                    else:
+                        # Try to find by name using Drive API
+                        if 'drive' in self.services:
+                            try:
+                                query_string = f"name='{sheet_identifier}' and mimeType='application/vnd.google-apps.spreadsheet'"
+                                results = self.services['drive'].files().list(q=query_string, fields="files(id,name)").execute()
+                                files = results.get('files', [])
+                                
+                                if files:
+                                    spreadsheet_id = files[0]['id']
+                                else:
+                                    response_text = f"No spreadsheet found with name '{sheet_identifier}'. Try using the full URL or spreadsheet ID."
+                                    response_data = {"SyntaxPrime": response_text}
+                                    save_conversation_enhanced(project, user_input, response_data)
+                                    return response_data, True
+                            except Exception as e:
+                                response_text = f"Error searching for spreadsheet by name: {str(e)}"
+                                response_data = {"SyntaxPrime": response_text}
+                                save_conversation_enhanced(project, user_input, response_data)
+                                return response_data, True
+                        else:
+                            response_text = "Drive API not available for name-based lookup. Please use the spreadsheet URL or ID."
+                            response_data = {"SyntaxPrime": response_text}
+                            save_conversation_enhanced(project, user_input, response_data)
+                            return response_data, True
+            
+            if not spreadsheet_id:
+                response_text = "Please provide either:\n- The full Google Sheets URL\n- The spreadsheet ID\n- The exact spreadsheet name"
+                response_data = {"SyntaxPrime": response_text}
+                save_conversation_enhanced(project, user_input, response_data)
+                return response_data, True
+            
+            result = self.read_sheet_data(spreadsheet_id)
+            
+            if result['success']:
+                response_text = f"**Sheet Data Retrieved:**\n\n"
+                response_text += f"**Rows found:** {result['rows']}\n"
+                response_text += f"**Spreadsheet URL:** {result['spreadsheet_url']}\n\n"
+                
+                if result['data']:
+                    response_text += f"**Sample data (first 5 rows):**\n"
+                    for i, row in enumerate(result['data'][:5]):
+                        response_text += f"Row {i+1}: {row}\n"
+                else:
+                    response_text += "No data found in the spreadsheet."
+            else:
+                response_text = f"Failed to read spreadsheet: {result['error']}"
+            
+            response_data = {"SyntaxPrime": response_text}
+            save_conversation_enhanced(project, user_input, response_data)
+            return response_data, True
+        
+        return {}, False
+        
+# =============================================================================
+# SECTION 8: GA4 ANALYTICS AND SEARCH CONSOLE INTEGRATION WITH DATA VALIDATION
+# =============================================================================
+
     def _validate_analytics_response(self, response_data, operation, property_id):
         """Strict validation to prevent fabricated analytics data"""
         if not response_data:
@@ -989,7 +1383,7 @@ Morning Briefing Data:
             }
         
         try:
-            print(f"🔍 GA4 Analytics API: Fetching data for property {property_id}")
+            print(f"📊 GA4 Analytics API: Fetching data for property {property_id}")
             
             # GA4 Data API request format
             request_body = {
@@ -1162,45 +1556,7 @@ Morning Briefing Data:
             result['site_key'] = site_key
         
         return result
-    
-    def get_all_sites_analytics(self, start_date: str = "7daysAgo", end_date: str = "today") -> Dict:
-        """Get analytics for all configured sites with data validation"""
-        results = {}
-        successful_sites = 0
-        failed_sites = 0
-        
-        for site_key, site_config in self.sites_config.items():
-            if site_config.get('analytics_view_id'):
-                print(f"🔍 Fetching analytics for {site_config['name']}...")
-                result = self.get_analytics_data(site_key, start_date, end_date)
-                results[site_key] = result
-                
-                if result['success']:
-                    successful_sites += 1
-                    print(f"   ✅ Success: {result.get('total_sessions', 0)} sessions")
-                else:
-                    failed_sites += 1
-                    print(f"   ❌ Failed: {result['error']}")
-            else:
-                results[site_key] = {
-                    'success': False,
-                    'error': f'No analytics property ID configured for {site_config["name"]}'
-                }
-                failed_sites += 1
-        
-        return {
-            'success': True,
-            'sites': results,
-            'total_sites': len(results),
-            'successful_sites': successful_sites,
-            'failed_sites': failed_sites,
-            'summary': f"Analytics retrieved for {successful_sites}/{len(results)} configured sites"
-        }
 
-    # =============================================================================
-    # SEARCH CONSOLE INTEGRATION - ENHANCED WITH DATA VALIDATION
-    # =============================================================================
-    
     def _validate_search_console_response(self, response_data, operation, site_url):
         """Strict validation to prevent fabricated search console data"""
         if not response_data:
@@ -1224,353 +1580,10 @@ Morning Briefing Data:
                 return False, f"INVALID DATA: Row {i} missing required 'keys' field"
         
         return True, None
-    
-    def get_search_console_data(self, site_url: str, start_date: str = None, end_date: str = None) -> Dict:
-        """Get Search Console performance data with strict validation"""
-        if 'searchconsole' not in self.services:
-            return {
-                'success': False,
-                'error': 'Search Console API not available. Check your Google Cloud Console - Search Console API must be enabled.'
-            }
-        
-        try:
-            if not start_date:
-                start_date = (datetime.datetime.now() - datetime.timedelta(days=7)).strftime('%Y-%m-%d')
-            if not end_date:
-                end_date = datetime.datetime.now().strftime('%Y-%m-%d')
-            
-            print(f"🔍 Search Console API: Fetching data for {site_url}")
-            
-            request_body = {
-                'startDate': start_date,
-                'endDate': end_date,
-                'dimensions': ['query', 'page'],
-                'rowLimit': 100
-            }
-            
-            response = self.services['searchconsole'].searchanalytics().query(
-                siteUrl=site_url,
-                body=request_body
-            ).execute()
-            
-            print(f"📊 Search Console Raw Response: {response}")
-            
-            # CRITICAL: Validate response before processing
-            is_valid, validation_error = self._validate_search_console_response(response, "Search Console", site_url)
-            if not is_valid:
-                return {'success': False, 'error': validation_error}
-            
-            # Process response - ONLY if validation passed
-            rows = response.get('rows', [])
-            search_data = []
-            
-            # If no rows, this is legitimate (no search traffic yet)
-            if len(rows) == 0:
-                return {
-                    'success': True,
-                    'data': [],
-                    'total_clicks': 0,
-                    'total_impressions': 0,
-                    'total_queries': 0,
-                    'average_ctr': 0,
-                    'average_position': 0,
-                    'date_range': f"{start_date} to {end_date}",
-                    'site_url': site_url,
-                    'message': f"No search console data found for {site_url}. This is normal for new sites or sites with no search visibility yet."
-                }
-            
-            total_clicks = 0
-            total_impressions = 0
-            total_queries = len(rows)
-            ctr_values = []
-            position_values = []
-            
-            for row in rows:
-                query = row['keys'][0]
-                page = row['keys'][1] if len(row['keys']) > 1 else ''
-                clicks = row.get('clicks', 0)
-                impressions = row.get('impressions', 0)
-                ctr = row.get('ctr', 0.0)
-                position = row.get('position', 0.0)
-                
-                search_data.append({
-                    'query': query,
-                    'page': page,
-                    'clicks': clicks,
-                    'impressions': impressions,
-                    'ctr': round(ctr * 100, 2),  # Convert to percentage
-                    'position': round(position, 1)
-                })
-                
-                # Accumulate totals
-                total_clicks += clicks
-                total_impressions += impressions
-                if ctr > 0:
-                    ctr_values.append(ctr)
-                if position > 0:
-                    position_values.append(position)
-            
-            avg_ctr = (sum(ctr_values) / len(ctr_values) * 100) if ctr_values else 0
-            avg_position = sum(position_values) / len(position_values) if position_values else 0
-            
-            print(f"✅ Search Console: Processed {len(search_data)} queries of REAL data")
-            print(f"   📈 Totals: {total_clicks} clicks, {total_impressions} impressions")
-            
-            return {
-                'success': True,
-                'data': search_data,
-                'total_clicks': total_clicks,
-                'total_impressions': total_impressions,
-                'total_queries': total_queries,
-                'average_ctr': round(avg_ctr, 2),
-                'average_position': round(avg_position, 1),
-                'date_range': f"{start_date} to {end_date}",
-                'site_url': site_url,
-                'raw_response_rows': len(rows)  # For debugging
-            }
-            
-        except Exception as e:
-            error_msg = str(e)
-            print(f"❌ Search Console API Error: {error_msg}")
-            
-            # Provide specific guidance based on common errors
-            if "403" in error_msg:
-                detailed_error = f"Permission denied for {site_url}. Check: 1) Site is verified in Search Console, 2) You have Owner/Full User access, 3) Search Console API is enabled in Google Cloud Console."
-            elif "404" in error_msg:
-                detailed_error = f"Site {site_url} not found in Search Console. Add and verify the site first."
-            elif "invalid_grant" in error_msg:
-                detailed_error = "OAuth token expired or invalid. Please re-authenticate via /google/auth/start"
-            else:
-                detailed_error = f"Search Console API error: {error_msg}"
-            
-            return {'success': False, 'error': detailed_error}
-    
-    def get_search_console_data_for_site(self, site_key: str, start_date: str = None, end_date: str = None) -> Dict:
-        """Get search console data for a specific site with ENHANCED VALIDATION"""
-        if site_key not in self.sites_config:
-            return {'success': False, 'error': f'Site "{site_key}" not found in configuration'}
-        
-        site_config = self.sites_config[site_key]
-        site_url = site_config.get('search_console_url')
-        
-        if not site_url:
-            return {
-                'success': False,
-                'error': f'No Search Console URL configured for site "{site_config["name"]}". Add search_console_url to your GOOGLE_SITES_CONFIG.'
-            }
-        
-        # Get the raw search console data
-        result = self.get_search_console_data(site_url, start_date, end_date)
-        
-        # ENHANCED: Add comprehensive validation to prevent fabricated data disasters
-        if result.get('success'):
-            try:
-                # Validate the data before returning
-                validation_results = validate_analytics_data_comprehensive(
-                    site_config,
-                    search_console_result=result
-                )
-                
-                sc_validation = validation_results.get('search_console')
-                if sc_validation:
-                    # Add validation metadata to the result
-                    result['validation'] = {
-                        'is_valid': sc_validation.is_valid,
-                        'confidence_score': sc_validation.confidence_score,
-                        'site_relevance_score': sc_validation.site_relevance_score,
-                        'warnings': sc_validation.warnings,
-                        'recommendation': sc_validation.recommendation
-                    }
-                    
-                    # Log validation issues
-                    if not sc_validation.is_valid or sc_validation.site_relevance_score < 0.7:
-                        print(f"🚨 Search Console validation issues for {site_config['name']}:")
-                        print(f"   - Valid: {'✅' if sc_validation.is_valid else '❌'}")
-                        print(f"   - Confidence: {sc_validation.confidence_score:.2f}/1.0")
-                        print(f"   - Relevance: {sc_validation.site_relevance_score:.2f}/1.0")
-                        
-                        if sc_validation.validation_errors:
-                            for error in sc_validation.validation_errors:
-                                print(f"   - ❌ {error}")
-                    
-                    # Add validation info to result for user display
-                    if sc_validation.site_relevance_score < 0.7:
-                        result['relevance_warning'] = f"Query relevance score: {sc_validation.site_relevance_score:.1f}/1.0 - Check if data matches expected site content"
-                        
-            except Exception as e:
-                print(f"Search Console validation failed: {e}")
-                # Don't fail the entire request if validation fails
-        
-        # Add site information to successful results
-        if result['success']:
-            result['site_name'] = site_config['name']
-            result['site_key'] = site_key
-        
-        return result
-# Section 7: Command Handlers (COMPLETELY REWRITTEN - FIXED Regex Error)
 
-    # =============================================================================
-    # COMMAND HANDLERS (UPDATED WITH CONTEXT STORAGE)
-    # =============================================================================
-    
-    def handle_docs_command(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
-        """Handle Google Docs commands with improved parsing"""
-        user_lower = user_input.lower().strip()
-        
-        # Create document command with improved content parsing
-        if 'create document' in user_lower or 'create doc' in user_lower:
-            # Better parsing to separate title from content
-            content_match = re.search(r'create (?:document|doc) ["\']?([^"\']+?)["\']?\s+with content:\s*(.+)', user_input, re.IGNORECASE)
-            if content_match:
-                title = content_match.group(1).strip()
-                content = content_match.group(2).strip()
-            else:
-                # Simple title extraction without content
-                title_match = re.search(r'create (?:document|doc) (?:called |titled |named )?["\']?([^"\']+)["\']?', user_lower)
-                if title_match:
-                    title = title_match.group(1).strip()
-                    content = ""
-                else:
-                    return {"SyntaxPrime": "Please specify a document title (e.g., 'create document Meeting Notes')"}, True
-            
-            result = self.create_document(title, content)
-            
-            if result['success']:
-                response_text = f"**Document Created Successfully!**\n\n"
-                response_text += f"**Title:** {result['title']}\n"
-                response_text += f"**Document ID:** {result['document_id']}\n"
-                response_text += f"**URL:** {result['document_url']}\n\n"
-                response_text += f"You can now edit this document in Google Docs or add more content using commands like:\n"
-                response_text += f"- 'add to document {result['document_id']}: your content here'"
-            else:
-                response_text = f"Failed to create document: {result['error']}"
-            
-            response_data = {"SyntaxPrime": response_text}
-            save_conversation_enhanced(project, user_input, response_data)
-            return response_data, True
-        
-        # Add to document command - Preserve case in document ID
-        if 'add to document' in user_lower or 'append to document' in user_lower:
-            doc_match = re.search(r'(?:add to|append to) document ([a-zA-Z0-9_-]+)[:\s]+(.+)', user_input, re.IGNORECASE)
-            if doc_match:
-                document_id = doc_match.group(1).strip()  # Keep original case
-                content = doc_match.group(2).strip()
-                
-                result = self.append_to_document(document_id, content)
-                
-                if result['success']:
-                    response_text = f"**Content Added Successfully!**\n\n"
-                    response_text += f"Content has been appended to the document.\n"
-                    response_text += f"**View Document:** {result['document_url']}"
-                else:
-                    response_text = f"Failed to add content: {result['error']}"
-                
-                response_data = {"SyntaxPrime": response_text}
-                save_conversation_enhanced(project, user_input, response_data)
-                return response_data, True
-        
-        return {}, False
-    
-    def handle_sheets_command(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
-        """Handle Google Sheets commands with enhanced URL/name parsing"""
-        user_lower = user_input.lower().strip()
-        
-        # Create spreadsheet command
-        if 'create spreadsheet' in user_lower or 'create sheet' in user_lower:
-            title_match = re.search(r'create (?:spreadsheet|sheet) (?:called |titled |named )?["\']?([^"\']+)["\']?', user_lower)
-            if title_match:
-                title = title_match.group(1).strip()
-                
-                result = self.create_spreadsheet(title)
-                
-                if result['success']:
-                    response_text = f"**Spreadsheet Created Successfully!**\n\n"
-                    response_text += f"**Title:** {result['title']}\n"
-                    response_text += f"**Spreadsheet ID:** {result['spreadsheet_id']}\n"
-                    response_text += f"**URL:** {result['spreadsheet_url']}\n\n"
-                    response_text += f"You can now add data or read it using commands like:\n"
-                    response_text += f"- 'read sheet {result['title']}' (by name)\n"
-                    response_text += f"- 'read sheet {result['spreadsheet_url']}' (by URL)"
-                else:
-                    response_text = f"Failed to create spreadsheet: {result['error']}"
-                
-                response_data = {"SyntaxPrime": response_text}
-                save_conversation_enhanced(project, user_input, response_data)
-                return response_data, True
-        
-        # Enhanced read spreadsheet command - supports URL, ID, and name
-        if 'read sheet' in user_lower or 'get data from sheet' in user_lower:
-            spreadsheet_id = None
-            
-            # Try to parse Google Sheets URL
-            url_match = re.search(r'(?:read sheet|get data from sheet)\s+https://docs\.google\.com/spreadsheets/d/([a-zA-Z0-9_-]+)', user_input)
-            if url_match:
-                spreadsheet_id = url_match.group(1)
-            else:
-                # Try direct ID or name format
-                sheet_match = re.search(r'(?:read sheet|get data from sheet)\s+(.+)', user_input)
-                if sheet_match:
-                    sheet_identifier = sheet_match.group(1).strip()
-                    
-                    # CRITICAL FIX: Properly close the regex string literal
-                    # This was the source of the syntax error on line 1378
-                    if re.match(r'^[a-zA-Z0-9_-]+$', sheet_identifier) and len(sheet_identifier) > 20:
-                        spreadsheet_id = sheet_identifier
-                    else:
-                        # Try to find by name using Drive API
-                        if 'drive' in self.services:
-                            try:
-                                query_string = f"name='{sheet_identifier}' and mimeType='application/vnd.google-apps.spreadsheet'"
-                                results = self.services['drive'].files().list(q=query_string, fields="files(id,name)").execute()
-                                files = results.get('files', [])
-                                
-                                if files:
-                                    spreadsheet_id = files[0]['id']
-                                else:
-                                    response_text = f"No spreadsheet found with name '{sheet_identifier}'. Try using the full URL or spreadsheet ID."
-                                    response_data = {"SyntaxPrime": response_text}
-                                    save_conversation_enhanced(project, user_input, response_data)
-                                    return response_data, True
-                            except Exception as e:
-                                response_text = f"Error searching for spreadsheet by name: {str(e)}"
-                                response_data = {"SyntaxPrime": response_text}
-                                save_conversation_enhanced(project, user_input, response_data)
-                                return response_data, True
-                        else:
-                            response_text = "Drive API not available for name-based lookup. Please use the spreadsheet URL or ID."
-                            response_data = {"SyntaxPrime": response_text}
-                            save_conversation_enhanced(project, user_input, response_data)
-                            return response_data, True
-            
-            if not spreadsheet_id:
-                response_text = "Please provide either:\n- The full Google Sheets URL\n- The spreadsheet ID\n- The exact spreadsheet name"
-                response_data = {"SyntaxPrime": response_text}
-                save_conversation_enhanced(project, user_input, response_data)
-                return response_data, True
-            
-            result = self.read_sheet_data(spreadsheet_id)
-            
-            if result['success']:
-                response_text = f"**Sheet Data Retrieved:**\n\n"
-                response_text += f"**Rows found:** {result['rows']}\n"
-                response_text += f"**Spreadsheet URL:** {result['spreadsheet_url']}\n\n"
-                
-                if result['data']:
-                    response_text += f"**Sample data (first 5 rows):**\n"
-                    for i, row in enumerate(result['data'][:5]):
-                        response_text += f"Row {i+1}: {row}\n"
-                else:
-                    response_text += "No data found in the spreadsheet."
-            else:
-                response_text = f"Failed to read spreadsheet: {result['error']}"
-            
-            response_data = {"SyntaxPrime": response_text}
-            save_conversation_enhanced(project, user_input, response_data)
-            return response_data, True
-        
-        return {}, False
-        
-# Section 8: Multi-Site Analytics and Search Console Command Handlers
+# =============================================================================
+# SECTION 9: MULTI-SITE ANALYTICS COMMAND HANDLERS
+# =============================================================================
 
     def handle_multi_site_analytics_command(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
         """Handle analytics commands with multi-site support and flexible dates"""
@@ -1719,177 +1732,41 @@ Morning Briefing Data:
             response_data = {"SyntaxPrime": response_text}
             save_conversation_enhanced(project, user_input, response_data)
             return response_data, True
-    
-    def handle_multi_site_search_console_command(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
-        """Handle search console commands with multi-site support and flexible dates"""
-        user_lower = user_input.lower().strip()
-        
-        # Parse site specification from command
-        site_key = None
-        
-        # Look for site specification patterns
-        site_patterns = [
-            r'search console for (.+?)(?:\s+last|\s+this|\s+from|\s+past|$)',
-            r'seo for (.+?)(?:\s+last|\s+this|\s+from|\s+past|$)',
-            r'(.+?) search console',
-            r'(.+?) seo'
-        ]
-        
-        for pattern in site_patterns:
-            match = re.search(pattern, user_lower)
-            if match:
-                potential_site = match.group(1).strip()
-                found_site = self.find_site_by_name(potential_site)
-                if found_site:
-                    site_key = found_site
-                    break
-        
-        # Parse date range
-        start_date, end_date = self.parse_date_range_from_input(user_input)
-        
-        # Convert Google Analytics format to Search Console format (YYYY-MM-DD)
-        if start_date.endswith('daysAgo'):
-            days_ago = int(start_date.replace('daysAgo', ''))
-            start_date_obj = datetime.date.today() - datetime.timedelta(days=days_ago)
-            start_date = start_date_obj.strftime('%Y-%m-%d')
-        elif start_date == 'yesterday':
-            start_date_obj = datetime.date.today() - datetime.timedelta(days=1)
-            start_date = start_date_obj.strftime('%Y-%m-%d')
-        elif start_date == 'today':
-            start_date = datetime.date.today().strftime('%Y-%m-%d')
-        
-        if end_date == 'today':
-            end_date = datetime.date.today().strftime('%Y-%m-%d')
-        
-        result = self.get_search_console_data_for_site(site_key, start_date, end_date)
-        
-        if result['success']:
-            data = result['data']
-            site_name = result.get('site_name', 'Unknown Site')
-            
-            # Store context for follow-up questions
-            enhanced_conversation_context.store_search_console_report(
-                session_id=project,
-                site_name=site_name,
-                report_data=result,
-                user_query=user_input
-            )
-            
-            response_text = f"**Search Console Report for {site_name} ({result['date_range']})**\n\n"
-            
-            if data:
-                total_clicks = sum(row['clicks'] for row in data)
-                total_impressions = sum(row['impressions'] for row in data)
-                avg_ctr = (total_clicks / total_impressions * 100) if total_impressions > 0 else 0
-                
-                response_text += f"**Summary:**\n"
-                response_text += f"- Total Clicks: {total_clicks:,}\n"
-                response_text += f"- Total Impressions: {total_impressions:,}\n"
-                response_text += f"- Average CTR: {avg_ctr:.2f}%\n"
-                response_text += f"- Total Queries: {result['total_queries']}\n\n"
-                
-                response_text += f"**Top Performing Queries:**\n"
-                sorted_data = sorted(data, key=lambda x: x['clicks'], reverse=True)
-                for i, row in enumerate(sorted_data[:10], 1):
-                    response_text += f"{i}. {row['query']} - {row['clicks']} clicks, {row['impressions']} impressions\n"
-            else:
-                response_text += "No search console data found for the specified period."
-        else:
-            response_text = f"Failed to retrieve search console data: {result['error']}"
-            
-            # Show available sites if site not found
-            if "not found" in result['error'].lower():
-                sites = self.get_available_sites()
-                if sites:
-                    response_text += f"\n\n**Available sites:**\n"
-                    for site in sites:
-                        if site['has_search_console']:
-                            response_text += f"- {site['name']} ({site['key']})\n"
-        
-        response_data = {"SyntaxPrime": response_text}
-        save_conversation_enhanced(project, user_input, response_data)
-        return response_data, True
-        
-# Section 9: Main Command Processor and Entry Point
 
-    def process_google_commands(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
-        """Main command processor for all Google services with enhanced context handling"""
-        user_lower = user_input.lower().strip()
+    def get_all_sites_analytics(self, start_date: str = "7daysAgo", end_date: str = "today") -> Dict:
+        """Get analytics for all configured sites with data validation"""
+        results = {}
+        successful_sites = 0
+        failed_sites = 0
         
-        # PRIORITY 0: Check for follow-up questions first
-        context = enhanced_conversation_context.get_context(project)
-        if context and enhanced_conversation_context.detect_follow_up_question(user_input, context):
-            response_data = enhanced_conversation_context.generate_contextual_response(
-                user_input, context, project, use_voices, random_toggle
-            )
-            save_conversation_enhanced(project, user_input, response_data)
-            return response_data, True
+        for site_key, site_config in self.sites_config.items():
+            if site_config.get('analytics_view_id'):
+                print(f"📊 Fetching analytics for {site_config['name']}...")
+                result = self.get_analytics_data(site_key, start_date, end_date)
+                results[site_key] = result
+                
+                if result['success']:
+                    successful_sites += 1
+                    print(f"   ✅ Success: {result.get('total_sessions', 0)} sessions")
+                else:
+                    failed_sites += 1
+                    print(f"   ❌ Failed: {result['error']}")
+            else:
+                results[site_key] = {
+                    'success': False,
+                    'error': f'No analytics property ID configured for {site_config["name"]}'
+                }
+                failed_sites += 1
         
-        # Blog suggestions commands - WITH VALIDATION BLOCKING
-        blog_patterns = [
-            'blog suggestions', 'blog ideas', 'content ideas', 'what to write',
-            'blog suggestions for', 'content suggestions', 'post ideas'
-        ]
-        
-        if any(pattern in user_lower for pattern in blog_patterns):
-            print("✍️ Detected blog suggestions command - will validate data first")
-            response_data, handled = self.handle_blog_suggestions_command(user_input, project, use_voices, random_toggle)
-            if handled:
-                save_conversation_enhanced(project, user_input, response_data)
-            return response_data, handled
-        
-        # PRIORITY 1: Multi-site search console commands (MOVED UP - more specific than Gmail search)
-        multi_search_triggers = ['search console for', 'seo for', 'search console', 'seo data']
-        if any(trigger in user_lower for trigger in multi_search_triggers):
-            return self.handle_multi_site_search_console_command(user_input, project, use_voices, random_toggle)
-        
-        # PRIORITY 2: Multi-site analytics commands
-        multi_analytics_triggers = [
-            'analytics for', 'all sites analytics', 'list sites', 'available sites',
-            'analytics report', 'website analytics', 'site traffic'
-        ]
-        if any(trigger in user_lower for trigger in multi_analytics_triggers):
-            return self.handle_multi_site_analytics_command(user_input, project, use_voices, random_toggle)
-        
-        # PRIORITY 3: Gmail/Calendar commands (moved down, with more specific search patterns)
-        gmail_triggers = [
-            'overnight', 'mail', 'emails', 'inbox', 'check mail',
-            'calendar', 'today', 'meetings', 'schedule',
-            'next meeting', 'next', 'upcoming',
-            'good morning', 'morning', 'gm'
-        ]
-        
-        # Gmail search commands (more specific patterns to avoid conflicts)
-        gmail_search_triggers = ['search email', 'find email', 'email about']
-        
-        if any(trigger in user_lower for trigger in gmail_triggers):
-            response_data, handled = self.handle_gmail_commands(user_input, project, use_voices, random_toggle)
-            if handled:
-                return response_data, True
-        elif any(trigger in user_lower for trigger in gmail_search_triggers) or (user_lower.startswith('search ') and 'console' not in user_lower):
-            # Only treat as Gmail search if it starts with 'search ' and doesn't contain 'console'
-            response_data, handled = self.handle_gmail_commands(user_input, project, use_voices, random_toggle)
-            if handled:
-                return response_data, True
-        
-        # PRIORITY 4: Document creation commands
-        docs_triggers = ['create document', 'create doc', 'add to document', 'append to document']
-        if any(trigger in user_lower for trigger in docs_triggers):
-            return self.handle_docs_command(user_input, project, use_voices, random_toggle)
-        
-        # PRIORITY 5: Spreadsheet commands
-        sheets_triggers = ['create spreadsheet', 'create sheet', 'read sheet', 'get data from sheet']
-        if any(trigger in user_lower for trigger in sheets_triggers):
-            return self.handle_sheets_command(user_input, project, use_voices, random_toggle)
-        
-        # PRIORITY 6: Slides commands (placeholder for future)
-        slides_triggers = ['create presentation', 'create slides', 'add slide']
-        if any(trigger in user_lower for trigger in slides_triggers):
-            response_data = {"SyntaxPrime": "Google Slides integration coming soon! Currently supports Google Docs and Sheets."}
-            save_conversation_enhanced(project, user_input, response_data)
-            return response_data, True
-        
-        return {}, False
+        return {
+            'success': True,
+            'sites': results,
+            'total_sites': len(results),
+            'successful_sites': successful_sites,
+            'failed_sites': failed_sites,
+            'summary': f"Analytics retrieved for {successful_sites}/{len(results)} configured sites"
+        }
+
     def handle_blog_suggestions_command(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
         """Generate blog suggestions with CRITICAL validation to prevent inappropriate content"""
         user_lower = user_input.lower().strip()
@@ -2005,285 +1882,9 @@ Provide specific, actionable blog post titles with brief explanations."""
         )
         
         return response_data, True
-
-# Add this BEFORE the final process_google_ecosystem_commands function
-# This is the missing GoogleIntegration class
-
-class GoogleIntegration:
-    """Complete Google Ecosystem Integration - All services in one class"""
-    
-    def __init__(self):
-        self.timezone = self._get_user_timezone()
-        self.credentials = None
-        self.services = {}
-        self.sites_config = self._load_sites_config()
         
-        if GOOGLE_APIS_AVAILABLE:
-            self._initialize_services()
-    
-    def _get_user_timezone(self):
-        """Get user's timezone with proper fallback"""
-        try:
-            from flask import has_request_context, session
-            if has_request_context() and session:
-                user_tz = session.get('user_timezone')
-                if user_tz:
-                    return pytz.timezone(user_tz)
-        except:
-            pass
-        return pytz.timezone('America/New_York')
-    
-    def _initialize_services(self):
-        """Initialize all Google API services with automatic token refresh"""
-        try:
-            # Import the token manager if available
-            try:
-                from modules.google_token_refresh import get_google_credentials, token_manager
-                # Get valid credentials with automatic refresh
-                self.credentials = get_google_credentials()
-            except ImportError:
-                # Fallback to direct credential loading
-                from utils.gmail_client import _build_creds
-                self.credentials = _build_creds()
-            
-            if not self.credentials:
-                print("No valid Google credentials available - authentication required")
-                return
-            
-            print("Valid Google credentials obtained")
-            
-            # Initialize all services with refreshed credentials
-            try:
-                # Core services
-                self.services['gmail'] = build('gmail', 'v1', credentials=self.credentials, cache_discovery=False)
-                self.services['calendar'] = build('calendar', 'v3', credentials=self.credentials, cache_discovery=False)
-                self.services['drive'] = build('drive', 'v3', credentials=self.credentials, cache_discovery=False)
-                self.services['docs'] = build('docs', 'v1', credentials=self.credentials, cache_discovery=False)
-                self.services['sheets'] = build('sheets', 'v4', credentials=self.credentials, cache_discovery=False)
-                
-                print("Google services initialized: ['gmail', 'calendar', 'drive', 'docs', 'sheets']")
-                
-            except Exception as e:
-                print(f"Error initializing Google services: {e}")
-                
-        except Exception as e:
-            print(f"Failed to initialize Google integration: {e}")
-    
-    def _load_sites_config(self) -> Dict[str, Dict]:
-        """Load multi-site configuration from environment variables"""
-        sites = {}
-        
-        # Method 1: JSON configuration (recommended)
-        sites_json = os.getenv('GOOGLE_SITES_CONFIG')
-        if sites_json:
-            try:
-                return json.loads(sites_json)
-            except json.JSONDecodeError as e:
-                print(f"Invalid GOOGLE_SITES_CONFIG JSON: {e}")
-        
-        # Method 2: Legacy single site support
-        legacy_view_id = os.getenv('GOOGLE_ANALYTICS_VIEW_ID')
-        legacy_search_url = os.getenv('SEARCH_CONSOLE_SITE_URL')
-        
-        if legacy_view_id or legacy_search_url:
-            sites['default'] = {
-                'name': 'Default Site',
-                'analytics_view_id': legacy_view_id,
-                'search_console_url': legacy_search_url,
-                'aliases': []
-            }
-        
-        return sites
-    
-    # Include all the methods from the other sections - for now just the critical ones:
-    
-    def process_google_commands(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
-        """Main command processor for all Google services with enhanced context handling"""
-        user_lower = user_input.lower().strip()
-    
-        # Blog suggestions commands - WITH VALIDATION BLOCKING
-            blog_patterns = [
-            'blog suggestions', 'blog ideas', 'content ideas', 'what to write',
-            'blog suggestions for', 'content suggestions', 'post ideas'
-            ]
-    
-        if any(pattern in user_lower for pattern in blog_patterns):
-            print("✏️ Detected blog suggestions command - will validate data first")
-            return {"SyntaxPrime": "🚨 BLOG SUGGESTIONS BLOCKED 🚨\n\nDetected attempt to generate blog suggestions for 'meals'. This would have suggested COOKING RECIPES for Meals N Feelz, but that site is about FUNDRAISING for food programs, not cooking!\n\nThe validation system prevented this content disaster. Configure your site keywords properly to enable safe blog suggestions."}, True
-        
-        # PRIORITY 1: Multi-site analytics commands
-        multi_analytics_triggers = [
-            'analytics for', 'all sites analytics', 'list sites', 'available sites',
-            'analytics report', 'website analytics', 'site traffic'
-        ]
-        if any(trigger in user_lower for trigger in multi_analytics_triggers):
-            return {"SyntaxPrime": "**Available Sites for Analytics:**\n\n**BC Dodge Personal Blog** (bcdodge)\n- Status: Not configured - missing GA4 property ID\n\n**Rose and Angle Consulting** (roseandangle)\n- Status: Not configured - missing GA4 property ID\n\n**Meals N Feelz** (mealsnfeelz)\n- Status: Not configured - missing GA4 property ID\n\n**TV Signals** (tvsignals)\n- Status: Not configured - missing GA4 property ID\n\n**Damnit Carl** (damnitcarl)\n- Status: Not configured - missing GA4 property ID\n\n**Next Steps:**\n1. Get your GA4 property IDs from Google Analytics\n2. Add them to your Railway environment variables\n3. Commands will work: \"analytics for bcdodge\", \"all sites analytics\""}, True
-        
-        # PRIORITY 2: Gmail/Calendar commands
-        gmail_triggers = [
-            'overnight', 'mail', 'emails', 'inbox', 'check mail',
-            'calendar', 'today', 'meetings', 'schedule',
-            'next meeting', 'next', 'upcoming',
-            'good morning', 'morning', 'gm'
-        ]
-        
-        if any(trigger in user_lower for trigger in gmail_triggers):
-            response_data, handled = self.handle_gmail_commands(user_input, project, use_voices, random_toggle)
-            if handled:
-                return response_data, True
-        
-        return {}, False
-    
-    def handle_gmail_commands(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
-        """Handle Gmail and Calendar commands with enhanced multi-calendar support"""
-        user_lower = user_input.lower().strip()
-        
-        # Import the enhanced functions from our updated gmail_client
-        from utils.gmail_client import list_today_events_all_calendars, format_calendar_summary_enhanced
-        
-        # Calendar commands - FIXED TO USE ALL CALENDARS
-        if user_lower in ["calendar", "today", "meetings", "schedule"]:
-            try:
-                print("Fetching today's calendar events from all calendars...")
-                # Use the new all-calendars approach
-                events = list_today_events_all_calendars(max_results=20)
-                
-                if not events or not isinstance(events, list):
-                    response_data = {"SyntaxPrime": "Calendar service unavailable. Check your Google OAuth setup."}
-                    save_conversation_enhanced(project, user_input, response_data)
-                    return response_data, True
-                
-                if len(events) == 0:
-                    summary_prompt = "No events found for today across all your calendars. Your schedule is completely clear."
-                else:
-                    # Use the enhanced formatter that shows calendar names
-                    calendar_summary = format_calendar_summary_enhanced(events, "Today's Calendar (All Calendars)")
-                    summary_prompt = f"Here's your complete calendar for today:\n\n{calendar_summary}"
-                
-                retrieval_ctx = enhanced_retrieve(summary_prompt, k=5) if is_ready() else []
-                response_data = generate_response(
-                    summary_prompt, use_voices, random_toggle,
-                    project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
-                )
-                
-                save_conversation_enhanced(project, user_input, response_data)
-                return response_data, True
-                
-            except Exception as e:
-                print(f"Calendar check failed: {e}")
-                response_data = {"SyntaxPrime": f"Calendar integration error: {str(e)}. Please check your Google OAuth setup."}
-                save_conversation_enhanced(project, user_input, response_data)
-                return response_data, True
-        
-        return {}, False
-    
-    def handle_super_morning_command(self, project, use_voices, random_toggle):
-        """
-        SUPER MORNING BRIEFING: Calendar + Inbox + ClickUp + Priorities
-        Single command that gives you EVERYTHING you need to start the day
-        """
-        print("=== SUPER MORNING BRIEFING TRIGGERED ===")
-        
-        # Import the enhanced functions
-        from utils.gmail_client import list_today_events_all_calendars, format_calendar_summary_enhanced
-        
-        # Track all integrations
-        integrations = {
-            'emails': {'success': False, 'data': None, 'error': None},
-            'calendar': {'success': False, 'data': None, 'error': None},
-            'next_meeting': {'success': False, 'data': None, 'error': None},
-            'clickup': {'success': False, 'data': None, 'error': None}
-        }
-        
-        # 2. TODAY'S CALENDAR (ALL CALENDARS)
-        try:
-            print("📅 Fetching today's calendar events...")
-            events = list_today_events_all_calendars(max_results=20)
-            if events and len(events) > 0:
-                integrations['calendar']['success'] = True
-                integrations['calendar']['data'] = events
-                print(f"✅ Got {len(events)} calendar events")
-            else:
-                integrations['calendar']['error'] = "No events today"
-        except Exception as e:
-            integrations['calendar']['error'] = str(e)
-            print(f"❌ Calendar fetch failed: {e}")
-        
-        # BUILD COMPREHENSIVE BRIEFING
-        briefing_lines = ["🌅 **SUPER MORNING BRIEFING**", ""]
-        
-        # Calendar Section
-        briefing_lines.append("📅 **TODAY'S SCHEDULE**")
-        if integrations['calendar']['success']:
-            events = integrations['calendar']['data']
-            briefing_lines.append(f"✅ {len(events)} events scheduled today")
-            
-            # Use our enhanced formatter
-            calendar_summary = format_calendar_summary_enhanced(events, "")
-            briefing_lines.append(calendar_summary)
-        else:
-            briefing_lines.append(f"❌ {integrations['calendar']['error']}")
-        briefing_lines.append("")
-        
-        # Generate the final briefing
-        morning_briefing = "\n".join(briefing_lines)
-        
-        try:
-            print("🤖 Generating AI response...")
-            retrieval_ctx = enhanced_retrieve(morning_briefing, k=8) if is_ready() else []
-            
-            ai_prompt = f"""Analyze this super morning briefing and provide a concise summary of the calendar events.
-
-Morning Briefing Data:
-{morning_briefing}"""
-            
-            response_data = generate_response(
-                ai_prompt, use_voices, random_toggle,
-                project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
-            )
-            
-            print("✅ Super morning briefing completed successfully")
-            return response_data
-            
-        except Exception as e:
-            print(f"❌ AI response generation failed: {e}")
-            # Fallback - return the raw briefing
-            return {"SyntaxPrime": f"Super morning briefing compiled:\n\n{morning_briefing}"}
-    
-    def _extract_email_sender(self, msg):
-        """Extract sender from email message"""
-        if not isinstance(msg, dict):
-            return None
-        
-        # Try different possible field names for sender
-        for sender_field in ['sender', 'from', 'From', 'fromEmail', 'senderEmail', 'author']:
-            if sender_field in msg:
-                sender = msg[sender_field]
-                if sender:
-                    # Clean up sender (remove email brackets if present)
-                    if '<' in sender and '>' in sender:
-                        sender = sender.split('<')[0].strip()
-                        if not sender:  # If no name, use email
-                            sender = sender.split('<')[1].split('>')[0].strip()
-                    return sender
-        
-        return "Unknown Sender"
-
-    def _extract_email_subject(self, msg):
-        """Extract subject from email message"""
-        if not isinstance(msg, dict):
-            return None
-        
-        # Try different possible field names for subject
-        for subject_field in ['subject', 'Subject', 'title', 'summary', 'snippet']:
-            if subject_field in msg:
-                subject = msg[subject_field]
-                if subject:
-                    return subject
-        
-        return "No Subject"
-# =============================================================================
-# MAIN INTEGRATION FUNCTION
+        # =============================================================================
+# SECTION 10: FINAL ENTRY POINT AND INTEGRATION
 # =============================================================================
 
 def process_google_ecosystem_commands(user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
@@ -2297,4 +1898,3 @@ def process_google_ecosystem_commands(user_input: str, project: str, use_voices:
     
     # Process the command
     return google_integration.process_google_commands(user_input, project, use_voices, random_toggle)
-
