@@ -4,6 +4,7 @@
 # Section 1: Imports and Flask Setup (UPDATED FOR CONSOLIDATED GOOGLE INTEGRATION)
 # Section 1: Imports and Flask Setup (UPDATED WITH ENHANCED MARKETING)
 # Section 1: Imports and Flask Setup (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)
+# Section 1: Imports and Flask Setup (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)9/11/25
 from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify, render_template_string, Response
 from flask_cors import CORS
 from utils.ghostline_engine import generate_response, generate_streaming_response as stream_generate
@@ -14,8 +15,8 @@ from utils.gmail_client import (
     list_today_events, list_tomorrow_events, search_calendar,
     get_next_meeting, format_calendar_summary
 )
-# Add these imports to the top of app.py
-#from modules.feedback_system import submit_user_feedback as record_response_feedback, get_feedback_dashboard as get_feedback_dashboard_data
+# FIXED: Uncommented feedback system imports
+from modules.feedback_system import submit_user_feedback as record_response_feedback, get_feedback_dashboard as get_feedback_dashboard_data
 #from modules.hybrid_analysis import generate_content_strategy_command
 #from modules.settings_persistence import get_default_voice, apply_session_preferences
 import os, json, io
@@ -75,14 +76,7 @@ from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
 import urllib.parse
 
-# Placeholder functions until modules are fixed
-def record_response_feedback(*args, **kwargs):
-    """Placeholder feedback function"""
-    return {'success': True, 'message': 'Feedback recorded'}
-
-def get_feedback_dashboard_data():
-    """Placeholder dashboard function"""
-    return {'total_feedback': 0}
+# FIXED: Removed placeholder functions - using real feedback system now
 
 def generate_content_strategy_command(*args, **kwargs):
     """Placeholder content strategy function"""
@@ -951,846 +945,161 @@ def stream_chat():
 # Section 8: Dashboard Routes (Modular) - UPDATED WITH GOOGLE DIAGNOSTICS
 # Section 8: Dashboard Routes (Modular) - UPDATED WITH CLICKUP DIAGNOSTICS
 # Section 8: Dashboard Routes (Modular) - UPDATED WITH ADMIN CONTROLS
-from modules.dashboard_system import setup_system_routes
-from modules.dashboard_diagnostics import setup_diagnostics_routes
-from modules.dashboard_integrations import setup_integrations_routes
-
-# Register dashboard routes
-setup_system_routes(app)
-setup_diagnostics_routes(app)
-setup_integrations_routes(app)
-
-# CRITICAL DEBUG ENDPOINT - Database Retrieval Testing
-@app.route('/debug/test_ghada_query')
-def test_ghada_query():
-    """Direct database test for Ghada queries and conversation retrieval"""
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
-    from modules.database import get_db_connection
-    import json
-    
-    results = {
-        "database_connection": False,
-        "total_conversations": 0,
-        "ghada_mentions": 0,
-        "shazeen_mentions": 0,
-        "jonathan_mentions": 0,
-        "sample_ghada_conversations": [],
-        "raw_sql_test": None,
-        "enhanced_retrieve_test": None,
-        "simple_like_search": None
-    }
-    
-    with get_db_connection() as conn:
-        if conn:
-            results["database_connection"] = True
-            cursor = conn.cursor()
-            
-            try:
-                # Test 1: Total conversation count
-                cursor.execute("SELECT COUNT(*) FROM chat_threads")
-                results["total_conversations"] = cursor.fetchone()[0]
-                
-                # Test 2: Direct name searches (case-insensitive)
-                cursor.execute("SELECT COUNT(*) FROM chat_threads WHERE LOWER(user_input) LIKE %s OR LOWER(response_data::text) LIKE %s", ('%ghada%', '%ghada%'))
-                results["ghada_mentions"] = cursor.fetchone()[0]
-                
-                cursor.execute("SELECT COUNT(*) FROM chat_threads WHERE LOWER(user_input) LIKE %s OR LOWER(response_data::text) LIKE %s", ('%shazeen%', '%shazeen%'))
-                results["shazeen_mentions"] = cursor.fetchone()[0]
-                
-                cursor.execute("SELECT COUNT(*) FROM chat_threads WHERE LOWER(user_input) LIKE %s OR LOWER(response_data::text) LIKE %s", ('%jonathan%', '%jonathan%'))
-                results["jonathan_mentions"] = cursor.fetchone()[0]
-                
-                # Test 3: Get sample Ghada conversations with response data
-                cursor.execute("""
-                    SELECT user_input, response_data, created_at, project
-                    FROM chat_threads 
-                    WHERE (LOWER(user_input) LIKE %s OR LOWER(response_data::text) LIKE %s)
-                    ORDER BY created_at DESC 
-                    LIMIT 5
-                """, ('%ghada%', '%ghada%'))
-                
-                rows = cursor.fetchall()
-                for row in rows:
-                    response_preview = "None"
-                    if row[1] and isinstance(row[1], dict):
-                        response_content = row[1].get('SyntaxPrime', '')
-                        response_preview = response_content[:300] + "..." if len(response_content) > 300 else response_content
-                    
-                    results["sample_ghada_conversations"].append({
-                        "user_input": row[0],
-                        "response_preview": response_preview,
-                        "date": row[2].isoformat() if row[2] else "Unknown",
-                        "project": row[3]
-                    })
-                
-                # Test 4: Test the exact SQL that enhanced_retrieve uses
-                simple_sql = """
-                SELECT user_input, response_data, created_at, project
-                FROM chat_threads 
-                WHERE (
-                    LOWER(user_input) LIKE %s 
-                    OR LOWER(response_data::text) LIKE %s
-                )
-                AND user_input IS NOT NULL
-                AND LENGTH(TRIM(user_input)) > 2
-                ORDER BY created_at DESC
-                LIMIT 5
-                """
-                
-                search_pattern = '%ghada%'
-                cursor.execute(simple_sql, (search_pattern, search_pattern))
-                sql_rows = cursor.fetchall()
-                
-                results["raw_sql_test"] = {
-                    "query_worked": True,
-                    "results_count": len(sql_rows),
-                    "sample_results": [
-                        {
-                            "user_input": row[0],
-                            "date": row[2].isoformat() if row[2] else "Unknown",
-                            "project": row[3],
-                            "response_preview": (row[1].get('SyntaxPrime', '')[:100] + "..." if row[1] and isinstance(row[1], dict) else "No response")
-                        } for row in sql_rows
-                    ]
-                }
-                
-                # Test 5: Very simple LIKE search for debugging
-                cursor.execute("SELECT user_input FROM chat_threads WHERE LOWER(user_input) LIKE %s LIMIT 3", ('%who is%',))
-                like_rows = cursor.fetchall()
-                results["simple_like_search"] = {
-                    "who_is_queries": [row[0] for row in like_rows],
-                    "count": len(like_rows)
-                }
-                
-            except Exception as e:
-                results["raw_sql_test"] = {"error": str(e)}
-        
-        # Test 6: Test enhanced_retrieve function directly
-        try:
-            from modules.brain import enhanced_retrieve
-            retrieve_results = enhanced_retrieve("who is ghada", k=5)
-            results["enhanced_retrieve_test"] = {
-                "function_worked": True,
-                "results_count": len(retrieve_results),
-                "sample_results": [
-                    {
-                        "text_preview": r.get('text', '')[:200] + "..." if r.get('text') else "No text",
-                        "source": r.get('source', 'Unknown'),
-                        "source_type": r.get('source_type', 'Unknown'),
-                        "similarity": r.get('similarity', 0)
-                    } for r in retrieve_results[:3]
-                ]
-            }
-        except Exception as e:
-            results["enhanced_retrieve_test"] = {"error": str(e)}
-    
-    # Return as formatted HTML for easy reading
-    html = f"""
-    <html>
-    <head><title>Database Retrieval Debug Results</title>
-    <style>
-        body {{ font-family: monospace; background: #1a1a1a; color: #fff; padding: 20px; line-height: 1.6; }}
-        .section {{ margin: 20px 0; padding: 15px; background: #2a2a2a; border-radius: 8px; }}
-        .success {{ color: #10b981; }}
-        .error {{ color: #ef4444; }}
-        .warning {{ color: #f59e0b; }}
-        .info {{ color: #3b82f6; }}
-        pre {{ background: #0a0a0a; padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; }}
-        .conversation {{ background: #1a2332; margin: 10px 0; padding: 10px; border-radius: 4px; border-left: 3px solid #3b82f6; }}
-        .highlight {{ background: #fbbf24; color: #000; padding: 2px 4px; border-radius: 2px; }}
-    </style>
-    </head>
-    <body>
-    <h1>🔍 Database Retrieval Debug Results</h1>
-    
-    <div class="section">
-        <h3>📊 Database Connection & Overview</h3>
-        <p class="{'success' if results['database_connection'] else 'error'}">
-            {'✅ Database Connected' if results['database_connection'] else '❌ Database Connection Failed'}
-        </p>
-        <p>Total conversations in database: <span class="info">{results['total_conversations']:,}</span></p>
-    </div>
-    
-    <div class="section">
-        <h3>👥 Personal Name Search Results</h3>
-        <p>Ghada mentions: <span class="{'success' if results['ghada_mentions'] > 0 else 'error'}">{results['ghada_mentions']} found</span></p>
-        <p>Shazeen mentions: <span class="{'success' if results['shazeen_mentions'] > 0 else 'error'}">{results['shazeen_mentions']} found</span></p>
-        <p>Jonathan mentions: <span class="{'success' if results['jonathan_mentions'] > 0 else 'error'}">{results['jonathan_mentions']} found</span></p>
-    </div>
-    
-    <div class="section">
-        <h3>💬 Sample Ghada Conversations</h3>
-        {"".join([
-            f'''<div class="conversation">
-                <strong>Date:</strong> {conv['date']}<br>
-                <strong>Project:</strong> {conv['project']}<br>
-                <strong>User Input:</strong> {conv['user_input']}<br>
-                <strong>AI Response:</strong> {conv['response_preview'][:200]}...
-            </div>''' 
-            for conv in results['sample_ghada_conversations']
-        ]) if results['sample_ghada_conversations'] else '<p class="warning">No conversations found containing "ghada"</p>'}
-    </div>
-    
-    <div class="section">
-        <h3>🔧 Raw SQL Test (Enhanced Retrieve Logic)</h3>
-        <pre>{json.dumps(results['raw_sql_test'], indent=2)}</pre>
-    </div>
-    
-    <div class="section">
-        <h3>🧠 Enhanced Retrieve Function Test</h3>
-        <pre>{json.dumps(results['enhanced_retrieve_test'], indent=2)}</pre>
-    </div>
-    
-    <div class="section">
-        <h3>🔍 Simple Pattern Search Test</h3>
-        <p>Found "who is" queries: <span class="info">{results['simple_like_search']['count'] if results['simple_like_search'] else 0}</span></p>
-        <pre>{json.dumps(results['simple_like_search'], indent=2) if results['simple_like_search'] else 'No results'}</pre>
-    </div>
-    
-    <div class="section">
-        <h3>🎯 Action Items</h3>
-        <ul>
-            <li class="{'success' if results['database_connection'] else 'error'}">Database Connection: {'✅ Working' if results['database_connection'] else '❌ Fix connection'}</li>
-            <li class="{'success' if results['ghada_mentions'] > 0 else 'error'}">Ghada Data: {'✅ Found in database' if results['ghada_mentions'] > 0 else '❌ Missing from database'}</li>
-            <li class="{'success' if results.get('enhanced_retrieve_test', {}).get('results_count', 0) > 0 else 'error'}">Retrieve Function: {'✅ Working' if results.get('enhanced_retrieve_test', {}).get('results_count', 0) > 0 else '❌ Not finding results'}</li>
-        </ul>
-    </div>
-    
-    <p><a href="/diagnostics" style="color: #6366f1;">← Back to Diagnostics</a> | 
-       <a href="/system" style="color: #6366f1;">System Dashboard</a> | 
-       <a href="/" style="color: #6366f1;">Chat Interface</a></p>
-    </body>
-    </html>
-    """
-    
-    return html
-
-@app.route('/debug/brain_diagnostics')
-def brain_diagnostics():
-    """Enhanced brain diagnostics with retrieval testing"""
-    if not session.get('logged_in'):
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    try:
-        from modules.brain import get_brain_diagnostics
-        diagnostics = get_brain_diagnostics()
-        return jsonify(diagnostics)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# Add this right after your existing debug routes in Section 8
-@app.route('/debug/bluesky-import')
-def debug_bluesky_import():
-    if not session.get('logged_in'):
-        return "Unauthorized", 401
-    
-    try:
-        from modules.bluesky_integration import is_bluesky_configured, process_bluesky_command
-        configured = is_bluesky_configured()
-        test_response = process_bluesky_command("bluesky test")
-        
-        return f"""
-        BlueSky Import Test:<br>
-        - Import successful: ✅<br>
-        - is_bluesky_configured(): {configured}<br>
-        - Test command response: {test_response[:200]}...
-        """
-    except Exception as e:
-        return f"BlueSky import failed: {str(e)}"
-
-# Google Integration Diagnostics Routes
-@app.route('/diagnostics/google-integration')
-def google_integration_diagnostics():
-    """Google integration diagnostic page"""
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    
-    try:
-        from modules.google_diagnostics import generate_diagnostic_report
-        report = generate_diagnostic_report()
-        
-        return render_template_string("""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Google Integration Diagnostics</title>
-            <style>
-                body { 
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    background: #0f0f0f; 
-                    color: #fff; 
-                    margin: 0; 
-                    padding: 20px; 
-                }
-                .container { max-width: 1000px; margin: 0 auto; }
-                .btn { 
-                    background: #6366f1; 
-                    color: white; 
-                    border: none; 
-                    padding: 12px 24px; 
-                    border-radius: 8px; 
-                    cursor: pointer; 
-                    font-size: 16px; 
-                    margin: 10px 5px;
-                    text-decoration: none;
-                    display: inline-block;
-                }
-                .btn:hover { background: #5855eb; }
-                .btn.success { background: #059669; }
-                .btn.warning { background: #d97706; }
-                .btn.danger { background: #dc2626; }
-                .diagnostic-report { 
-                    background: #1a1a1a; 
-                    border: 1px solid #333; 
-                    border-radius: 8px; 
-                    padding: 20px; 
-                    margin: 20px 0; 
-                    font-family: 'Courier New', monospace;
-                    white-space: pre-wrap;
-                    overflow-x: auto;
-                }
-                .action-buttons {
-                    text-align: center;
-                    margin: 20px 0;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>Google Integration Diagnostics</h1>
-                
-                <div class="action-buttons">
-                    <button onclick="runDiagnostics()" class="btn">Refresh Diagnostics</button>
-                    <a href="/google/auth/start" class="btn warning">Re-authenticate Google</a>
-                    <a href="/integrations" class="btn">Back to Integrations</a>
-                </div>
-                
-                <div class="diagnostic-report">{{ report }}</div>
-                
-                <div class="action-buttons">
-                    <button onclick="testEmailCommand()" class="btn">Test Email Command</button>
-                    <button onclick="testCalendarCommand()" class="btn">Test Calendar Command</button>
-                    <button onclick="testMorningBriefing()" class="btn">Test Morning Briefing</button>
-                </div>
-            </div>
-            
-            <script>
-                function runDiagnostics() {
-                    window.location.reload();
-                }
-                
-                function testEmailCommand() {
-                    fetch('/api/test-command', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        credentials: 'include',
-                        body: JSON.stringify({command: 'overnight'})
-                    }).then(r => r.json()).then(data => {
-                        alert('Email test result: ' + JSON.stringify(data, null, 2));
-                    }).catch(e => alert('Test failed: ' + e));
-                }
-                
-                function testCalendarCommand() {
-                    fetch('/api/test-command', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        credentials: 'include',
-                        body: JSON.stringify({command: 'calendar'})
-                    }).then(r => r.json()).then(data => {
-                        alert('Calendar test result: ' + JSON.stringify(data, null, 2));
-                    }).catch(e => alert('Test failed: ' + e));
-                }
-                
-                function testMorningBriefing() {
-                    fetch('/api/test-command', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        credentials: 'include',
-                        body: JSON.stringify({command: 'good morning'})
-                    }).then(r => r.json()).then(data => {
-                        alert('Morning briefing test result: ' + JSON.stringify(data, null, 2));
-                    }).catch(e => alert('Test failed: ' + e));
-                }
-            </script>
-        </body>
-        </html>
-        """, report=report)
-        
-    except Exception as e:
-        return f"Diagnostic failed: {str(e)}", 500
-
-@app.route('/api/test-command', methods=['POST'])
-def test_command():
-    """Test specific Gmail/Calendar commands for debugging"""
+# Section 8: Feedback System Routes (NEW) 9/11/25
+@app.route('/api/feedback', methods=['POST'])
+def record_feedback():
+    """Record user feedback for AI responses (👍👎🖕 buttons)"""
     if not session.get('logged_in'):
         return jsonify({'error': 'Unauthorized'}), 401
     
     try:
         data = request.get_json()
-        command = data.get('command', '')
+        response_id = data.get('response_id')
+        feedback_type = data.get('feedback_type')  # 'thumbs_up', 'thumbs_down', 'middle_finger'
+        project = data.get('project', session.get('current_project', 'General'))
+        user_comment = data.get('comment', '')
         
-        from modules.gmail import process_gmail_command
+        if not response_id or not feedback_type:
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
         
-        # Test the command with minimal parameters
-        response_data, handled = process_gmail_command(
-            command,
-            'diagnostics',
-            ['SyntaxPrime'],
-            False
+        # Record feedback using the imported function
+        result = record_response_feedback(
+            response_id=response_id,
+            feedback_type=feedback_type,
+            project=project,
+            user_comment=user_comment
         )
         
-        return jsonify({
-            'success': True,
-            'handled': handled,
-            'response': response_data,
-            'command_tested': command
-        })
+        app.logger.info(f"Feedback recorded: {feedback_type} for response {response_id}")
+        return jsonify(result)
         
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'command_tested': data.get('command', 'unknown') if 'data' in locals() else 'unknown'
-        }), 500
+        app.logger.error(f"Feedback recording failed: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-# ClickUp Integration Diagnostics Routes
-@app.route('/diagnostics/clickup')
-def clickup_diagnostics():
-    """ClickUp integration diagnostic page"""
+@app.route('/feedback/<feedback_type>', methods=['POST'])
+def record_feedback_legacy(feedback_type):
+    """Legacy feedback endpoint for backward compatibility"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json() or {}
+        response_id = data.get('response_id', f"legacy_{int(datetime.datetime.now().timestamp())}")
+        
+        # Convert legacy format to new format
+        result = record_response_feedback(
+            response_id=response_id,
+            feedback_type=feedback_type,
+            project=session.get('current_project', 'General'),
+            user_comment=data.get('comment', '')
+        )
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        app.logger.error(f"Legacy feedback recording failed: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/admin/feedback-dashboard')
+def feedback_dashboard():
+    """Admin dashboard for feedback analytics"""
     if not session.get('logged_in'):
         return redirect(url_for('login'))
     
     try:
-        from modules.clickup_diagnostics import generate_clickup_diagnostic_report
-        report = generate_clickup_diagnostic_report()
+        dashboard_data = get_feedback_dashboard_data()
         
         return render_template_string("""
         <!DOCTYPE html>
         <html>
         <head>
-            <title>ClickUp Integration Diagnostics</title>
+            <title>Ghostline Feedback Dashboard</title>
             <style>
-                body { 
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    background: #0f0f0f; 
-                    color: #fff; 
-                    margin: 0; 
-                    padding: 20px; 
-                }
-                .container { max-width: 1000px; margin: 0 auto; }
-                .btn { 
-                    background: #6366f1; 
-                    color: white; 
-                    border: none; 
-                    padding: 12px 24px; 
-                    border-radius: 8px; 
-                    cursor: pointer; 
-                    font-size: 16px; 
-                    margin: 10px 5px;
-                    text-decoration: none;
-                    display: inline-block;
-                }
-                .btn:hover { background: #5855eb; }
-                .btn.success { background: #059669; }
-                .btn.warning { background: #d97706; }
-                .btn.danger { background: #dc2626; }
-                .diagnostic-report { 
-                    background: #1a1a1a; 
-                    border: 1px solid #333; 
-                    border-radius: 8px; 
-                    padding: 20px; 
-                    margin: 20px 0; 
-                    font-family: 'Courier New', monospace;
-                    white-space: pre-wrap;
-                    overflow-x: auto;
-                    line-height: 1.5;
-                }
-                .action-buttons {
-                    text-align: center;
-                    margin: 20px 0;
-                }
-                .setup-section {
-                    background: #1a1a1a;
-                    border: 1px solid #333;
-                    border-radius: 8px;
-                    padding: 20px;
-                    margin: 20px 0;
-                }
-                .config-box {
-                    background: #2a2a2a;
-                    border: 1px solid #444;
-                    border-radius: 4px;
-                    padding: 15px;
-                    margin: 15px 0;
-                    font-family: 'Courier New', monospace;
-                }
+                body { font-family: 'Courier New', monospace; background: #0a0a0a; color: #00ff00; padding: 20px; }
+                .dashboard { max-width: 1200px; margin: 0 auto; }
+                .stat-box { background: #1a1a1a; border: 1px solid #333; padding: 15px; margin: 10px; border-radius: 5px; }
+                .emoji-stat { font-size: 24px; margin: 10px 0; }
+                .feedback-list { background: #111; padding: 10px; margin: 10px 0; border-radius: 5px; max-height: 400px; overflow-y: auto; }
+                h1, h2 { color: #00ffff; }
+                table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+                th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+                th { background: #222; }
+                .positive { color: #00ff00; }
+                .negative { color: #ff4444; }
+                .sass { color: #ffaa00; }
             </style>
         </head>
         <body>
-            <div class="container">
-                <h1>ClickUp Integration Diagnostics</h1>
+            <div class="dashboard">
+                <h1>🧠 Ghostline Feedback Dashboard</h1>
                 
-                <div class="action-buttons">
-                    <button onclick="runDiagnostics()" class="btn">Refresh Diagnostics</button>
-                    <button onclick="testTaskCreation()" class="btn warning">Test Task Creation</button>
-                    <button onclick="showWorkspaceTree()" class="btn">Show Workspace Tree</button>
-                    <a href="/integrations" class="btn">Back to Integrations</a>
+                <div class="stat-box">
+                    <h2>📊 Overview</h2>
+                    <div class="emoji-stat">Total Feedback: {{ dashboard_data.total_feedback }}</div>
+                    {% for emoji, count in dashboard_data.emoji_stats.items() %}
+                    <div class="emoji-stat">{{ emoji }}: {{ count }}</div>
+                    {% endfor %}
                 </div>
                 
-                <div class="diagnostic-report">{{ report }}</div>
+                {% if dashboard_data.recent_feedback %}
+                <div class="stat-box">
+                    <h2>📈 Recent Activity (Last 7 Days)</h2>
+                    <table>
+                        <tr><th>Date</th><th>Type</th><th>Count</th></tr>
+                        {% for item in dashboard_data.recent_feedback %}
+                        <tr>
+                            <td>{{ item[0] }}</td>
+                            <td class="{% if item[1] == 'thumbs_up' %}positive{% elif item[1] == 'thumbs_down' %}negative{% else %}sass{% endif %}">
+                                {% if item[1] == 'thumbs_up' %}👍 Good
+                                {% elif item[1] == 'thumbs_down' %}👎 Bad  
+                                {% else %}🖕 Sass/Snark{% endif %}
+                            </td>
+                            <td>{{ item[2] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+                {% endif %}
                 
-                <div class="setup-section">
-                    <h3>Manual ClickUp Setup Steps:</h3>
-                    <ol>
-                        <li><strong>Get API Token:</strong>
-                            <ul>
-                                <li>Go to ClickUp Settings → Apps → API</li>
-                                <li>Generate a Personal API Token</li>
-                                <li>Add to Railway environment as <code>CLICKUP_API_TOKEN</code></li>
-                            </ul>
-                        </li>
-                        <li><strong>Create Workspace Structure:</strong>
-                            <ul>
-                                <li>Create a Space called "Ghostline" (or use existing)</li>
-                                <li>Create a List called "Inbox" or "Tasks"</li>
-                                <li>Note the List ID from diagnostics above</li>
-                            </ul>
-                        </li>
-                        <li><strong>Set Environment Variables:</strong>
-                            <div class="config-box" id="configBox">
-                                Run diagnostics to get specific configuration
-                            </div>
-                        </li>
-                        <li><strong>Test Integration:</strong>
-                            <ul>
-                                <li>Try: "create clickup task: Test task"</li>
-                                <li>Check if task appears in your ClickUp workspace</li>
-                            </ul>
-                        </li>
-                    </ol>
+                {% if dashboard_data.project_breakdown %}
+                <div class="stat-box">
+                    <h2>📁 By Project</h2>
+                    <table>
+                        <tr><th>Project</th><th>Type</th><th>Count</th></tr>
+                        {% for item in dashboard_data.project_breakdown %}
+                        <tr>
+                            <td>{{ item[0] or 'General' }}</td>
+                            <td class="{% if item[1] == 'thumbs_up' %}positive{% elif item[1] == 'thumbs_down' %}negative{% else %}sass{% endif %}">
+                                {% if item[1] == 'thumbs_up' %}👍
+                                {% elif item[1] == 'thumbs_down' %}👎  
+                                {% else %}🖕{% endif %}
+                            </td>
+                            <td>{{ item[2] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+                {% endif %}
+                
+                <div class="stat-box">
+                    <h2>ℹ️ About Feedback Types</h2>
+                    <div>👍 <span class="positive">Good</span> - Positive feedback for helpful responses</div>
+                    <div>👎 <span class="negative">Bad</span> - Negative feedback for poor responses</div>
+                    <div>🖕 <span class="sass">Sass/Snark</span> - Approval for personality, humor, or perfect attitude (this is GOOD feedback!)</div>
                 </div>
                 
-                <div class="action-buttons">
-                    <button onclick="copyConfig()" class="btn success" id="copyBtn" style="display:none;">Copy Configuration</button>
+                <div style="margin-top: 20px;">
+                    <a href="/" style="color: #00ffff;">← Back to Chat</a>
                 </div>
             </div>
-            
-            <script>
-                function runDiagnostics() {
-                    window.location.reload();
-                }
-                
-                function testTaskCreation() {
-                    const listId = prompt("Enter List ID to test (from diagnostic report above):");
-                    if (!listId) return;
-                    
-                    fetch('/api/clickup/test-task', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        credentials: 'include',
-                        body: JSON.stringify({list_id: listId})
-                    }).then(r => r.json()).then(data => {
-                        if (data.success) {
-                            alert('Test successful! Task created: ' + data.task_id + '\\nURL: ' + data.task_url);
-                        } else {
-                            alert('Test failed: ' + data.error);
-                        }
-                    }).catch(e => alert('Test failed: ' + e));
-                }
-                
-                function showWorkspaceTree() {
-                    fetch('/api/clickup/workspace-tree', {
-                        credentials: 'include'
-                    }).then(r => r.json()).then(data => {
-                        if (data.error) {
-                            alert('Failed to load workspace tree: ' + data.error);
-                        } else {
-                            const tree = JSON.stringify(data.workspace_tree, null, 2);
-                            const newWindow = window.open('', '_blank');
-                            newWindow.document.write('<pre style="background:#1a1a1a;color:#fff;padding:20px;font-family:monospace;">' + tree + '</pre>');
-                        }
-                    });
-                }
-                
-                function copyConfig() {
-                    const configText = document.getElementById('configBox').textContent;
-                    navigator.clipboard.writeText(configText).then(() => {
-                        alert('Configuration copied to clipboard!');
-                    });
-                }
-                
-                // Extract configuration from report if available
-                document.addEventListener('DOMContentLoaded', function() {
-                    const report = document.querySelector('.diagnostic-report').textContent;
-                    const configMatch = report.match(/Environment Variables to Set:[\\s\\S]*?```([\\s\\S]*?)```/);
-                    if (configMatch) {
-                        document.getElementById('configBox').textContent = configMatch[1].trim();
-                        document.getElementById('copyBtn').style.display = 'inline-block';
-                    }
-                });
-            </script>
         </body>
         </html>
-        """, report=report)
+        """, dashboard_data=dashboard_data)
         
     except Exception as e:
-        return f"ClickUp diagnostic failed: {str(e)}", 500
-
-@app.route('/api/clickup/test-task', methods=['POST'])
-def test_clickup_task():
-    """Test ClickUp task creation"""
-    if not session.get('logged_in'):
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    try:
-        data = request.get_json()
-        list_id = data.get('list_id')
-        
-        if not list_id:
-            return jsonify({'success': False, 'error': 'List ID required'}), 400
-        
-        from modules.clickup_diagnostics import ClickUpDiagnostics
-        diagnostics = ClickUpDiagnostics()
-        result = diagnostics.test_task_creation(list_id)
-        
-        return jsonify(result)
-        
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/clickup/workspace-tree')
-def get_clickup_workspace_tree():
-    """Get ClickUp workspace tree structure"""
-    if not session.get('logged_in'):
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    try:
-        from modules.clickup_diagnostics import get_clickup_workspace_tree
-        result = get_clickup_workspace_tree()
-        return jsonify(result)
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# Enhanced System Dashboard with Admin Controls
-@app.route('/system/admin')
-def system_admin_dashboard():
-    """Enhanced system dashboard with admin controls"""
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    
-    return render_template_string("""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Ghostline System Admin</title>
-        <style>
-            body { 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: #0f0f0f; 
-                color: #fff; 
-                margin: 0; 
-                padding: 20px; 
-            }
-            .container { max-width: 1000px; margin: 0 auto; }
-            .system-section { 
-                background: #1a1a1a; 
-                border: 1px solid #333; 
-                border-radius: 8px; 
-                padding: 20px; 
-                margin: 20px 0; 
-            }
-            .btn { 
-                background: #6366f1; 
-                color: white; 
-                border: none; 
-                padding: 12px 24px; 
-                border-radius: 8px; 
-                cursor: pointer; 
-                font-size: 16px; 
-                margin: 10px 5px;
-                text-decoration: none;
-                display: inline-block;
-            }
-            .btn:hover { background: #5855eb; }
-            .btn.success { background: #059669; }
-            .btn.warning { background: #d97706; }
-            .btn.danger { background: #dc2626; }
-            .btn.danger:hover { background: #b91c1c; }
-            .controls-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 15px;
-                margin: 20px 0;
-            }
-            @keyframes spin {
-                from { transform: rotate(0deg); }
-                to { transform: rotate(360deg); }
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>Ghostline System Admin</h1>
-            
-            <div class="system-section">
-                <h3>🔧 Admin & Cache Controls</h3>
-                <div class="controls-grid">
-                    <button onclick="reloadModules()" class="btn warning">
-                        🔄 Reload Modules
-                    </button>
-                    <button onclick="clearCache()" class="btn">
-                        🗑️ Clear Cache
-                    </button>
-                    <button onclick="forceRestart()" class="btn danger" 
-                            title="⚠️ This will restart the entire application">
-                        🔴 Force Restart
-                    </button>
-                </div>
-                <div id="adminResults" style="margin-top: 15px;"></div>
-                
-                <details style="margin-top: 15px;">
-                    <summary style="cursor: pointer; font-weight: bold;">
-                        ℹ️ When to Use These Controls
-                    </summary>
-                    <div style="margin-top: 10px; padding: 10px; background: #2a2a2a; border-radius: 4px; font-size: 14px;">
-                        <p><strong>Reload Modules:</strong> Use when code changes aren't taking effect. Reloads Python modules without full restart.</p>
-                        <p><strong>Clear Cache:</strong> Clears memory caches and forces garbage collection. Try this first for weird behavior.</p>
-                        <p><strong>Force Restart:</strong> Nuclear option - completely restarts the application. Use when other methods fail.</p>
-                    </div>
-                </details>
-            </div>
-            
-            <div class="system-section">
-                <h3>🔗 Quick Links</h3>
-                <div class="controls-grid">
-                    <a href="/" class="btn">Back to Chat</a>
-                    <a href="/system" class="btn">System Dashboard</a>
-                    <a href="/integrations" class="btn">Integrations</a>
-                    <a href="/diagnostics" class="btn">Diagnostics</a>
-                    <a href="/debug/test_ghada_query" class="btn success">🔍 Debug Database</a>
-                </div>
-            </div>
-        </div>
-        
-        <script>
-            function reloadModules() {
-                showSpinner('Reloading modules...');
-                
-                fetch('/admin/reload-modules', {
-                    method: 'POST',
-                    credentials: 'include'
-                })
-                .then(r => r.json())
-                .then(data => {
-                    hideSpinner();
-                    if (data.success) {
-                        showAdminResult('success', 
-                            `✅ Reloaded ${data.reloaded_modules.length} modules successfully.` + 
-                            (data.failed_modules.length > 0 ? 
-                                `<br>⚠️ Failed: ${data.failed_modules.join(', ')}` : ''));
-                    } else {
-                        showAdminResult('error', '❌ Module reload failed: ' + data.error);
-                    }
-                })
-                .catch(e => {
-                    hideSpinner();
-                    showAdminResult('error', '❌ Request failed: ' + e);
-                });
-            }
-
-            function clearCache() {
-                showSpinner('Clearing caches...');
-                
-                fetch('/admin/clear-cache', {
-                    method: 'POST',
-                    credentials: 'include'
-                })
-                .then(r => r.json())
-                .then(data => {
-                    hideSpinner();
-                    if (data.success) {
-                        showAdminResult('success', 
-                            `✅ Cache clearing completed.<br>` + 
-                            data.actions_performed.join('<br>'));
-                    } else {
-                        showAdminResult('error', '❌ Cache clearing failed: ' + data.error);
-                    }
-                })
-                .catch(e => {
-                    hideSpinner();
-                    showAdminResult('error', '❌ Request failed: ' + e);
-                });
-            }
-
-            function forceRestart() {
-                if (!confirm('⚠️ This will restart the entire application and disconnect all users. Continue?')) {
-                    return;
-                }
-                
-                showSpinner('Restarting application...');
-                
-                fetch('/admin/restart', {
-                    method: 'POST',
-                    credentials: 'include'
-                })
-                .then(r => r.json())
-                .then(data => {
-                    hideSpinner();
-                    if (data.success) {
-                        showAdminResult('warning', 
-                            '🔄 Application is restarting... Page will reload automatically.');
-                        
-                        // Auto-reload page after restart
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 5000);
-                    } else {
-                        showAdminResult('error', '❌ Restart failed: ' + data.error);
-                    }
-                })
-                .catch(e => {
-                    hideSpinner();
-                    // This is expected since the server restarts
-                    showAdminResult('warning', 
-                        '🔄 Restart initiated. Page will reload in 5 seconds...');
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 5000);
-                });
-            }
-
-            function showAdminResult(type, message) {
-                const resultDiv = document.getElementById('adminResults');
-                const bgColor = type === 'success' ? '#065f46' : 
-                               type === 'warning' ? '#92400e' : '#991b1b';
-                
-                resultDiv.innerHTML = `
-                    <div style="background: ${bgColor}; padding: 10px; border-radius: 4px; margin-top: 10px;">
-                        ${message}
-                    </div>
-                `;
-            }
-
-            function showSpinner(message) {
-                const resultDiv = document.getElementById('adminResults');
-                resultDiv.innerHTML = `
-                    <div style="background: #374151; padding: 10px; border-radius: 4px; margin-top: 10px;">
-                        <span style="animation: spin 1s linear infinite; display: inline-block; margin-right: 8px;">⟳</span>
-                        ${message}
-                    </div>
-                `;
-            }
-
-            function hideSpinner() {
-                // Don't hide - showAdminResult will replace it
-            }
-        </script>
-    </body>
-    </html>
-    """)
+        app.logger.error(f"Feedback dashboard error: {e}")
+        return f"Dashboard error: {e}", 500
 # Add this right before the "# Section 9: PDF Report Generation" line
 
 @app.route('/api/feedback', methods=['POST'])
