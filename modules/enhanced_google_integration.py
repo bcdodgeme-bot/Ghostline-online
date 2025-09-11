@@ -2098,14 +2098,14 @@ class GoogleIntegration:
     # Include all the methods from the other sections - for now just the critical ones:
     
     def process_google_commands(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
-    """Main command processor for all Google services with enhanced context handling"""
+        """Main command processor for all Google services with enhanced context handling"""
         user_lower = user_input.lower().strip()
     
-    # Blog suggestions commands - WITH VALIDATION BLOCKING
-        blog_patterns = [
-        'blog suggestions', 'blog ideas', 'content ideas', 'what to write',
-        'blog suggestions for', 'content suggestions', 'post ideas'
-        ]
+        # Blog suggestions commands - WITH VALIDATION BLOCKING
+            blog_patterns = [
+            'blog suggestions', 'blog ideas', 'content ideas', 'what to write',
+            'blog suggestions for', 'content suggestions', 'post ideas'
+            ]
     
         if any(pattern in user_lower for pattern in blog_patterns):
             print("✏️ Detected blog suggestions command - will validate data first")
