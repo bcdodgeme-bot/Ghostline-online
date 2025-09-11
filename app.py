@@ -1100,47 +1100,6 @@ def feedback_dashboard():
     except Exception as e:
         app.logger.error(f"Feedback dashboard error: {e}")
         return f"Dashboard error: {e}", 500
-# Add this right before the "# Section 9: PDF Report Generation" line
-
-@app.route('/api/feedback', methods=['POST'])
-def record_feedback():
-    """Record user feedback for AI responses"""
-    if not session.get('logged_in'):
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    try:
-        data = request.get_json()
-        response_id = data.get('response_id')
-        feedback_type = data.get('feedback_type')
-        timestamp = data.get('timestamp')
-        
-        if not response_id or not feedback_type:
-            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
-        
-        # Store feedback in database
-        from modules.database import get_db_connection
-        
-        with get_db_connection() as conn:
-            if conn:
-                cursor = conn.cursor()
-                cursor.execute("""
-                    INSERT INTO user_feedback (response_id, feedback_type, timestamp, session_id)
-                    VALUES (%s, %s, %s, %s)
-                """, (response_id, feedback_type, timestamp, session.get('session_id')))
-                conn.commit()
-                
-                app.logger.info(f"Feedback recorded: {feedback_type} for response {response_id}")
-                
-                return jsonify({
-                    'success': True,
-                    'message': 'Feedback recorded successfully'
-                })
-            else:
-                return jsonify({'success': False, 'error': 'Database connection failed'}), 500
-                
-    except Exception as e:
-        app.logger.error(f"Feedback recording failed: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
 
 # Section 9: PDF Report Generation
 from modules.pdf_generation import (
