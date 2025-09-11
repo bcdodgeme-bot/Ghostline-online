@@ -1584,6 +1584,9 @@ Morning Briefing Data:
 # =============================================================================
 # SECTION 9: MULTI-SITE ANALYTICS COMMAND HANDLERS
 # =============================================================================
+# =============================================================================
+# SECTION 9: MULTI-SITE ANALYTICS COMMAND HANDLERS 9/11/25
+# =============================================================================
 
     def handle_multi_site_analytics_command(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
         """Handle analytics commands with multi-site support and flexible dates"""
@@ -1789,9 +1792,12 @@ Morning Briefing Data:
         analytics_result = None
         sc_result = None
         
-        # Get Search Console data
+        # Get Search Console data with proper date format
         if site_config.get('search_console_url'):
-            sc_result = self.get_search_console_data_for_site(site_key, '30daysAgo', 'today')
+            # Calculate proper date format for Search Console
+            end_date = datetime.date.today().strftime('%Y-%m-%d')
+            start_date = (datetime.date.today() - datetime.timedelta(days=30)).strftime('%Y-%m-%d')
+            sc_result = self.get_search_console_data_for_site(site_key, start_date, end_date)
         
         # Get Analytics data
         if site_config.get('analytics_view_id'):
@@ -1882,8 +1888,9 @@ Provide specific, actionable blog post titles with brief explanations."""
         )
         
         return response_data, True
+    
         
-        # =============================================================================
+# =============================================================================
 # SECTION 10: FINAL ENTRY POINT AND INTEGRATION
 # =============================================================================
 
