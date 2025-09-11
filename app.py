@@ -76,7 +76,7 @@ from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
 import urllib.parse
 
-# FIXED: Removed placeholder functions - using real feedback system now
+# REMOVED: Placeholder functions - using real feedback system now
 
 def generate_content_strategy_command(*args, **kwargs):
     """Placeholder content strategy function"""
@@ -1140,23 +1140,6 @@ def record_feedback():
                 
     except Exception as e:
         app.logger.error(f"Feedback recording failed: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/feedback/<feedback_type>', methods=['POST'])
-def record_feedback_legacy(feedback_type):
-    """Legacy feedback endpoint for backward compatibility"""
-    if not session.get('logged_in'):
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    try:
-        data = request.get_json() or {}
-        response_id = data.get('response_id', 'unknown')
-        
-        # Use the main feedback endpoint
-        return record_feedback()
-        
-    except Exception as e:
-        app.logger.error(f"Legacy feedback recording failed: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # Section 9: PDF Report Generation
