@@ -744,10 +744,13 @@ def upload_file():
 # Section 7: Streaming Chat API (UPDATED WITH UNIFIED CONVERSATION CONTEXT)
 # Section 7: Streaming Chat API (UPDATED WITH SLACK INTEGRATION)
 # Section 7: Streaming Chat API - FIXED VERSION
+# Section 7: Streaming Chat API (UPDATED FOR CONSOLIDATED GOOGLE INTEGRATION)
+# SECTION 7: Streaming Chat API (UPDATED)
+# Section 7: Streaming Chat API - FIXED VERSION WITH BLUESKY HIGHEST PRIORITY 9/11/25
 
 @app.route('/api/chat/stream', methods=['POST'])
 def stream_chat():
-    """Enhanced streaming chat endpoint - FIXED VERSION"""
+    """Enhanced streaming chat endpoint - FIXED VERSION WITH BLUESKY"""
     
     # Enhanced logging for debugging auth issues
     app.logger.info(f"Stream request from {request.remote_addr}")
@@ -813,6 +816,59 @@ def stream_chat():
                         ('google_consolidated', lambda: process_google_ecosystem_commands(user_input, project, use_voices, random_toggle)),
                     ]
                     
+                    # FIXED: Add BlueSky processor with HIGHEST priority (position 0) - THIS IS THE KEY FIX
+                    if is_bluesky_configured():
+                        app.logger.info(f"Adding BlueSky processor to stream pipeline with highest priority")
+                        
+                        def bluesky_processor():
+                            # Use the same detection logic as the main route
+                            user_lower = user_input.lower().strip()
+                            bluesky_patterns = [
+                                # Direct BlueSky mentions
+                                'bluesky', 'bsky', 'blue sky',
+                                # Action patterns
+                                'analyze bluesky', 'check bluesky', 'my bluesky', 'bluesky feed',
+                                'bluesky timeline', 'bluesky posts', 'bluesky analysis',
+                                # Engagement patterns
+                                'bluesky engagement', 'bluesky suggestions', 'who should i follow',
+                                'bluesky opportunities', 'social engagement', 'feed analysis',
+                                # High priority patterns
+                                'bluesky high priority', 'best bluesky posts', 'top bluesky',
+                                # Test patterns
+                                'bluesky test', 'test bluesky', 'bluesky connection'
+                            ]
+                            
+                            # Check if input matches any BlueSky pattern
+                            bluesky_detected = False
+                            for pattern in bluesky_patterns:
+                                if pattern in user_lower:
+                                    bluesky_detected = True
+                                    app.logger.info(f"Stream: BlueSky pattern matched: '{pattern}'")
+                                    break
+                            
+                            # Also check for standalone keywords
+                            standalone_keywords = ['bsky', 'bluesky']
+                            if not bluesky_detected:
+                                for keyword in standalone_keywords:
+                                    if user_lower == keyword or user_lower.startswith(keyword + ' ') or user_lower.endswith(' ' + keyword):
+                                        bluesky_detected = True
+                                        app.logger.info(f"Stream: BlueSky standalone keyword matched: '{keyword}'")
+                                        break
+                            
+                            if bluesky_detected:
+                                app.logger.info(f"Stream: Processing BlueSky command: '{user_input}'")
+                                response_content = process_bluesky_command(user_input)
+                                # Check if we got a real response (not just the help menu)
+                                if response_content and "Available BlueSky commands" not in response_content:
+                                    app.logger.info(f"Stream: BlueSky command successfully processed")
+                                    return {"SyntaxPrime": response_content}, True
+                                else:
+                                    app.logger.info(f"Stream: BlueSky returned help menu, falling through")
+                            
+                            return {}, False
+                        
+                        processors.insert(0, ('bluesky', bluesky_processor))
+                    
                     # Add Calendar → Telegram processor
                     if is_calendar_telegram_configured():
                         app.logger.info(f"Adding Calendar-Telegram processor to stream pipeline")
@@ -857,35 +913,61 @@ def stream_chat():
                         else:
                             summary_prompt = (
                                 "Summarize the key points from the following webpage for Carl. "
-                                "Use bullets and keep it tight and actionable.\n\n"
-                                f"--- SCRAPED CONTENT START ---\n{result['text']}\n--- SCRAPED CONTENT END ---"
+                                "Focus on actionable insights and key information:\n\n"
+                                f"{result['content']}"
                             )
-                            retrieval_ctx = enhanced_retrieve(summary_prompt, k=5) if is_ready() else []
+                            
+                            retrieval_ctx = enhanced_retrieve(summary_prompt, k=5, project=project) if is_ready() else []
+                            
                             response_data = generate_response(
                                 summary_prompt, use_voices, random_toggle,
                                 project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
                             )
+                        
                         handled = True
+                        app.logger.info("Scrape command processed")
+                        
                     except Exception as e:
                         app.logger.error(f"Scrape command failed: {e}")
-                        response_data = {"SyntaxPrime": f"Scrape failed: {e}"}
+                        response_data = {"SyntaxPrime": f"Scraping failed: {e}"}
                         handled = True
-                
-                # Normal AI response as fallback
+
+                # Gmail/Calendar commands
                 if not handled:
                     try:
-                        retrieval_ctx = enhanced_retrieve(user_input, k=5) if is_ready() else []
+                        from modules.gmail import process_gmail_command
+                        temp_response, temp_handled = process_gmail_command(user_input, project, use_voices, random_toggle)
+                        if temp_handled:
+                            response_data = temp_response
+                            handled = True
+                            app.logger.info("Request handled by Gmail processor")
+                    except Exception as e:
+                        app.logger.error(f"Gmail processor failed: {e}")
+
+                # Normal AI response if no special processing
+                if not response_data:
+                    try:
+                        app.logger.info("Using normal AI response generation")
+                        
+                        # Get conversation context
+                        retrieval_ctx = enhanced_retrieve(user_input, k=5, project=project) if is_ready() else []
+                        
+                        # Try brain context refresh
+                        try:
+                            refresh_brain_context()
+                        except Exception as e:
+                            app.logger.warning(f"Brain context refresh failed: {e}")
+                        
                         response_data = generate_response_with_context_check(
                             user_input, use_voices, random_toggle,
                             project, CHAT_MODEL, retrieval_ctx
                         )
+                        
+                        app.logger.info("Normal AI response generation completed")
+                        
                     except Exception as e:
-                        app.logger.error(f"Normal response generation failed: {e}")
-                        response_data = {"SyntaxPrime": f"Response generation failed: {str(e)}"}
-                
-                # Ensure we have some response
-                if not response_data:
-                    response_data = {"SyntaxPrime": "I encountered an issue processing your request. Please try again."}
+                        app.logger.error(f"AI response generation failed: {e}")
+                        response_data = {"SyntaxPrime": f"I'm having trouble processing that request right now. Please try again."}
                 
                 # Save conversation
                 try:
