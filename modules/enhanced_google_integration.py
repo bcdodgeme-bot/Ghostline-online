@@ -21,7 +21,9 @@ from utils.ghostline_engine import generate_response
 from utils.rag_basic import is_ready
 from modules.database import save_conversation_enhanced, save_daily_log_enhanced
 from modules.brain import enhanced_retrieve
-from modules.conversation_persistence import save_conversation_enhanced
+# Add the analytics validation import
+from modules.analytics_validation_enhanced import validate_analytics_data_comprehensive, should_block_ai_suggestions_enhanced
+
 
 # Google API imports
 try:
