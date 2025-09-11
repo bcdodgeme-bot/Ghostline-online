@@ -21,6 +21,7 @@ from utils.ghostline_engine import generate_response
 from utils.rag_basic import is_ready
 from modules.database import save_conversation_enhanced, save_daily_log_enhanced
 from modules.brain import enhanced_retrieve
+from modules.conversation_persistence import save_conversation_enhanced
 
 # Google API imports
 try:
@@ -1104,7 +1105,7 @@ Morning Briefing Data:
             return {'success': False, 'error': detailed_error}
     
     def get_analytics_data(self, site_key: str, start_date: str = "7daysAgo", end_date: str = "today") -> Dict:
-        """Get analytics for a specific site - wrapper for GA4"""
+        """Get analytics for a specific site with ENHANCED VALIDATION to prevent fabricated data"""
         if site_key not in self.sites_config:
             return {'success': False, 'error': f'Site "{site_key}" not found in configuration'}
         
@@ -1117,7 +1118,41 @@ Morning Briefing Data:
                 'error': f'No GA4 property ID configured for site "{site_config["name"]}". Add analytics_view_id to your GOOGLE_SITES_CONFIG.'
             }
         
+        # Get the raw analytics data
         result = self.get_ga4_analytics_report(property_id, start_date, end_date)
+        
+        # ENHANCED: Add comprehensive validation to prevent "Christianity B2B" disasters
+        if result.get('success'):
+            try:
+                # Validate the data before returning
+                validation_results = validate_analytics_data_comprehensive(
+                    site_config,
+                    analytics_result=result
+                )
+                
+                analytics_validation = validation_results.get('analytics')
+                if analytics_validation:
+                    # Add validation metadata to the result
+                    result['validation'] = {
+                        'is_valid': analytics_validation.is_valid,
+                        'confidence_score': analytics_validation.confidence_score,
+                        'warnings': analytics_validation.warnings,
+                        'recommendation': analytics_validation.recommendation
+                    }
+                    
+                    # Log validation warnings
+                    if analytics_validation.warnings:
+                        print(f"⚠️  Analytics validation warnings for {site_config['name']}:")
+                        for warning in analytics_validation.warnings:
+                            print(f"   - {warning}")
+                    
+                    # Add validation info to result for user display
+                    if analytics_validation.confidence_score < 0.8:
+                        result['quality_warning'] = f"Data quality score: {analytics_validation.confidence_score:.1f}/1.0"
+                        
+            except Exception as e:
+                print(f"Analytics validation failed: {e}")
+                # Don't fail the entire request if validation fails
         
         # Add site information to successful results
         if result['success']:
@@ -1309,7 +1344,7 @@ Morning Briefing Data:
             return {'success': False, 'error': detailed_error}
     
     def get_search_console_data_for_site(self, site_key: str, start_date: str = None, end_date: str = None) -> Dict:
-        """Get search console data for a specific site"""
+        """Get search console data for a specific site with ENHANCED VALIDATION"""
         if site_key not in self.sites_config:
             return {'success': False, 'error': f'Site "{site_key}" not found in configuration'}
         
@@ -1322,7 +1357,47 @@ Morning Briefing Data:
                 'error': f'No Search Console URL configured for site "{site_config["name"]}". Add search_console_url to your GOOGLE_SITES_CONFIG.'
             }
         
+        # Get the raw search console data
         result = self.get_search_console_data(site_url, start_date, end_date)
+        
+        # ENHANCED: Add comprehensive validation to prevent fabricated data disasters
+        if result.get('success'):
+            try:
+                # Validate the data before returning
+                validation_results = validate_analytics_data_comprehensive(
+                    site_config,
+                    search_console_result=result
+                )
+                
+                sc_validation = validation_results.get('search_console')
+                if sc_validation:
+                    # Add validation metadata to the result
+                    result['validation'] = {
+                        'is_valid': sc_validation.is_valid,
+                        'confidence_score': sc_validation.confidence_score,
+                        'site_relevance_score': sc_validation.site_relevance_score,
+                        'warnings': sc_validation.warnings,
+                        'recommendation': sc_validation.recommendation
+                    }
+                    
+                    # Log validation issues
+                    if not sc_validation.is_valid or sc_validation.site_relevance_score < 0.7:
+                        print(f"🚨 Search Console validation issues for {site_config['name']}:")
+                        print(f"   - Valid: {'✅' if sc_validation.is_valid else '❌'}")
+                        print(f"   - Confidence: {sc_validation.confidence_score:.2f}/1.0")
+                        print(f"   - Relevance: {sc_validation.site_relevance_score:.2f}/1.0")
+                        
+                        if sc_validation.validation_errors:
+                            for error in sc_validation.validation_errors:
+                                print(f"   - ❌ {error}")
+                    
+                    # Add validation info to result for user display
+                    if sc_validation.site_relevance_score < 0.7:
+                        result['relevance_warning'] = f"Query relevance score: {sc_validation.site_relevance_score:.1f}/1.0 - Check if data matches expected site content"
+                        
+            except Exception as e:
+                print(f"Search Console validation failed: {e}")
+                # Don't fail the entire request if validation fails
         
         # Add site information to successful results
         if result['success']:
@@ -1748,6 +1823,19 @@ Morning Briefing Data:
             save_conversation_enhanced(project, user_input, response_data)
             return response_data, True
         
+        # Blog suggestions commands - WITH VALIDATION BLOCKING
+        blog_patterns = [
+            'blog suggestions', 'blog ideas', 'content ideas', 'what to write',
+            'blog suggestions for', 'content suggestions', 'post ideas'
+        ]
+        
+        if any(pattern in user_lower for pattern in blog_patterns):
+            print("✍️ Detected blog suggestions command - will validate data first")
+            response_data, handled = self.handle_blog_suggestions_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                save_conversation_enhanced(project, user_input, response_data)
+            return response_data, handled
+        
         # PRIORITY 1: Multi-site search console commands (MOVED UP - more specific than Gmail search)
         multi_search_triggers = ['search console for', 'seo for', 'search console', 'seo data']
         if any(trigger in user_lower for trigger in multi_search_triggers):
@@ -1800,7 +1888,121 @@ Morning Briefing Data:
             return response_data, True
         
         return {}, False
+    def handle_blog_suggestions_command(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
+        """Generate blog suggestions with CRITICAL validation to prevent inappropriate content"""
+        user_lower = user_input.lower().strip()
+        
+        # Site identification
+        site_key = None
+        if 'for ' in user_lower:
+            site_name = user_lower.split('for ')[-1].strip()
+            site_key = self.find_site_by_name(site_name)
+        
+        if not site_key and self.sites_config:
+            site_key = list(self.sites_config.keys())[0]
+        
+        if not site_key:
+            return {"SyntaxPrime": "No sites configured for blog suggestions."}, True
+        
+        site_config = self.sites_config[site_key]
+        
+        # Gather data from multiple sources WITH VALIDATION
+        analytics_result = None
+        sc_result = None
+        
+        # Get Search Console data
+        if site_config.get('search_console_url'):
+            sc_result = self.get_search_console_data_for_site(site_key, '30daysAgo', 'today')
+        
+        # Get Analytics data
+        if site_config.get('analytics_view_id'):
+            analytics_result = self.get_analytics_data(site_key, '30daysAgo', 'today')
+        
+        # CRITICAL: Validate all data before using for AI suggestions
+        validation_results = validate_analytics_data_comprehensive(site_config, analytics_result, sc_result)
+        
+        # Check if we should block AI suggestions due to data quality issues
+        should_block, block_reason, overall_confidence = should_block_ai_suggestions_enhanced(validation_results)
+        
+        if should_block:
+            error_response = f"🚨 **DATA VALIDATION FAILED - BLOG SUGGESTIONS BLOCKED** 🚨\n\n"
+            error_response += f"**Cannot generate blog suggestions due to data quality issues:**\n"
+            error_response += f"• {block_reason}\n\n"
+            
+            error_response += f"**Data Quality Report for {site_config['name']}:**\n"
+            for data_type, result in validation_results.items():
+                status = '✅ Valid' if result.is_valid else '❌ Invalid'
+                error_response += f"• {data_type.title()}: {status} "
+                error_response += f"(Confidence: {result.confidence_score:.1f}/1.0, Relevance: {result.site_relevance_score:.1f}/1.0)\n"
+                
+                if result.validation_errors:
+                    for error in result.validation_errors[:2]:  # Limit to top 2 errors
+                        error_response += f"  - ❌ {error}\n"
+                        
+                if result.warnings:
+                    for warning in result.warnings[:2]:  # Limit to top 2 warnings
+                        error_response += f"  - ⚠️ {warning}\n"
+            
+            error_response += f"\n**This prevents disasters like suggesting religious content for non-religious sites!**\n\n"
+            error_response += f"**Manual Verification Required:**\n"
+            error_response += f"1. Check {site_config['name']} in Google Analytics dashboard\n"
+            error_response += f"2. Verify search queries in Search Console match expected content\n"
+            error_response += f"3. Ensure Analytics View ID and Search Console URL are correct\n"
+            error_response += f"4. Re-run command once data issues are resolved"
+            
+            return {"SyntaxPrime": error_response}, True
+        
+        # Data is validated - proceed with generating suggestions
+        data_summary = f"Blog suggestions for {site_config['name']} (DATA VERIFIED ✅):\n\n"
+        data_summary += f"**Data Quality Score: {overall_confidence:.1f}/1.0** ✅\n\n"
+        
+        # Process Search Console data (already validated)
+        if sc_result and sc_result['success'] and sc_result['data']:
+            # Find queries with high impressions but low CTR (opportunity keywords)
+            opportunities = []
+            for row in sc_result['data']:
+                if row['impressions'] > 100 and row['ctr'] < 5:  # High impressions, low CTR
+                    opportunities.append(row)
+            
+            opportunities.sort(key=lambda x: x['impressions'], reverse=True)
+            
+            if opportunities:
+                data_summary += "**SEO Opportunities (High Impressions, Low CTR):**\n"
+                for row in opportunities[:5]:
+                    data_summary += f"• \"{row['query']}\" - {row['impressions']} impressions, {row['ctr']:.1f}% CTR\n"
+                data_summary += "\n"
+        
+        # Generate AI suggestions using the VALIDATED data
+        from utils.ghostline_engine import generate_response, CHAT_MODEL
+        from utils.rag_basic import enhanced_retrieve, is_ready
+        
+        prompt = f"""Based on the following VALIDATED website performance data, suggest 5-7 specific blog post ideas for {site_config['name']}.
 
+Website Focus: {site_config.get('expected_keywords', [])}
+{data_summary}
+
+IMPORTANT CONTEXT:
+- This data has been validated for accuracy (confidence: {overall_confidence:.1f}/1.0)
+- Only suggest content relevant to this specific website's focus
+- DO NOT suggest content from other topics/niches
+
+Focus on:
+1. Content that addresses high-impression, low-CTR search queries
+2. Topics that could capture more traffic for trending searches  
+3. Content that builds on successful existing pages
+4. Seasonal or timely content opportunities
+
+Provide specific, actionable blog post titles with brief explanations."""
+        
+        # Generate AI response
+        retrieval_ctx = enhanced_retrieve(prompt, k=3, project=project) if is_ready() else []
+        
+        response_data = generate_response(
+            prompt, use_voices, random_toggle,
+            project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+        )
+        
+        return response_data, True
 
 # Add this BEFORE the final process_google_ecosystem_commands function
 # This is the missing GoogleIntegration class
