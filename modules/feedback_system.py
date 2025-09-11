@@ -1,21 +1,58 @@
-# modules/feedback_system.py
+# modules/feedback_system.py - CRASH FIXED VERSION
 import os
 import datetime
 import psycopg2
-from modules.database import get_db_connection
+from contextlib import contextmanager
+
+# Database configuration - direct connection to avoid context manager issues
+DATABASE_URL = os.getenv('DATABASE_URL')
+if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
+    DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+
+@contextmanager
+def safe_db_connection():
+    """Safe database connection that handles all exceptions properly"""
+    conn = None
+    try:
+        if DATABASE_URL:
+            conn = psycopg2.connect(DATABASE_URL)
+            yield conn
+        else:
+            print("No DATABASE_URL found - feedback will not persist")
+            yield None
+    except Exception as e:
+        print(f"Database connection failed: {e}")
+        if conn:
+            try:
+                conn.rollback()
+            except:
+                pass
+        yield None
+    finally:
+        if conn:
+            try:
+                conn.close()
+            except:
+                pass
 
 class FeedbackSystem:
     def __init__(self):
-        self._create_tables()
+        # Don't create tables on init - do it lazily
+        self.tables_created = False
     
-    def _create_tables(self):
-        with get_db_connection() as conn:
-            if not conn:
-                print("No database connection - feedback will not persist")
-                return
+    def _ensure_tables(self):
+        """Create tables only when needed, with safe error handling"""
+        if self.tables_created:
+            return True
             
-            try:
+        try:
+            with safe_db_connection() as conn:
+                if not conn:
+                    print("No database connection - feedback will not persist")
+                    return False
+                
                 with conn.cursor() as cursor:
+                    # Create feedback table
                     cursor.execute('''
                         CREATE TABLE IF NOT EXISTS user_feedback (
                             id SERIAL PRIMARY KEY,
@@ -27,6 +64,7 @@ class FeedbackSystem:
                         )
                     ''')
                     
+                    # Create analytics table
                     cursor.execute('''
                         CREATE TABLE IF NOT EXISTS feedback_analytics (
                             id SERIAL PRIMARY KEY,
@@ -40,22 +78,37 @@ class FeedbackSystem:
                         )
                     ''')
                     
-                    cursor.execute('CREATE INDEX IF NOT EXISTS idx_feedback_response_id ON user_feedback (response_id)')
-                    cursor.execute('CREATE INDEX IF NOT EXISTS idx_feedback_type ON user_feedback (feedback_type)')
-                    cursor.execute('CREATE INDEX IF NOT EXISTS idx_feedback_project ON user_feedback (project)')
-                    cursor.execute('CREATE INDEX IF NOT EXISTS idx_analytics_date_project ON feedback_analytics (date, project)')
+                    # Create indexes safely
+                    indexes = [
+                        'CREATE INDEX IF NOT EXISTS idx_feedback_response_id ON user_feedback (response_id)',
+                        'CREATE INDEX IF NOT EXISTS idx_feedback_type ON user_feedback (feedback_type)',
+                        'CREATE INDEX IF NOT EXISTS idx_feedback_project ON user_feedback (project)',
+                        'CREATE INDEX IF NOT EXISTS idx_analytics_date_project ON feedback_analytics (date, project)'
+                    ]
+                    
+                    for index_sql in indexes:
+                        try:
+                            cursor.execute(index_sql)
+                        except Exception as idx_e:
+                            print(f"Index creation warning: {idx_e}")
                     
                     conn.commit()
+                    self.tables_created = True
                     print("✅ Feedback system tables created/verified")
+                    return True
                     
-            except Exception as e:
-                print(f"❌ Error creating feedback tables: {e}")
-                raise
+        except Exception as e:
+            print(f"❌ Error creating feedback tables: {e}")
+            return False
 
     def submit_feedback(self, response_id, feedback_type, project=None, user_comment=None):
         """Submit user feedback for a response"""
+        # Ensure tables exist
+        if not self._ensure_tables():
+            return {'success': False, 'error': 'Database initialization failed'}
+            
         try:
-            with get_db_connection() as conn:
+            with safe_db_connection() as conn:
                 if not conn:
                     return {'success': False, 'error': 'No database connection'}
                 
@@ -109,8 +162,12 @@ class FeedbackSystem:
     
     def get_dashboard_data(self):
         """Get feedback analytics for dashboard"""
+        # Ensure tables exist
+        if not self._ensure_tables():
+            return {'total_feedback': 0, 'error': 'Database initialization failed'}
+            
         try:
-            with get_db_connection() as conn:
+            with safe_db_connection() as conn:
                 if not conn:
                     return {'total_feedback': 0, 'breakdown': {}}
                 
@@ -165,23 +222,37 @@ class FeedbackSystem:
             print(f"Error getting dashboard data: {e}")
             return {'total_feedback': 0, 'error': str(e)}
 
-# Initialize the global feedback system
-_feedback_system = FeedbackSystem()
+# Initialize the global feedback system safely
+try:
+    _feedback_system = FeedbackSystem()
+    print("✅ Feedback system initialized successfully")
+except Exception as e:
+    print(f"⚠️ Feedback system initialization warning: {e}")
+    _feedback_system = None
 
 # STANDALONE FUNCTIONS FOR APP.PY IMPORTS
 def submit_user_feedback(response_id, feedback_type, project=None, user_comment=None):
     """Standalone function for app.py import compatibility"""
-    return _feedback_system.submit_feedback(response_id, feedback_type, project, user_comment)
+    if _feedback_system:
+        return _feedback_system.submit_feedback(response_id, feedback_type, project, user_comment)
+    else:
+        return {'success': False, 'error': 'Feedback system not initialized'}
 
 def get_feedback_dashboard():
     """Standalone function for app.py import compatibility"""
-    return _feedback_system.get_dashboard_data()
+    if _feedback_system:
+        return _feedback_system.get_dashboard_data()
+    else:
+        return {'total_feedback': 0, 'error': 'Feedback system not initialized'}
 
 # Additional utility functions
 def get_feedback_summary(days=7):
     """Get feedback summary for the last N days"""
+    if not _feedback_system or not _feedback_system._ensure_tables():
+        return {'total': 0, 'positive': 0, 'negative': 0, 'sass': 0}
+        
     try:
-        with get_db_connection() as conn:
+        with safe_db_connection() as conn:
             if not conn:
                 return {}
             
@@ -214,34 +285,8 @@ def get_feedback_summary(days=7):
         print(f"Error getting feedback summary: {e}")
         return {}
 
-def export_feedback_data(format='json'):
-    """Export feedback data for analysis"""
-    try:
-        with get_db_connection() as conn:
-            if not conn:
-                return None
-            
-            with conn.cursor() as cursor:
-                cursor.execute('''
-                    SELECT response_id, feedback_type, project, user_comment, created_at
-                    FROM user_feedback 
-                    ORDER BY created_at DESC
-                ''')
-                
-                data = cursor.fetchall()
-                
-                if format == 'json':
-                    import json
-                    return json.dumps([{
-                        'response_id': row[0],
-                        'feedback_type': row[1],
-                        'project': row[2],
-                        'comment': row[3],
-                        'timestamp': row[4].isoformat() if row[4] else None
-                    } for row in data], indent=2)
-                else:
-                    return data
-                    
-    except Exception as e:
-        print(f"Error exporting feedback data: {e}")
-        return None
+def is_feedback_system_ready():
+    """Check if feedback system is properly initialized"""
+    return _feedback_system is not None and _feedback_system._ensure_tables()
+
+print("📊 Feedback system module loaded successfully")
