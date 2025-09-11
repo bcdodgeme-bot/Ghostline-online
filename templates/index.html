@@ -2260,15 +2260,28 @@
               messageDiv.className = 'message bot';
               messageDiv.innerHTML = `
                 <div class="message-bubble bot">
-                  <div class="message-header">
-                    <img src="/static/syntax-buffering.png" alt="${displayNames[voice] || voice}" class="logo">
-                    ${displayNames[voice] || voice}
-                    <button class="speaker-btn" onclick="speakText(this.closest('.message-bubble').querySelector('.message-content').textContent, this)" title="Speak this message">
-                      🔊
-                    </button>
-                  </div>
-                  <div class="message-content" id="streaming-${voice}"></div>
-                </div>
+                       <img src="/static/syntax-buffering.png" alt="${displayNames[voice] || voice}" class="logo">
+                       ${displayNames[voice] || voice}
+                       <button class="speaker-btn" onclick="speakText(this.closest('.message-bubble').querySelector('.message-content').textContent, this)" title="Speak this message">
+                         🔊
+                       </button>
+                     </div>
+                     <div class="message-content" id="streaming-${voice}"></div>
+                     <button class="mobile-copy-btn" onclick="copyToClipboard(this.closest('.message-bubble').querySelector('.message-content').textContent, this)" title="Copy this response">
+                       📋 Copy
+                     </button>
+                     <div class="feedback-buttons">
+                       <button class="feedback-btn thumbs-up" onclick="recordFeedback('${Date.now()}_${voice}', 'thumbs_up', this)" title="Good response">
+                         👍
+                       </button>
+                       <button class="feedback-btn thumbs-down" onclick="recordFeedback('${Date.now()}_${voice}', 'thumbs_down', this)" title="Poor response">
+                         👎
+                       </button>
+                       <button class="feedback-btn middle-finger" onclick="recordFeedback('${Date.now()}_${voice}', 'middle_finger', this)" title="Sarcastic/unhelpful response">
+                         🖕
+                       </button>
+                     </div>
+                   </div>
               `;
               
               thread.insertBefore(messageDiv, anchor);
