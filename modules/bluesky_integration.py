@@ -112,8 +112,9 @@ class BlueSkyIntegration:
                 return {
                     "relevance_score": 0.1,
                     "reason": "No matching conversation history found",
-                    "post_preview": post_text[:100] + "..." if len(post_text) > 100 else post_text,
-                    "author": f"{author_display} (@{author_handle})"
+                    "post_preview": post_text[:200] + "..." if len(post_text) > 200 else post_text,
+                    "author": f"{author_display} (@{author_handle})",
+                    "full_post": post
                 }
             
             # Calculate relevance score based on conversation matches
@@ -146,12 +147,13 @@ class BlueSkyIntegration:
             return {
                 "relevance_score": final_score,
                 "reason": "; ".join(reasons) if reasons else "Moderate relevance to your interests",
-                "post_preview": post_text[:200] + "..." if len(post_text) > 200 else post_text,
+                "post_preview": post_text,  # Store full text now
                 "author": f"{author_display} (@{author_handle})",
                 "created_at": created_at,
                 "matching_conversations": len(search_results),
                 "conversation_boost": conversation_boost > 0,
-                "suggested_engagement": self._suggest_engagement_type(post_text, search_results)
+                "suggested_engagement": self._suggest_engagement_type(post_text, search_results),
+                "full_post": post  # Store complete post data
             }
             
         except Exception as e:
@@ -159,7 +161,8 @@ class BlueSkyIntegration:
             return {
                 "relevance_score": 0,
                 "reason": f"Analysis error: {str(e)}",
-                "post_preview": "Error processing post"
+                "post_preview": "Error processing post",
+                "full_post": post
             }
     
     def _suggest_engagement_type(self, post_text: str, search_results: List[Dict]) -> str:
@@ -199,7 +202,6 @@ class BlueSkyIntegration:
                 # Add post URI for potential actions
                 post_uri = post.get('post', {}).get('uri', '')
                 analysis['post_uri'] = post_uri
-                analysis['full_post'] = post  # Keep full post data for actions
                 
                 suggestions.append(analysis)
         
@@ -210,7 +212,7 @@ class BlueSkyIntegration:
         return suggestions
     
     def format_suggestions_for_display(self, suggestions: List[Dict[str, Any]]) -> str:
-        """Format engagement suggestions for display"""
+        """Format engagement suggestions for display with full post content"""
         if not suggestions:
             return "📱 No high-relevance posts found in your current timeline. Check back in an hour!"
         
@@ -223,24 +225,94 @@ class BlueSkyIntegration:
             preview = suggestion['post_preview']
             reason = suggestion['reason']
             engagement_type = suggestion.get('suggested_engagement', 'general_engagement')
+            created_at = suggestion.get('created_at', '')
             
             # Format score as percentage
             score_pct = int(score * 100)
             
-            output.append(f"**{i}. {author}** (Relevance: {score_pct}%)")
-            output.append(f"   *{preview}*")
-            output.append(f"   **Why:** {reason}")
-            output.append(f"   **Suggested action:** {engagement_type.replace('_', ' ').title()}")
+            # Format timestamp if available
+            time_display = ""
+            if created_at:
+                try:
+                    # Parse BlueSky timestamp format
+                    dt = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                    time_display = f" • {dt.strftime('%H:%M %m/%d')}"
+                except:
+                    pass
+            
+            output.append(f"**{i}. {author}** (Relevance: {score_pct}%){time_display}")
+            
+            # Show the FULL post content with better formatting
+            full_post = preview
+            
+            # Format the post content nicely
+            if full_post:
+                lines = full_post.split('\n')
+                formatted_lines = []
+                for line in lines:
+                    if line.strip():
+                        if len(line) > 80:
+                            # Break long lines at word boundaries
+                            words = line.split()
+                            current_line = ""
+                            for word in words:
+                                if len(current_line + " " + word) <= 80:
+                                    current_line += (" " if current_line else "") + word
+                                else:
+                                    if current_line:
+                                        formatted_lines.append(f"   {current_line}")
+                                    current_line = word
+                            if current_line:
+                                formatted_lines.append(f"   {current_line}")
+                        else:
+                            formatted_lines.append(f"   {line}")
+                    else:
+                        formatted_lines.append("")  # Preserve blank lines
+                
+                if formatted_lines:
+                    output.append("   📄 **Post:**")
+                    output.extend(formatted_lines)
+                else:
+                    output.append(f"   📄 **Post:** {full_post}")
+            
+            output.append("")
+            output.append(f"   **💡 Why relevant:** {reason}")
+            output.append(f"   **🎯 Suggested action:** {engagement_type.replace('_', ' ').title()}")
+            
+            # Add engagement stats if available
+            post_data = suggestion.get('full_post', {})
+            if post_data:
+                post_info = post_data.get('post', {})
+                like_count = post_info.get('likeCount', 0)
+                reply_count = post_info.get('replyCount', 0)
+                repost_count = post_info.get('repostCount', 0)
+                
+                if like_count > 0 or reply_count > 0 or repost_count > 0:
+                    stats = []
+                    if like_count > 0: stats.append(f"❤️ {like_count}")
+                    if reply_count > 0: stats.append(f"💬 {reply_count}")
+                    if repost_count > 0: stats.append(f"🔄 {repost_count}")
+                    output.append(f"   **📊 Engagement:** {' • '.join(stats)}")
+            
+            output.append("")
+            output.append("---")
             output.append("")
         
         if len(suggestions) > 10:
             output.append(f"... and {len(suggestions) - 10} more posts worth checking out!")
+            output.append("")
+        
+        # Add quick commands
+        output.append("**Quick Commands:**")
+        output.append("• `bluesky high priority` - Show only high-relevance posts (60%+)")
+        output.append("• `bluesky posts` - Show recent posts without analysis")
+        output.append("• `bluesky timeline` - Refresh timeline analysis")
         
         return "\n".join(output)
 
 # Integration command processing
 def process_bluesky_command(user_input: str) -> str:
-    """Process BlueSky-related commands"""
+    """Process BlueSky-related commands with enhanced post display"""
     bluesky = BlueSkyIntegration()
     
     user_lower = user_input.lower()
@@ -253,6 +325,61 @@ def process_bluesky_command(user_input: str) -> str:
         suggestions = bluesky.get_engagement_suggestions(limit=100, min_score=0.6)
         return bluesky.format_suggestions_for_display(suggestions)
     
+    elif any(phrase in user_lower for phrase in ['bluesky raw', 'bluesky posts', 'show bluesky posts']):
+        # New command to show just the recent posts without analysis
+        posts = bluesky.get_timeline(limit=10)
+        if not posts:
+            return "❌ Could not fetch BlueSky timeline. Check your connection."
+        
+        output = ["📱 **Recent BlueSky Posts**\n"]
+        
+        for i, post in enumerate(posts[:10], 1):
+            post_record = post.get('post', {}).get('record', {})
+            author = post.get('post', {}).get('author', {})
+            
+            post_text = post_record.get('text', 'No content')
+            author_display = author.get('displayName', author.get('handle', 'Unknown'))
+            author_handle = author.get('handle', 'unknown')
+            created_at = post_record.get('createdAt', '')
+            
+            # Format timestamp
+            time_display = ""
+            if created_at:
+                try:
+                    dt = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                    time_display = f" • {dt.strftime('%H:%M %m/%d')}"
+                except:
+                    pass
+            
+            output.append(f"**{i}. {author_display} (@{author_handle})**{time_display}")
+            
+            # Format post text
+            lines = post_text.split('\n')
+            for line in lines:
+                if line.strip():
+                    output.append(f"   {line}")
+                else:
+                    output.append("")
+            
+            # Add engagement stats
+            post_info = post.get('post', {})
+            like_count = post_info.get('likeCount', 0)
+            reply_count = post_info.get('replyCount', 0)
+            repost_count = post_info.get('repostCount', 0)
+            
+            if like_count > 0 or reply_count > 0 or repost_count > 0:
+                stats = []
+                if like_count > 0: stats.append(f"❤️ {like_count}")
+                if reply_count > 0: stats.append(f"💬 {reply_count}")
+                if repost_count > 0: stats.append(f"🔄 {repost_count}")
+                output.append(f"   📊 {' • '.join(stats)}")
+            
+            output.append("")
+            output.append("---")
+            output.append("")
+        
+        return "\n".join(output)
+    
     elif 'bluesky test' in user_lower:
         if bluesky.authenticate():
             posts = bluesky.get_timeline(limit=5)
@@ -260,7 +387,11 @@ def process_bluesky_command(user_input: str) -> str:
         else:
             return "❌ BlueSky authentication failed. Check credentials."
     
-    return "Available BlueSky commands:\n• 'analyze my bluesky feed' - Get engagement suggestions\n• 'bluesky high priority' - Show only high-relevance posts\n• 'bluesky test' - Test connection"
+    return """Available BlueSky commands:
+• 'bluesky timeline' - Get engagement suggestions with analysis
+• 'bluesky high priority' - Show only high-relevance posts (60%+)
+• 'bluesky posts' - Show recent posts with full content, no analysis
+• 'bluesky test' - Test connection"""
 
 def is_bluesky_configured() -> bool:
     """Check if BlueSky integration is configured"""
