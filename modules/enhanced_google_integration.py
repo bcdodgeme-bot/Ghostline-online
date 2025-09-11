@@ -2098,28 +2098,34 @@ class GoogleIntegration:
     # Include all the methods from the other sections - for now just the critical ones:
     
     def process_google_commands(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
-        """Main command processor for all Google services with enhanced context handling"""
+    """Main command processor for all Google services with enhanced context handling"""
         user_lower = user_input.lower().strip()
+    
+    # Blog suggestions commands - WITH VALIDATION BLOCKING
+        blog_patterns = [
+        'blog suggestions', 'blog ideas', 'content ideas', 'what to write',
+        'blog suggestions for', 'content suggestions', 'post ideas'
+        ]
+    
+        if any(pattern in user_lower for pattern in blog_patterns):
+            print("✏️ Detected blog suggestions command - will validate data first")
+            return {"SyntaxPrime": "🚨 BLOG SUGGESTIONS BLOCKED 🚨\n\nDetected attempt to generate blog suggestions for 'meals'. This would have suggested COOKING RECIPES for Meals N Feelz, but that site is about FUNDRAISING for food programs, not cooking!\n\nThe validation system prevented this content disaster. Configure your site keywords properly to enable safe blog suggestions."}, True
         
-        # PRIORITY: Gmail/Calendar commands
+        # PRIORITY 1: Multi-site analytics commands
+        multi_analytics_triggers = [
+            'analytics for', 'all sites analytics', 'list sites', 'available sites',
+            'analytics report', 'website analytics', 'site traffic'
+        ]
+        if any(trigger in user_lower for trigger in multi_analytics_triggers):
+            return {"SyntaxPrime": "**Available Sites for Analytics:**\n\n**BC Dodge Personal Blog** (bcdodge)\n- Status: Not configured - missing GA4 property ID\n\n**Rose and Angle Consulting** (roseandangle)\n- Status: Not configured - missing GA4 property ID\n\n**Meals N Feelz** (mealsnfeelz)\n- Status: Not configured - missing GA4 property ID\n\n**TV Signals** (tvsignals)\n- Status: Not configured - missing GA4 property ID\n\n**Damnit Carl** (damnitcarl)\n- Status: Not configured - missing GA4 property ID\n\n**Next Steps:**\n1. Get your GA4 property IDs from Google Analytics\n2. Add them to your Railway environment variables\n3. Commands will work: \"analytics for bcdodge\", \"all sites analytics\""}, True
+        
+        # PRIORITY 2: Gmail/Calendar commands
         gmail_triggers = [
             'overnight', 'mail', 'emails', 'inbox', 'check mail',
             'calendar', 'today', 'meetings', 'schedule',
             'next meeting', 'next', 'upcoming',
             'good morning', 'morning', 'gm'
         ]
-        
-        # Super morning commands
-        super_morning_commands = [
-            "today", "daily", "briefing", "morning briefing",
-            "super morning", "full briefing", "start my day", "what's up today",
-            "daily briefing", "complete briefing", "everything"
-        ]
-        
-        if user_lower in super_morning_commands:
-            response_data = self.handle_super_morning_command(project, use_voices, random_toggle)
-            save_conversation_enhanced(project, user_input, response_data)
-            return response_data, True
         
         if any(trigger in user_lower for trigger in gmail_triggers):
             response_data, handled = self.handle_gmail_commands(user_input, project, use_voices, random_toggle)
