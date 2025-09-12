@@ -1409,6 +1409,7 @@ def reports_dashboard():
 # Section 10: Telegram Integration Routes
 # Section 10: Telegram Integration Routes 9/12/25
 # Section 10: Telegram Integration Routes
+# Section 10: Telegram Integration Routes
 @app.route('/reminders/check', methods=['POST'])
 def check_telegram_reminders():
     """Manual trigger for reminder checking"""
@@ -1848,10 +1849,24 @@ def test_reminder_parser():
         try:
             from modules.telegram_notifications import parse_reminder_command
             result = parse_reminder_command(test_input, "Personal Operating Manual")
+            
+            # Convert datetime and timedelta objects to strings for JSON serialization
+            if result and isinstance(result, dict):
+                serializable_result = {}
+                for key, value in result.items():
+                    if hasattr(value, 'isoformat'):  # datetime objects
+                        serializable_result[key] = value.isoformat()
+                    elif hasattr(value, 'total_seconds'):  # timedelta objects
+                        serializable_result[key] = f"{value.total_seconds()} seconds"
+                    else:
+                        serializable_result[key] = value
+            else:
+                serializable_result = result
+            
             results.append({
                 'input': test_input,
                 'success': result.get('success') if result else False,
-                'result': result,
+                'result': serializable_result,
                 'current_time': datetime.datetime.now().isoformat()
             })
         except Exception as e:
