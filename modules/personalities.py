@@ -483,6 +483,8 @@ def test_personality_system():
     print("\n✅ Personality system ready for integration")
     return personalities, integration
 
+
+
 #-------------------------------------------------------------------
 # SECTION 9: EXPORT AND INITIALIZATION
 #-------------------------------------------------------------------
@@ -500,3 +502,230 @@ personality_integration = PersonalityIntegration()
 if __name__ == "__main__":
     # Run tests if executed directly
     test_personality_system()
+
+#-------------------------------------------------------------------
+# SECTION 10: DYNAMIC PERSONALITY LEARNING INTEGRATION
+#-------------------------------------------------------------------
+
+class LearningPersonalityIntegration(PersonalityIntegration):
+    """
+    Enhanced personality integration with feedback learning capabilities
+    This builds on the base PersonalityIntegration to add learning features
+    """
+    
+    def __init__(self):
+        super().__init__()
+        self.learning_cache = {}
+        self.cache_duration = 21600  # 6 hours in seconds
+        
+    def get_feedback_learning_engine(self):
+        """Get feedback learning engine with error handling"""
+        try:
+            from modules.feedback_learning import FeedbackLearningEngine
+            return FeedbackLearningEngine()
+        except ImportError:
+            print("⚠️  Feedback learning not available")
+            return None
+    
+    def get_enhanced_personality_prompt(self, personality_id: str) -> str:
+        """
+        Get personality prompt enhanced with feedback learning
+        """
+        import time
+        
+        cache_key = f"enhanced_{personality_id.lower()}"
+        current_time = time.time()
+        
+        # Check cache first
+        if cache_key in self.learning_cache:
+            cached_time, cached_prompt = self.learning_cache[cache_key]
+            if current_time - cached_time < self.cache_duration:
+                print(f"🧠 Using cached enhanced prompt for {personality_id}")
+                return cached_prompt
+        
+        # Get base personality
+        config = self.personality_system.get_personality_config(personality_id)
+        base_prompt = config['system_prompt']
+        
+        # Try to enhance with learning
+        learning_engine = self.get_feedback_learning_engine()
+        if learning_engine:
+            try:
+                enhanced_prompt = learning_engine.get_personality_enhancement(personality_id, base_prompt)
+                
+                # Cache the result
+                self.learning_cache[cache_key] = (current_time, enhanced_prompt)
+                
+                if len(enhanced_prompt) > len(base_prompt):
+                    print(f"🚀 Enhanced {personality_id} with feedback learning")
+                    return enhanced_prompt
+                else:
+                    print(f"📝 No learning enhancements available for {personality_id}")
+                    return base_prompt
+                    
+            except Exception as e:
+                print(f"⚠️  Learning enhancement failed for {personality_id}: {e}")
+                return base_prompt
+        else:
+            print(f"📋 Using base personality for {personality_id} (no learning engine)")
+            return base_prompt
+    
+    def integrate_with_openrouter_enhanced(self,
+                                         messages: list,
+                                         personality_id: str = 'syntaxprime',
+                                         **openrouter_kwargs) -> dict:
+        """
+        Enhanced OpenRouter integration with feedback learning
+        """
+        
+        # Get enhanced personality prompt
+        enhanced_prompt = self.get_enhanced_personality_prompt(personality_id)
+        
+        # Modify system message with enhanced personality
+        system_message = {
+            "role": "system",
+            "content": enhanced_prompt
+        }
+        
+        # Prepare messages with enhanced personality system prompt
+        enhanced_messages = [system_message] + messages
+        
+        # Get post-processor from base personality config
+        config = self.personality_system.get_personality_config(personality_id)
+        
+        return {
+            'messages': enhanced_messages,
+            'personality_id': personality_id,
+            'post_processor': config.get('post_processor'),
+            'enhanced': True,
+            **openrouter_kwargs
+        }
+    
+    def analyze_personality_performance(self, personality_id: str) -> dict:
+        """
+        Analyze how well a personality is performing based on feedback
+        """
+        learning_engine = self.get_feedback_learning_engine()
+        if not learning_engine:
+            return {'status': 'learning_unavailable'}
+        
+        try:
+            # Get perfect response analysis
+            perfect_analysis = learning_engine.analyze_perfect_personality_responses(personality_id)
+            
+            # Get negative feedback analysis
+            negative_analysis = learning_engine.analyze_negative_feedback(personality_id)
+            
+            performance = {
+                'personality': personality_id,
+                'perfect_responses': perfect_analysis.get('total_perfect_responses', 0),
+                'negative_responses': negative_analysis.get('total_negative_responses', 0),
+                'learning_active': perfect_analysis.get('total_perfect_responses', 0) >= 3,
+                'status': 'healthy' if perfect_analysis.get('total_perfect_responses', 0) > negative_analysis.get('total_negative_responses', 0) else 'needs_improvement'
+            }
+            
+            # Add performance ratio
+            total_feedback = performance['perfect_responses'] + performance['negative_responses']
+            if total_feedback > 0:
+                performance['success_rate'] = performance['perfect_responses'] / total_feedback
+            else:
+                performance['success_rate'] = 0
+            
+            return performance
+            
+        except Exception as e:
+            return {'status': 'error', 'error': str(e)}
+    
+    def get_all_personality_performance(self) -> dict:
+        """
+        Get performance analysis for all personalities
+        """
+        personalities = ['syntaxprime', 'syntaxbot', 'nilexe', 'ggpt']
+        performance_data = {}
+        
+        for personality in personalities:
+            performance_data[personality] = self.analyze_personality_performance(personality)
+        
+        # Calculate overall system performance
+        total_perfect = sum(p.get('perfect_responses', 0) for p in performance_data.values())
+        total_negative = sum(p.get('negative_responses', 0) for p in performance_data.values())
+        
+        performance_data['system_summary'] = {
+            'total_perfect_responses': total_perfect,
+            'total_negative_responses': total_negative,
+            'overall_success_rate': total_perfect / (total_perfect + total_negative) if (total_perfect + total_negative) > 0 else 0,
+            'learning_active_personalities': len([p for p in performance_data.values() if p.get('learning_active', False)])
+        }
+        
+        return performance_data
+
+def upgrade_personality_system_with_learning():
+    """
+    Upgrade the global personality integration to use learning capabilities
+    """
+    global personality_integration
+    
+    try:
+        # Replace the basic integration with the learning version
+        personality_integration = LearningPersonalityIntegration()
+        print("🚀 Personality system upgraded with feedback learning")
+        return True
+    except Exception as e:
+        print(f"⚠️  Failed to upgrade personality system: {e}")
+        return False
+
+def test_learning_personality_system():
+    """
+    Test the learning-enhanced personality system
+    """
+    print("=== LEARNING PERSONALITY SYSTEM TEST ===")
+    
+    learning_integration = LearningPersonalityIntegration()
+    
+    # Test enhanced prompts for each personality
+    personalities = ['syntaxprime', 'syntaxbot', 'nilexe', 'ggpt']
+    
+    for personality in personalities:
+        print(f"\n🎭 Testing {personality}...")
+        
+        # Get base prompt
+        base_config = learning_integration.personality_system.get_personality_config(personality)
+        base_length = len(base_config['system_prompt'])
+        
+        # Get enhanced prompt
+        enhanced_prompt = learning_integration.get_enhanced_personality_prompt(personality)
+        enhanced_length = len(enhanced_prompt)
+        
+        print(f"   Base prompt: {base_length} characters")
+        print(f"   Enhanced prompt: {enhanced_length} characters")
+        print(f"   Enhancement: {enhanced_length - base_length:+} characters")
+        
+        # Test performance analysis
+        performance = learning_integration.analyze_personality_performance(personality)
+        print(f"   Perfect responses: {performance.get('perfect_responses', 0)}")
+        print(f"   Learning active: {performance.get('learning_active', False)}")
+    
+    # Test overall system performance
+    print(f"\n📊 Overall System Performance:")
+    overall_performance = learning_integration.get_all_personality_performance()
+    summary = overall_performance.get('system_summary', {})
+    
+    print(f"   Total perfect responses: {summary.get('total_perfect_responses', 0)}")
+    print(f"   Overall success rate: {summary.get('overall_success_rate', 0):.1%}")
+    print(f"   Learning-active personalities: {summary.get('learning_active_personalities', 0)}")
+    
+    print("\n✅ Learning personality system test complete")
+    return learning_integration
+
+# Update exports to include learning classes
+__all__.extend([
+    'LearningPersonalityIntegration',
+    'upgrade_personality_system_with_learning',
+    'test_learning_personality_system'
+])
+
+# Automatically upgrade the personality system if learning is available
+try:
+    upgrade_personality_system_with_learning()
+except Exception as e:
+    print(f"📝 Keeping basic personality system: {e}")

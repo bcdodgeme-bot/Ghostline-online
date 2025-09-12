@@ -696,3 +696,225 @@ if __name__ == "__main__":
         test_openrouter_connection()
     
     print("=== ENGINE READY ===")
+
+#-------------------------------------------------------------------
+# SECTION 12: FEEDBACK-AWARE RESPONSE GENERATION
+#-------------------------------------------------------------------
+
+def get_feedback_learning_engine():
+    """Get the feedback learning engine with error handling"""
+    try:
+        from modules.feedback_learning import FeedbackLearningEngine
+        return FeedbackLearningEngine()
+    except ImportError as e:
+        print(f"⚠️  Feedback learning system import failed: {e}")
+        return None
+
+def apply_feedback_enhanced_personality(messages: List[Dict], voice: str) -> List[Dict]:
+    """
+    Apply personality enhanced with feedback learning data
+    This is the SMART version that learns from 🖕 ratings!
+    """
+    try:
+        # Get both personality and learning systems
+        personality_integration = get_personality_system()
+        learning_engine = get_feedback_learning_engine()
+        
+        if personality_integration and learning_engine:
+            # Get base personality
+            config = personality_integration.personality_system.get_personality_config(voice.lower())
+            base_prompt = config['system_prompt']
+            
+            # Enhance with feedback learning
+            enhanced_prompt = learning_engine.get_personality_enhancement(voice, base_prompt)
+            
+            # Check if enhancement actually happened
+            if len(enhanced_prompt) > len(base_prompt):
+                print(f"🧠 Applied feedback learning to {voice} (+{len(enhanced_prompt) - len(base_prompt)} chars)")
+            else:
+                print(f"🎭 Using base {voice} personality (no learning data yet)")
+            
+            # Apply enhanced personality to messages
+            if messages and messages[0]["role"] == "system":
+                messages[0]["content"] += f"\n\n{enhanced_prompt}"
+            else:
+                messages.insert(0, {
+                    "role": "system",
+                    "content": enhanced_prompt
+                })
+                
+        elif personality_integration:
+            # Fallback to base personality system
+            print(f"⚠️  Learning engine unavailable, using base {voice} personality")
+            return apply_authentic_personality(messages, voice)
+        else:
+            # Final fallback
+            print(f"⚠️  No personality systems available for {voice}")
+            fallback_prompt = f"You are {voice}, respond naturally in your authentic voice."
+            
+            if messages and messages[0]["role"] == "system":
+                messages[0]["content"] += f"\n\n{fallback_prompt}"
+            else:
+                messages.insert(0, {
+                    "role": "system",
+                    "content": fallback_prompt
+                })
+        
+        return messages
+        
+    except Exception as e:
+        print(f"❌ Feedback-enhanced personality application failed: {e}")
+        return apply_authentic_personality(messages, voice)  # Fallback
+
+def generate_feedback_aware_response(
+    user_input: str,
+    use_voices: List[str],
+    random_toggle: bool,
+    project: str = "default",
+    model: str = None,
+    retrieval_context: List[Dict] = None,
+    **kwargs
+) -> Dict[str, str]:
+    """
+    Generate response using feedback-enhanced personalities
+    This replaces generate_response when feedback learning is active
+    """
+    
+    # Use environment model if none specified, then filter it
+    if model is None:
+        model = os.getenv("CHAT_MODEL", "openrouter/auto")
+    
+    # Apply model filtering for safety
+    filtered_model = filter_model_selection(model)
+    
+    # Get conversation history context
+    conversation_context = load_user_history_only(project, max_tokens=500)
+    
+    # Get current time context
+    time_context = get_current_time_context()
+    
+    # Build comprehensive system context
+    system_context = f"""You are Ghostline AI, Carl's advanced personal assistant and creative partner.
+
+{time_context}
+
+{conversation_context}
+
+{ANSWER_RULES}
+
+Current project context: {project}
+"""
+    
+    # Add retrieval context if available
+    if retrieval_context and len(retrieval_context) > 0:
+        system_context += "\n\nRelevant knowledge base context:\n"
+        for i, ctx in enumerate(retrieval_context[:3], 1):  # Limit to 3 most relevant
+            system_context += f"{i}. {ctx.get('text', '')[:200]}...\n"
+    
+    # Generate responses for each requested voice
+    responses = {}
+    learning_engine = get_feedback_learning_engine()
+    
+    for voice in use_voices:
+        try:
+            print(f"🧠 Generating feedback-aware {voice} response using {filtered_model}")
+            
+            # Prepare messages with base system context
+            messages = [
+                {"role": "system", "content": system_context},
+                {"role": "user", "content": user_input}
+            ]
+            
+            # Apply feedback-enhanced personality to messages
+            messages = apply_feedback_enhanced_personality(messages, voice)
+            
+            # Make API call
+            response = _client.chat_completion(
+                model=filtered_model,
+                messages=messages,
+                temperature=0.7
+            )
+            
+            # Extract response content
+            if 'choices' in response and len(response['choices']) > 0:
+                raw_content = response['choices'][0]['message']['content']
+                
+                # Check for negative patterns if learning engine is available
+                if learning_engine:
+                    warnings = learning_engine.should_avoid_pattern(raw_content, voice)
+                    if warnings:
+                        print(f"⚠️  {voice} response warnings: {warnings}")
+                
+                # Apply personality post-processing
+                processed_content = apply_personality_post_processing(raw_content, voice)
+                
+                responses[voice] = processed_content
+                print(f"✅ {voice} response generated with feedback awareness")
+            else:
+                responses[voice] = f"Error: No response generated for {voice}"
+                print(f"❌ No response generated for {voice}")
+                
+        except Exception as e:
+            print(f"❌ Error generating feedback-aware {voice} response: {e}")
+            responses[voice] = f"Error generating {voice} response: {str(e)}"
+    
+    return responses
+
+def log_response_for_learning(responses: Dict[str, str], user_input: str, project: str):
+    """
+    Log responses for potential future learning
+    This helps track response patterns for analysis
+    """
+    try:
+        learning_engine = get_feedback_learning_engine()
+        if not learning_engine:
+            return
+        
+        # Simple logging of response characteristics for future analysis
+        for voice, response in responses.items():
+            response_stats = {
+                'voice': voice,
+                'project': project,
+                'user_input_length': len(user_input.split()),
+                'response_length': len(response.split()),
+                'has_humor': any(indicator in response.lower() for indicator in ['lol', '😂', 'sarcasm', 'chaos']),
+                'has_memory_ref': any(ref in response.lower() for ref in ['remember', 'coffee', '2am', 'chaos']),
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            # This could be stored for future analysis if needed
+            print(f"📊 Response logged for learning: {voice} - {response_stats['response_length']} words")
+            
+    except Exception as e:
+        print(f"⚠️  Response logging failed: {e}")
+
+# Update the export list to include new functions
+def get_feedback_aware_engine_status():
+    """Get engine status including feedback learning capabilities"""
+    base_status = get_engine_status()
+    
+    # Add feedback learning status
+    learning_engine = get_feedback_learning_engine()
+    base_status['feedback_learning'] = {
+        'available': learning_engine is not None,
+        'status': 'active' if learning_engine else 'unavailable'
+    }
+    
+    if learning_engine:
+        try:
+            # Test analysis capability
+            analysis = learning_engine.analyze_perfect_personality_responses("SyntaxPrime")
+            base_status['feedback_learning']['perfect_responses'] = analysis.get('total_perfect_responses', 0)
+            base_status['feedback_learning']['learning_active'] = analysis.get('total_perfect_responses', 0) >= 3
+        except Exception as e:
+            base_status['feedback_learning']['error'] = str(e)
+    
+    return base_status
+
+# Add to __all__ export list:
+__all__.extend([
+    'generate_feedback_aware_response',
+    'apply_feedback_enhanced_personality',
+    'log_response_for_learning',
+    'get_feedback_aware_engine_status'
+])
