@@ -278,21 +278,23 @@ app.jinja_env.filters['markdown'] = markdown_filter
 
 # Section 3: Helper Functions for Chat Processing
 # Section 3: Helper Functions for Chat Processing - FIXED VERSION
+# Section 3: Helper Functions for Chat Processing - FIXED VERSION 9/12/25
 
 def handle_reminder_command(user_input, project, use_voices, random_toggle):
-    """Handle reminder creation commands - MUCH MORE SELECTIVE"""
+    """Handle reminder creation commands - FIXED DETECTION PATTERNS"""
     
-    # Make detection MUCH more specific - only explicit reminder requests
+    # FIXED: Updated patterns to catch "remind me in one minute to X"
     explicit_reminder_patterns = [
         r'^remind me to\s+',
         r'^set a reminder\s+',
         r'^create a reminder\s+',
         r'^set reminder\s+',
         r'^reminder:\s+',
-        r'^remind me in\s+\d+',
-        r'^remind me at\s+\d+',
+        r'^remind me in\s+',               # ✅ FIXED: Removed \d+ requirement
+        r'^remind me at\s+',
         r'^reminder for\s+',
-        r'remind me to .+ (in|at|tomorrow|today)',
+        r'remind me .+ in\s+',             # ✅ NEW: Catches "remind me to X in Y"
+        r'remind me .+ at\s+',             # ✅ NEW: Catches "remind me to X at Y"
         r'set a reminder .+ (in|at|tomorrow|today)',
     ]
     
@@ -377,70 +379,46 @@ def generate_response_with_context_check(user_input, use_voices, random_toggle, 
         print(f"Weak context for specific query, trying enhanced search approaches")
         
         enhanced_context = []
-        search_terms = user_input.lower().replace('?', '').split()
+        search_terms = user_input.lower().replace('?', '').replace(',', ' ')
         
-        # Extract important words (longer than 3 chars, not common words)
-        important_words = [w for w in search_terms
-                          if len(w) > 3 and w not in [
-                              'what', 'does', 'tell', 'about', 'explain', 'describe',
-                              'where', 'when', 'who', 'how', 'why', 'the', 'and', 'are',
-                              'this', 'that', 'with', 'from', 'they', 'have', 'been'
-                          ]]
-        
-        print(f"Trying search with important words: {important_words}")
-        
-        for word in important_words[:3]:  # Try up to 3 important words
-            try:
-                additional_context = enhanced_retrieve(word, k=3, project=project)
+        # Try multiple search approaches
+        for term in search_terms.split():
+            if len(term) > 3:  # Skip short words
+                additional_context = retrieve(term, limit=2)
                 if additional_context:
                     enhanced_context.extend(additional_context)
-                    print(f"Found {len(additional_context)} results for '{word}'")
-            except Exception as e:
-                print(f"Enhanced search failed for '{word}': {e}")
         
-        # Also try the full query one more time
-        try:
-            final_attempt = enhanced_retrieve(user_input, k=5, project=project)
-            if final_attempt:
-                enhanced_context.extend(final_attempt)
-                print(f"Final attempt found {len(final_attempt)} additional results")
-        except Exception as e:
-            print(f"Final enhanced search attempt failed: {e}")
-        
-        # Remove duplicates and use enhanced context if better
+        # Combine and deduplicate
         if enhanced_context:
-            seen_content = set()
+            all_context = list(retrieval_context or []) + enhanced_context
+            # Simple dedup by content similarity
             unique_context = []
-            for item in enhanced_context:
-                content_key = item.get('text', '')[:100]
-                if content_key not in seen_content:
-                    seen_content.add(content_key)
-                    unique_context.append(item)
+            seen_content = set()
+            for ctx in all_context:
+                content_snippet = ctx.get('content', '')[:100]
+                if content_snippet not in seen_content:
+                    unique_context.append(ctx)
+                    seen_content.add(content_snippet)
             
-            if len(unique_context) > context_quality:
-                retrieval_context = unique_context[:10]
-                print(f"Using enhanced context: {len(retrieval_context)} unique results")
+            retrieval_context = unique_context[:8]  # Limit to top 8
+            print(f"Enhanced context: {len(retrieval_context)} results")
     
-    # Add instruction to be less overly cautious about knowledge
-    if is_specific_query and len(retrieval_context) < 2:
-        enhanced_prompt = f"""User question: {user_input}
-
-Context from database: {len(retrieval_context)} results found.
-
-Important: Even if database context is limited, please answer using your general knowledge when appropriate. Don't claim you lack information if you actually know about the topic from your training. Only defer to "I don't have information" for very specific or recent topics that genuinely require external sources.
-
-If this is about popular culture, TV shows, movies, books, or well-known topics, please provide a helpful response based on your training knowledge."""
-        
-        return generate_response(
-            enhanced_prompt, use_voices, random_toggle,
-            project=project, model=model, retrieval_context=retrieval_context
+    try:
+        response = generate_response(
+            user_input,
+            use_voices,
+            random_toggle,
+            project,
+            model,
+            retrieval_context
         )
-    
-    return generate_response(
-        user_input, use_voices, random_toggle,
-        project=project, model=model, retrieval_context=retrieval_context
-    )
-    
+        return response
+    except Exception as e:
+        app.logger.error(f"Response generation failed: {e}")
+        return {
+            "SyntaxPrime": f"I encountered an error processing your request: {str(e)}"
+        }
+
     
 # Section 4: Main Chat Route
 # Section 4: Main Chat Route
