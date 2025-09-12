@@ -457,6 +457,7 @@ If this is about popular culture, TV shows, movies, books, or well-known topics,
 # Section 4: Main Chat Route (UPDATED WITH BLUESKY INTEGRATION)
 # Section 4: Main Chat Route (UPDATED WITH FIXED BLUESKY INTEGRATION - HIGHEST PRIORITY)
 # Section 4: Main Chat Route (UPDATED WITH FIXED BLUESKY INTEGRATION + CONTENT STRATEGY - HIGHEST PRIORITY)
+# Section 4: Main Chat Route (UPDATED WITH FIXED CALENDAR DATA FORMATTING) 9/12/25
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if not session.get('logged_in'):

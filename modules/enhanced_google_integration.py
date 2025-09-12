@@ -597,7 +597,7 @@ class GoogleIntegration:
 # =============================================================================
 
     def handle_gmail_commands(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
-        """Handle Gmail and Calendar commands with enhanced multi-calendar support"""
+        """Handle Gmail and Calendar commands with enhanced multi-calendar support and FIXED calendar data formatting"""
         user_lower = user_input.lower().strip()
         
         # SUPER MORNING COMMANDS - More specific patterns to avoid false triggers
@@ -699,7 +699,7 @@ class GoogleIntegration:
                 save_conversation_enhanced(project, user_input, response_data)
                 return response_data, True
         
-        # Calendar commands - exact matches only
+        # Calendar commands - FIXED: exact matches only with proper data formatting
         calendar_exact_matches = ["calendar", "today", "meetings", "schedule"]
         if user_lower in calendar_exact_matches:
             try:
@@ -713,11 +713,32 @@ class GoogleIntegration:
                     return response_data, True
                 
                 if len(events) == 0:
-                    summary_prompt = "No events found for today across all your calendars. Your schedule is completely clear."
+                    summary_prompt = "REAL CALENDAR DATA: No events found for today across all your calendars. Your schedule is completely clear.\n\nCRITICAL INSTRUCTION: Do not fabricate or invent any meetings, appointments, or events. The calendar is genuinely empty for today."
                 else:
-                    # Use the enhanced formatter that shows calendar names
-                    calendar_summary = format_calendar_summary_enhanced(events, "Today's Calendar (All Calendars)")
-                    summary_prompt = f"Here's your complete calendar for today:\n\n{calendar_summary}"
+                    # FIXED: Format real calendar data properly for AI
+                    summary_prompt = f"REAL CALENDAR DATA for today ({len(events)} actual events):\n\n"
+                    summary_prompt += "CRITICAL INSTRUCTION: Use ONLY the following real calendar events. Do not add, invent, or fabricate any additional meetings.\n\n"
+                    summary_prompt += "TODAY'S ACTUAL EVENTS:\n"
+                    
+                    for i, event in enumerate(events, 1):
+                        # Extract real event details
+                        if isinstance(event, dict):
+                            title = event.get('title', event.get('summary', 'Untitled Event'))
+                            start_time = event.get('start_time_formatted', event.get('start_formatted', 'Time not specified'))
+                            calendar_name = event.get('calendar_name', 'Unknown Calendar')
+                            location = event.get('location', '')
+                            
+                            summary_prompt += f"{i}. **{title}**\n"
+                            summary_prompt += f"   - Time: {start_time}\n"
+                            summary_prompt += f"   - Calendar: {calendar_name}\n"
+                            if location:
+                                summary_prompt += f"   - Location: {location}\n"
+                            summary_prompt += "\n"
+                        else:
+                            # Fallback for string format
+                            summary_prompt += f"{i}. {event}\n"
+                    
+                    summary_prompt += f"\nEND OF REAL CALENDAR DATA - These are the {len(events)} actual events in your calendar today. Do not mention any events not listed above."
                     
                     # Store context for follow-ups
                     enhanced_conversation_context.store_calendar_report(
@@ -741,7 +762,7 @@ class GoogleIntegration:
                 save_conversation_enhanced(project, user_input, response_data)
                 return response_data, True
         
-        # Next meeting command - exact matches only
+        # Next meeting command - FIXED: exact matches only with proper data formatting
         next_meeting_matches = ["next meeting", "next", "upcoming"]
         if user_lower in next_meeting_matches:
             try:
@@ -749,13 +770,26 @@ class GoogleIntegration:
                 next_meeting = get_next_meeting()
                 
                 if not next_meeting or isinstance(next_meeting, dict) and "error" in next_meeting:
-                    summary_prompt = "No upcoming meetings found in your calendar."
+                    summary_prompt = "REAL CALENDAR DATA: No upcoming meetings found in your calendar.\n\nCRITICAL INSTRUCTION: Do not fabricate or invent any meetings. There genuinely are no upcoming meetings scheduled."
                 elif next_meeting and next_meeting.get('summary'):
+                    # FIXED: Format real meeting data properly
+                    title = next_meeting.get('summary', 'Untitled Meeting')
+                    start_time = next_meeting.get('start_formatted', 'Time not specified')
                     calendar_name = next_meeting.get('calendar_name', '')
-                    calendar_suffix = f" ({calendar_name})" if calendar_name else ""
-                    summary_prompt = f"Next meeting: {next_meeting['summary']} at {next_meeting.get('start_formatted', 'Unknown time')}{calendar_suffix}"
+                    location = next_meeting.get('location', '')
+                    
+                    summary_prompt = f"REAL CALENDAR DATA - Your next meeting:\n\n"
+                    summary_prompt += f"CRITICAL INSTRUCTION: This is the actual next meeting from your calendar. Do not invent or add any other meetings.\n\n"
+                    summary_prompt += f"NEXT MEETING:\n"
+                    summary_prompt += f"**{title}**\n"
+                    summary_prompt += f"- Time: {start_time}\n"
+                    if calendar_name:
+                        summary_prompt += f"- Calendar: {calendar_name}\n"
+                    if location:
+                        summary_prompt += f"- Location: {location}\n"
+                    summary_prompt += f"\nThis is your only upcoming meeting. Do not mention any other meetings."
                 else:
-                    summary_prompt = "Next meeting lookup completed but no readable meeting data found."
+                    summary_prompt = "REAL CALENDAR DATA: Next meeting lookup completed but no readable meeting data found.\n\nCRITICAL INSTRUCTION: Do not fabricate meeting details."
                 
                 retrieval_ctx = enhanced_retrieve(summary_prompt, k=5) if is_ready() else []
                 response_data = generate_response(
@@ -773,6 +807,97 @@ class GoogleIntegration:
                 return response_data, True
         
         return {}, False
+
+    def handle_super_morning_command(self, project: str, use_voices: list, random_toggle: bool) -> Dict:
+        """FIXED: Handle super morning briefing with proper calendar data formatting"""
+        try:
+            print("🌅 Starting comprehensive morning briefing...")
+            
+            # Gather all data
+            overnight_emails = list_overnight(include_unread=True, include_primary=False)
+            today_events = list_today_events_all_calendars(max_results=20)
+            next_meeting = get_next_meeting()
+            
+            # Build comprehensive anti-fabrication prompt with REAL data
+            summary_prompt = """COMPREHENSIVE MORNING BRIEFING - REAL DATA ONLY
+
+CRITICAL INSTRUCTION: This briefing contains only REAL data from your accounts.
+Do not fabricate, invent, or imagine any additional emails, meetings, or information.
+All data below is verified and extracted from actual sources.
+
+"""
+            
+            # Add email section with real data
+            if overnight_emails and isinstance(overnight_emails, list) and len(overnight_emails) > 0:
+                summary_prompt += f"📧 EMAILS: {len(overnight_emails)} new overnight emails\n"
+                for i, msg in enumerate(overnight_emails[:5], 1):
+                    sender = self._extract_email_sender(msg)
+                    subject = self._extract_email_subject(msg)
+                    summary_prompt += f"  {i}. {sender or 'Unknown'}: {subject or 'No Subject'}\n"
+                
+                if len(overnight_emails) > 5:
+                    summary_prompt += f"  ... and {len(overnight_emails) - 5} more emails\n"
+                summary_prompt += "\n"
+            else:
+                summary_prompt += "📧 EMAILS: No new overnight emails found. Your inbox is up to date.\n\n"
+            
+            # Add calendar section with REAL data - FIXED formatting
+            if today_events and isinstance(today_events, list) and len(today_events) > 0:
+                summary_prompt += f"📅 CALENDAR: {len(today_events)} actual events today\n"
+                summary_prompt += "REAL EVENTS FROM YOUR CALENDAR:\n"
+                
+                for i, event in enumerate(today_events, 1):
+                    if isinstance(event, dict):
+                        title = event.get('title', event.get('summary', 'Untitled Event'))
+                        start_time = event.get('start_time_formatted', event.get('start_formatted', 'Time not specified'))
+                        calendar_name = event.get('calendar_name', '')
+                        location = event.get('location', '')
+                        
+                        summary_prompt += f"  {i}. **{title}** at {start_time}"
+                        if calendar_name:
+                            summary_prompt += f" ({calendar_name})"
+                        if location:
+                            summary_prompt += f" - {location}"
+                        summary_prompt += "\n"
+                    else:
+                        # Handle string format
+                        summary_prompt += f"  {i}. {event}\n"
+                
+                summary_prompt += "\n"
+            else:
+                summary_prompt += "📅 CALENDAR: No events scheduled for today. You have a clear calendar.\n\n"
+            
+            # Add next meeting info with REAL data
+            if next_meeting and isinstance(next_meeting, dict) and next_meeting.get('summary'):
+                title = next_meeting.get('summary', 'Untitled Meeting')
+                start_time = next_meeting.get('start_formatted', 'Time not specified')
+                calendar_name = next_meeting.get('calendar_name', '')
+                
+                summary_prompt += f"⏰ NEXT MEETING: **{title}** at {start_time}"
+                if calendar_name:
+                    summary_prompt += f" ({calendar_name})"
+                summary_prompt += "\n\n"
+            else:
+                summary_prompt += "⏰ NEXT MEETING: No upcoming meetings found.\n\n"
+            
+            summary_prompt += "END OF REAL DATA - Do not add any additional information not listed above."
+            
+            # Generate response with context
+            retrieval_ctx = enhanced_retrieve(summary_prompt, k=5, project=project) if is_ready() else []
+            
+            response_data = generate_response(
+                summary_prompt, use_voices, random_toggle,
+                project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+            )
+            
+            print(f"🏁 Morning briefing completed with real data")
+            
+            return response_data
+            
+        except Exception as e:
+            error_msg = f"Morning briefing failed: {str(e)}"
+            print(f"❌ {error_msg}")
+            return {"SyntaxPrime": f"Morning briefing error: {error_msg}. Please check your Google OAuth setup."}
 # =============================================================================
 # SECTION 6: MAIN COMMAND PROCESSOR (WITH YOUR UPDATED CODE)
 # =============================================================================
