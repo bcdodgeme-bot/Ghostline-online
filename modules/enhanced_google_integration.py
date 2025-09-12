@@ -907,6 +907,9 @@ All data below is verified and extracted from actual sources.
 # =============================================================================
 # SECTION 6: MAIN COMMAND PROCESSOR AND MISSING METHODS - FIXED SITE NAME PARSING 9/12/25
 # =============================================================================
+# =============================================================================
+# SECTION 6: MAIN COMMAND PROCESSOR AND MISSING METHODS - ANTI-HALLUCINATION VERSION 9/12/25
+# =============================================================================
 
     def find_site_by_name(self, site_query: str) -> Optional[str]:
         """Find site key by name or alias - ENHANCED with better multi-word matching"""
@@ -964,8 +967,176 @@ All data below is verified and extracted from actual sources.
         print(f"Available sites: {[(key, config['name']) for key, config in self.sites_config.items()]}")
         return None
 
+    def format_search_console_response(self, result: Dict, user_input: str) -> str:
+        """ANTI-HALLUCINATION: Template-based Search Console response using ONLY real API data"""
+        if not result.get('success'):
+            error_msg = result.get('error', 'Unknown error')
+            response = f"**Search Console Error:**\n{error_msg}\n\n"
+            
+            # Show available sites if site not found
+            if "not found" in error_msg.lower():
+                sites = self.get_available_sites()
+                if sites:
+                    response += f"**Available sites for Search Console:**\n"
+                    for site in sites:
+                        if site.get('has_search_console'):
+                            response += f"• **{site['name']}** (key: `{site['key']}`)\n"
+                            if site['aliases']:
+                                response += f"  Aliases: {', '.join(site['aliases'])}\n"
+                    
+                    response += f"\n**Usage examples:**\n"
+                    response += f"• `search console for {sites[0]['name']}`\n"
+                    response += f"• `search console {sites[0]['name']} last 30 days`\n"
+            
+            return response
+        
+        # SUCCESS: Format real API data ONLY
+        data = result.get('data', [])
+        site_name = result.get('site_name', 'Unknown Site')
+        date_range = result.get('date_range', 'Unknown range')
+        
+        response = f"**Search Console Report for {site_name} ({date_range})**\n\n"
+        response += f"**Summary:**\n"
+        response += f"- Total Clicks: {result.get('total_clicks', 0):,}\n"
+        response += f"- Total Impressions: {result.get('total_impressions', 0):,}\n"
+        response += f"- Average CTR: {result.get('average_ctr', 0):.2f}%\n"
+        response += f"- Total Queries: {result.get('total_queries', 0)}\n\n"
+        
+        if data and isinstance(data, list) and len(data) > 0:
+            response += f"**Top Performing Queries:**\n"
+            sorted_data = sorted([row for row in data if isinstance(row, dict)],
+                               key=lambda x: x.get('clicks', 0), reverse=True)
+            for i, row in enumerate(sorted_data[:10], 1):
+                query = row.get('query', 'Unknown query')
+                clicks = row.get('clicks', 0)
+                impressions = row.get('impressions', 0)
+                response += f"{i}. {query} - {clicks} clicks, {impressions} impressions\n"
+        else:
+            response += "No search console data found for the specified period."
+        
+        return response
+
+    def format_analytics_response(self, result: Dict, start_date: str, end_date: str) -> str:
+        """ANTI-HALLUCINATION: Template-based Analytics response using ONLY real API data"""
+        if not result.get('success'):
+            error_msg = result.get('error', 'Unknown error')
+            response = f"**Analytics Error:**\n{error_msg}\n\n"
+            
+            # Show available sites if site not found
+            if "not found" in error_msg.lower():
+                sites = self.get_available_sites()
+                if sites:
+                    response += f"**Available sites for Analytics:**\n"
+                    for site in sites:
+                        if site.get('has_analytics'):
+                            response += f"• **{site['name']}** (key: `{site['key']}`)\n"
+                            if site['aliases']:
+                                response += f"  Aliases: {', '.join(site['aliases'])}\n"
+                    
+                    response += f"\n**Usage examples:**\n"
+                    response += f"• `analytics for {sites[0]['name']}`\n"
+                    response += f"• `analytics for {sites[0]['name']} last 30 days`\n"
+            
+            return response
+        
+        # SUCCESS: Format real API data ONLY
+        data = result.get('data', [])
+        site_name = result.get('site_name', 'Unknown Site')
+        
+        response = f"**GA4 Analytics Report for {site_name} ({start_date} to {end_date})**\n\n"
+        response += f"**Summary:**\n"
+        response += f"- Total Sessions: {result.get('total_sessions', 0):,}\n"
+        response += f"- Total Users: {result.get('total_users', 0):,}\n"
+        response += f"- Total Pageviews: {result.get('total_pageviews', 0):,}\n"
+        response += f"- Average Bounce Rate: {result.get('avg_bounce_rate', 0):.1f}%\n\n"
+        
+        if data and isinstance(data, list) and len(data) > 0:
+            # Show recent breakdown or full period depending on range
+            if len(data) <= 31:  # Show all days if 31 or fewer
+                response += f"**Daily Breakdown:**\n"
+                for row in data:
+                    if isinstance(row, dict):
+                        date = row.get('date', 'Unknown')
+                        sessions = row.get('sessions', 0)
+                        users = row.get('users', 0)
+                        response += f"- {date}: {sessions} sessions, {users} users\n"
+            else:  # Show summary for longer periods
+                response += f"**Recent Activity (Last 7 days):**\n"
+                for row in data[-7:]:
+                    if isinstance(row, dict):
+                        date = row.get('date', 'Unknown')
+                        sessions = row.get('sessions', 0)
+                        users = row.get('users', 0)
+                        response += f"- {date}: {sessions} sessions, {users} users\n"
+        else:
+            response += "No analytics data found for the specified period."
+        
+        return response
+
+    def format_all_sites_analytics_response(self, result: Dict, start_date: str, end_date: str) -> str:
+        """ANTI-HALLUCINATION: Template-based response for all sites analytics using ONLY real API data"""
+        if not result.get('success'):
+            return f"**Error:** {result.get('error', 'Failed to get analytics for all sites')}"
+        
+        response = f"**GA4 Analytics Report for All Sites ({start_date} to {end_date})**\n\n"
+        
+        sites_data = result.get('sites', {})
+        for site_key, site_result in sites_data.items():
+            if site_result.get('success'):
+                data = site_result.get('data', [])
+                site_name = site_result.get('site_name', site_key)
+                
+                if data and isinstance(data, list):
+                    total_sessions = sum(row.get('sessions', 0) for row in data if isinstance(row, dict))
+                    total_users = sum(row.get('users', 0) for row in data if isinstance(row, dict))
+                    total_pageviews = sum(row.get('pageviews', 0) for row in data if isinstance(row, dict))
+                    
+                    response += f"**{site_name}:**\n"
+                    response += f"- Sessions: {total_sessions:,}\n"
+                    response += f"- Users: {total_users:,}\n"
+                    response += f"- Pageviews: {total_pageviews:,}\n\n"
+                else:
+                    response += f"**{site_name}:** No data available\n\n"
+            else:
+                site_name = site_result.get('site_name', site_key)
+                error = site_result.get('error', 'Unknown error')
+                response += f"**{site_name}:** Error - {error}\n\n"
+        
+        return response
+
+    def format_sites_list_response(self) -> str:
+        """ANTI-HALLUCINATION: Template-based sites list using ONLY configuration data"""
+        sites = self.get_available_sites()
+        
+        if not sites:
+            return "No sites configured. Set up GOOGLE_SITES_CONFIG environment variable."
+        
+        response = f"**Available Sites for Analytics:**\n\n"
+        for site in sites:
+            status_icons = []
+            if site['has_analytics']:
+                status_icons.append("GA4 Analytics")
+            if site['has_search_console']:
+                status_icons.append("Search Console")
+            
+            status = " | ".join(status_icons) if status_icons else "Not configured"
+            response += f"**{site['name']}** (key: `{site['key']}`)\n"
+            response += f"- Status: {status}\n"
+            
+            if site['aliases']:
+                response += f"- Aliases: {', '.join(site['aliases'])}\n"
+            response += "\n"
+        
+        response += f"**Usage Examples:**\n"
+        response += f"- `analytics for {sites[0]['name']}`\n"
+        response += f"- `analytics for {sites[0]['name']} last 6 months`\n"
+        response += f"- `all sites analytics last year`\n"
+        response += f"- `search console for {sites[0]['name']} last 3 months`\n"
+        
+        return response
+
     def process_google_commands(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
-        """Main command processor for all Google services with ENHANCED SITE PARSING"""
+        """Main command processor for all Google services with ANTI-HALLUCINATION response generation"""
         user_lower = user_input.lower().strip()
         
         print(f"🔍 Google command processing: '{user_input}'")
@@ -993,16 +1164,61 @@ All data below is verified and extracted from actual sources.
                 save_conversation_enhanced(project, user_input, response_data)
             return response_data, handled
         
-        # PRIORITY 1: Multi-site search console commands - ENHANCED SITE PARSING
+        # PRIORITY 1: Multi-site search console commands - TEMPLATE-BASED RESPONSES
         search_console_patterns = [
             'search console for', 'seo for', 'search console', 'seo data'
         ]
         
         if any(trigger in user_lower for trigger in search_console_patterns):
             print("🔍 Detected Search Console command")
-            return self.handle_multi_site_search_console_command(user_input, project, use_voices, random_toggle)
+            
+            # Extract site name using enhanced parsing
+            site_key = None
+            site_name_extracted = None
+            
+            # Strategy 1: "search console for SITE_NAME [time_period]"
+            for_pattern = re.search(r'search console for\s+(.+?)(?:\s+(?:last|this|from|past|in)\s|$)', user_lower)
+            if for_pattern:
+                site_name_extracted = for_pattern.group(1).strip()
+            
+            # Strategy 2: "SITE_NAME search console"
+            if not site_name_extracted:
+                site_console_pattern = re.search(r'^(.+?)\s+search console', user_lower)
+                if site_console_pattern:
+                    site_name_extracted = site_console_pattern.group(1).strip()
+            
+            # Strategy 3: "search console SITE_NAME"
+            if not site_name_extracted:
+                console_site_pattern = re.search(r'search console\s+(.+?)(?:\s+(?:last|this|from|past|in)\s|$)', user_lower)
+                if console_site_pattern:
+                    site_name_extracted = console_site_pattern.group(1).strip()
+            
+            if site_name_extracted:
+                site_key = self.find_site_by_name(site_name_extracted)
+            
+            # Parse date range
+            start_date, end_date = self.parse_date_range_from_input(user_input)
+            
+            # Convert to Search Console format
+            if start_date.endswith('daysAgo'):
+                days_ago = int(start_date.replace('daysAgo', ''))
+                start_date_obj = datetime.date.today() - datetime.timedelta(days=days_ago)
+                start_date = start_date_obj.strftime('%Y-%m-%d')
+            elif start_date == 'today':
+                start_date = datetime.date.today().strftime('%Y-%m-%d')
+            
+            if end_date == 'today':
+                end_date = datetime.date.today().strftime('%Y-%m-%d')
+            
+            # Get data and format with template (NO AI GENERATION)
+            result = self.get_search_console_data_for_site(site_key, start_date, end_date)
+            response_text = self.format_search_console_response(result, user_input)
+            
+            response_data = {"SyntaxPrime": response_text}
+            save_conversation_enhanced(project, user_input, response_data)
+            return response_data, True
         
-        # PRIORITY 2: Multi-site analytics commands - ENHANCED SITE PARSING
+        # PRIORITY 2: Multi-site analytics commands - TEMPLATE-BASED RESPONSES
         analytics_patterns = [
             'analytics for', 'all sites analytics', 'list sites', 'available sites',
             'analytics report', 'website analytics', 'site traffic'
@@ -1010,9 +1226,60 @@ All data below is verified and extracted from actual sources.
         
         if any(trigger in user_lower for trigger in analytics_patterns):
             print("📊 Detected Analytics command")
-            return self.handle_multi_site_analytics_command(user_input, project, use_voices, random_toggle)
+            
+            # Handle "all sites" commands
+            if 'all sites' in user_lower or 'all websites' in user_lower:
+                start_date, end_date = self.parse_date_range_from_input(user_input)
+                result = self.get_all_sites_analytics(start_date, end_date)
+                response_text = self.format_all_sites_analytics_response(result, start_date, end_date)
+                
+                response_data = {"SyntaxPrime": response_text}
+                save_conversation_enhanced(project, user_input, response_data)
+                return response_data, True
+            
+            # Handle site list command
+            elif 'list sites' in user_lower or 'available sites' in user_lower:
+                response_text = self.format_sites_list_response()
+                
+                response_data = {"SyntaxPrime": response_text}
+                save_conversation_enhanced(project, user_input, response_data)
+                return response_data, True
+            
+            # Handle single site analytics
+            else:
+                # Extract site name using enhanced parsing
+                site_key = None
+                site_name_extracted = None
+                
+                # Strategy 1: "analytics for SITE_NAME [time_period]"
+                for_pattern = re.search(r'analytics for\s+(.+?)(?:\s+(?:last|this|from|past|in)\s|$)', user_lower)
+                if for_pattern:
+                    site_name_extracted = for_pattern.group(1).strip()
+                
+                # Strategy 2: "SITE_NAME analytics"
+                if not site_name_extracted:
+                    site_analytics_pattern = re.search(r'^(.+?)\s+analytics', user_lower)
+                    if site_analytics_pattern:
+                        site_name_extracted = site_analytics_pattern.group(1).strip()
+                
+                # Strategy 3: "SITE_NAME traffic"
+                if not site_name_extracted:
+                    site_traffic_pattern = re.search(r'^(.+?)\s+traffic', user_lower)
+                    if site_traffic_pattern:
+                        site_name_extracted = site_traffic_pattern.group(1).strip()
+                
+                if site_name_extracted:
+                    site_key = self.find_site_by_name(site_name_extracted)
+                
+                start_date, end_date = self.parse_date_range_from_input(user_input)
+                result = self.get_analytics_data(site_key, start_date, end_date)
+                response_text = self.format_analytics_response(result, start_date, end_date)
+                
+                response_data = {"SyntaxPrime": response_text}
+                save_conversation_enhanced(project, user_input, response_data)
+                return response_data, True
         
-        # PRIORITY 3: Gmail/Calendar commands
+        # PRIORITY 3: Gmail/Calendar commands (keep AI generation for these)
         gmail_triggers = [
             'overnight', 'mail', 'emails', 'inbox', 'check mail',
             'calendar', 'today', 'meetings', 'schedule',
@@ -1020,353 +1287,22 @@ All data below is verified and extracted from actual sources.
             'good morning', 'morning', 'gm'
         ]
         
-        # Gmail search commands (more specific patterns to avoid conflicts)
-        gmail_search_triggers = ['search email', 'find email', 'email about']
-        
         if any(trigger in user_lower for trigger in gmail_triggers):
             response_data, handled = self.handle_gmail_commands(user_input, project, use_voices, random_toggle)
             if handled:
                 return response_data, True
-        elif any(trigger in user_lower for trigger in gmail_search_triggers) or (user_lower.startswith('search ') and 'console' not in user_lower):
-            # Only treat as Gmail search if it starts with 'search ' and doesn't contain 'console'
-            response_data, handled = self.handle_gmail_commands(user_input, project, use_voices, random_toggle)
-            if handled:
-                return response_data, True
         
-        # PRIORITY 4: Document creation commands
+        # PRIORITY 4: Document creation commands (keep AI generation)
         docs_triggers = ['create document', 'create doc', 'add to document', 'append to document']
         if any(trigger in user_lower for trigger in docs_triggers):
             return self.handle_docs_command(user_input, project, use_voices, random_toggle)
         
-        # PRIORITY 5: Spreadsheet commands
+        # PRIORITY 5: Spreadsheet commands (keep AI generation)
         sheets_triggers = ['create spreadsheet', 'create sheet', 'read sheet', 'get data from sheet']
         if any(trigger in user_lower for trigger in sheets_triggers):
             return self.handle_sheets_command(user_input, project, use_voices, random_toggle)
         
         return {}, False
-
-    def handle_multi_site_search_console_command(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
-        """Handle search console commands with ENHANCED SITE NAME PARSING"""
-        user_lower = user_input.lower().strip()
-        
-        # ENHANCED SITE PARSING: Multiple strategies to extract site names
-        site_key = None
-        site_name_extracted = None
-        
-        print(f"🔍 Parsing Search Console command: '{user_input}'")
-        
-        # Strategy 1: "search console for SITE_NAME [time_period]"
-        for_pattern = re.search(r'search console for\s+(.+?)(?:\s+(?:last|this|from|past|in)\s|$)', user_lower)
-        if for_pattern:
-            site_name_extracted = for_pattern.group(1).strip()
-            print(f"   Strategy 1 - 'for' pattern extracted: '{site_name_extracted}'")
-        
-        # Strategy 2: "seo for SITE_NAME [time_period]"
-        if not site_name_extracted:
-            seo_for_pattern = re.search(r'seo for\s+(.+?)(?:\s+(?:last|this|from|past|in)\s|$)', user_lower)
-            if seo_for_pattern:
-                site_name_extracted = seo_for_pattern.group(1).strip()
-                print(f"   Strategy 2 - 'seo for' pattern extracted: '{site_name_extracted}'")
-        
-        # Strategy 3: "SITE_NAME search console"
-        if not site_name_extracted:
-            site_console_pattern = re.search(r'^(.+?)\s+search console', user_lower)
-            if site_console_pattern:
-                site_name_extracted = site_console_pattern.group(1).strip()
-                print(f"   Strategy 3 - 'site search console' pattern extracted: '{site_name_extracted}'")
-        
-        # Strategy 4: "SITE_NAME seo [data]"
-        if not site_name_extracted:
-            site_seo_pattern = re.search(r'^(.+?)\s+seo(?:\s+data)?$', user_lower)
-            if site_seo_pattern:
-                site_name_extracted = site_seo_pattern.group(1).strip()
-                print(f"   Strategy 4 - 'site seo' pattern extracted: '{site_name_extracted}'")
-        
-        # Strategy 5: Just "search console SITE_NAME" (space-separated)
-        if not site_name_extracted:
-            console_site_pattern = re.search(r'search console\s+(.+?)(?:\s+(?:last|this|from|past|in)\s|$)', user_lower)
-            if console_site_pattern:
-                site_name_extracted = console_site_pattern.group(1).strip()
-                print(f"   Strategy 5 - 'search console site' pattern extracted: '{site_name_extracted}'")
-        
-        # Now try to find the site using the enhanced find_site_by_name function
-        if site_name_extracted:
-            site_key = self.find_site_by_name(site_name_extracted)
-            if site_key:
-                print(f"✅ Site resolved: '{site_name_extracted}' -> '{site_key}'")
-            else:
-                print(f"❌ Site not found: '{site_name_extracted}'")
-        else:
-            print(f"❌ No site name extracted from command")
-        
-        # Parse date range
-        start_date, end_date = self.parse_date_range_from_input(user_input)
-        
-        # Convert Google Analytics format to Search Console format (YYYY-MM-DD)
-        if start_date.endswith('daysAgo'):
-            days_ago = int(start_date.replace('daysAgo', ''))
-            start_date_obj = datetime.date.today() - datetime.timedelta(days=days_ago)
-            start_date = start_date_obj.strftime('%Y-%m-%d')
-        elif start_date == 'yesterday':
-            start_date_obj = datetime.date.today() - datetime.timedelta(days=1)
-            start_date = start_date_obj.strftime('%Y-%m-%d')
-        elif start_date == 'today':
-            start_date = datetime.date.today().strftime('%Y-%m-%d')
-        
-        if end_date == 'today':
-            end_date = datetime.date.today().strftime('%Y-%m-%d')
-        
-        # CRITICAL FIX: Get the result as a dictionary
-        result = self.get_search_console_data_for_site(site_key, start_date, end_date)
-        
-        # CRITICAL FIX: Ensure result is a dictionary before accessing it
-        if not isinstance(result, dict):
-            response_text = f"Search Console data retrieval returned invalid format: {type(result)}"
-            response_data = {"SyntaxPrime": response_text}
-            save_conversation_enhanced(project, user_input, response_data)
-            return response_data, True
-        
-        if result.get('success'):
-            data = result.get('data', [])
-            site_name = result.get('site_name', 'Unknown Site')
-            
-            # Store context for follow-up questions
-            enhanced_conversation_context.store_search_console_report(
-                session_id=project,
-                site_name=site_name,
-                report_data=result,
-                user_query=user_input
-            )
-            
-            response_text = f"**Search Console Report for {site_name} ({result.get('date_range', 'Unknown range')})**\n\n"
-            
-            if data and isinstance(data, list):
-                total_clicks = sum(row.get('clicks', 0) for row in data if isinstance(row, dict))
-                total_impressions = sum(row.get('impressions', 0) for row in data if isinstance(row, dict))
-                avg_ctr = (total_clicks / total_impressions * 100) if total_impressions > 0 else 0
-                
-                response_text += f"**Summary:**\n"
-                response_text += f"- Total Clicks: {total_clicks:,}\n"
-                response_text += f"- Total Impressions: {total_impressions:,}\n"
-                response_text += f"- Average CTR: {avg_ctr:.2f}%\n"
-                response_text += f"- Total Queries: {result.get('total_queries', len(data))}\n\n"
-                
-                response_text += f"**Top Performing Queries:**\n"
-                sorted_data = sorted([row for row in data if isinstance(row, dict)],
-                                   key=lambda x: x.get('clicks', 0), reverse=True)
-                for i, row in enumerate(sorted_data[:10], 1):
-                    query = row.get('query', 'Unknown query')
-                    clicks = row.get('clicks', 0)
-                    impressions = row.get('impressions', 0)
-                    response_text += f"{i}. {query} - {clicks} clicks, {impressions} impressions\n"
-            else:
-                response_text += "No search console data found for the specified period."
-        else:
-            error_msg = result.get('error', 'Unknown error')
-            response_text = f"Failed to retrieve search console data: {error_msg}"
-            
-            # Show available sites with better formatting
-            if "not found" in error_msg.lower() or site_key is None:
-                sites = self.get_available_sites()
-                if sites:
-                    response_text += f"\n\n**Available sites for Search Console:**\n"
-                    for site in sites:
-                        if site.get('has_search_console'):
-                            response_text += f"• **{site['name']}** (key: `{site['key']}`)\n"
-                            if site['aliases']:
-                                response_text += f"  Aliases: {', '.join(site['aliases'])}\n"
-                    
-                    response_text += f"\n**Usage examples:**\n"
-                    response_text += f"• `search console for {sites[0]['name']}`\n"
-                    response_text += f"• `search console {sites[0]['name']} last 30 days`\n"
-                    if sites[0]['aliases']:
-                        response_text += f"• `search console for {sites[0]['aliases'][0]}` (using alias)\n"
-                else:
-                    response_text += f"\n\nNo sites configured with Search Console. Check your GOOGLE_SITES_CONFIG environment variable."
-        
-        response_data = {"SyntaxPrime": response_text}
-        save_conversation_enhanced(project, user_input, response_data)
-        return response_data, True
-
-    def handle_multi_site_analytics_command(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
-        """Handle analytics commands with ENHANCED SITE NAME PARSING"""
-        user_lower = user_input.lower().strip()
-        
-        print(f"📊 Parsing Analytics command: '{user_input}'")
-        
-        # ENHANCED SITE PARSING: Multiple strategies to extract site names
-        site_key = None
-        site_name_extracted = None
-        
-        # Strategy 1: "analytics for SITE_NAME [time_period]"
-        for_pattern = re.search(r'analytics for\s+(.+?)(?:\s+(?:last|this|from|past|in)\s|$)', user_lower)
-        if for_pattern:
-            site_name_extracted = for_pattern.group(1).strip()
-            print(f"   Strategy 1 - 'analytics for' pattern extracted: '{site_name_extracted}'")
-        
-        # Strategy 2: "SITE_NAME analytics"
-        if not site_name_extracted:
-            site_analytics_pattern = re.search(r'^(.+?)\s+analytics', user_lower)
-            if site_analytics_pattern:
-                site_name_extracted = site_analytics_pattern.group(1).strip()
-                print(f"   Strategy 2 - 'site analytics' pattern extracted: '{site_name_extracted}'")
-        
-        # Strategy 3: "SITE_NAME traffic"
-        if not site_name_extracted:
-            site_traffic_pattern = re.search(r'^(.+?)\s+traffic', user_lower)
-            if site_traffic_pattern:
-                site_name_extracted = site_traffic_pattern.group(1).strip()
-                print(f"   Strategy 3 - 'site traffic' pattern extracted: '{site_name_extracted}'")
-        
-        # Strategy 4: "website analytics for SITE_NAME" or "site traffic for SITE_NAME"
-        if not site_name_extracted:
-            website_for_pattern = re.search(r'(?:website analytics|site traffic) for\s+(.+?)(?:\s+(?:last|this|from|past|in)\s|$)', user_lower)
-            if website_for_pattern:
-                site_name_extracted = website_for_pattern.group(1).strip()
-                print(f"   Strategy 4 - 'website/site for' pattern extracted: '{site_name_extracted}'")
-        
-        # Now try to find the site using the enhanced find_site_by_name function
-        if site_name_extracted:
-            site_key = self.find_site_by_name(site_name_extracted)
-            if site_key:
-                print(f"✅ Site resolved: '{site_name_extracted}' -> '{site_key}'")
-            else:
-                print(f"❌ Site not found: '{site_name_extracted}'")
-        
-        # Handle "all sites" commands
-        if 'all sites' in user_lower or 'all websites' in user_lower:
-            start_date, end_date = self.parse_date_range_from_input(user_input)
-            result = self.get_all_sites_analytics(start_date, end_date)
-            
-            if result['success']:
-                response_text = f"**GA4 Analytics Report for All Sites ({start_date} to {end_date})**\n\n"
-                
-                for site_key, site_result in result['sites'].items():
-                    if site_result['success']:
-                        data = site_result['data']
-                        site_name = site_result['site_name']
-                        
-                        if data:
-                            total_sessions = sum(row['sessions'] for row in data)
-                            total_users = sum(row['users'] for row in data)
-                            total_pageviews = sum(row['pageviews'] for row in data)
-                            
-                            response_text += f"**{site_name}:**\n"
-                            response_text += f"- Sessions: {total_sessions:,}\n"
-                            response_text += f"- Users: {total_users:,}\n"
-                            response_text += f"- Pageviews: {total_pageviews:,}\n\n"
-                        else:
-                            response_text += f"**{site_name}:** No data available\n\n"
-                    else:
-                        response_text += f"**{site_result['site_name']}:** {site_result['error']}\n\n"
-            else:
-                response_text = f"Failed to get analytics for all sites: {result['error']}"
-            
-            response_data = {"SyntaxPrime": response_text}
-            save_conversation_enhanced(project, user_input, response_data)
-            return response_data, True
-        
-        # Handle site list command
-        elif 'list sites' in user_lower or 'available sites' in user_lower:
-            sites = self.get_available_sites()
-            
-            if sites:
-                response_text = f"**Available Sites for Analytics:**\n\n"
-                for site in sites:
-                    status_icons = []
-                    if site['has_analytics']:
-                        status_icons.append("GA4 Analytics")
-                    if site['has_search_console']:
-                        status_icons.append("Search Console")
-                    
-                    status = " | ".join(status_icons) if status_icons else "Not configured"
-                    response_text += f"**{site['name']}** (key: `{site['key']}`)\n"
-                    response_text += f"- Status: {status}\n"
-                    
-                    if site['aliases']:
-                        response_text += f"- Aliases: {', '.join(site['aliases'])}\n"
-                    response_text += "\n"
-                
-                response_text += f"**Usage Examples:**\n"
-                response_text += f"- `analytics for {sites[0]['name']}`\n"
-                response_text += f"- `analytics for {sites[0]['name']} last 6 months`\n"
-                response_text += f"- `all sites analytics last year`\n"
-                response_text += f"- `search console for {sites[0]['name']} last 3 months`\n"
-            else:
-                response_text = "No sites configured. Set up GOOGLE_SITES_CONFIG environment variable."
-            
-            response_data = {"SyntaxPrime": response_text}
-            save_conversation_enhanced(project, user_input, response_data)
-            return response_data, True
-        
-        # Handle single site analytics with flexible date ranges
-        else:
-            start_date, end_date = self.parse_date_range_from_input(user_input)
-            result = self.get_analytics_data(site_key, start_date, end_date)
-            
-            if result['success']:
-                data = result['data']
-                site_name = result.get('site_name', 'Unknown Site')
-                
-                # Store context for follow-up questions
-                enhanced_conversation_context.store_analytics_report(
-                    session_id=project,
-                    site_name=site_name,
-                    report_data=result,
-                    user_query=user_input
-                )
-                
-                response_text = f"**GA4 Analytics Report for {site_name} ({start_date} to {end_date})**\n\n"
-                
-                if data:
-                    total_sessions = sum(row['sessions'] for row in data)
-                    total_users = sum(row['users'] for row in data)
-                    total_pageviews = sum(row['pageviews'] for row in data)
-                    avg_bounce_rate = sum(row['bounce_rate'] for row in data) / len(data) if data else 0
-                    
-                    response_text += f"**Summary:**\n"
-                    response_text += f"- Total Sessions: {total_sessions:,}\n"
-                    response_text += f"- Total Users: {total_users:,}\n"
-                    response_text += f"- Total Pageviews: {total_pageviews:,}\n"
-                    response_text += f"- Average Bounce Rate: {avg_bounce_rate:.1f}%\n\n"
-                    
-                    # Show recent breakdown or full period depending on range
-                    if len(data) <= 31:  # Show all days if 31 or fewer
-                        response_text += f"**Daily Breakdown:**\n"
-                        for row in data:
-                            response_text += f"- {row['date']}: {row['sessions']} sessions, {row['users']} users\n"
-                    else:  # Show summary for longer periods
-                        response_text += f"**Recent Activity (Last 7 days):**\n"
-                        for row in data[-7:]:
-                            response_text += f"- {row['date']}: {row['sessions']} sessions, {row['users']} users\n"
-                else:
-                    response_text += "No analytics data found for the specified period."
-            else:
-                error_msg = result['error']
-                response_text = f"Failed to retrieve analytics: {error_msg}"
-                
-                # Show available sites with better formatting if site not found
-                if "not found" in error_msg.lower() or site_key is None:
-                    sites = self.get_available_sites()
-                    if sites:
-                        response_text += f"\n\n**Available sites for Analytics:**\n"
-                        for site in sites:
-                            if site.get('has_analytics'):
-                                response_text += f"• **{site['name']}** (key: `{site['key']}`)\n"
-                                if site['aliases']:
-                                    response_text += f"  Aliases: {', '.join(site['aliases'])}\n"
-                        
-                        response_text += f"\n**Usage examples:**\n"
-                        response_text += f"• `analytics for {sites[0]['name']}`\n"
-                        response_text += f"• `analytics for {sites[0]['name']} last 30 days`\n"
-                        if sites[0]['aliases']:
-                            response_text += f"• `analytics for {sites[0]['aliases'][0]}` (using alias)\n"
-                    else:
-                        response_text += f"\n\nNo sites configured with Analytics. Check your GOOGLE_SITES_CONFIG environment variable."
-            
-            response_data = {"SyntaxPrime": response_text}
-            save_conversation_enhanced(project, user_input, response_data)
-            return response_data, True
 
     def get_search_console_data_for_site(self, site_key: str, start_date: str = None, end_date: str = None) -> Dict:
         """Get search console data for a specific site with ENHANCED VALIDATION - FIXED VERSION"""
@@ -1388,56 +1324,16 @@ All data below is verified and extracted from actual sources.
                 'error': f'No Search Console URL configured for site "{site_config["name"]}". Add search_console_url to your GOOGLE_SITES_CONFIG.'
             }
         
-        # CRITICAL FIX: Ensure we always return a dictionary
+        # Get the raw search console data
         try:
-            # Get the raw search console data
             result = self.get_search_console_data(site_url, start_date, end_date)
             
-            # CRITICAL FIX: Validate the result is a dictionary
+            # Validate the result is a dictionary
             if not isinstance(result, dict):
                 return {
                     'success': False,
                     'error': f'get_search_console_data returned {type(result)} instead of dict'
                 }
-            
-            # ENHANCED: Add comprehensive validation to prevent fabricated data disasters
-            if result.get('success'):
-                try:
-                    # Validate the data before returning
-                    validation_results = validate_analytics_data_comprehensive(
-                        site_config,
-                        search_console_result=result
-                    )
-                    
-                    sc_validation = validation_results.get('search_console')
-                    if sc_validation:
-                        # Add validation metadata to the result
-                        result['validation'] = {
-                            'is_valid': sc_validation.is_valid,
-                            'confidence_score': sc_validation.confidence_score,
-                            'site_relevance_score': sc_validation.site_relevance_score,
-                            'warnings': sc_validation.warnings,
-                            'recommendation': sc_validation.recommendation
-                        }
-                        
-                        # Log validation issues
-                        if not sc_validation.is_valid or sc_validation.site_relevance_score < 0.7:
-                            print(f"🚨 Search Console validation issues for {site_config['name']}:")
-                            print(f"   - Valid: {'✅' if sc_validation.is_valid else '❌'}")
-                            print(f"   - Confidence: {sc_validation.confidence_score:.2f}/1.0")
-                            print(f"   - Relevance: {sc_validation.site_relevance_score:.2f}/1.0")
-                            
-                            if sc_validation.validation_errors:
-                                for error in sc_validation.validation_errors:
-                                    print(f"   - ❌ {error}")
-                        
-                        # Add validation info to result for user display
-                        if sc_validation.site_relevance_score < 0.7:
-                            result['relevance_warning'] = f"Query relevance score: {sc_validation.site_relevance_score:.1f}/1.0 - Check if data matches expected site content"
-                            
-                except Exception as e:
-                    print(f"Search Console validation failed: {e}")
-                    # Don't fail the entire request if validation fails
             
             # Add site information to successful results
             if result.get('success'):
