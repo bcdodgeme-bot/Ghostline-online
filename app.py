@@ -1407,6 +1407,7 @@ def reports_dashboard():
     return render_template_string(html_content, projects=PROJECTS)
     
 # Section 10: Telegram Integration Routes
+# Section 10: Telegram Integration Routes 9/12/25
 @app.route('/reminders/check', methods=['POST'])
 def check_telegram_reminders():
     """Manual trigger for reminder checking"""
@@ -1565,6 +1566,267 @@ def telegram_webhook_info():
         
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
+
+# NEW DEBUG ROUTES FOR NOTIFICATION DELIVERY DIAGNOSIS
+@app.route('/telegram/system_status')
+def telegram_system_status():
+    """Comprehensive Telegram system status and debugging"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    status = {}
+    
+    try:
+        # 1. Environment Variables Check
+        status['environment'] = {
+            'bot_token_set': bool(os.getenv('TELEGRAM_BOT_TOKEN')),
+            'chat_id_set': bool(os.getenv('TELEGRAM_CHAT_ID')),
+            'chat_id_value': os.getenv('TELEGRAM_CHAT_ID'),
+            'railway_environment': bool(os.getenv('RAILWAY_ENVIRONMENT'))
+        }
+        
+        # 2. Bot Initialization Check
+        try:
+            from modules.telegram_notifications import TelegramBot, GhostlineTelegramReminders
+            bot = TelegramBot()
+            status['bot_init'] = {
+                'success': True,
+                'chat_id': bot.chat_id,
+                'token_length': len(bot.token) if bot.token else 0
+            }
+        except Exception as e:
+            status['bot_init'] = {
+                'success': False,
+                'error': str(e)
+            }
+        
+        # 3. Database Connection Check
+        try:
+            from modules.database import get_db_connection
+            with get_db_connection() as conn:
+                if conn:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT COUNT(*) FROM telegram_reminders WHERE status = 'pending'")
+                    pending_count = cursor.fetchone()[0]
+                    
+                    cursor.execute("SELECT COUNT(*) FROM telegram_reminders WHERE status = 'sent'")
+                    sent_count = cursor.fetchone()[0]
+                    
+                    status['database'] = {
+                        'connection': 'success',
+                        'pending_reminders': pending_count,
+                        'sent_reminders': sent_count
+                    }
+                else:
+                    status['database'] = {'connection': 'failed', 'error': 'No connection'}
+        except Exception as e:
+            status['database'] = {'connection': 'error', 'error': str(e)}
+        
+        # 4. Telegram API Test
+        try:
+            token = os.getenv('TELEGRAM_BOT_TOKEN')
+            response = requests.get(f"https://api.telegram.org/bot{token}/getMe", timeout=10)
+            api_result = response.json()
+            status['telegram_api'] = {
+                'reachable': response.status_code == 200,
+                'bot_ok': api_result.get('ok', False),
+                'bot_username': api_result.get('result', {}).get('username', 'unknown'),
+                'error': api_result.get('description') if not api_result.get('ok') else None
+            }
+        except Exception as e:
+            status['telegram_api'] = {'reachable': False, 'error': str(e)}
+        
+        # 5. Recent Reminders Check
+        try:
+            reminders = GhostlineTelegramReminders()
+            check_result = reminders.check_and_send_reminders()
+            status['reminder_check'] = check_result
+        except Exception as e:
+            status['reminder_check'] = {'error': str(e)}
+        
+        # 6. Test Send Message
+        try:
+            if status['bot_init']['success']:
+                test_result = bot.send_message("🧪 System status test - " + datetime.datetime.now().strftime('%H:%M:%S'))
+                status['test_send'] = test_result
+        except Exception as e:
+            status['test_send'] = {'error': str(e)}
+        
+        return jsonify(status)
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/telegram/reminders_debug')
+def telegram_reminders_debug():
+    """Debug view of all Telegram reminders"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    try:
+        from modules.database import get_db_connection
+        
+        with get_db_connection() as conn:
+            if not conn:
+                return jsonify({"error": "Database not available"}), 500
+            
+            cursor = conn.cursor()
+            
+            # Get all reminders
+            cursor.execute('''
+                SELECT reminder_id, title, remind_at, status, project, priority, created_at
+                FROM telegram_reminders 
+                ORDER BY created_at DESC
+                LIMIT 20
+            ''')
+            
+            reminders = []
+            for row in cursor.fetchall():
+                reminder_id, title, remind_at, status, project, priority, created_at = row
+                reminders.append({
+                    'reminder_id': reminder_id,
+                    'title': title,
+                    'remind_at': remind_at.isoformat() if remind_at else None,
+                    'status': status,
+                    'project': project,
+                    'priority': priority,
+                    'created_at': created_at.isoformat() if created_at else None,
+                    'is_due': remind_at <= datetime.datetime.now() if remind_at else False
+                })
+            
+            # Get counts by status
+            cursor.execute('''
+                SELECT status, COUNT(*) 
+                FROM telegram_reminders 
+                GROUP BY status
+            ''')
+            
+            status_counts = dict(cursor.fetchall())
+            
+            return jsonify({
+                'reminders': reminders,
+                'status_counts': status_counts,
+                'current_time': datetime.datetime.now().isoformat()
+            })
+            
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/telegram/force_reminder_check', methods=['POST'])
+def force_reminder_check():
+    """Force an immediate reminder check with detailed logging"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    try:
+        from modules.telegram_notifications import GhostlineTelegramReminders
+        
+        print("=== FORCING REMINDER CHECK ===")
+        reminders = GhostlineTelegramReminders()
+        result = reminders.check_and_send_reminders()
+        print(f"Force check result: {result}")
+        
+        return jsonify({
+            'success': True,
+            'result': result,
+            'timestamp': datetime.datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Force reminder check failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/telegram/create_test_reminder', methods=['POST'])
+def create_test_reminder():
+    """Create a test reminder that's due immediately"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    try:
+        from modules.telegram_notifications import GhostlineTelegramReminders
+        
+        # Create a reminder due in 30 seconds
+        remind_time = datetime.datetime.now() + datetime.timedelta(seconds=30)
+        
+        reminders = GhostlineTelegramReminders()
+        result = reminders.create_reminder(
+            title="🧪 Test Reminder - Should arrive in 30 seconds",
+            content="This is a test notification to debug delivery issues",
+            remind_at=remind_time,
+            project="Debug",
+            priority=1  # High priority
+        )
+        
+        return jsonify({
+            'success': result.get('success', False),
+            'result': result,
+            'remind_at': remind_time.isoformat(),
+            'note': 'Check your Telegram in 30 seconds'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/telegram/find_chat_id')
+def find_telegram_chat_id():
+    """Find your Telegram chat ID from recent messages"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    try:
+        token = os.getenv('TELEGRAM_BOT_TOKEN')
+        if not token:
+            return jsonify({"error": "TELEGRAM_BOT_TOKEN not configured"}), 400
+        
+        # Get recent updates from Telegram
+        response = requests.get(f"https://api.telegram.org/bot{token}/getUpdates")
+        data = response.json()
+        
+        if not data.get('ok'):
+            return jsonify({
+                "error": "Failed to get updates",
+                "telegram_error": data.get('description', 'Unknown error')
+            }), 400
+        
+        # Extract all unique chat IDs from recent messages
+        chat_ids = []
+        for update in data.get('result', []):
+            if 'message' in update and 'chat' in update['message']:
+                chat = update['message']['chat']
+                chat_ids.append({
+                    'chat_id': chat['id'],
+                    'type': chat.get('type', 'unknown'),
+                    'title': chat.get('title', chat.get('first_name', 'Unknown')),
+                    'username': chat.get('username', 'N/A'),
+                    'message_text': update['message'].get('text', 'N/A')[:50]
+                })
+        
+        # Remove duplicates
+        unique_chats = []
+        seen_ids = set()
+        for chat in chat_ids:
+            if chat['chat_id'] not in seen_ids:
+                unique_chats.append(chat)
+                seen_ids.add(chat['chat_id'])
+        
+        return jsonify({
+            "found_chats": unique_chats,
+            "instructions": [
+                "1. Send a message to your bot from the chat where you want notifications",
+                "2. Refresh this page to see your chat_id",
+                "3. Add TELEGRAM_CHAT_ID=[your_chat_id] to Railway environment variables",
+                "4. Restart your Railway deployment"
+            ]
+        })
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
         
 # Section 11: Marketing Dashboard Routes
 from modules.marketing_flux import (
