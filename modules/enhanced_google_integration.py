@@ -904,10 +904,71 @@ All data below is verified and extracted from actual sources.
 # =============================================================================
 # SECTION 6: MAIN COMMAND PROCESSOR AND MISSING METHODS 9/11/25
 # =============================================================================
+# =============================================================================
+# SECTION 6: MAIN COMMAND PROCESSOR AND MISSING METHODS - FIXED SITE NAME PARSING 9/12/25
+# =============================================================================
+
+    def find_site_by_name(self, site_query: str) -> Optional[str]:
+        """Find site key by name or alias - ENHANCED with better multi-word matching"""
+        if not site_query:
+            return None
+            
+        site_query_clean = site_query.lower().strip()
+        
+        print(f"🔍 Site search: Looking for '{site_query_clean}' in {list(self.sites_config.keys())}")
+        
+        # Method 1: Direct key match (exact)
+        if site_query_clean in self.sites_config:
+            print(f"✅ Direct key match: {site_query_clean}")
+            return site_query_clean
+        
+        # Method 2: Convert multi-word site name to expected key format
+        # "Damn It Carl" -> "damn_it_carl"
+        # "TV Signals" -> "tv_signals"
+        # "Rose and Angel" -> "rose_and_angel"
+        # "Meals N Feelz" -> "meals_n_feelz"
+        key_format = site_query_clean.replace(' ', '_').replace('&', 'and').replace('n ', 'n_')
+        if key_format in self.sites_config:
+            print(f"✅ Key format match: '{site_query_clean}' -> '{key_format}'")
+            return key_format
+        
+        # Method 3: Exact name match (case insensitive)
+        for key, config in self.sites_config.items():
+            if config['name'].lower() == site_query_clean:
+                print(f"✅ Name match: '{site_query_clean}' -> '{key}' ({config['name']})")
+                return key
+        
+        # Method 4: Alias match (exact)
+        for key, config in self.sites_config.items():
+            aliases = [alias.strip().lower() for alias in config.get('aliases', [])]
+            if site_query_clean in aliases:
+                print(f"✅ Alias match: '{site_query_clean}' -> '{key}' (alias: {site_query_clean})")
+                return key
+        
+        # Method 5: Partial name match (contains)
+        for key, config in self.sites_config.items():
+            config_name_lower = config['name'].lower()
+            if site_query_clean in config_name_lower or config_name_lower in site_query_clean:
+                print(f"✅ Partial name match: '{site_query_clean}' -> '{key}' ({config['name']})")
+                return key
+        
+        # Method 6: Partial alias match
+        for key, config in self.sites_config.items():
+            aliases = [alias.strip().lower() for alias in config.get('aliases', [])]
+            for alias in aliases:
+                if site_query_clean in alias or alias in site_query_clean:
+                    print(f"✅ Partial alias match: '{site_query_clean}' -> '{key}' (partial alias: {alias})")
+                    return key
+        
+        print(f"❌ No site match found for: '{site_query_clean}'")
+        print(f"Available sites: {[(key, config['name']) for key, config in self.sites_config.items()]}")
+        return None
 
     def process_google_commands(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
-        """Main command processor for all Google services with enhanced context handling"""
+        """Main command processor for all Google services with ENHANCED SITE PARSING"""
         user_lower = user_input.lower().strip()
+        
+        print(f"🔍 Google command processing: '{user_input}'")
         
         # PRIORITY 0: Check for follow-up questions first
         context = enhanced_conversation_context.get_context(project)
@@ -926,23 +987,29 @@ All data below is verified and extracted from actual sources.
         ]
         
         if any(pattern in user_lower for pattern in blog_patterns):
-            print("✍️ Detected blog suggestions command - will validate data first")
+            print("✏️ Detected blog suggestions command - will validate data first")
             response_data, handled = self.handle_blog_suggestions_command(user_input, project, use_voices, random_toggle)
             if handled:
                 save_conversation_enhanced(project, user_input, response_data)
             return response_data, handled
         
-        # PRIORITY 1: Multi-site search console commands
-        multi_search_triggers = ['search console for', 'seo for', 'search console', 'seo data']
-        if any(trigger in user_lower for trigger in multi_search_triggers):
+        # PRIORITY 1: Multi-site search console commands - ENHANCED SITE PARSING
+        search_console_patterns = [
+            'search console for', 'seo for', 'search console', 'seo data'
+        ]
+        
+        if any(trigger in user_lower for trigger in search_console_patterns):
+            print("🔍 Detected Search Console command")
             return self.handle_multi_site_search_console_command(user_input, project, use_voices, random_toggle)
         
-        # PRIORITY 2: Multi-site analytics commands
-        multi_analytics_triggers = [
+        # PRIORITY 2: Multi-site analytics commands - ENHANCED SITE PARSING
+        analytics_patterns = [
             'analytics for', 'all sites analytics', 'list sites', 'available sites',
             'analytics report', 'website analytics', 'site traffic'
         ]
-        if any(trigger in user_lower for trigger in multi_analytics_triggers):
+        
+        if any(trigger in user_lower for trigger in analytics_patterns):
+            print("📊 Detected Analytics command")
             return self.handle_multi_site_analytics_command(user_input, project, use_voices, random_toggle)
         
         # PRIORITY 3: Gmail/Calendar commands
@@ -979,28 +1046,58 @@ All data below is verified and extracted from actual sources.
         return {}, False
 
     def handle_multi_site_search_console_command(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
-        """Handle search console commands with multi-site support and flexible dates - FIXED VERSION"""
+        """Handle search console commands with ENHANCED SITE NAME PARSING"""
         user_lower = user_input.lower().strip()
         
-        # Parse site specification from command
+        # ENHANCED SITE PARSING: Multiple strategies to extract site names
         site_key = None
+        site_name_extracted = None
         
-        # Look for site specification patterns
-        site_patterns = [
-            r'search console for (.+?)(?:\s+last|\s+this|\s+from|\s+past|$)',
-            r'seo for (.+?)(?:\s+last|\s+this|\s+from|\s+past|$)',
-            r'(.+?) search console',
-            r'(.+?) seo'
-        ]
+        print(f"🔍 Parsing Search Console command: '{user_input}'")
         
-        for pattern in site_patterns:
-            match = re.search(pattern, user_lower)
-            if match:
-                potential_site = match.group(1).strip()
-                found_site = self.find_site_by_name(potential_site)
-                if found_site:
-                    site_key = found_site
-                    break
+        # Strategy 1: "search console for SITE_NAME [time_period]"
+        for_pattern = re.search(r'search console for\s+(.+?)(?:\s+(?:last|this|from|past|in)\s|$)', user_lower)
+        if for_pattern:
+            site_name_extracted = for_pattern.group(1).strip()
+            print(f"   Strategy 1 - 'for' pattern extracted: '{site_name_extracted}'")
+        
+        # Strategy 2: "seo for SITE_NAME [time_period]"
+        if not site_name_extracted:
+            seo_for_pattern = re.search(r'seo for\s+(.+?)(?:\s+(?:last|this|from|past|in)\s|$)', user_lower)
+            if seo_for_pattern:
+                site_name_extracted = seo_for_pattern.group(1).strip()
+                print(f"   Strategy 2 - 'seo for' pattern extracted: '{site_name_extracted}'")
+        
+        # Strategy 3: "SITE_NAME search console"
+        if not site_name_extracted:
+            site_console_pattern = re.search(r'^(.+?)\s+search console', user_lower)
+            if site_console_pattern:
+                site_name_extracted = site_console_pattern.group(1).strip()
+                print(f"   Strategy 3 - 'site search console' pattern extracted: '{site_name_extracted}'")
+        
+        # Strategy 4: "SITE_NAME seo [data]"
+        if not site_name_extracted:
+            site_seo_pattern = re.search(r'^(.+?)\s+seo(?:\s+data)?$', user_lower)
+            if site_seo_pattern:
+                site_name_extracted = site_seo_pattern.group(1).strip()
+                print(f"   Strategy 4 - 'site seo' pattern extracted: '{site_name_extracted}'")
+        
+        # Strategy 5: Just "search console SITE_NAME" (space-separated)
+        if not site_name_extracted:
+            console_site_pattern = re.search(r'search console\s+(.+?)(?:\s+(?:last|this|from|past|in)\s|$)', user_lower)
+            if console_site_pattern:
+                site_name_extracted = console_site_pattern.group(1).strip()
+                print(f"   Strategy 5 - 'search console site' pattern extracted: '{site_name_extracted}'")
+        
+        # Now try to find the site using the enhanced find_site_by_name function
+        if site_name_extracted:
+            site_key = self.find_site_by_name(site_name_extracted)
+            if site_key:
+                print(f"✅ Site resolved: '{site_name_extracted}' -> '{site_key}'")
+            else:
+                print(f"❌ Site not found: '{site_name_extracted}'")
+        else:
+            print(f"❌ No site name extracted from command")
         
         # Parse date range
         start_date, end_date = self.parse_date_range_from_input(user_input)
@@ -1068,28 +1165,218 @@ All data below is verified and extracted from actual sources.
             error_msg = result.get('error', 'Unknown error')
             response_text = f"Failed to retrieve search console data: {error_msg}"
             
-            # Show available sites if site not found
-            if "not found" in error_msg.lower():
+            # Show available sites with better formatting
+            if "not found" in error_msg.lower() or site_key is None:
                 sites = self.get_available_sites()
                 if sites:
-                    response_text += f"\n\n**Available sites:**\n"
+                    response_text += f"\n\n**Available sites for Search Console:**\n"
                     for site in sites:
                         if site.get('has_search_console'):
-                            response_text += f"- {site['name']} ({site['key']})\n"
+                            response_text += f"• **{site['name']}** (key: `{site['key']}`)\n"
+                            if site['aliases']:
+                                response_text += f"  Aliases: {', '.join(site['aliases'])}\n"
+                    
+                    response_text += f"\n**Usage examples:**\n"
+                    response_text += f"• `search console for {sites[0]['name']}`\n"
+                    response_text += f"• `search console {sites[0]['name']} last 30 days`\n"
+                    if sites[0]['aliases']:
+                        response_text += f"• `search console for {sites[0]['aliases'][0]}` (using alias)\n"
+                else:
+                    response_text += f"\n\nNo sites configured with Search Console. Check your GOOGLE_SITES_CONFIG environment variable."
         
         response_data = {"SyntaxPrime": response_text}
         save_conversation_enhanced(project, user_input, response_data)
         return response_data, True
+
+    def handle_multi_site_analytics_command(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
+        """Handle analytics commands with ENHANCED SITE NAME PARSING"""
+        user_lower = user_input.lower().strip()
+        
+        print(f"📊 Parsing Analytics command: '{user_input}'")
+        
+        # ENHANCED SITE PARSING: Multiple strategies to extract site names
+        site_key = None
+        site_name_extracted = None
+        
+        # Strategy 1: "analytics for SITE_NAME [time_period]"
+        for_pattern = re.search(r'analytics for\s+(.+?)(?:\s+(?:last|this|from|past|in)\s|$)', user_lower)
+        if for_pattern:
+            site_name_extracted = for_pattern.group(1).strip()
+            print(f"   Strategy 1 - 'analytics for' pattern extracted: '{site_name_extracted}'")
+        
+        # Strategy 2: "SITE_NAME analytics"
+        if not site_name_extracted:
+            site_analytics_pattern = re.search(r'^(.+?)\s+analytics', user_lower)
+            if site_analytics_pattern:
+                site_name_extracted = site_analytics_pattern.group(1).strip()
+                print(f"   Strategy 2 - 'site analytics' pattern extracted: '{site_name_extracted}'")
+        
+        # Strategy 3: "SITE_NAME traffic"
+        if not site_name_extracted:
+            site_traffic_pattern = re.search(r'^(.+?)\s+traffic', user_lower)
+            if site_traffic_pattern:
+                site_name_extracted = site_traffic_pattern.group(1).strip()
+                print(f"   Strategy 3 - 'site traffic' pattern extracted: '{site_name_extracted}'")
+        
+        # Strategy 4: "website analytics for SITE_NAME" or "site traffic for SITE_NAME"
+        if not site_name_extracted:
+            website_for_pattern = re.search(r'(?:website analytics|site traffic) for\s+(.+?)(?:\s+(?:last|this|from|past|in)\s|$)', user_lower)
+            if website_for_pattern:
+                site_name_extracted = website_for_pattern.group(1).strip()
+                print(f"   Strategy 4 - 'website/site for' pattern extracted: '{site_name_extracted}'")
+        
+        # Now try to find the site using the enhanced find_site_by_name function
+        if site_name_extracted:
+            site_key = self.find_site_by_name(site_name_extracted)
+            if site_key:
+                print(f"✅ Site resolved: '{site_name_extracted}' -> '{site_key}'")
+            else:
+                print(f"❌ Site not found: '{site_name_extracted}'")
+        
+        # Handle "all sites" commands
+        if 'all sites' in user_lower or 'all websites' in user_lower:
+            start_date, end_date = self.parse_date_range_from_input(user_input)
+            result = self.get_all_sites_analytics(start_date, end_date)
+            
+            if result['success']:
+                response_text = f"**GA4 Analytics Report for All Sites ({start_date} to {end_date})**\n\n"
+                
+                for site_key, site_result in result['sites'].items():
+                    if site_result['success']:
+                        data = site_result['data']
+                        site_name = site_result['site_name']
+                        
+                        if data:
+                            total_sessions = sum(row['sessions'] for row in data)
+                            total_users = sum(row['users'] for row in data)
+                            total_pageviews = sum(row['pageviews'] for row in data)
+                            
+                            response_text += f"**{site_name}:**\n"
+                            response_text += f"- Sessions: {total_sessions:,}\n"
+                            response_text += f"- Users: {total_users:,}\n"
+                            response_text += f"- Pageviews: {total_pageviews:,}\n\n"
+                        else:
+                            response_text += f"**{site_name}:** No data available\n\n"
+                    else:
+                        response_text += f"**{site_result['site_name']}:** {site_result['error']}\n\n"
+            else:
+                response_text = f"Failed to get analytics for all sites: {result['error']}"
+            
+            response_data = {"SyntaxPrime": response_text}
+            save_conversation_enhanced(project, user_input, response_data)
+            return response_data, True
+        
+        # Handle site list command
+        elif 'list sites' in user_lower or 'available sites' in user_lower:
+            sites = self.get_available_sites()
+            
+            if sites:
+                response_text = f"**Available Sites for Analytics:**\n\n"
+                for site in sites:
+                    status_icons = []
+                    if site['has_analytics']:
+                        status_icons.append("GA4 Analytics")
+                    if site['has_search_console']:
+                        status_icons.append("Search Console")
+                    
+                    status = " | ".join(status_icons) if status_icons else "Not configured"
+                    response_text += f"**{site['name']}** (key: `{site['key']}`)\n"
+                    response_text += f"- Status: {status}\n"
+                    
+                    if site['aliases']:
+                        response_text += f"- Aliases: {', '.join(site['aliases'])}\n"
+                    response_text += "\n"
+                
+                response_text += f"**Usage Examples:**\n"
+                response_text += f"- `analytics for {sites[0]['name']}`\n"
+                response_text += f"- `analytics for {sites[0]['name']} last 6 months`\n"
+                response_text += f"- `all sites analytics last year`\n"
+                response_text += f"- `search console for {sites[0]['name']} last 3 months`\n"
+            else:
+                response_text = "No sites configured. Set up GOOGLE_SITES_CONFIG environment variable."
+            
+            response_data = {"SyntaxPrime": response_text}
+            save_conversation_enhanced(project, user_input, response_data)
+            return response_data, True
+        
+        # Handle single site analytics with flexible date ranges
+        else:
+            start_date, end_date = self.parse_date_range_from_input(user_input)
+            result = self.get_analytics_data(site_key, start_date, end_date)
+            
+            if result['success']:
+                data = result['data']
+                site_name = result.get('site_name', 'Unknown Site')
+                
+                # Store context for follow-up questions
+                enhanced_conversation_context.store_analytics_report(
+                    session_id=project,
+                    site_name=site_name,
+                    report_data=result,
+                    user_query=user_input
+                )
+                
+                response_text = f"**GA4 Analytics Report for {site_name} ({start_date} to {end_date})**\n\n"
+                
+                if data:
+                    total_sessions = sum(row['sessions'] for row in data)
+                    total_users = sum(row['users'] for row in data)
+                    total_pageviews = sum(row['pageviews'] for row in data)
+                    avg_bounce_rate = sum(row['bounce_rate'] for row in data) / len(data) if data else 0
+                    
+                    response_text += f"**Summary:**\n"
+                    response_text += f"- Total Sessions: {total_sessions:,}\n"
+                    response_text += f"- Total Users: {total_users:,}\n"
+                    response_text += f"- Total Pageviews: {total_pageviews:,}\n"
+                    response_text += f"- Average Bounce Rate: {avg_bounce_rate:.1f}%\n\n"
+                    
+                    # Show recent breakdown or full period depending on range
+                    if len(data) <= 31:  # Show all days if 31 or fewer
+                        response_text += f"**Daily Breakdown:**\n"
+                        for row in data:
+                            response_text += f"- {row['date']}: {row['sessions']} sessions, {row['users']} users\n"
+                    else:  # Show summary for longer periods
+                        response_text += f"**Recent Activity (Last 7 days):**\n"
+                        for row in data[-7:]:
+                            response_text += f"- {row['date']}: {row['sessions']} sessions, {row['users']} users\n"
+                else:
+                    response_text += "No analytics data found for the specified period."
+            else:
+                error_msg = result['error']
+                response_text = f"Failed to retrieve analytics: {error_msg}"
+                
+                # Show available sites with better formatting if site not found
+                if "not found" in error_msg.lower() or site_key is None:
+                    sites = self.get_available_sites()
+                    if sites:
+                        response_text += f"\n\n**Available sites for Analytics:**\n"
+                        for site in sites:
+                            if site.get('has_analytics'):
+                                response_text += f"• **{site['name']}** (key: `{site['key']}`)\n"
+                                if site['aliases']:
+                                    response_text += f"  Aliases: {', '.join(site['aliases'])}\n"
+                        
+                        response_text += f"\n**Usage examples:**\n"
+                        response_text += f"• `analytics for {sites[0]['name']}`\n"
+                        response_text += f"• `analytics for {sites[0]['name']} last 30 days`\n"
+                        if sites[0]['aliases']:
+                            response_text += f"• `analytics for {sites[0]['aliases'][0]}` (using alias)\n"
+                    else:
+                        response_text += f"\n\nNo sites configured with Analytics. Check your GOOGLE_SITES_CONFIG environment variable."
+            
+            response_data = {"SyntaxPrime": response_text}
+            save_conversation_enhanced(project, user_input, response_data)
+            return response_data, True
 
     def get_search_console_data_for_site(self, site_key: str, start_date: str = None, end_date: str = None) -> Dict:
         """Get search console data for a specific site with ENHANCED VALIDATION - FIXED VERSION"""
         
         # CRITICAL FIX: Validate site_key parameter
         if not site_key or site_key not in self.sites_config:
-            available_sites = list(self.sites_config.keys()) if self.sites_config else []
+            available_sites = [(key, config['name']) for key, config in self.sites_config.items()] if self.sites_config else []
             return {
                 'success': False,
-                'error': f'Site "{site_key}" not found in configuration. Available sites: {available_sites}'
+                'error': f'Site "{site_key}" not found in configuration.\n\nAvailable sites: {available_sites}\n\nTip: Try using the exact site name like "Damn It Carl" or an alias like "carl".'
             }
         
         site_config = self.sites_config[site_key]
@@ -1165,236 +1452,6 @@ All data below is verified and extracted from actual sources.
                 'success': False,
                 'error': f'Exception in search console data retrieval: {str(e)}'
             }
-
-    def get_search_console_data(self, site_url: str, start_date: str = None, end_date: str = None) -> Dict:
-        """Get Search Console performance data with strict validation"""
-        if 'searchconsole' not in self.services:
-            return {
-                'success': False,
-                'error': 'Search Console API not available. Check your Google Cloud Console - Search Console API must be enabled.'
-            }
-        
-        try:
-            if not start_date:
-                start_date = (datetime.datetime.now() - datetime.timedelta(days=7)).strftime('%Y-%m-%d')
-            if not end_date:
-                end_date = datetime.datetime.now().strftime('%Y-%m-%d')
-            
-            print(f"🔍 Search Console API: Fetching data for {site_url}")
-            
-            request_body = {
-                'startDate': start_date,
-                'endDate': end_date,
-                'dimensions': ['query', 'page'],
-                'rowLimit': 100
-            }
-            
-            response = self.services['searchconsole'].searchanalytics().query(
-                siteUrl=site_url,
-                body=request_body
-            ).execute()
-            
-            print(f"📊 Search Console Raw Response: {response}")
-            
-            # CRITICAL: Validate response before processing
-            is_valid, validation_error = self._validate_search_console_response(response, "Search Console", site_url)
-            if not is_valid:
-                return {'success': False, 'error': validation_error}
-            
-            # Process response - ONLY if validation passed
-            rows = response.get('rows', [])
-            search_data = []
-            
-            # If no rows, this is legitimate (no search traffic yet)
-            if len(rows) == 0:
-                return {
-                    'success': True,
-                    'data': [],
-                    'total_clicks': 0,
-                    'total_impressions': 0,
-                    'total_queries': 0,
-                    'average_ctr': 0,
-                    'average_position': 0,
-                    'date_range': f"{start_date} to {end_date}",
-                    'site_url': site_url,
-                    'message': f"No search console data found for {site_url}. This is normal for new sites or sites with no search visibility yet."
-                }
-            
-            total_clicks = 0
-            total_impressions = 0
-            total_queries = len(rows)
-            ctr_values = []
-            position_values = []
-            
-            for row in rows:
-                query = row['keys'][0]
-                page = row['keys'][1] if len(row['keys']) > 1 else ''
-                clicks = row.get('clicks', 0)
-                impressions = row.get('impressions', 0)
-                ctr = row.get('ctr', 0.0)
-                position = row.get('position', 0.0)
-                
-                search_data.append({
-                    'query': query,
-                    'page': page,
-                    'clicks': clicks,
-                    'impressions': impressions,
-                    'ctr': round(ctr * 100, 2),  # Convert to percentage
-                    'position': round(position, 1)
-                })
-                
-                # Accumulate totals
-                total_clicks += clicks
-                total_impressions += impressions
-                if ctr > 0:
-                    ctr_values.append(ctr)
-                if position > 0:
-                    position_values.append(position)
-            
-            avg_ctr = (sum(ctr_values) / len(ctr_values) * 100) if ctr_values else 0
-            avg_position = sum(position_values) / len(position_values) if position_values else 0
-            
-            print(f"✅ Search Console: Processed {len(search_data)} queries of REAL data")
-            print(f"   📈 Totals: {total_clicks} clicks, {total_impressions} impressions")
-            
-            return {
-                'success': True,
-                'data': search_data,
-                'total_clicks': total_clicks,
-                'total_impressions': total_impressions,
-                'total_queries': total_queries,
-                'average_ctr': round(avg_ctr, 2),
-                'average_position': round(avg_position, 1),
-                'date_range': f"{start_date} to {end_date}",
-                'site_url': site_url,
-                'raw_response_rows': len(rows)  # For debugging
-            }
-            
-        except Exception as e:
-            error_msg = str(e)
-            print(f"❌ Search Console API Error: {error_msg}")
-            
-            # Provide specific guidance based on common errors
-            if "403" in error_msg:
-                detailed_error = f"Permission denied for {site_url}. Check: 1) Site is verified in Search Console, 2) You have Owner/Full User access, 3) Search Console API is enabled in Google Cloud Console."
-            elif "404" in error_msg:
-                detailed_error = f"Site {site_url} not found in Search Console. Add and verify the site first."
-            elif "invalid_grant" in error_msg:
-                detailed_error = "OAuth token expired or invalid. Please re-authenticate via /google/auth/start"
-            else:
-                detailed_error = f"Search Console API error: {error_msg}"
-            
-            return {'success': False, 'error': detailed_error}
-
-    def handle_docs_command(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
-        """Handle Google Docs commands with improved parsing"""
-        user_lower = user_input.lower().strip()
-        
-        # Create document command with improved content parsing
-        if 'create document' in user_lower or 'create doc' in user_lower:
-            # Better parsing to separate title from content
-            content_match = re.search(r'create (?:document|doc) ["\']?([^"\']+?)["\']?\s+with content:\s*(.+)', user_input, re.IGNORECASE)
-            if content_match:
-                title = content_match.group(1).strip()
-                content = content_match.group(2).strip()
-            else:
-                # Simple title extraction without content
-                title_match = re.search(r'create (?:document|doc) (?:called |titled |named )?["\']?([^"\']+)["\']?', user_input, re.IGNORECASE)
-                if title_match:
-                    title = title_match.group(1).strip()
-                    content = "Document created via Ghostline"
-                else:
-                    title = "Ghostline Document"
-                    content = user_input  # Use the entire input as content
-            
-            result = self.create_document(title, content)
-            
-            if result['success']:
-                response_text = f"**Document Created Successfully!**\n\n"
-                response_text += f"**Title:** {result['title']}\n"
-                response_text += f"**Document ID:** {result['document_id']}\n"
-                response_text += f"**URL:** {result['document_url']}\n\n"
-                response_text += f"**Content Preview:**\n{content[:200]}{'...' if len(content) > 200 else ''}"
-            else:
-                response_text = f"Failed to create document: {result['error']}"
-            
-            response_data = {"SyntaxPrime": response_text}
-            save_conversation_enhanced(project, user_input, response_data)
-            return response_data, True
-        
-        # Append to document command
-        if 'add to document' in user_lower or 'append to document' in user_lower:
-            doc_match = re.search(r'(?:add to|append to) document (.+?) content: (.+)', user_input, re.IGNORECASE)
-            if doc_match:
-                doc_identifier = doc_match.group(1).strip()
-                content_to_add = doc_match.group(2).strip()
-                
-                # Try to extract document ID from URL or use as-is
-                doc_id = None
-                if 'docs.google.com/document/d/' in doc_identifier:
-                    id_match = re.search(r'/document/d/([a-zA-Z0-9-_]+)', doc_identifier)
-                    if id_match:
-                        doc_id = id_match.group(1)
-                else:
-                    doc_id = doc_identifier
-                
-                if doc_id:
-                    result = self.append_to_document(doc_id, content_to_add)
-                    
-                    if result['success']:
-                        response_text = f"**Content Added Successfully!**\n\n"
-                        response_text += f"**Document URL:** {result['document_url']}\n"
-                        response_text += f"**Added Content:** {content_to_add[:200]}{'...' if len(content_to_add) > 200 else ''}"
-                    else:
-                        response_text = f"Failed to add content: {result['error']}"
-                else:
-                    response_text = "Could not extract document ID. Please provide either the full Google Docs URL or the document ID."
-                
-                response_data = {"SyntaxPrime": response_text}
-                save_conversation_enhanced(project, user_input, response_data)
-                return response_data, True
-        
-        return {}, False
-
-    def create_document(self, title: str, content: str = "") -> Dict:
-        """Create a new Google Document"""
-        if 'docs' not in self.services:
-            return {'success': False, 'error': 'Google Docs API not available'}
-        
-        try:
-            # Create the document
-            document = {
-                'title': title
-            }
-            
-            doc = self.services['docs'].documents().create(body=document).execute()
-            document_id = doc.get('documentId')
-            
-            # Add content if provided
-            if content:
-                requests = [
-                    {
-                        'insertText': {
-                            'location': {'index': 1},
-                            'text': content
-                        }
-                    }
-                ]
-                
-                self.services['docs'].documents().batchUpdate(
-                    documentId=document_id,
-                    body={'requests': requests}
-                ).execute()
-            
-            return {
-                'success': True,
-                'title': title,
-                'document_id': document_id,
-                'document_url': f"https://docs.google.com/document/d/{document_id}"
-            }
-            
-        except Exception as e:
-            return {'success': False, 'error': str(e)}
 # =============================================================================
 # SECTION 7: GOOGLE DOCS AND SHEETS INTEGRATION
 # =============================================================================
