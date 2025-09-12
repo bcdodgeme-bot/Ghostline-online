@@ -1,4 +1,6 @@
-# utils/ghostline_engine.py - COMPLETE REWRITE with Model Blacklist and Enhanced Features
+# utils/ghostline_engine.py
+# Complete Ghostline Engine with Authentic Personality Integration
+# Sectioned for easy editing and maintenance
 
 import os
 import json
@@ -6,18 +8,19 @@ import requests
 from datetime import datetime
 from typing import Optional, Iterable, List, Dict
 
-# ========================================================================
-# CONFIGURATION AND CONSTANTS
-# ========================================================================
+#-------------------------------------------------------------------
+# SECTION 1: CONFIGURATION AND CONSTANTS
+#-------------------------------------------------------------------
 
 # OpenRouter API configuration
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
-# Model filtering configuration
+# Model filtering configuration - block potentially problematic models
 BLOCKED_MODELS = [
     'gpt-5o', 'openai/gpt-5o', 'gpt-5', 'openai/gpt-5',
-    'gpt-5-turbo', 'openai/gpt-5-turbo'
+    'gpt-5-turbo', 'openai/gpt-5-turbo',
+    'o1-preview', 'openai/o1-preview', 'o1-mini', 'openai/o1-mini'
 ]
 
 # Preferred fallback models when auto-selection is blocked
@@ -26,84 +29,98 @@ FALLBACK_MODELS = [
     "anthropic/claude-3-opus",
     "openai/gpt-4o",
     "openai/gpt-4-turbo",
-    "meta-llama/llama-3.1-405b-instruct"
+    "meta-llama/llama-3.1-405b-instruct",
+    "google/gemini-pro-1.5"
 ]
 
-# Response quality rules
+# Response quality rules for consistent output
 ANSWER_RULES = (
     "Answer ONLY the latest user message. "
     "Do NOT repeat or quote the prompt. "
     "Do NOT invent 'User:'/'Assistant:' transcripts. "
-    "Be direct, helpful, and stay in persona. "
-    "One clean answer no preambles like 'Certainly' or 'Here's your response'."
+    "Be direct, helpful, and stay in your authentic personality. "
+    "One clean answer - no preambles like 'Certainly' or 'Here's your response'."
 )
 
-if not OPENROUTER_API_KEY:
-    print("⚠️  WARNING: OPENROUTER_API_KEY not set - API calls will fail")
-
-# ========================================================================
-# TIMEZONE AND TIME HANDLING
-# ========================================================================
-
+# Timezone handling
 try:
-    from modules.timezone_handler import timezone_manager, now_user_time
+    import pytz
     TIMEZONE_AVAILABLE = True
 except ImportError:
     TIMEZONE_AVAILABLE = False
-    print("Timezone handler not available - using UTC")
 
-def get_current_time_context():
-    """Get current time in user's timezone with full context"""
-    if TIMEZONE_AVAILABLE:
-        try:
-            user_now = now_user_time()
-            tz_info = timezone_manager.get_timezone_info()
-            
-            # Rich time context for the AI
-            return (
-                f"Current time: {user_now.strftime('%A, %B %d, %Y at %I:%M %p')} "
-                f"({tz_info['timezone_abbr']}, {tz_info['timezone_name']})"
-            )
-        except Exception as e:
-            print(f"Timezone context failed: {e}")
-            # Fallback to basic format
-            return f"Current time: {datetime.now().strftime('%A, %B %d, %Y at %I:%M %p UTC')}"
-    else:
-        # Fallback when timezone handler not available
-        return f"Current time: {datetime.now().strftime('%A, %B %d, %Y at %H:%M UTC')}"
+#-------------------------------------------------------------------
+# SECTION 2: TIME AND CONTEXT UTILITIES
+#-------------------------------------------------------------------
 
-# ========================================================================
-# MODEL FILTERING AND SELECTION
-# ========================================================================
+def get_current_time_context() -> str:
+    """Get current time context for AI responses"""
+    try:
+        now = datetime.now()
+        
+        if TIMEZONE_AVAILABLE:
+            # Try to get Eastern timezone for Carl's location
+            eastern = pytz.timezone('US/Eastern')
+            now = now.replace(tzinfo=pytz.UTC).astimezone(eastern)
+        
+        current_time = now.strftime("%A, %B %d, %Y at %I:%M %p")
+        
+        # Add time-based context
+        hour = now.hour
+        if 5 <= hour < 12:
+            time_context = f"Current time: {current_time} (Morning)"
+        elif 12 <= hour < 17:
+            time_context = f"Current time: {current_time} (Afternoon)"
+        elif 17 <= hour < 21:
+            time_context = f"Current time: {current_time} (Evening)"
+        else:
+            time_context = f"Current time: {current_time} (Late night)"
+        
+        return time_context
+        
+    except Exception as e:
+        print(f"Time context error: {e}")
+        return f"Current time: {datetime.now().strftime('%A, %B %d, %Y at %I:%M %p')}"
+
+def _estimate_tokens(text: str) -> int:
+    """Estimate token count for text (rough approximation)"""
+    return max(1, len(text.split()) // 0.75)  # ~0.75 words per token average
+
+#-------------------------------------------------------------------
+# SECTION 3: MODEL FILTERING AND BLACKLIST SYSTEM
+#-------------------------------------------------------------------
 
 def filter_model_selection(model: str) -> str:
     """
-    Filter and validate model selection, preventing blocked models
-    
-    Args:
-        model: The requested model name
-        
-    Returns:
-        Safe model name to use (original or fallback)
+    Filter and validate model selection with blacklist protection
+    Prevents use of blocked models and provides safe fallbacks
     """
     if not model:
+        print(f"⚠️  No model specified, using fallback: {FALLBACK_MODELS[0]}")
         return FALLBACK_MODELS[0]
     
-    # Check if the model is in our blocklist
-    for blocked_model in BLOCKED_MODELS:
-        if blocked_model.lower() in model.lower():
-            print(f"🚫 Model '{model}' is blocked. Using fallback: {FALLBACK_MODELS[0]}")
+    model_lower = model.lower()
+    
+    # Check if model is in blacklist
+    for blocked in BLOCKED_MODELS:
+        if blocked.lower() in model_lower:
+            print(f"🚫 Blocked model '{model}' detected, using fallback: {FALLBACK_MODELS[0]}")
             return FALLBACK_MODELS[0]
     
-    # Special handling for openrouter/auto - let it through but log it
-    if model.lower() in ['openrouter/auto', 'auto']:
-        print(f"🤖 Using OpenRouter auto-selection (blocked models will be filtered)")
+    # Handle special cases
+    if model_lower in ['openrouter/auto', 'auto']:
+        print(f"🤖 Using OpenRouter auto-selection (blocked models filtered)")
         return model
+    
+    # Validate that it's a reasonable model format
+    if '/' not in model and model not in ['auto']:
+        print(f"⚠️  Invalid model format '{model}', using fallback: {FALLBACK_MODELS[0]}")
+        return FALLBACK_MODELS[0]
     
     print(f"✅ Model '{model}' approved for use")
     return model
 
-def get_model_blacklist_status():
+def get_model_blacklist_status() -> dict:
     """Get current model blacklist configuration for diagnostics"""
     return {
         'blocked_models': BLOCKED_MODELS,
@@ -112,24 +129,27 @@ def get_model_blacklist_status():
         'filtered_chat_model': filter_model_selection(os.getenv("CHAT_MODEL", "openrouter/auto"))
     }
 
-# ========================================================================
-# OPENROUTER CLIENT
-# ========================================================================
+#-------------------------------------------------------------------
+# SECTION 4: OPENROUTER CLIENT WITH ENHANCED ERROR HANDLING
+#-------------------------------------------------------------------
 
 class OpenRouterClient:
-    """Enhanced OpenRouter client with model filtering and error handling"""
+    """Enhanced OpenRouter client with model filtering and robust error handling"""
     
     def __init__(self, api_key: str, base_url: str):
         self.api_key = api_key
         self.base_url = base_url
+        
+        if not api_key:
+            print("⚠️  Warning: No OpenRouter API key configured")
     
     def _make_request(self, endpoint: str, data: dict, stream: bool = False):
-        """Make HTTP request to OpenRouter API with enhanced error handling"""
+        """Make HTTP request to OpenRouter API with comprehensive error handling"""
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
             "HTTP-Referer": "https://ghostline.ai",
-            "X-Title": "Ghostline AI"
+            "X-Title": "Ghostline AI - Personal Assistant"
         }
         
         url = f"{self.base_url}/{endpoint}"
@@ -158,9 +178,13 @@ class OpenRouterClient:
             elif e.response.status_code == 401:
                 print("🔑 OpenRouter: Authentication failed")
                 raise Exception("OpenRouter API: Authentication failed. Check your API key.")
+            elif e.response.status_code == 400:
+                print("📝 OpenRouter: Bad request")
+                raise Exception("OpenRouter API: Bad request. Check your input parameters.")
             else:
                 print(f"🚨 OpenRouter HTTP Error: {e.response.status_code}")
                 raise Exception(f"OpenRouter API error: {e.response.status_code}")
+                
         except requests.exceptions.Timeout:
             print("⏱️  OpenRouter: Request timeout")
             raise Exception("OpenRouter API: Request timeout. The model may be overloaded.")
@@ -172,7 +196,7 @@ class OpenRouterClient:
             raise
     
     def chat_completion(self, model: str, messages: List[Dict], temperature: float = 0.7, stream: bool = False):
-        """Create chat completion with model filtering"""
+        """Create chat completion with model filtering and validation"""
         # Log the model selection process
         original_model = model
         filtered_model = filter_model_selection(model)
@@ -220,21 +244,17 @@ class OpenRouterClient:
 # Create global client instance
 _client = OpenRouterClient(OPENROUTER_API_KEY, OPENROUTER_BASE_URL)
 
-# ========================================================================
-# CONVERSATION HISTORY MANAGEMENT
-# ========================================================================
-
-def _estimate_tokens(text: str) -> int:
-    """Estimate token count for text"""
-    return max(1, len(text.split()))
+#-------------------------------------------------------------------
+# SECTION 5: CONVERSATION HISTORY MANAGEMENT
+#-------------------------------------------------------------------
 
 def _history_path(project: str) -> str:
     """Get history file path for project"""
     return f"sessions/{project.lower().replace(' ', '_')}.json"
 
-def load_user_history_only(project: str, max_tokens: int) -> str:
+def load_user_history_only(project: str, max_tokens: int = 500) -> str:
     """
-    Load recent USER prompts only (no assistant text) to avoid echoing.
+    Load recent USER prompts only (no assistant text) to avoid response echoing.
     Returns a summary of recent conversation context.
     """
     history_file = _history_path(project)
@@ -277,9 +297,84 @@ def load_user_history_only(project: str, max_tokens: int) -> str:
         print(f"History loading error: {e}")
         return ""
 
-# ========================================================================
-# ENHANCED RESPONSE GENERATION
-# ========================================================================
+#-------------------------------------------------------------------
+# SECTION 6: AUTHENTIC PERSONALITY INTEGRATION
+#-------------------------------------------------------------------
+
+def get_personality_system():
+    """Get the personality system with error handling"""
+    try:
+        from modules.personalities import PersonalityIntegration
+        return PersonalityIntegration()
+    except ImportError as e:
+        print(f"⚠️  Personality system import failed: {e}")
+        return None
+
+def apply_authentic_personality(messages: List[Dict], voice: str) -> List[Dict]:
+    """
+    Apply authentic personality from the database-trained personality system
+    This replaces the old generic personality prompts with the real ones
+    """
+    try:
+        personality_integration = get_personality_system()
+        
+        if personality_integration:
+            # Use the authentic personality system
+            config = personality_integration.personality_system.get_personality_config(voice.lower())
+            authentic_prompt = config['system_prompt']
+            
+            print(f"🎭 Applying authentic {voice} personality ({len(authentic_prompt)} chars)")
+            
+            # Modify system message to include authentic personality
+            if messages and messages[0]["role"] == "system":
+                messages[0]["content"] += f"\n\n{authentic_prompt}"
+            else:
+                # Insert personality system message
+                messages.insert(0, {
+                    "role": "system",
+                    "content": authentic_prompt
+                })
+        else:
+            # Fallback to basic personality if import fails
+            print(f"⚠️  Using fallback personality for {voice}")
+            fallback_prompt = f"You are {voice}, respond naturally in your authentic voice."
+            
+            if messages and messages[0]["role"] == "system":
+                messages[0]["content"] += f"\n\n{fallback_prompt}"
+            else:
+                messages.insert(0, {
+                    "role": "system",
+                    "content": fallback_prompt
+                })
+        
+        return messages
+        
+    except Exception as e:
+        print(f"❌ Personality application failed: {e}")
+        return messages
+
+def apply_personality_post_processing(response: str, voice: str) -> str:
+    """
+    Apply personality-specific post-processing filters
+    """
+    try:
+        personality_integration = get_personality_system()
+        
+        if personality_integration:
+            processed_response = personality_integration.process_personality_response(response, voice.lower())
+            if processed_response != response:
+                print(f"🎨 Applied {voice} post-processing filters")
+            return processed_response
+        else:
+            return response
+            
+    except Exception as e:
+        print(f"⚠️  Post-processing failed for {voice}: {e}")
+        return response
+
+#-------------------------------------------------------------------
+# SECTION 7: ENHANCED RESPONSE GENERATION
+#-------------------------------------------------------------------
 
 def generate_response(
     user_input: str,
@@ -291,12 +386,12 @@ def generate_response(
     **kwargs
 ) -> Dict[str, str]:
     """
-    Enhanced response generation with model filtering and improved context handling
+    Enhanced response generation with authentic personality integration
     
     Args:
         user_input: The user's message
         use_voices: List of voice personas to use
-        random_toggle: Whether to use random selection
+        random_toggle: Whether to use random selection  
         project: Project context for history
         model: Model to use (will be filtered)
         retrieval_context: Context from RAG system
@@ -310,17 +405,17 @@ def generate_response(
     if model is None:
         model = os.getenv("CHAT_MODEL", "openrouter/auto")
     
-    # Apply model filtering
+    # Apply model filtering for safety
     filtered_model = filter_model_selection(model)
     
-    # Get conversation history
+    # Get conversation history context
     conversation_context = load_user_history_only(project, max_tokens=500)
     
     # Get current time context
     time_context = get_current_time_context()
     
     # Build comprehensive system context
-    system_context = f"""You are Ghostline AI, an advanced personal assistant.
+    system_context = f"""You are Ghostline AI, Carl's advanced personal assistant and creative partner.
 
 {time_context}
 
@@ -337,12 +432,6 @@ Current project context: {project}
         for i, ctx in enumerate(retrieval_context[:3], 1):  # Limit to 3 most relevant
             system_context += f"{i}. {ctx.get('text', '')[:200]}...\n"
     
-    # Prepare messages for API
-    messages = [
-        {"role": "system", "content": system_context},
-        {"role": "user", "content": user_input}
-    ]
-    
     # Generate responses for each requested voice
     responses = {}
     
@@ -350,84 +439,90 @@ Current project context: {project}
         try:
             print(f"🎭 Generating {voice} response using {filtered_model}")
             
-            # Customize system prompt based on voice
-            voice_messages = messages.copy()
-            if voice == "SyntaxPrime":
-                voice_messages[0]["content"] += "\n\nVoice: You are SyntaxPrime, the primary Ghostline assistant. Be helpful, direct, and professional."
-            elif voice == "SyntaxBot":
-                voice_messages[0]["content"] += "\n\nVoice: You are SyntaxBot, focused on technical and programming assistance. Be precise and code-focused."
-            elif voice == "NilExe":
-                voice_messages[0]["content"] += "\n\nVoice: You are NilExe, a philosophical and creative assistant. Be thoughtful and contemplative."
+            # Prepare messages with base system context
+            messages = [
+                {"role": "system", "content": system_context},
+                {"role": "user", "content": user_input}
+            ]
             
-            # Make API call with filtered model
+            # Apply authentic personality to messages
+            messages = apply_authentic_personality(messages, voice)
+            
+            # Make API call
             response = _client.chat_completion(
                 model=filtered_model,
-                messages=voice_messages,
-                temperature=kwargs.get('temperature', 0.7)
+                messages=messages,
+                temperature=0.7
             )
             
+            # Extract response content
             if 'choices' in response and len(response['choices']) > 0:
-                content = response['choices'][0]['message']['content']
-                responses[voice] = content
-                print(f"✅ {voice} response generated ({len(content)} chars)")
+                raw_content = response['choices'][0]['message']['content']
+                
+                # Apply personality post-processing
+                processed_content = apply_personality_post_processing(raw_content, voice)
+                
+                responses[voice] = processed_content
+                print(f"✅ {voice} response generated successfully")
             else:
-                error_msg = f"No response content from {filtered_model}"
-                print(f"❌ {error_msg}")
-                responses[voice] = f"Error: {error_msg}"
+                responses[voice] = f"Error: No response generated for {voice}"
+                print(f"❌ No response generated for {voice}")
                 
         except Exception as e:
-            error_msg = f"Response generation failed for {voice}: {str(e)}"
-            print(f"❌ {error_msg}")
-            responses[voice] = f"Error: {error_msg}"
-    
-    # Return at least SyntaxPrime response
-    if not responses:
-        responses["SyntaxPrime"] = "Error: All response generation failed"
-    elif "SyntaxPrime" not in responses and len(responses) > 0:
-        # If SyntaxPrime failed but others succeeded, copy one
-        first_voice = list(responses.keys())[0]
-        responses["SyntaxPrime"] = responses[first_voice]
+            print(f"❌ Error generating {voice} response: {e}")
+            responses[voice] = f"Error generating {voice} response: {str(e)}"
     
     return responses
+
+#-------------------------------------------------------------------
+# SECTION 8: CONTEXT-AWARE RESPONSE GENERATION
+#-------------------------------------------------------------------
 
 def generate_response_with_context_check(
     user_input: str,
     use_voices: List[str],
     random_toggle: bool,
-    project: str,
-    model: str,
-    retrieval_context: List[Dict]
+    project: str = "default",
+    model: str = None,
+    retrieval_context: List[Dict] = None,
+    **kwargs
 ) -> Dict[str, str]:
     """
-    Enhanced response generation with additional context validation
+    Generate response with intelligent context checking for follow-up questions
     """
     
-    # Check if we have sufficient context for the query
-    if retrieval_context and len(retrieval_context) > 0:
-        context_quality = sum(1 for ctx in retrieval_context if ctx.get('score', 0) > 0.5)
-        
-        if context_quality == 0:
-            # Low quality context - add disclaimer
-            enhanced_input = f"""{user_input}
-
-Note: Limited relevant information found in knowledge base. Please provide the best answer possible based on your general knowledge, and mention if you need more specific information."""
-        else:
-            enhanced_input = user_input
-    else:
-        enhanced_input = user_input
+    # Check if this looks like a context-dependent follow-up
+    context_indicators = [
+        'this', 'that', 'it', 'they', 'them', 'what about', 'how about',
+        'and also', 'in addition', 'furthermore', 'what do you think',
+        'any thoughts', 'your opinion', 'what would you', 'should i'
+    ]
     
-    return generate_response(
-        enhanced_input,
-        use_voices,
-        random_toggle,
-        project=project,
-        model=model,
-        retrieval_context=retrieval_context
-    )
+    user_lower = user_input.lower()
+    needs_context = any(indicator in user_lower for indicator in context_indicators)
+    
+    if needs_context and len(user_input.split()) < 20:
+        # This looks like a follow-up question - enhance with context
+        enhanced_prompt = f"""This appears to be a follow-up question that might reference previous context.
 
-# ========================================================================
-# STREAMING RESPONSE GENERATION
-# ========================================================================
+User's question: "{user_input}"
+
+Please provide the best answer possible based on your general knowledge and conversation context. If the question references something specific from our conversation history, use that context appropriately."""
+        
+        return generate_response(
+            enhanced_prompt, use_voices, random_toggle,
+            project=project, model=model, retrieval_context=retrieval_context
+        )
+    else:
+        # Standard response generation
+        return generate_response(
+            user_input, use_voices, random_toggle,
+            project=project, model=model, retrieval_context=retrieval_context
+        )
+
+#-------------------------------------------------------------------
+# SECTION 9: STREAMING RESPONSE GENERATION
+#-------------------------------------------------------------------
 
 def generate_streaming_response(
     user_input: str,
@@ -437,7 +532,7 @@ def generate_streaming_response(
     retrieval_context: List[Dict] = None
 ):
     """
-    Generate streaming response with model filtering
+    Generate streaming response with authentic personality integration
     
     Yields:
         str: Chunks of the response as they're generated
@@ -453,7 +548,7 @@ def generate_streaming_response(
     time_context = get_current_time_context()
     
     # Build system context
-    system_context = f"""You are Ghostline AI, an advanced personal assistant.
+    system_context = f"""You are Ghostline AI, Carl's advanced personal assistant and creative partner.
 
 {time_context}
 
@@ -470,35 +565,53 @@ Project: {project}
         for ctx in retrieval_context[:3]:
             system_context += f"- {ctx.get('content', '')[:200]}...\n"
     
+    # Prepare messages
     messages = [
         {"role": "system", "content": system_context},
         {"role": "user", "content": user_input}
     ]
     
+    # Apply authentic personality
+    messages = apply_authentic_personality(messages, voice)
+    
     try:
         print(f"🎭 Streaming {voice} response using {filtered_model}")
         
+        # Stream the response
+        response_chunks = []
         for chunk in _client.chat_completion(
             model=filtered_model,
             messages=messages,
             temperature=0.7,
             stream=True
         ):
+            response_chunks.append(chunk)
             yield chunk
+        
+        # Apply post-processing to complete response
+        complete_response = ''.join(response_chunks)
+        processed_response = apply_personality_post_processing(complete_response, voice)
+        
+        # If post-processing changed the response significantly, indicate this
+        if len(processed_response) != len(complete_response):
+            print(f"🎨 Post-processing applied to {voice} streaming response")
             
     except Exception as e:
         print(f"❌ Streaming failed: {e}")
         yield f"Error: {str(e)}"
 
-# ========================================================================
-# UTILITY AND DIAGNOSTIC FUNCTIONS
-# ========================================================================
+#-------------------------------------------------------------------
+# SECTION 10: UTILITY AND DIAGNOSTIC FUNCTIONS
+#-------------------------------------------------------------------
 
 def test_openrouter_connection():
     """Test OpenRouter API connection and model filtering"""
     print("🔍 Testing OpenRouter connection and model filtering...")
     
-    # Test basic connection
+    if not OPENROUTER_API_KEY:
+        print("❌ No OpenRouter API key configured")
+        return False
+    
     try:
         test_response = _client.chat_completion(
             model="openai/gpt-3.5-turbo",  # Simple, reliable model
@@ -517,6 +630,26 @@ def test_openrouter_connection():
         print(f"❌ OpenRouter connection failed: {e}")
         return False
 
+def test_personality_integration():
+    """Test the personality system integration"""
+    print("🎭 Testing personality system integration...")
+    
+    personality_integration = get_personality_system()
+    if personality_integration:
+        print("✅ Personality system loaded successfully")
+        
+        # Test each personality
+        for personality_id in ['syntaxprime', 'syntaxbot', 'nilexe', 'ggpt']:
+            try:
+                config = personality_integration.personality_system.get_personality_config(personality_id)
+                print(f"  ✅ {config['name']}: {len(config['system_prompt'])} char prompt")
+            except Exception as e:
+                print(f"  ❌ {personality_id}: {e}")
+        return True
+    else:
+        print("❌ Personality system failed to load")
+        return False
+
 def get_engine_status():
     """Get comprehensive engine status for diagnostics"""
     return {
@@ -525,40 +658,13 @@ def get_engine_status():
         'current_time': get_current_time_context(),
         'model_blacklist': get_model_blacklist_status(),
         'fallback_models': FALLBACK_MODELS,
-        'connection_test': test_openrouter_connection() if OPENROUTER_API_KEY else False
+        'connection_test': test_openrouter_connection() if OPENROUTER_API_KEY else False,
+        'personality_system': test_personality_integration()
     }
 
-# ========================================================================
-# PERSONALITY INTEGRATION
-# ========================================================================
-
-def apply_personality_modifications(messages: List[Dict], personality: str = "SyntaxPrime") -> List[Dict]:
-    """Apply personality-specific modifications to messages"""
-    
-    personality_prompts = {
-        "SyntaxPrime": "You are SyntaxPrime, the primary Ghostline assistant. Be helpful, direct, and professional.",
-        "SyntaxBot": "You are SyntaxBot, focused on technical and programming assistance. Be precise and code-focused.",
-        "NilExe": "You are NilExe, a philosophical and creative assistant. Be thoughtful, contemplative, and occasionally abstract.",
-        "CargoBot": "You are CargoBot, focused on logistics, shipping, and supply chain management.",
-        "DataCore": "You are DataCore, specialized in data analysis, statistics, and research."
-    }
-    
-    if personality in personality_prompts:
-        # Modify system message to include personality
-        if messages and messages[0]["role"] == "system":
-            messages[0]["content"] += f"\n\n{personality_prompts[personality]}"
-        else:
-            # Insert personality system message
-            messages.insert(0, {
-                "role": "system",
-                "content": personality_prompts[personality]
-            })
-    
-    return messages
-
-# ========================================================================
-# EXPORT FOR MAIN APPLICATION
-# ========================================================================
+#-------------------------------------------------------------------
+# SECTION 11: EXPORT FOR MAIN APPLICATION
+#-------------------------------------------------------------------
 
 # Main functions for external use
 __all__ = [
@@ -569,6 +675,24 @@ __all__ = [
     'get_model_blacklist_status',
     'get_engine_status',
     'test_openrouter_connection',
+    'test_personality_integration',
+    'apply_authentic_personality',
+    'apply_personality_post_processing',
     'BLOCKED_MODELS',
     'FALLBACK_MODELS'
 ]
+
+# Initialize and test systems on import
+if __name__ == "__main__":
+    print("=== GHOSTLINE ENGINE INITIALIZATION TEST ===")
+    print(f"OpenRouter API Key: {'✅ Configured' if OPENROUTER_API_KEY else '❌ Missing'}")
+    print(f"Timezone Support: {'✅ Available' if TIMEZONE_AVAILABLE else '❌ Missing'}")
+    
+    # Test personality system
+    test_personality_integration()
+    
+    # Test OpenRouter connection if API key is available
+    if OPENROUTER_API_KEY:
+        test_openrouter_connection()
+    
+    print("=== ENGINE READY ===")
