@@ -1657,6 +1657,143 @@ def telegram_system_status():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/telegram/debug')
+def telegram_debug_interface():
+    """Simple HTML interface for debugging Telegram notifications"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    html = '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Telegram Debug Interface</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+            .debug-button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+            .debug-button:hover { background: #0056b3; }
+            .debug-output { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 3px; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+            .error { color: #dc3545; }
+            .success { color: #28a745; }
+        </style>
+    </head>
+    <body>
+        <h1>🔧 Telegram Debug Interface</h1>
+        
+        <div class="debug-section">
+            <h3>System Status</h3>
+            <button class="debug-button" onclick="checkSystemStatus()">Check System Status</button>
+            <div id="systemStatus" class="debug-output"></div>
+        </div>
+        
+        <div class="debug-section">
+            <h3>Reminders Debug</h3>
+            <button class="debug-button" onclick="checkReminders()">View All Reminders</button>
+            <button class="debug-button" onclick="forceReminderCheck()">Force Reminder Check</button>
+            <div id="remindersOutput" class="debug-output"></div>
+        </div>
+        
+        <div class="debug-section">
+            <h3>Test Functions</h3>
+            <button class="debug-button" onclick="createTestReminder()">Create Test Reminder (30s)</button>
+            <button class="debug-button" onclick="findChatId()">Find Chat ID</button>
+            <div id="testOutput" class="debug-output"></div>
+        </div>
+        
+        <div class="debug-section">
+            <h3>Webhook Info</h3>
+            <button class="debug-button" onclick="checkWebhook()">Check Webhook Info</button>
+            <div id="webhookOutput" class="debug-output"></div>
+        </div>
+        
+        <script>
+            function checkSystemStatus() {
+                fetch('/telegram/system_status')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('systemStatus').innerHTML = JSON.stringify(data, null, 2);
+                    document.getElementById('systemStatus').className = 'debug-output success';
+                })
+                .catch(e => {
+                    document.getElementById('systemStatus').innerHTML = 'Error: ' + e;
+                    document.getElementById('systemStatus').className = 'debug-output error';
+                });
+            }
+            
+            function checkReminders() {
+                fetch('/telegram/reminders_debug')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('remindersOutput').innerHTML = JSON.stringify(data, null, 2);
+                    document.getElementById('remindersOutput').className = 'debug-output success';
+                })
+                .catch(e => {
+                    document.getElementById('remindersOutput').innerHTML = 'Error: ' + e;
+                    document.getElementById('remindersOutput').className = 'debug-output error';
+                });
+            }
+            
+            function forceReminderCheck() {
+                fetch('/telegram/force_reminder_check', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('remindersOutput').innerHTML = JSON.stringify(data, null, 2);
+                    document.getElementById('remindersOutput').className = 'debug-output success';
+                })
+                .catch(e => {
+                    document.getElementById('remindersOutput').innerHTML = 'Error: ' + e;
+                    document.getElementById('remindersOutput').className = 'debug-output error';
+                });
+            }
+            
+            function createTestReminder() {
+                fetch('/telegram/create_test_reminder', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('testOutput').innerHTML = JSON.stringify(data, null, 2);
+                    document.getElementById('testOutput').className = 'debug-output success';
+                    if (data.success) {
+                        alert('Test reminder created! Check your Telegram in 30 seconds.');
+                    }
+                })
+                .catch(e => {
+                    document.getElementById('testOutput').innerHTML = 'Error: ' + e;
+                    document.getElementById('testOutput').className = 'debug-output error';
+                });
+            }
+            
+            function findChatId() {
+                fetch('/telegram/find_chat_id')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('testOutput').innerHTML = JSON.stringify(data, null, 2);
+                    document.getElementById('testOutput').className = 'debug-output success';
+                })
+                .catch(e => {
+                    document.getElementById('testOutput').innerHTML = 'Error: ' + e;
+                    document.getElementById('testOutput').className = 'debug-output error';
+                });
+            }
+            
+            function checkWebhook() {
+                fetch('/telegram/webhook_info')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('webhookOutput').innerHTML = JSON.stringify(data, null, 2);
+                    document.getElementById('webhookOutput').className = 'debug-output success';
+                })
+                .catch(e => {
+                    document.getElementById('webhookOutput').innerHTML = 'Error: ' + e;
+                    document.getElementById('webhookOutput').className = 'debug-output error';
+                });
+            }
+        </script>
+    </body>
+    </html>
+    '''
+    return html
+
 @app.route('/telegram/reminders_debug')
 def telegram_reminders_debug():
     """Debug view of all Telegram reminders"""
