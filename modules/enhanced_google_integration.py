@@ -125,6 +125,9 @@ def is_likely_person_name(text: str) -> bool:
 # =============================================================================
 # SECTION 2: ENHANCED CONVERSATIONAL CONTEXT CLASS
 # =============================================================================
+# =============================================================================
+# SECTION 2: ENHANCED CONVERSATIONAL CONTEXT CLASS - FIXED VERSION 9/11/25
+# =============================================================================
 
 class EnhancedConversationalContext:
     """Enhanced conversational context for all Google integrations"""
@@ -235,6 +238,73 @@ class EnhancedConversationalContext:
                 return True
         
         return False
+    
+    def generate_contextual_response(self, user_input: str, context: dict, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
+        """FIXED: Generate contextual response based on stored context"""
+        try:
+            context_type = context.get('type', 'unknown')
+            
+            # Build contextual prompt based on context type
+            if context_type == 'search_console_report':
+                site_name = context.get('site_name', 'Unknown Site')
+                summary = context.get('summary', 'No summary available')
+                
+                contextual_prompt = f"""The user is asking a follow-up question about a recent Search Console report for {site_name}.
+                
+Original query: {context.get('original_query', 'Unknown')}
+Report summary: {summary}
+
+User's follow-up question: {user_input}
+
+Please provide specific insights and recommendations based on the Search Console data mentioned above."""
+                
+            elif context_type == 'analytics_report':
+                site_name = context.get('site_name', 'Unknown Site')
+                summary = context.get('summary', 'No summary available')
+                
+                contextual_prompt = f"""The user is asking a follow-up question about a recent Google Analytics report for {site_name}.
+                
+Original query: {context.get('original_query', 'Unknown')}
+Report summary: {summary}
+
+User's follow-up question: {user_input}
+
+Please provide specific insights and recommendations based on the analytics data mentioned above."""
+                
+            elif context_type.startswith('gmail_'):
+                email_count = context.get('email_count', 0)
+                
+                contextual_prompt = f"""The user is asking a follow-up question about a recent Gmail report.
+                
+Email report contained {email_count} emails.
+User's follow-up question: {user_input}
+
+Please provide helpful insights about email management and priorities."""
+                
+            else:
+                # Generic contextual response
+                contextual_prompt = f"""The user is asking a follow-up question about a recent report or interaction.
+                
+Context type: {context_type}
+User's follow-up question: {user_input}
+
+Please provide helpful insights based on the context."""
+            
+            # Get retrieval context for enhanced responses
+            retrieval_ctx = enhanced_retrieve(contextual_prompt, k=5, project=project) if is_ready() else []
+            
+            # Generate the response
+            response_data = generate_response(
+                contextual_prompt, use_voices, random_toggle,
+                project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+            )
+            
+            return response_data, True
+            
+        except Exception as e:
+            print(f"Contextual response generation failed: {e}")
+            # Fallback to normal response
+            return {}, False
     
     def _generate_analytics_summary(self, data: list) -> str:
         """Generate summary for analytics data"""
