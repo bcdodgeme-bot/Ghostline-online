@@ -1613,6 +1613,9 @@ All data below is verified and extracted from actual sources.
 # =============================================================================
 # SECTION 8: GA4 ANALYTICS AND SEARCH CONSOLE INTEGRATION WITH DATA VALIDATION
 # =============================================================================
+# =============================================================================
+# SECTION 8: GA4 ANALYTICS AND SEARCH CONSOLE INTEGRATION WITH DATA VALIDATION - COMPLETE METHODS 9/12/25
+# =============================================================================
 
     def _validate_analytics_response(self, response_data, operation, property_id):
         """Strict validation to prevent fabricated analytics data"""
@@ -1847,6 +1850,279 @@ All data below is verified and extracted from actual sources.
                 return False, f"INVALID DATA: Row {i} missing required 'keys' field"
         
         return True, None
+
+    def get_search_console_data(self, site_url: str, start_date: str = None, end_date: str = None) -> Dict:
+        """Get Search Console performance data with strict validation"""
+        if 'searchconsole' not in self.services:
+            return {
+                'success': False,
+                'error': 'Search Console API not available. Check your Google Cloud Console - Search Console API must be enabled.'
+            }
+        
+        try:
+            if not start_date:
+                start_date = (datetime.datetime.now() - datetime.timedelta(days=7)).strftime('%Y-%m-%d')
+            if not end_date:
+                end_date = datetime.datetime.now().strftime('%Y-%m-%d')
+            
+            print(f"🔍 Search Console API: Fetching data for {site_url}")
+            
+            request_body = {
+                'startDate': start_date,
+                'endDate': end_date,
+                'dimensions': ['query', 'page'],
+                'rowLimit': 100
+            }
+            
+            response = self.services['searchconsole'].searchanalytics().query(
+                siteUrl=site_url,
+                body=request_body
+            ).execute()
+            
+            print(f"📊 Search Console Raw Response: {response}")
+            
+            # CRITICAL: Validate response before processing
+            is_valid, validation_error = self._validate_search_console_response(response, "Search Console", site_url)
+            if not is_valid:
+                return {'success': False, 'error': validation_error}
+            
+            # Process response - ONLY if validation passed
+            rows = response.get('rows', [])
+            search_data = []
+            
+            # If no rows, this is legitimate (no search traffic yet)
+            if len(rows) == 0:
+                return {
+                    'success': True,
+                    'data': [],
+                    'total_clicks': 0,
+                    'total_impressions': 0,
+                    'total_queries': 0,
+                    'average_ctr': 0,
+                    'average_position': 0,
+                    'date_range': f"{start_date} to {end_date}",
+                    'site_url': site_url,
+                    'message': f"No search console data found for {site_url}. This is normal for new sites or sites with no search visibility yet."
+                }
+            
+            total_clicks = 0
+            total_impressions = 0
+            total_queries = len(rows)
+            ctr_values = []
+            position_values = []
+            
+            for row in rows:
+                query = row['keys'][0]
+                page = row['keys'][1] if len(row['keys']) > 1 else ''
+                clicks = row.get('clicks', 0)
+                impressions = row.get('impressions', 0)
+                ctr = row.get('ctr', 0.0)
+                position = row.get('position', 0.0)
+                
+                search_data.append({
+                    'query': query,
+                    'page': page,
+                    'clicks': clicks,
+                    'impressions': impressions,
+                    'ctr': round(ctr * 100, 2),  # Convert to percentage
+                    'position': round(position, 1)
+                })
+                
+                # Accumulate totals
+                total_clicks += clicks
+                total_impressions += impressions
+                if ctr > 0:
+                    ctr_values.append(ctr)
+                if position > 0:
+                    position_values.append(position)
+            
+            avg_ctr = (sum(ctr_values) / len(ctr_values) * 100) if ctr_values else 0
+            avg_position = sum(position_values) / len(position_values) if position_values else 0
+            
+            print(f"✅ Search Console: Processed {len(search_data)} queries of REAL data")
+            print(f"   📈 Totals: {total_clicks} clicks, {total_impressions} impressions")
+            
+            return {
+                'success': True,
+                'data': search_data,
+                'total_clicks': total_clicks,
+                'total_impressions': total_impressions,
+                'total_queries': total_queries,
+                'average_ctr': round(avg_ctr, 2),
+                'average_position': round(avg_position, 1),
+                'date_range': f"{start_date} to {end_date}",
+                'site_url': site_url,
+                'raw_response_rows': len(rows)  # For debugging
+            }
+            
+        except Exception as e:
+            error_msg = str(e)
+            print(f"❌ Search Console API Error: {error_msg}")
+            
+            # Provide specific guidance based on common errors
+            if "403" in error_msg:
+                detailed_error = f"Permission denied for {site_url}. Check: 1) Site is verified in Search Console, 2) You have Owner/Full User access, 3) Search Console API is enabled in Google Cloud Console."
+            elif "404" in error_msg:
+                detailed_error = f"Site {site_url} not found in Search Console. Add and verify the site first."
+            elif "invalid_grant" in error_msg:
+                detailed_error = "OAuth token expired or invalid. Please re-authenticate via /google/auth/start"
+            else:
+                detailed_error = f"Search Console API error: {error_msg}"
+            
+            return {'success': False, 'error': detailed_error}
+
+    def get_all_sites_analytics(self, start_date: str = "7daysAgo", end_date: str = "today") -> Dict:
+        """Get analytics for all configured sites with data validation"""
+        results = {}
+        successful_sites = 0
+        failed_sites = 0
+        
+        for site_key, site_config in self.sites_config.items():
+            if site_config.get('analytics_view_id'):
+                print(f"📊 Fetching analytics for {site_config['name']}...")
+                result = self.get_analytics_data(site_key, start_date, end_date)
+                results[site_key] = result
+                
+                if result['success']:
+                    successful_sites += 1
+                    print(f"   ✅ Success: {result.get('total_sessions', 0)} sessions")
+                else:
+                    failed_sites += 1
+                    print(f"   ❌ Failed: {result['error']}")
+            else:
+                results[site_key] = {
+                    'success': False,
+                    'error': f'No analytics property ID configured for {site_config["name"]}'
+                }
+                failed_sites += 1
+        
+        return {
+            'success': True,
+            'sites': results,
+            'total_sites': len(results),
+            'successful_sites': successful_sites,
+            'failed_sites': failed_sites,
+            'summary': f"Analytics retrieved for {successful_sites}/{len(results)} configured sites"
+        }
+
+    def handle_blog_suggestions_command(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
+        """Generate blog suggestions with CRITICAL validation to prevent inappropriate content"""
+        user_lower = user_input.lower().strip()
+        
+        # Site identification
+        site_key = None
+        if 'for ' in user_lower:
+            site_name = user_lower.split('for ')[-1].strip()
+            site_key = self.find_site_by_name(site_name)
+        
+        if not site_key and self.sites_config:
+            site_key = list(self.sites_config.keys())[0]
+        
+        if not site_key:
+            return {"SyntaxPrime": "No sites configured for blog suggestions."}, True
+        
+        site_config = self.sites_config[site_key]
+        
+        # Gather data from multiple sources WITH VALIDATION
+        analytics_result = None
+        sc_result = None
+        
+        # Get Search Console data with proper date format
+        if site_config.get('search_console_url'):
+            # Calculate proper date format for Search Console
+            end_date = datetime.date.today().strftime('%Y-%m-%d')
+            start_date = (datetime.date.today() - datetime.timedelta(days=30)).strftime('%Y-%m-%d')
+            sc_result = self.get_search_console_data_for_site(site_key, start_date, end_date)
+        
+        # Get Analytics data
+        if site_config.get('analytics_view_id'):
+            analytics_result = self.get_analytics_data(site_key, '30daysAgo', 'today')
+        
+        # CRITICAL: Validate all data before using for AI suggestions
+        validation_results = validate_analytics_data_comprehensive(site_config, analytics_result, sc_result)
+        
+        # Check if we should block AI suggestions due to data quality issues
+        should_block, block_reason, overall_confidence = should_block_ai_suggestions_enhanced(validation_results)
+        
+        if should_block:
+            error_response = f"🚨 **DATA VALIDATION FAILED - BLOG SUGGESTIONS BLOCKED** 🚨\n\n"
+            error_response += f"**Cannot generate blog suggestions due to data quality issues:**\n"
+            error_response += f"• {block_reason}\n\n"
+            
+            error_response += f"**Data Quality Report for {site_config['name']}:**\n"
+            for data_type, result in validation_results.items():
+                status = '✅ Valid' if result.is_valid else '❌ Invalid'
+                error_response += f"• {data_type.title()}: {status} "
+                error_response += f"(Confidence: {result.confidence_score:.1f}/1.0, Relevance: {result.site_relevance_score:.1f}/1.0)\n"
+                
+                if result.validation_errors:
+                    for error in result.validation_errors[:2]:  # Limit to top 2 errors
+                        error_response += f"  - ❌ {error}\n"
+                        
+                if result.warnings:
+                    for warning in result.warnings[:2]:  # Limit to top 2 warnings
+                        error_response += f"  - ⚠️ {warning}\n"
+            
+            error_response += f"\n**This prevents disasters like suggesting religious content for non-religious sites!**\n\n"
+            error_response += f"**Manual Verification Required:**\n"
+            error_response += f"1. Check {site_config['name']} in Google Analytics dashboard\n"
+            error_response += f"2. Verify search queries in Search Console match expected content\n"
+            error_response += f"3. Ensure Analytics View ID and Search Console URL are correct\n"
+            error_response += f"4. Re-run command once data issues are resolved"
+            
+            return {"SyntaxPrime": error_response}, True
+        
+        # Data is validated - proceed with generating suggestions
+        data_summary = f"Blog suggestions for {site_config['name']} (DATA VERIFIED ✅):\n\n"
+        data_summary += f"**Data Quality Score: {overall_confidence:.1f}/1.0** ✅\n\n"
+        
+        # Process Search Console data (already validated)
+        if sc_result and sc_result['success'] and sc_result['data']:
+            # Find queries with high impressions but low CTR (opportunity keywords)
+            opportunities = []
+            for row in sc_result['data']:
+                if row['impressions'] > 100 and row['ctr'] < 5:  # High impressions, low CTR
+                    opportunities.append(row)
+            
+            opportunities.sort(key=lambda x: x['impressions'], reverse=True)
+            
+            if opportunities:
+                data_summary += "**SEO Opportunities (High Impressions, Low CTR):**\n"
+                for row in opportunities[:5]:
+                    data_summary += f"• \"{row['query']}\" - {row['impressions']} impressions, {row['ctr']:.1f}% CTR\n"
+                data_summary += "\n"
+        
+        # Generate AI suggestions using the VALIDATED data
+        from utils.ghostline_engine import generate_response, CHAT_MODEL
+        from utils.rag_basic import enhanced_retrieve, is_ready
+        
+        prompt = f"""Based on the following VALIDATED website performance data, suggest 5-7 specific blog post ideas for {site_config['name']}.
+
+Website Focus: {site_config.get('expected_keywords', [])}
+{data_summary}
+
+IMPORTANT CONTEXT:
+- This data has been validated for accuracy (confidence: {overall_confidence:.1f}/1.0)
+- Only suggest content relevant to this specific website's focus
+- DO NOT suggest content from other topics/niches
+
+Focus on:
+1. Content that addresses high-impression, low-CTR search queries
+2. Topics that could capture more traffic for trending searches  
+3. Content that builds on successful existing pages
+4. Seasonal or timely content opportunities
+
+Provide specific, actionable blog post titles with brief explanations."""
+        
+        # Generate AI response
+        retrieval_ctx = enhanced_retrieve(prompt, k=3, project=project) if is_ready() else []
+        
+        response_data = generate_response(
+            prompt, use_voices, random_toggle,
+            project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+        )
+        
+        return response_data, True
 
 # =============================================================================
 # SECTION 9: MULTI-SITE ANALYTICS COMMAND HANDLERS
