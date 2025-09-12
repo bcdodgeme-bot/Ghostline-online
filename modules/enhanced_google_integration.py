@@ -910,6 +910,9 @@ All data below is verified and extracted from actual sources.
 # =============================================================================
 # SECTION 6: MAIN COMMAND PROCESSOR AND MISSING METHODS - ANTI-HALLUCINATION VERSION 9/12/25
 # =============================================================================
+# =============================================================================
+# SECTION 6: MAIN COMMAND PROCESSOR AND MISSING METHODS - ANTI-HALLUCINATION VERSION WITH REVERSE PATTERN FIX 9/12/25
+# =============================================================================
 
     def find_site_by_name(self, site_query: str) -> Optional[str]:
         """Find site key by name or alias - ENHANCED with better multi-word matching"""
@@ -1136,7 +1139,7 @@ All data below is verified and extracted from actual sources.
         return response
 
     def process_google_commands(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
-        """Main command processor for all Google services with ANTI-HALLUCINATION response generation"""
+        """Main command processor for all Google services with ANTI-HALLUCINATION response generation - FIXED REVERSE PATTERNS"""
         user_lower = user_input.lower().strip()
         
         print(f"🔍 Google command processing: '{user_input}'")
@@ -1218,13 +1221,27 @@ All data below is verified and extracted from actual sources.
             save_conversation_enhanced(project, user_input, response_data)
             return response_data, True
         
-        # PRIORITY 2: Multi-site analytics commands - TEMPLATE-BASED RESPONSES
-        analytics_patterns = [
+        # PRIORITY 2: Multi-site analytics commands - TEMPLATE-BASED RESPONSES WITH REVERSE PATTERN FIX
+        analytics_triggers = [
             'analytics for', 'all sites analytics', 'list sites', 'available sites',
             'analytics report', 'website analytics', 'site traffic'
         ]
         
-        if any(trigger in user_lower for trigger in analytics_patterns):
+        # Check for direct analytics triggers
+        is_analytics_command = any(trigger in user_lower for trigger in analytics_triggers)
+        
+        # CRITICAL FIX: Also check for "[SITE] analytics" and "[SITE] traffic" patterns
+        if not is_analytics_command:
+            # Pattern: "Rose and Angel analytics", "TV Signals analytics", etc.
+            reverse_analytics_pattern = re.search(r'^(.+?)\s+(analytics|traffic)(?:\s|$)', user_lower)
+            if reverse_analytics_pattern:
+                potential_site = reverse_analytics_pattern.group(1).strip()
+                # Verify this is actually a configured site
+                if self.find_site_by_name(potential_site):
+                    is_analytics_command = True
+                    print(f"📊 Detected reverse analytics pattern: '{potential_site} {reverse_analytics_pattern.group(2)}'")
+        
+        if is_analytics_command:
             print("📊 Detected Analytics command")
             
             # Handle "all sites" commands
@@ -1247,7 +1264,7 @@ All data below is verified and extracted from actual sources.
             
             # Handle single site analytics
             else:
-                # Extract site name using enhanced parsing
+                # Extract site name using enhanced parsing - FIXED TO HANDLE BOTH PATTERNS
                 site_key = None
                 site_name_extracted = None
                 
@@ -1256,17 +1273,17 @@ All data below is verified and extracted from actual sources.
                 if for_pattern:
                     site_name_extracted = for_pattern.group(1).strip()
                 
-                # Strategy 2: "SITE_NAME analytics"
+                # Strategy 2: "SITE_NAME analytics" - THIS WAS MISSING!
                 if not site_name_extracted:
-                    site_analytics_pattern = re.search(r'^(.+?)\s+analytics', user_lower)
-                    if site_analytics_pattern:
-                        site_name_extracted = site_analytics_pattern.group(1).strip()
+                    reverse_pattern = re.search(r'^(.+?)\s+analytics', user_lower)
+                    if reverse_pattern:
+                        site_name_extracted = reverse_pattern.group(1).strip()
                 
                 # Strategy 3: "SITE_NAME traffic"
                 if not site_name_extracted:
-                    site_traffic_pattern = re.search(r'^(.+?)\s+traffic', user_lower)
-                    if site_traffic_pattern:
-                        site_name_extracted = site_traffic_pattern.group(1).strip()
+                    traffic_pattern = re.search(r'^(.+?)\s+traffic', user_lower)
+                    if traffic_pattern:
+                        site_name_extracted = traffic_pattern.group(1).strip()
                 
                 if site_name_extracted:
                     site_key = self.find_site_by_name(site_name_extracted)
