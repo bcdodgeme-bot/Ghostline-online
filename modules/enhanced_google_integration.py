@@ -592,16 +592,19 @@ class GoogleIntegration:
 # =============================================================================
 # SECTION 5: GMAIL AND CALENDAR COMMAND HANDLERS
 # =============================================================================
+# =============================================================================
+# SECTION 5: GMAIL AND CALENDAR COMMAND HANDLERS 9/12/25
+# =============================================================================
 
     def handle_gmail_commands(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
         """Handle Gmail and Calendar commands with enhanced multi-calendar support"""
         user_lower = user_input.lower().strip()
         
-        # SUPER MORNING COMMANDS - Multiple aliases for ultimate briefing
+        # SUPER MORNING COMMANDS - More specific patterns to avoid false triggers
         super_morning_commands = [
-            "today","daily", "briefing", "morning briefing",
-            "super morning", "full briefing", "start my day", "what's up today",
-            "daily briefing", "complete briefing", "everything"
+            "daily briefing", "morning briefing", "super morning",
+            "full briefing", "start my day", "what's up today",
+            "complete briefing", "daily", "briefing", "everything"
         ]
         
         if user_lower in super_morning_commands:
@@ -609,8 +612,9 @@ class GoogleIntegration:
             save_conversation_enhanced(project, user_input, response_data)
             return response_data, True
         
-        # Gmail overnight (multiple aliases)
-        if user_lower in ["overnight", "mail", "emails", "inbox", "check mail"]:
+        # Gmail overnight - more specific patterns
+        overnight_patterns = ["overnight", "overnight emails", "check mail", "inbox", "new emails"]
+        if any(pattern == user_lower for pattern in overnight_patterns):
             try:
                 print("Fetching overnight emails...")
                 msgs = list_overnight(include_unread=True, include_primary=False)
@@ -657,7 +661,7 @@ class GoogleIntegration:
                 save_conversation_enhanced(project, user_input, response_data)
                 return response_data, True
 
-        # Gmail search (multiple aliases)
+        # Gmail search - more specific patterns
         if user_lower.startswith(("search ", "find ", "email about ")):
             try:
                 # Extract search term
@@ -695,8 +699,9 @@ class GoogleIntegration:
                 save_conversation_enhanced(project, user_input, response_data)
                 return response_data, True
         
-        # Calendar commands - FIXED TO USE ALL CALENDARS
-        if user_lower in ["calendar", "today", "meetings", "schedule"]:
+        # Calendar commands - exact matches only
+        calendar_exact_matches = ["calendar", "today", "meetings", "schedule"]
+        if user_lower in calendar_exact_matches:
             try:
                 print("Fetching today's calendar events from all calendars...")
                 # Use the new all-calendars approach
@@ -736,8 +741,9 @@ class GoogleIntegration:
                 save_conversation_enhanced(project, user_input, response_data)
                 return response_data, True
         
-        # Next meeting command
-        if user_lower in ["next meeting", "next", "upcoming"]:
+        # Next meeting command - exact matches only
+        next_meeting_matches = ["next meeting", "next", "upcoming"]
+        if user_lower in next_meeting_matches:
             try:
                 print("Getting next meeting...")
                 next_meeting = get_next_meeting()
@@ -767,143 +773,6 @@ class GoogleIntegration:
                 return response_data, True
         
         return {}, False
-
-    def handle_super_morning_command(self, project, use_voices, random_toggle):
-        """
-        SUPER MORNING BRIEFING: Calendar + Inbox + ClickUp + Priorities
-        Single command that gives you EVERYTHING you need to start the day
-        """
-        print("=== SUPER MORNING BRIEFING TRIGGERED ===")
-        
-        # Track all integrations
-        integrations = {
-            'emails': {'success': False, 'data': None, 'error': None},
-            'calendar': {'success': False, 'data': None, 'error': None},
-            'next_meeting': {'success': False, 'data': None, 'error': None},
-            'clickup': {'success': False, 'data': None, 'error': None}
-        }
-        
-        # 1. OVERNIGHT EMAILS
-        try:
-            print("📧 Fetching overnight emails...")
-            msgs = list_overnight(include_unread=True, include_primary=False)
-            if msgs and len(msgs) > 0:
-                integrations['emails']['success'] = True
-                integrations['emails']['data'] = msgs
-                print(f"✅ Got {len(msgs)} overnight emails")
-            else:
-                integrations['emails']['error'] = "No overnight emails"
-        except Exception as e:
-            integrations['emails']['error'] = str(e)
-            print(f"❌ Email fetch failed: {e}")
-        
-        # 2. TODAY'S CALENDAR (ALL CALENDARS)
-        try:
-            print("📅 Fetching today's calendar events...")
-            events = list_today_events_all_calendars(max_results=20)
-            if events and len(events) > 0:
-                integrations['calendar']['success'] = True
-                integrations['calendar']['data'] = events
-                print(f"✅ Got {len(events)} calendar events")
-            else:
-                integrations['calendar']['error'] = "No events today"
-        except Exception as e:
-            integrations['calendar']['error'] = str(e)
-            print(f"❌ Calendar fetch failed: {e}")
-        
-        # 3. NEXT MEETING
-        try:
-            print("⏰ Fetching next meeting...")
-            next_meeting = get_next_meeting()
-            if next_meeting and next_meeting.get('summary'):
-                integrations['next_meeting']['success'] = True
-                integrations['next_meeting']['data'] = next_meeting
-                print(f"✅ Next meeting: {next_meeting.get('summary')}")
-            else:
-                integrations['next_meeting']['error'] = "No upcoming meetings"
-        except Exception as e:
-            integrations['next_meeting']['error'] = str(e)
-            print(f"❌ Next meeting fetch failed: {e}")
-        
-        # 4. CLICKUP TASKS
-        try:
-            print("📋 Fetching ClickUp tasks...")
-            from modules.clickup_integration import get_clickup_morning_briefing, is_clickup_configured
-            
-            if is_clickup_configured():
-                clickup_briefing = get_clickup_morning_briefing()
-                integrations['clickup']['success'] = True
-                integrations['clickup']['data'] = clickup_briefing
-                print("✅ Got ClickUp morning briefing")
-            else:
-                integrations['clickup']['error'] = "ClickUp not configured"
-        except Exception as e:
-            integrations['clickup']['error'] = str(e)
-            print(f"❌ ClickUp fetch failed: {e}")
-        
-        # BUILD COMPREHENSIVE BRIEFING
-        briefing_lines = ["🌅 **SUPER MORNING BRIEFING**", ""]
-        
-        # Email Section
-        briefing_lines.append("📧 **OVERNIGHT EMAILS**")
-        if integrations['emails']['success']:
-            email_count = len(integrations['emails']['data'])
-            briefing_lines.append(f"✅ Found {email_count} overnight emails")
-            
-            # Show top 3 email previews
-            for i, msg in enumerate(integrations['emails']['data'][:3]):
-                sender = self._extract_email_sender(msg)
-                subject = self._extract_email_subject(msg)
-                if subject and len(subject) > 50:
-                    subject = subject[:50] + "..."
-                briefing_lines.append(f"   {i+1}. {sender}: {subject}")
-        else:
-            briefing_lines.append(f"❌ {integrations['emails']['error']}")
-        briefing_lines.append("")
-        
-        # Calendar Section
-        briefing_lines.append("📅 **TODAY'S SCHEDULE**")
-        if integrations['calendar']['success']:
-            events = integrations['calendar']['data']
-            briefing_lines.append(f"✅ {len(events)} events scheduled today")
-            
-            # Use our enhanced formatter
-            calendar_summary = format_calendar_summary_enhanced(events, "")
-            briefing_lines.append(calendar_summary)
-        else:
-            briefing_lines.append(f"❌ {integrations['calendar']['error']}")
-        briefing_lines.append("")
-        
-        # Generate the final briefing
-        morning_briefing = "\n".join(briefing_lines)
-        
-        try:
-            print("🤖 Generating AI response...")
-            retrieval_ctx = enhanced_retrieve(morning_briefing, k=8) if is_ready() else []
-            
-            ai_prompt = f"""Analyze this super morning briefing and provide:
-1. A concise executive summary 
-2. Top 3 priorities for the day
-3. Any urgent items that need immediate attention
-
-Be specific about actual data provided, but don't reference details not explicitly mentioned.
-
-Morning Briefing Data:
-{morning_briefing}"""
-            
-            response_data = generate_response(
-                ai_prompt, use_voices, random_toggle,
-                project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
-            )
-            
-            print("✅ Super morning briefing completed successfully")
-            return response_data
-            
-        except Exception as e:
-            print(f"❌ AI response generation failed: {e}")
-            # Fallback - return the raw briefing
-            return {"SyntaxPrime": f"Super morning briefing compiled (AI processing failed):\n\n{morning_briefing}"}
-            
 # =============================================================================
 # SECTION 6: MAIN COMMAND PROCESSOR (WITH YOUR UPDATED CODE)
 # =============================================================================
@@ -918,11 +787,12 @@ Morning Briefing Data:
         # PRIORITY 0: Check for follow-up questions first
         context = enhanced_conversation_context.get_context(project)
         if context and enhanced_conversation_context.detect_follow_up_question(user_input, context):
-            response_data = enhanced_conversation_context.generate_contextual_response(
+            response_data, handled = enhanced_conversation_context.generate_contextual_response(
                 user_input, context, project, use_voices, random_toggle
             )
-            save_conversation_enhanced(project, user_input, response_data)
-            return response_data, True
+            if handled:
+                save_conversation_enhanced(project, user_input, response_data)
+            return response_data, handled
         
         # Blog suggestions commands - WITH VALIDATION BLOCKING
         blog_patterns = [
@@ -931,7 +801,7 @@ Morning Briefing Data:
         ]
         
         if any(pattern in user_lower for pattern in blog_patterns):
-            print("✏️ Detected blog suggestions command - will validate data first")
+            print("✍️ Detected blog suggestions command - will validate data first")
             response_data, handled = self.handle_blog_suggestions_command(user_input, project, use_voices, random_toggle)
             if handled:
                 save_conversation_enhanced(project, user_input, response_data)
@@ -984,7 +854,7 @@ Morning Briefing Data:
         return {}, False
 
     def handle_multi_site_search_console_command(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
-        """Handle search console commands with multi-site support and flexible dates"""
+        """Handle search console commands with multi-site support and flexible dates - FIXED VERSION"""
         user_lower = user_input.lower().strip()
         
         # Parse site specification from command
@@ -1024,10 +894,18 @@ Morning Briefing Data:
         if end_date == 'today':
             end_date = datetime.date.today().strftime('%Y-%m-%d')
         
+        # CRITICAL FIX: Get the result as a dictionary
         result = self.get_search_console_data_for_site(site_key, start_date, end_date)
         
-        if result['success']:
-            data = result['data']
+        # CRITICAL FIX: Ensure result is a dictionary before accessing it
+        if not isinstance(result, dict):
+            response_text = f"Search Console data retrieval returned invalid format: {type(result)}"
+            response_data = {"SyntaxPrime": response_text}
+            save_conversation_enhanced(project, user_input, response_data)
+            return response_data, True
+        
+        if result.get('success'):
+            data = result.get('data', [])
             site_name = result.get('site_name', 'Unknown Site')
             
             # Store context for follow-up questions
@@ -1038,35 +916,40 @@ Morning Briefing Data:
                 user_query=user_input
             )
             
-            response_text = f"**Search Console Report for {site_name} ({result['date_range']})**\n\n"
+            response_text = f"**Search Console Report for {site_name} ({result.get('date_range', 'Unknown range')})**\n\n"
             
-            if data:
-                total_clicks = sum(row['clicks'] for row in data)
-                total_impressions = sum(row['impressions'] for row in data)
+            if data and isinstance(data, list):
+                total_clicks = sum(row.get('clicks', 0) for row in data if isinstance(row, dict))
+                total_impressions = sum(row.get('impressions', 0) for row in data if isinstance(row, dict))
                 avg_ctr = (total_clicks / total_impressions * 100) if total_impressions > 0 else 0
                 
                 response_text += f"**Summary:**\n"
                 response_text += f"- Total Clicks: {total_clicks:,}\n"
                 response_text += f"- Total Impressions: {total_impressions:,}\n"
                 response_text += f"- Average CTR: {avg_ctr:.2f}%\n"
-                response_text += f"- Total Queries: {result['total_queries']}\n\n"
+                response_text += f"- Total Queries: {result.get('total_queries', len(data))}\n\n"
                 
                 response_text += f"**Top Performing Queries:**\n"
-                sorted_data = sorted(data, key=lambda x: x['clicks'], reverse=True)
+                sorted_data = sorted([row for row in data if isinstance(row, dict)],
+                                   key=lambda x: x.get('clicks', 0), reverse=True)
                 for i, row in enumerate(sorted_data[:10], 1):
-                    response_text += f"{i}. {row['query']} - {row['clicks']} clicks, {row['impressions']} impressions\n"
+                    query = row.get('query', 'Unknown query')
+                    clicks = row.get('clicks', 0)
+                    impressions = row.get('impressions', 0)
+                    response_text += f"{i}. {query} - {clicks} clicks, {impressions} impressions\n"
             else:
                 response_text += "No search console data found for the specified period."
         else:
-            response_text = f"Failed to retrieve search console data: {result['error']}"
+            error_msg = result.get('error', 'Unknown error')
+            response_text = f"Failed to retrieve search console data: {error_msg}"
             
             # Show available sites if site not found
-            if "not found" in result['error'].lower():
+            if "not found" in error_msg.lower():
                 sites = self.get_available_sites()
                 if sites:
                     response_text += f"\n\n**Available sites:**\n"
                     for site in sites:
-                        if site['has_search_console']:
+                        if site.get('has_search_console'):
                             response_text += f"- {site['name']} ({site['key']})\n"
         
         response_data = {"SyntaxPrime": response_text}
@@ -1074,9 +957,15 @@ Morning Briefing Data:
         return response_data, True
 
     def get_search_console_data_for_site(self, site_key: str, start_date: str = None, end_date: str = None) -> Dict:
-        """Get search console data for a specific site with ENHANCED VALIDATION"""
-        if site_key not in self.sites_config:
-            return {'success': False, 'error': f'Site "{site_key}" not found in configuration'}
+        """Get search console data for a specific site with ENHANCED VALIDATION - FIXED VERSION"""
+        
+        # CRITICAL FIX: Validate site_key parameter
+        if not site_key or site_key not in self.sites_config:
+            available_sites = list(self.sites_config.keys()) if self.sites_config else []
+            return {
+                'success': False,
+                'error': f'Site "{site_key}" not found in configuration. Available sites: {available_sites}'
+            }
         
         site_config = self.sites_config[site_key]
         site_url = site_config.get('search_console_url')
@@ -1087,54 +976,70 @@ Morning Briefing Data:
                 'error': f'No Search Console URL configured for site "{site_config["name"]}". Add search_console_url to your GOOGLE_SITES_CONFIG.'
             }
         
-        # Get the raw search console data
-        result = self.get_search_console_data(site_url, start_date, end_date)
-        
-        # ENHANCED: Add comprehensive validation to prevent fabricated data disasters
-        if result.get('success'):
-            try:
-                # Validate the data before returning
-                validation_results = validate_analytics_data_comprehensive(
-                    site_config,
-                    search_console_result=result
-                )
-                
-                sc_validation = validation_results.get('search_console')
-                if sc_validation:
-                    # Add validation metadata to the result
-                    result['validation'] = {
-                        'is_valid': sc_validation.is_valid,
-                        'confidence_score': sc_validation.confidence_score,
-                        'site_relevance_score': sc_validation.site_relevance_score,
-                        'warnings': sc_validation.warnings,
-                        'recommendation': sc_validation.recommendation
-                    }
+        # CRITICAL FIX: Ensure we always return a dictionary
+        try:
+            # Get the raw search console data
+            result = self.get_search_console_data(site_url, start_date, end_date)
+            
+            # CRITICAL FIX: Validate the result is a dictionary
+            if not isinstance(result, dict):
+                return {
+                    'success': False,
+                    'error': f'get_search_console_data returned {type(result)} instead of dict'
+                }
+            
+            # ENHANCED: Add comprehensive validation to prevent fabricated data disasters
+            if result.get('success'):
+                try:
+                    # Validate the data before returning
+                    validation_results = validate_analytics_data_comprehensive(
+                        site_config,
+                        search_console_result=result
+                    )
                     
-                    # Log validation issues
-                    if not sc_validation.is_valid or sc_validation.site_relevance_score < 0.7:
-                        print(f"🚨 Search Console validation issues for {site_config['name']}:")
-                        print(f"   - Valid: {'✅' if sc_validation.is_valid else '❌'}")
-                        print(f"   - Confidence: {sc_validation.confidence_score:.2f}/1.0")
-                        print(f"   - Relevance: {sc_validation.site_relevance_score:.2f}/1.0")
+                    sc_validation = validation_results.get('search_console')
+                    if sc_validation:
+                        # Add validation metadata to the result
+                        result['validation'] = {
+                            'is_valid': sc_validation.is_valid,
+                            'confidence_score': sc_validation.confidence_score,
+                            'site_relevance_score': sc_validation.site_relevance_score,
+                            'warnings': sc_validation.warnings,
+                            'recommendation': sc_validation.recommendation
+                        }
                         
-                        if sc_validation.validation_errors:
-                            for error in sc_validation.validation_errors:
-                                print(f"   - ❌ {error}")
-                    
-                    # Add validation info to result for user display
-                    if sc_validation.site_relevance_score < 0.7:
-                        result['relevance_warning'] = f"Query relevance score: {sc_validation.site_relevance_score:.1f}/1.0 - Check if data matches expected site content"
+                        # Log validation issues
+                        if not sc_validation.is_valid or sc_validation.site_relevance_score < 0.7:
+                            print(f"🚨 Search Console validation issues for {site_config['name']}:")
+                            print(f"   - Valid: {'✅' if sc_validation.is_valid else '❌'}")
+                            print(f"   - Confidence: {sc_validation.confidence_score:.2f}/1.0")
+                            print(f"   - Relevance: {sc_validation.site_relevance_score:.2f}/1.0")
+                            
+                            if sc_validation.validation_errors:
+                                for error in sc_validation.validation_errors:
+                                    print(f"   - ❌ {error}")
                         
-            except Exception as e:
-                print(f"Search Console validation failed: {e}")
-                # Don't fail the entire request if validation fails
-        
-        # Add site information to successful results
-        if result['success']:
-            result['site_name'] = site_config['name']
-            result['site_key'] = site_key
-        
-        return result
+                        # Add validation info to result for user display
+                        if sc_validation.site_relevance_score < 0.7:
+                            result['relevance_warning'] = f"Query relevance score: {sc_validation.site_relevance_score:.1f}/1.0 - Check if data matches expected site content"
+                            
+                except Exception as e:
+                    print(f"Search Console validation failed: {e}")
+                    # Don't fail the entire request if validation fails
+            
+            # Add site information to successful results
+            if result.get('success'):
+                result['site_name'] = site_config['name']
+                result['site_key'] = site_key
+            
+            return result
+            
+        except Exception as e:
+            print(f"get_search_console_data_for_site exception: {e}")
+            return {
+                'success': False,
+                'error': f'Exception in search console data retrieval: {str(e)}'
+            }
 
     def get_search_console_data(self, site_url: str, start_date: str = None, end_date: str = None) -> Dict:
         """Get Search Console performance data with strict validation"""
@@ -1255,6 +1160,116 @@ Morning Briefing Data:
                 detailed_error = f"Search Console API error: {error_msg}"
             
             return {'success': False, 'error': detailed_error}
+
+    def handle_docs_command(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
+        """Handle Google Docs commands with improved parsing"""
+        user_lower = user_input.lower().strip()
+        
+        # Create document command with improved content parsing
+        if 'create document' in user_lower or 'create doc' in user_lower:
+            # Better parsing to separate title from content
+            content_match = re.search(r'create (?:document|doc) ["\']?([^"\']+?)["\']?\s+with content:\s*(.+)', user_input, re.IGNORECASE)
+            if content_match:
+                title = content_match.group(1).strip()
+                content = content_match.group(2).strip()
+            else:
+                # Simple title extraction without content
+                title_match = re.search(r'create (?:document|doc) (?:called |titled |named )?["\']?([^"\']+)["\']?', user_input, re.IGNORECASE)
+                if title_match:
+                    title = title_match.group(1).strip()
+                    content = "Document created via Ghostline"
+                else:
+                    title = "Ghostline Document"
+                    content = user_input  # Use the entire input as content
+            
+            result = self.create_document(title, content)
+            
+            if result['success']:
+                response_text = f"**Document Created Successfully!**\n\n"
+                response_text += f"**Title:** {result['title']}\n"
+                response_text += f"**Document ID:** {result['document_id']}\n"
+                response_text += f"**URL:** {result['document_url']}\n\n"
+                response_text += f"**Content Preview:**\n{content[:200]}{'...' if len(content) > 200 else ''}"
+            else:
+                response_text = f"Failed to create document: {result['error']}"
+            
+            response_data = {"SyntaxPrime": response_text}
+            save_conversation_enhanced(project, user_input, response_data)
+            return response_data, True
+        
+        # Append to document command
+        if 'add to document' in user_lower or 'append to document' in user_lower:
+            doc_match = re.search(r'(?:add to|append to) document (.+?) content: (.+)', user_input, re.IGNORECASE)
+            if doc_match:
+                doc_identifier = doc_match.group(1).strip()
+                content_to_add = doc_match.group(2).strip()
+                
+                # Try to extract document ID from URL or use as-is
+                doc_id = None
+                if 'docs.google.com/document/d/' in doc_identifier:
+                    id_match = re.search(r'/document/d/([a-zA-Z0-9-_]+)', doc_identifier)
+                    if id_match:
+                        doc_id = id_match.group(1)
+                else:
+                    doc_id = doc_identifier
+                
+                if doc_id:
+                    result = self.append_to_document(doc_id, content_to_add)
+                    
+                    if result['success']:
+                        response_text = f"**Content Added Successfully!**\n\n"
+                        response_text += f"**Document URL:** {result['document_url']}\n"
+                        response_text += f"**Added Content:** {content_to_add[:200]}{'...' if len(content_to_add) > 200 else ''}"
+                    else:
+                        response_text = f"Failed to add content: {result['error']}"
+                else:
+                    response_text = "Could not extract document ID. Please provide either the full Google Docs URL or the document ID."
+                
+                response_data = {"SyntaxPrime": response_text}
+                save_conversation_enhanced(project, user_input, response_data)
+                return response_data, True
+        
+        return {}, False
+
+    def create_document(self, title: str, content: str = "") -> Dict:
+        """Create a new Google Document"""
+        if 'docs' not in self.services:
+            return {'success': False, 'error': 'Google Docs API not available'}
+        
+        try:
+            # Create the document
+            document = {
+                'title': title
+            }
+            
+            doc = self.services['docs'].documents().create(body=document).execute()
+            document_id = doc.get('documentId')
+            
+            # Add content if provided
+            if content:
+                requests = [
+                    {
+                        'insertText': {
+                            'location': {'index': 1},
+                            'text': content
+                        }
+                    }
+                ]
+                
+                self.services['docs'].documents().batchUpdate(
+                    documentId=document_id,
+                    body={'requests': requests}
+                ).execute()
+            
+            return {
+                'success': True,
+                'title': title,
+                'document_id': document_id,
+                'document_url': f"https://docs.google.com/document/d/{document_id}"
+            }
+            
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
 # =============================================================================
 # SECTION 7: GOOGLE DOCS AND SHEETS INTEGRATION
 # =============================================================================

@@ -1,4 +1,4 @@
-# modules/gmail.py - Complete version with FIXED data integrity and fabrication prevention
+# modules/gmail.py - Complete version with FIXED calendar data structure handling
 # This module handles all Gmail and Calendar integration commands with strict validation
 
 import os
@@ -62,6 +62,36 @@ def _debug_email_structure(msgs, operation):
     
     print("=== END DEBUG EMAIL STRUCTURE ===\n")
 
+def _debug_calendar_structure(events, operation):
+    """DEBUG: Log the actual structure of calendar objects - NEW FUNCTION"""
+    print(f"\n=== DEBUG CALENDAR STRUCTURE for {operation} ===")
+    print(f"Total events received: {len(events) if events else 0}")
+    print(f"Events type: {type(events)}")
+    
+    if events and len(events) > 0:
+        print(f"Type of first event: {type(events[0])}")
+        
+        if isinstance(events[0], dict):
+            print(f"First event keys: {list(events[0].keys())}")
+            print("First event content:")
+            for key, value in events[0].items():
+                if isinstance(value, str) and len(value) > 100:
+                    print(f"  {key}: {value[:100]}... (truncated)")
+                elif isinstance(value, dict):
+                    print(f"  {key}: {type(value)} with keys {list(value.keys())}")
+                else:
+                    print(f"  {key}: {value}")
+        elif isinstance(events[0], str):
+            print(f"First event is STRING: {events[0][:200]}...")
+        else:
+            print(f"First event is UNKNOWN TYPE: {type(events[0])}")
+        
+        # Check all event types
+        event_types = [type(event).__name__ for event in events[:5]]
+        print(f"Types of first 5 events: {event_types}")
+    
+    print("=== END DEBUG CALENDAR STRUCTURE ===\n")
+
 def _extract_email_info(msg):
     """Extract sender and subject from email object, handling different possible formats"""
     if not isinstance(msg, dict):
@@ -112,6 +142,68 @@ def _extract_email_info(msg):
     
     return sender, subject
 
+def _extract_calendar_event_info(event):
+    """Extract info from calendar event, handling string/dict conversion issues - NEW FUNCTION"""
+    if isinstance(event, str):
+        # If we got a string instead of dict, try to parse it
+        try:
+            # Maybe it's JSON string?
+            event = json.loads(event)
+        except (json.JSONDecodeError, ValueError):
+            # Not JSON, return minimal info
+            return {
+                'title': event[:50] + '...' if len(event) > 50 else event,
+                'start_time': 'Unknown Time',
+                'location': None,
+                'error': f'Received string instead of event object: {event[:100]}'
+            }
+    
+    if not isinstance(event, dict):
+        return {
+            'title': f'Unknown Event (Type: {type(event)})',
+            'start_time': 'Unknown Time',
+            'location': None,
+            'error': f'Event is not a dictionary: {type(event)}'
+        }
+    
+    # Extract title/summary
+    title = 'Untitled Event'
+    for title_field in ['summary', 'title', 'subject', 'name']:
+        if title_field in event and event[title_field]:
+            title = event[title_field]
+            break
+    
+    # Extract start time - handle nested structure
+    start_time = 'Time not specified'
+    if 'start' in event:
+        start_obj = event['start']
+        if isinstance(start_obj, dict):
+            # Try different time fields
+            for time_field in ['dateTime', 'date']:
+                if time_field in start_obj and start_obj[time_field]:
+                    start_time = start_obj[time_field]
+                    break
+        elif isinstance(start_obj, str):
+            start_time = start_obj
+    elif 'startTime' in event:
+        start_time = event['startTime']
+    elif 'start_time' in event:
+        start_time = event['start_time']
+    
+    # Extract location
+    location = None
+    for location_field in ['location', 'where', 'place']:
+        if location_field in event and event[location_field]:
+            location = event[location_field]
+            break
+    
+    return {
+        'title': title,
+        'start_time': start_time,
+        'location': location,
+        'error': None
+    }
+
 def _validate_gmail_response(msgs, operation):
     """Strict validation to prevent fabricated Gmail content"""
     if msgs is None:
@@ -135,21 +227,25 @@ def _validate_gmail_response(msgs, operation):
     return True, None
 
 def _validate_calendar_response(events, operation):
-    """Strict validation to prevent fabricated Calendar content"""
+    """FIXED: Strict validation that handles string/dict conversion issues"""
     if events is None:
         return False, f"AUTHENTICATION FAILED: {operation} returned no data. Check your Calendar API authentication and permissions."
     
     if isinstance(events, dict) and "error" in events:
         return False, f"API ERROR: {operation} failed - {events['error']}"
     
+    if isinstance(events, str):
+        # If we get a string instead of list/dict, this is a data format issue
+        return False, f"DATA FORMAT ERROR: {operation} returned a string instead of calendar events. This suggests a parsing issue in the Calendar API client."
+    
     if not isinstance(events, list):
         return False, f"INVALID DATA FORMAT: {operation} returned data that isn't a list of events (got {type(events)})"
     
-    # Additional validation: check if we have valid event structures
+    # Log the structure for debugging
     if len(events) > 0:
-        for i, event in enumerate(events[:3]):  # Check first 3 events
-            if not isinstance(event, dict):
-                return False, f"INVALID EVENT FORMAT: Event {i+1} is not a dictionary (got {type(event)})"
+        print(f"Calendar validation: First event type = {type(events[0])}")
+        if isinstance(events[0], str):
+            print(f"Calendar validation: First event string content = {events[0][:200]}")
     
     return True, None
 
@@ -162,6 +258,19 @@ def _count_real_emails(msgs):
     for msg in msgs:
         sender, subject = _extract_email_info(msg)
         if sender or subject:  # Count as real if we can extract either field
+            real_count += 1
+    
+    return real_count
+
+def _count_real_events(events):
+    """Count how many events have extractable information - NEW FUNCTION"""
+    if not events:
+        return 0
+    
+    real_count = 0
+    for event in events:
+        event_info = _extract_calendar_event_info(event)
+        if not event_info['error']:  # Count as real if no extraction error
             real_count += 1
     
     return real_count
@@ -333,18 +442,24 @@ ACTUAL SEARCH RESULTS:
         return _handle_integration_error(error_msg, f"Gmail search '{search_query}'")
 
 def handle_calendar_command(command_type, project, use_voices, random_toggle):
-    """Handle calendar commands with STRICT data validation"""
+    """FIXED: Handle calendar commands with robust string/dict handling"""
     try:
         print(f"📅 Starting calendar command: {command_type}")
         
         # Determine which calendar function to call
+        events = None
+        operation = "calendar events"
+        
         if command_type in ['today', 'today events', 'today\'s events']:
+            print("📅 Calling list_today_events()...")
             events = list_today_events()
             operation = "today's calendar events"
         elif command_type in ['tomorrow', 'tomorrow events', 'tomorrow\'s events']:
+            print("📅 Calling list_tomorrow_events()...")
             events = list_tomorrow_events()
             operation = "tomorrow's calendar events"
         elif command_type in ['next meeting', 'next', 'upcoming']:
+            print("📅 Calling get_next_meeting()...")
             next_meeting = get_next_meeting()
             if next_meeting:
                 events = [next_meeting]  # Convert single meeting to list format
@@ -354,18 +469,28 @@ def handle_calendar_command(command_type, project, use_voices, random_toggle):
                 operation = "next meeting"
         else:
             # Default to today's events
+            print("📅 Defaulting to list_today_events()...")
             events = list_today_events()
             operation = "calendar events"
         
-        # STRICT VALIDATION
+        print(f"📅 Raw calendar response: {type(events)} = {events}")
+        
+        # DEBUG: Log the actual calendar structure
+        _debug_calendar_structure(events, operation)
+        
+        # STRICT VALIDATION with enhanced error handling
         is_valid, error_msg = _validate_calendar_response(events, operation)
         if not is_valid:
             print(f"❌ Calendar validation failed: {error_msg}")
             return _handle_integration_error(error_msg, operation)
         
-        print(f"📊 Calendar Results: {len(events)} events found")
+        # Count real events
+        real_event_count = _count_real_events(events)
+        total_events = len(events) if events else 0
         
-        if len(events) == 0:
+        print(f"📊 Calendar Results: {real_event_count} processable events out of {total_events} total")
+        
+        if real_event_count == 0:
             summary_prompt = f"""SYSTEM STATUS: No {operation} found.
 
 CRITICAL INSTRUCTION: Do not fabricate or invent any calendar events, meetings, or appointments.
@@ -377,7 +502,7 @@ Do not mention any specific meetings, people, or events as none were found."""
             # Process real calendar events
             summary_prompt = f"""CALENDAR: {operation.upper()}
 
-Found {len(events)} real events.
+Found {real_event_count} real events out of {total_events} total.
 
 CRITICAL INSTRUCTION: Only reference the actual calendar events provided below.
 Do not add, invent, or fabricate any additional meetings or events.
@@ -385,16 +510,23 @@ Do not add, invent, or fabricate any additional meetings or events.
 ACTUAL EVENTS:
 """
             
+            processed_events = []
             for i, event in enumerate(events, 1):
-                title = event.get('summary', 'No Title')
-                start_time = event.get('start', {}).get('dateTime', 'Time not specified')
-                location = event.get('location', 'No location')
+                event_info = _extract_calendar_event_info(event)
                 
-                summary_prompt += f"{i}. {title}\n"
-                summary_prompt += f"   Time: {start_time}\n"
-                if location and location != 'No location':
-                    summary_prompt += f"   Location: {location}\n"
-                summary_prompt += "\n"
+                if event_info['error']:
+                    print(f"⚠️ Event {i} extraction error: {event_info['error']}")
+                    summary_prompt += f"{i}. ERROR PROCESSING EVENT: {event_info['error']}\n\n"
+                else:
+                    processed_events.append(event_info)
+                    
+                    summary_prompt += f"{i}. {event_info['title']}\n"
+                    summary_prompt += f"   Time: {event_info['start_time']}\n"
+                    if event_info['location']:
+                        summary_prompt += f"   Location: {event_info['location']}\n"
+                    summary_prompt += "\n"
+            
+            print(f"✅ Successfully processed {len(processed_events)} calendar events")
         
         # Generate response with context
         retrieval_ctx = enhanced_retrieve(summary_prompt, k=5, project=project) if is_ready() else []
@@ -404,13 +536,16 @@ ACTUAL EVENTS:
             project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
         )
         
-        print(f"📝 Calendar command completed: {len(events)} real events processed")
+        print(f"📝 Calendar command completed: {real_event_count} real events processed")
         
         return response_data
         
     except Exception as e:
         error_msg = f"Calendar processing failed: {str(e)}"
-        print(f"❌ {error_msg}")
+        print(f"❌ Calendar exception: {error_msg}")
+        # Add more detailed error information
+        import traceback
+        print(f"Full traceback: {traceback.format_exc()}")
         return _handle_integration_error(error_msg, f"calendar {command_type}")
 
 def handle_morning_briefing_command(project, use_voices, random_toggle):
@@ -429,7 +564,7 @@ def handle_morning_briefing_command(project, use_voices, random_toggle):
         
         # Count real data
         real_email_count = _count_real_emails(overnight_emails) if email_valid else 0
-        real_event_count = len(today_events) if calendar_valid else 0
+        real_event_count = _count_real_events(today_events) if calendar_valid else 0
         
         print(f"📊 Morning Briefing Data: {real_email_count} emails, {real_event_count} events")
         
@@ -469,20 +604,27 @@ All data below is verified and extracted from actual sources.
             summary_prompt += "📅 CALENDAR: No events scheduled for today. You have a clear calendar.\n\n"
         else:
             summary_prompt += f"📅 CALENDAR: {real_event_count} events today\n"
-            for i, event in enumerate(today_events[:5], 1):  # Show first 5
-                title = event.get('summary', 'No Title')
-                start_time = event.get('start', {}).get('dateTime', 'Time not specified')
-                summary_prompt += f"  {i}. {title} at {start_time}\n"
+            processed_events = 0
+            for event in today_events:
+                if processed_events >= 5:  # Limit to 5 events
+                    break
+                
+                event_info = _extract_calendar_event_info(event)
+                if not event_info['error']:
+                    processed_events += 1
+                    summary_prompt += f"  {processed_events}. {event_info['title']} at {event_info['start_time']}\n"
             
-            if len(today_events) > 5:
-                summary_prompt += f"  ... and {len(today_events) - 5} more events\n"
+            if real_event_count > 5:
+                summary_prompt += f"  ... and {real_event_count - 5} more events\n"
             summary_prompt += "\n"
         
         # Add next meeting info
         if next_meeting:
-            title = next_meeting.get('summary', 'No Title')
-            start_time = next_meeting.get('start', {}).get('dateTime', 'Time not specified')
-            summary_prompt += f"⏰ NEXT MEETING: {title} at {start_time}\n\n"
+            next_meeting_info = _extract_calendar_event_info(next_meeting)
+            if not next_meeting_info['error']:
+                summary_prompt += f"⏰ NEXT MEETING: {next_meeting_info['title']} at {next_meeting_info['start_time']}\n\n"
+            else:
+                summary_prompt += "⏰ NEXT MEETING: Found but could not parse details.\n\n"
         else:
             summary_prompt += "⏰ NEXT MEETING: No upcoming meetings found.\n\n"
         
@@ -503,6 +645,8 @@ All data below is verified and extracted from actual sources.
     except Exception as e:
         error_msg = f"Morning briefing failed: {str(e)}"
         print(f"❌ {error_msg}")
+        import traceback
+        print(f"Full traceback: {traceback.format_exc()}")
         return _handle_integration_error(error_msg, "morning briefing")
 
 # =============================================================================
@@ -524,7 +668,14 @@ def process_gmail_command(user_input, project, use_voices, random_toggle):
         'morning', 'gm', 'briefing', 'what\'s up today', 'today\'s agenda'
     ]
     
-    if any(pattern in user_lower for pattern in morning_patterns):
+    # FIXED: Check for exact matches and avoid triggering on casual mentions
+    is_morning_command = False
+    for pattern in morning_patterns:
+        if user_lower == pattern or user_lower.startswith(pattern + ' ') or user_lower.endswith(' ' + pattern):
+            is_morning_command = True
+            break
+    
+    if is_morning_command:
         print("🌅 Detected morning briefing command")
         response_data = handle_morning_briefing_command(project, use_voices, random_toggle)
         return response_data, True
@@ -540,11 +691,11 @@ def process_gmail_command(user_input, project, use_voices, random_toggle):
         response_data = handle_overnight_command(project, use_voices, random_toggle)
         return response_data, True
     
-    # Calendar patterns
+    # Calendar patterns - FIXED: More specific pattern matching
     calendar_patterns = {
-        'today': ['today', 'today\'s events', 'what\'s today', 'schedule today'],
-        'tomorrow': ['tomorrow', 'tomorrow\'s events', 'what\'s tomorrow', 'schedule tomorrow'],
-        'next meeting': ['next meeting', 'next', 'upcoming', 'what\'s next']
+        'today': ['calendar today', 'today\'s calendar', 'today\'s events', 'what\'s today', 'schedule today', 'today schedule'],
+        'tomorrow': ['calendar tomorrow', 'tomorrow\'s calendar', 'tomorrow\'s events', 'what\'s tomorrow', 'schedule tomorrow'],
+        'next meeting': ['next meeting', 'upcoming meeting', 'what\'s next meeting', 'when is my next meeting']
     }
     
     for command_type, patterns in calendar_patterns.items():
@@ -552,6 +703,12 @@ def process_gmail_command(user_input, project, use_voices, random_toggle):
             print(f"📅 Detected calendar command: {command_type}")
             response_data = handle_calendar_command(command_type, project, use_voices, random_toggle)
             return response_data, True
+    
+    # Generic "calendar" command
+    if user_lower in ['calendar', 'my calendar', 'show calendar']:
+        print("📅 Detected generic calendar command - defaulting to today")
+        response_data = handle_calendar_command('today', project, use_voices, random_toggle)
+        return response_data, True
     
     # Gmail search patterns
     search_patterns = [
