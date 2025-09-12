@@ -1529,6 +1529,9 @@ All data below is verified and extracted from actual sources.
 # =============================================================================
 # SECTION 8: GA4 ANALYTICS AND SEARCH CONSOLE INTEGRATION WITH DATA VALIDATION - COMPLETE METHODS 9/12/25
 # =============================================================================
+# =============================================================================
+# SECTION 8: GA4 ANALYTICS AND SEARCH CONSOLE INTEGRATION WITH ENHANCED REPORTING AND DATA VALIDATION
+# =============================================================================
 
     def _validate_analytics_response(self, response_data, operation, property_id):
         """Strict validation to prevent fabricated analytics data"""
@@ -1557,8 +1560,8 @@ All data below is verified and extracted from actual sources.
         
         return True, None
     
-    def get_ga4_analytics_report(self, property_id: str, start_date: str = "7daysAgo", end_date: str = "today") -> Dict:
-        """Get GA4 Analytics report using the Data API with strict validation"""
+    def get_ga4_analytics_report(self, property_id: str, start_date: str = "7daysAgo", end_date: str = "today", report_type: str = "basic") -> Dict:
+        """Get GA4 Analytics report with enhanced dimensions based on report type"""
         if 'analyticsdata' not in self.services:
             return {
                 'success': False,
@@ -1566,20 +1569,65 @@ All data below is verified and extracted from actual sources.
             }
         
         try:
-            print(f"📊 GA4 Analytics API: Fetching data for property {property_id}")
+            print(f"📊 GA4 Analytics API: Fetching {report_type} data for property {property_id}")
+            
+            # Base metrics for all reports
+            base_metrics = [
+                {'name': 'sessions'},
+                {'name': 'totalUsers'},
+                {'name': 'screenPageViews'},
+                {'name': 'bounceRate'}
+            ]
+            
+            # Base dimensions
+            base_dimensions = [{'name': 'date'}]
+            
+            # Enhanced metrics and dimensions based on report type
+            if report_type == "traffic_sources":
+                base_metrics.extend([
+                    {'name': 'averageSessionDuration'},
+                    {'name': 'engagementRate'}
+                ])
+                base_dimensions.extend([
+                    {'name': 'sessionSource'},
+                    {'name': 'sessionMedium'}
+                ])
+            elif report_type == "devices":
+                base_dimensions.extend([
+                    {'name': 'deviceCategory'},
+                    {'name': 'operatingSystem'},
+                    {'name': 'browser'}
+                ])
+            elif report_type == "geography":
+                base_dimensions.extend([
+                    {'name': 'country'},
+                    {'name': 'region'},
+                    {'name': 'city'}
+                ])
+            elif report_type == "content":
+                base_metrics.extend([
+                    {'name': 'averageSessionDuration'},
+                    {'name': 'engagementRate'}
+                ])
+                base_dimensions.extend([
+                    {'name': 'pagePath'},
+                    {'name': 'pageTitle'}
+                ])
+            elif report_type == "acquisition":
+                base_metrics.extend([
+                    {'name': 'newUsers'}
+                ])
+                base_dimensions.extend([
+                    {'name': 'firstUserSource'},
+                    {'name': 'firstUserMedium'},
+                    {'name': 'sessionCampaignName'}
+                ])
             
             # GA4 Data API request format
             request_body = {
                 'dateRanges': [{'startDate': start_date, 'endDate': end_date}],
-                'metrics': [
-                    {'name': 'sessions'},
-                    {'name': 'totalUsers'},
-                    {'name': 'screenPageViews'},
-                    {'name': 'bounceRate'}
-                ],
-                'dimensions': [
-                    {'name': 'date'}
-                ],
+                'metrics': base_metrics,
+                'dimensions': base_dimensions,
                 'orderBys': [
                     {'dimension': {'dimensionName': 'date'}}
                 ]
@@ -1594,7 +1642,7 @@ All data below is verified and extracted from actual sources.
             print(f"📊 GA4 Raw Response: {response}")
             
             # CRITICAL: Validate response before processing
-            is_valid, validation_error = self._validate_analytics_response(response, "GA4 Analytics", property_id)
+            is_valid, validation_error = self._validate_analytics_response(response, f"GA4 Analytics ({report_type})", property_id)
             if not is_valid:
                 return {'success': False, 'error': validation_error}
             
@@ -1613,6 +1661,7 @@ All data below is verified and extracted from actual sources.
                     'avg_bounce_rate': 0,
                     'date_range': f"{start_date} to {end_date}",
                     'property_id': property_id,
+                    'report_type': report_type,
                     'message': f"No analytics data found for property {property_id} in the specified date range. This could be normal for new sites or quiet periods."
                 }
             
@@ -1627,21 +1676,55 @@ All data below is verified and extracted from actual sources.
                 metric_values = row.get('metricValues', [])
                 
                 if dimension_values and metric_values:
-                    date = dimension_values[0].get('value', 'Unknown')
+                    # Build row data based on report type
+                    row_data = {}
                     
-                    # Extract metrics safely
+                    # Always include date (first dimension)
+                    row_data['date'] = dimension_values[0].get('value', 'Unknown')
+                    
+                    # Add additional dimensions based on report type
+                    if report_type == "traffic_sources" and len(dimension_values) >= 3:
+                        row_data['source'] = dimension_values[1].get('value', 'Unknown')
+                        row_data['medium'] = dimension_values[2].get('value', 'Unknown')
+                    elif report_type == "devices" and len(dimension_values) >= 4:
+                        row_data['device'] = dimension_values[1].get('value', 'Unknown')
+                        row_data['os'] = dimension_values[2].get('value', 'Unknown')
+                        row_data['browser'] = dimension_values[3].get('value', 'Unknown')
+                    elif report_type == "geography" and len(dimension_values) >= 4:
+                        row_data['country'] = dimension_values[1].get('value', 'Unknown')
+                        row_data['region'] = dimension_values[2].get('value', 'Unknown')
+                        row_data['city'] = dimension_values[3].get('value', 'Unknown')
+                    elif report_type == "content" and len(dimension_values) >= 3:
+                        row_data['page_path'] = dimension_values[1].get('value', 'Unknown')
+                        row_data['page_title'] = dimension_values[2].get('value', 'Unknown')
+                    elif report_type == "acquisition" and len(dimension_values) >= 4:
+                        row_data['first_source'] = dimension_values[1].get('value', 'Unknown')
+                        row_data['first_medium'] = dimension_values[2].get('value', 'Unknown')
+                        row_data['campaign'] = dimension_values[3].get('value', 'Unknown')
+                    
+                    # Extract metrics safely (positions may vary based on report type)
                     sessions = int(metric_values[0].get('value', '0') or '0')
                     users = int(metric_values[1].get('value', '0') or '0')
                     pageviews = int(metric_values[2].get('value', '0') or '0')
                     bounce_rate = float(metric_values[3].get('value', '0') or '0')
                     
-                    analytics_data.append({
-                        'date': date,
+                    row_data.update({
                         'sessions': sessions,
                         'users': users,
                         'pageviews': pageviews,
                         'bounce_rate': bounce_rate
                     })
+                    
+                    # Add enhanced metrics if available
+                    if len(metric_values) > 4:
+                        if report_type in ["traffic_sources", "content", "acquisition"]:
+                            row_data['avg_session_duration'] = float(metric_values[4].get('value', '0') or '0')
+                            if len(metric_values) > 5:
+                                row_data['engagement_rate'] = float(metric_values[5].get('value', '0') or '0')
+                        elif report_type == "acquisition" and len(metric_values) > 4:
+                            row_data['new_users'] = int(metric_values[4].get('value', '0') or '0')
+                    
+                    analytics_data.append(row_data)
                     
                     # Accumulate totals
                     total_sessions += sessions
@@ -1652,7 +1735,7 @@ All data below is verified and extracted from actual sources.
             
             avg_bounce_rate = sum(bounce_rates) / len(bounce_rates) if bounce_rates else 0
             
-            print(f"✅ GA4 Analytics: Processed {len(analytics_data)} days of REAL data")
+            print(f"✅ GA4 Analytics: Processed {len(analytics_data)} rows of REAL {report_type} data")
             print(f"   📈 Totals: {total_sessions} sessions, {total_users} users, {total_pageviews} pageviews")
             
             return {
@@ -1664,7 +1747,8 @@ All data below is verified and extracted from actual sources.
                 'avg_bounce_rate': round(avg_bounce_rate, 2),
                 'date_range': f"{start_date} to {end_date}",
                 'property_id': property_id,
-                'raw_response_rows': len(rows)  # For debugging
+                'report_type': report_type,
+                'raw_response_rows': len(rows)
             }
             
         except Exception as e:
@@ -1683,8 +1767,8 @@ All data below is verified and extracted from actual sources.
             
             return {'success': False, 'error': detailed_error}
     
-    def get_analytics_data(self, site_key: str, start_date: str = "7daysAgo", end_date: str = "today") -> Dict:
-        """Get analytics for a specific site with ENHANCED VALIDATION to prevent fabricated data"""
+    def get_analytics_data(self, site_key: str, start_date: str = "7daysAgo", end_date: str = "today", report_type: str = "basic") -> Dict:
+        """Get analytics for a specific site with ENHANCED VALIDATION and report types"""
         if site_key not in self.sites_config:
             return {'success': False, 'error': f'Site "{site_key}" not found in configuration'}
         
@@ -1697,10 +1781,10 @@ All data below is verified and extracted from actual sources.
                 'error': f'No GA4 property ID configured for site "{site_config["name"]}". Add analytics_view_id to your GOOGLE_SITES_CONFIG.'
             }
         
-        # Get the raw analytics data
-        result = self.get_ga4_analytics_report(property_id, start_date, end_date)
+        # Get the raw analytics data with specified report type
+        result = self.get_ga4_analytics_report(property_id, start_date, end_date, report_type)
         
-        # ENHANCED: Add comprehensive validation to prevent "Christianity B2B" disasters
+        # ENHANCED: Add comprehensive validation to prevent fabricated data
         if result.get('success'):
             try:
                 # Validate the data before returning
@@ -1739,6 +1823,159 @@ All data below is verified and extracted from actual sources.
             result['site_key'] = site_key
         
         return result
+
+    def format_enhanced_analytics_response(self, result: Dict, start_date: str, end_date: str, report_type: str = "basic") -> str:
+        """ANTI-HALLUCINATION: Enhanced template-based Analytics response for different report types"""
+        if not result.get('success'):
+            error_msg = result.get('error', 'Unknown error')
+            response = f"**Analytics Error:**\n{error_msg}\n\n"
+            
+            # Show available sites if site not found
+            if "not found" in error_msg.lower():
+                sites = self.get_available_sites()
+                if sites:
+                    response += f"**Available sites for Analytics:**\n"
+                    for site in sites:
+                        if site.get('has_analytics'):
+                            response += f"• **{site['name']}** (key: `{site['key']}`)\n"
+                            if site['aliases']:
+                                response += f"  Aliases: {', '.join(site['aliases'])}\n"
+                    
+                    response += f"\n**Enhanced Analytics Commands:**\n"
+                    response += f"• `analytics for {sites[0]['name']}`\n"
+                    response += f"• `traffic sources for {sites[0]['name']}`\n"
+                    response += f"• `devices for {sites[0]['name']}`\n"
+                    response += f"• `geography for {sites[0]['name']}`\n"
+                    response += f"• `content performance for {sites[0]['name']}`\n"
+            
+            return response
+        
+        # SUCCESS: Format real API data based on report type
+        data = result.get('data', [])
+        site_name = result.get('site_name', 'Unknown Site')
+        
+        if report_type == "traffic_sources":
+            response = f"**Traffic Sources Report for {site_name} ({start_date} to {end_date})**\n\n"
+            response += f"**Summary:**\n"
+            response += f"- Total Sessions: {result.get('total_sessions', 0):,}\n"
+            response += f"- Total Users: {result.get('total_users', 0):,}\n"
+            response += f"- Total Pageviews: {result.get('total_pageviews', 0):,}\n\n"
+            
+            if data:
+                # Group by source/medium
+                source_stats = {}
+                for row in data:
+                    if isinstance(row, dict) and 'source' in row:
+                        key = f"{row.get('source', 'Unknown')} / {row.get('medium', 'Unknown')}"
+                        if key not in source_stats:
+                            source_stats[key] = {'sessions': 0, 'users': 0}
+                        source_stats[key]['sessions'] += row.get('sessions', 0)
+                        source_stats[key]['users'] += row.get('users', 0)
+                
+                response += f"**Top Traffic Sources:**\n"
+                sorted_sources = sorted(source_stats.items(), key=lambda x: x[1]['sessions'], reverse=True)
+                for i, (source, stats) in enumerate(sorted_sources[:10], 1):
+                    response += f"{i}. {source}: {stats['sessions']} sessions, {stats['users']} users\n"
+            
+        elif report_type == "devices":
+            response = f"**Device Report for {site_name} ({start_date} to {end_date})**\n\n"
+            response += f"**Summary:**\n"
+            response += f"- Total Sessions: {result.get('total_sessions', 0):,}\n"
+            response += f"- Total Users: {result.get('total_users', 0):,}\n\n"
+            
+            if data:
+                # Group by device category
+                device_stats = {}
+                for row in data:
+                    if isinstance(row, dict) and 'device' in row:
+                        device = row.get('device', 'Unknown')
+                        if device not in device_stats:
+                            device_stats[device] = {'sessions': 0, 'users': 0}
+                        device_stats[device]['sessions'] += row.get('sessions', 0)
+                        device_stats[device]['users'] += row.get('users', 0)
+                
+                response += f"**Device Breakdown:**\n"
+                sorted_devices = sorted(device_stats.items(), key=lambda x: x[1]['sessions'], reverse=True)
+                for device, stats in sorted_devices:
+                    percentage = (stats['sessions'] / result.get('total_sessions', 1)) * 100
+                    response += f"• {device}: {stats['sessions']} sessions ({percentage:.1f}%)\n"
+            
+        elif report_type == "geography":
+            response = f"**Geographic Report for {site_name} ({start_date} to {end_date})**\n\n"
+            response += f"**Summary:**\n"
+            response += f"- Total Sessions: {result.get('total_sessions', 0):,}\n"
+            response += f"- Total Users: {result.get('total_users', 0):,}\n\n"
+            
+            if data:
+                # Group by country
+                country_stats = {}
+                for row in data:
+                    if isinstance(row, dict) and 'country' in row:
+                        country = row.get('country', 'Unknown')
+                        if country not in country_stats:
+                            country_stats[country] = {'sessions': 0, 'users': 0}
+                        country_stats[country]['sessions'] += row.get('sessions', 0)
+                        country_stats[country]['users'] += row.get('users', 0)
+                
+                response += f"**Top Countries:**\n"
+                sorted_countries = sorted(country_stats.items(), key=lambda x: x[1]['sessions'], reverse=True)
+                for i, (country, stats) in enumerate(sorted_countries[:10], 1):
+                    percentage = (stats['sessions'] / result.get('total_sessions', 1)) * 100
+                    response += f"{i}. {country}: {stats['sessions']} sessions ({percentage:.1f}%)\n"
+            
+        elif report_type == "content":
+            response = f"**Content Performance Report for {site_name} ({start_date} to {end_date})**\n\n"
+            response += f"**Summary:**\n"
+            response += f"- Total Pageviews: {result.get('total_pageviews', 0):,}\n"
+            response += f"- Total Sessions: {result.get('total_sessions', 0):,}\n\n"
+            
+            if data:
+                # Group by page path
+                page_stats = {}
+                for row in data:
+                    if isinstance(row, dict) and 'page_path' in row:
+                        path = row.get('page_path', 'Unknown')
+                        if path not in page_stats:
+                            page_stats[path] = {'pageviews': 0, 'sessions': 0}
+                        page_stats[path]['pageviews'] += row.get('pageviews', 0)
+                        page_stats[path]['sessions'] += row.get('sessions', 0)
+                
+                response += f"**Top Pages:**\n"
+                sorted_pages = sorted(page_stats.items(), key=lambda x: x[1]['pageviews'], reverse=True)
+                for i, (path, stats) in enumerate(sorted_pages[:10], 1):
+                    response += f"{i}. {path}: {stats['pageviews']} pageviews, {stats['sessions']} sessions\n"
+        
+        else:
+            # Basic report (existing format)
+            response = f"**GA4 Analytics Report for {site_name} ({start_date} to {end_date})**\n\n"
+            response += f"**Summary:**\n"
+            response += f"- Total Sessions: {result.get('total_sessions', 0):,}\n"
+            response += f"- Total Users: {result.get('total_users', 0):,}\n"
+            response += f"- Total Pageviews: {result.get('total_pageviews', 0):,}\n"
+            response += f"- Average Bounce Rate: {result.get('avg_bounce_rate', 0):.1f}%\n\n"
+            
+            if data and isinstance(data, list) and len(data) > 0:
+                if len(data) <= 31:
+                    response += f"**Daily Breakdown:**\n"
+                    for row in data:
+                        if isinstance(row, dict):
+                            date = row.get('date', 'Unknown')
+                            sessions = row.get('sessions', 0)
+                            users = row.get('users', 0)
+                            response += f"- {date}: {sessions} sessions, {users} users\n"
+                else:
+                    response += f"**Recent Activity (Last 7 days):**\n"
+                    for row in data[-7:]:
+                        if isinstance(row, dict):
+                            date = row.get('date', 'Unknown')
+                            sessions = row.get('sessions', 0)
+                            users = row.get('users', 0)
+                            response += f"- {date}: {sessions} sessions, {users} users\n"
+        
+        if not data:
+            response += "\nNo analytics data found for the specified period."
+        
+        return response
 
     def _validate_search_console_response(self, response_data, operation, site_url):
         """Strict validation to prevent fabricated search console data"""
@@ -1865,7 +2102,7 @@ All data below is verified and extracted from actual sources.
                 'average_position': round(avg_position, 1),
                 'date_range': f"{start_date} to {end_date}",
                 'site_url': site_url,
-                'raw_response_rows': len(rows)  # For debugging
+                'raw_response_rows': len(rows)
             }
             
         except Exception as e:
@@ -1884,16 +2121,16 @@ All data below is verified and extracted from actual sources.
             
             return {'success': False, 'error': detailed_error}
 
-    def get_all_sites_analytics(self, start_date: str = "7daysAgo", end_date: str = "today") -> Dict:
-        """Get analytics for all configured sites with data validation"""
+    def get_all_sites_analytics(self, start_date: str = "7daysAgo", end_date: str = "today", report_type: str = "basic") -> Dict:
+        """Get analytics for all configured sites with enhanced reporting"""
         results = {}
         successful_sites = 0
         failed_sites = 0
         
         for site_key, site_config in self.sites_config.items():
             if site_config.get('analytics_view_id'):
-                print(f"📊 Fetching analytics for {site_config['name']}...")
-                result = self.get_analytics_data(site_key, start_date, end_date)
+                print(f"📊 Fetching {report_type} analytics for {site_config['name']}...")
+                result = self.get_analytics_data(site_key, start_date, end_date, report_type)
                 results[site_key] = result
                 
                 if result['success']:
@@ -1915,6 +2152,7 @@ All data below is verified and extracted from actual sources.
             'total_sites': len(results),
             'successful_sites': successful_sites,
             'failed_sites': failed_sites,
+            'report_type': report_type,
             'summary': f"Analytics retrieved for {successful_sites}/{len(results)} configured sites"
         }
 
@@ -2036,7 +2274,6 @@ Provide specific, actionable blog post titles with brief explanations."""
         )
         
         return response_data, True
-
 # =============================================================================
 # SECTION 9: MULTI-SITE ANALYTICS COMMAND HANDLERS
 # =============================================================================
