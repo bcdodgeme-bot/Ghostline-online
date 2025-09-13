@@ -441,6 +441,7 @@ def generate_response_with_context_check(user_input, use_voices, random_toggle, 
 # Section 4: Main Chat Route (UPDATED WITH FIXED BLUESKY INTEGRATION - HIGHEST PRIORITY)
 # Section 4: Main Chat Route (UPDATED WITH FIXED BLUESKY INTEGRATION + CONTENT STRATEGY - HIGHEST PRIORITY)
 # Section 4: Main Chat Route (UPDATED WITH FIXED CALENDAR DATA FORMATTING) 9/12/25
+# Section 4: Main Chat Route (UPDATED WITH FIXED CALENDAR DATA FORMATTING) 9/12/25
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if not session.get('logged_in'):
@@ -530,16 +531,7 @@ def index():
                 # Don't fail the whole request, just log and continue
                 pass
 
-        # Try hybrid content strategy commands
-        try:
-            response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
-            if handled:
-                save_conversation_enhanced(project, user_input, response_data)
-                return _render_enhanced(project, response_data)
-        except Exception as e:
-            app.logger.error(f"Content strategy command failed: {e}")
-
-        # Handle reminder commands with proper error handling
+        # Handle reminder commands with proper error handling (MOVED UP HIGH PRIORITY)
         try:
             response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
             if handled:
@@ -547,6 +539,15 @@ def index():
                 return _render_enhanced(project, response_data)
         except Exception as e:
             app.logger.error(f"Reminder handler failed: {e}")
+
+        # Try hybrid content strategy commands
+        try:
+            response_data, handled = generate_content_strategy_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+        except Exception as e:
+            app.logger.error(f"Content strategy command failed: {e}")
 
         # Try Cloze + ClickUp integration commands
         if is_cloze_configured() and is_clickup_configured():
