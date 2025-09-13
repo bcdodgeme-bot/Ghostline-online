@@ -6221,7 +6221,479 @@ KEYWORDS_TEST_MATCHING_TEMPLATE = '''
 </body>
 </html>
 '''
-
+# Section 17.5 RSS Marketing Knowledge Dashboard Template 9/13/25
+MARKETING_KNOWLEDGE_TEMPLATE = '''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Marketing Knowledge Base</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .btn { 
+            background: #6366f1; color: white; border: none; padding: 12px 24px;
+            border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
+            text-decoration: none; display: inline-block;
+        }
+        .btn:hover { background: #5855eb; }
+        .btn.success { background: #059669; }
+        .btn.warning { background: #d97706; }
+        .btn.secondary { background: #374151; }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .main-content { }
+        .sidebar { }
+        .search-section {
+            background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
+            padding: 20px; margin: 20px 0;
+        }
+        .search-input { 
+            width: 100%; padding: 15px; background: #333; color: #fff;
+            border: 1px solid #555; border-radius: 4px; font-size: 16px; margin: 10px 0;
+        }
+        .category-filters {
+            display: flex; flex-wrap: wrap; gap: 10px; margin: 15px 0;
+        }
+        .category-btn {
+            background: #374151; color: white; border: none; padding: 8px 16px;
+            border-radius: 20px; cursor: pointer; font-size: 14px;
+            transition: background 0.2s;
+        }
+        .category-btn:hover, .category-btn.active { background: #6366f1; }
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .insight-card {
+            background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
+            padding: 20px; position: relative;
+        }
+        .insight-title { font-size: 16px; font-weight: bold; margin-bottom: 10px; }
+        .insight-meta { color: #9ca3af; font-size: 12px; margin-bottom: 10px; }
+        .insight-summary { color: #d1d5db; line-height: 1.4; margin-bottom: 15px; }
+        .insight-keywords {
+            display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px;
+        }
+        .keyword-tag {
+            background: #374151; color: #e5e7eb; padding: 4px 8px;
+            border-radius: 12px; font-size: 11px;
+        }
+        .stats-section {
+            background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
+            padding: 20px; margin-bottom: 20px;
+        }
+        .stat-row {
+            display: flex; justify-content: space-between; margin: 8px 0;
+            padding: 8px 0; border-bottom: 1px solid #333;
+        }
+        .stat-label { color: #9ca3af; }
+        .stat-value { font-weight: bold; color: #fff; }
+        .search-results {
+            display: none;
+            background: #2a2a2a; border-radius: 8px; padding: 20px; margin: 20px 0;
+        }
+        .loading { text-align: center; color: #6366f1; padding: 20px; }
+        .monitor-status {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 15px;
+        }
+        .status-dot {
+            width: 12px; height: 12px; border-radius: 50%;
+            background: #dc2626;
+        }
+        .status-dot.running { background: #059669; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Marketing Knowledge Base</h1>
+        
+        <div class="dashboard-grid">
+            <div class="main-content">
+                <div class="search-section">
+                    <h3>Search Marketing Best Practices</h3>
+                    <input type="text" id="searchInput" class="search-input" 
+                           placeholder="e.g., SEO optimization, social media strategy, content writing tips...">
+                    
+                    <div class="category-filters">
+                        <button class="category-btn active" data-category="all">All</button>
+                        <button class="category-btn" data-category="seo">SEO</button>
+                        <button class="category-btn" data-category="content_marketing">Content Marketing</button>
+                        <button class="category-btn" data-category="social_media">Social Media</button>
+                        <button class="category-btn" data-category="analytics">Analytics</button>
+                    </div>
+                    
+                    <button onclick="searchKnowledge()" class="btn">Search Knowledge Base</button>
+                    
+                    <div class="category-filters" style="margin-top: 15px; border-top: 1px solid #333; padding-top: 15px;">
+                        <button onclick="getSEOTips()" class="btn secondary">Get SEO Tips</button>
+                        <button onclick="getContentTips()" class="btn secondary">Writing Tips</button>
+                        <button onclick="getSocialTips()" class="btn secondary">Social Media</button>
+                    </div>
+                </div>
+                
+                <div id="searchResults" class="search-results"></div>
+                
+                <div class="insights-grid">
+                    <h3 style="grid-column: 1 / -1;">Fresh Marketing Insights (Last 7 Days)</h3>
+                    {% for insight in fresh_insights %}
+                    <div class="insight-card">
+                        <div class="insight-title">{{ insight.title }}</div>
+                        <div class="insight-meta">
+                            {{ insight.feed_name }} • {{ insight.category|title }} 
+                            {% if insight.days_old is not none %}• {{ insight.days_old }} days ago{% endif %}
+                            • Score: {{ "%.1f"|format(insight.relevance_score) }}
+                        </div>
+                        <div class="insight-summary">
+                            {{ insight.summary or insight.content[:200] }}...
+                        </div>
+                        {% if insight.keywords %}
+                        <div class="insight-keywords">
+                            {% for keyword in insight.keywords[:5] %}
+                            <span class="keyword-tag">{{ keyword }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div style="margin-top: 15px;">
+                            <a href="{{ insight.url }}" target="_blank" class="btn secondary" style="font-size: 12px; padding: 6px 12px;">Read Full Article</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="stats-section">
+                    <h3>RSS Monitor Status</h3>
+                    <div class="monitor-status">
+                        <div class="status-dot{% if rss_status.running %} running{% endif %}"></div>
+                        <span>{% if rss_status.running %}Running{% else %}Stopped{% endif %}</span>
+                    </div>
+                    
+                    {% if rss_status.total_sources %}
+                    <div class="stat-row">
+                        <span class="stat-label">Sources:</span>
+                        <span class="stat-value">{{ rss_status.active_sources }}/{{ rss_status.total_sources }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if rss_status.total_content %}
+                    <div class="stat-row">
+                        <span class="stat-label">Total Content:</span>
+                        <span class="stat-value">{{ "{:,}".format(rss_status.total_content) }}</span>
+                    </div>
+                    
+                    <div class="stat-row">
+                        <span class="stat-label">Fresh Content:</span>
+                        <span class="stat-value">{{ "{:,}".format(rss_status.fresh_content or 0) }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div style="margin-top: 15px;">
+                        <button onclick="toggleMonitor()" id="toggleBtn" class="btn">
+                            {% if rss_status.running %}Stop Monitor{% else %}Start Monitor{% endif %}
+                        </button>
+                        <button onclick="forceUpdate()" class="btn secondary">Force Update</button>
+                    </div>
+                </div>
+                
+                <div class="stats-section">
+                    <h3>Knowledge Stats</h3>
+                    {% for category, stats in category_stats.items() %}
+                    <div class="stat-row">
+                        <span class="stat-label">{{ category|title }}:</span>
+                        <span class="stat-value">{{ stats.total_content }} ({{ stats.fresh_content }} fresh)</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="stats-section">
+                    <h3>Quick Actions</h3>
+                    <button onclick="getMarketingTrends()" class="btn secondary">2025 Trends</button>
+                    <button onclick="getRankMathTips()" class="btn secondary">Rank Math Tips</button>
+                    <button onclick="getLocalSEO()" class="btn secondary">Local SEO</button>
+                    <button onclick="getTechnicalSEO()" class="btn secondary">Technical SEO</button>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 40px; text-align: center;">
+            <a href="/" class="btn secondary">Back to Chat</a>
+            <a href="/integrations" class="btn secondary">Integrations</a>
+            <a href="/system" class="btn secondary">System Dashboard</a>
+        </div>
+    </div>
+    
+    <script>
+        let activeCategory = 'all';
+        let isMonitorRunning = {{ 'true' if rss_status.running else 'false' }};
+        
+        // Category filter handling
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                activeCategory = this.dataset.category;
+            });
+        });
+        
+        // Enter key search
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchKnowledge();
+            }
+        });
+        
+        function showLoading(container) {
+            container.innerHTML = '<div class="loading">Searching knowledge base...</div>';
+            container.style.display = 'block';
+        }
+        
+        function displayResults(results, query) {
+            const container = document.getElementById('searchResults');
+            
+            if (results.length === 0) {
+                container.innerHTML = `
+                    <h3>No Results Found</h3>
+                    <p>No marketing content found for "${query}". Try different keywords or check a different category.</p>
+                `;
+                return;
+            }
+            
+            let html = `<h3>Search Results for "${query}" (${results.length} found)</h3>`;
+            html += '<div class="insights-grid">';
+            
+            results.forEach(result => {
+                html += `
+                    <div class="insight-card">
+                        <div class="insight-title">${result.title}</div>
+                        <div class="insight-meta">
+                            ${result.feed_name || 'Unknown Source'} • ${result.category} 
+                            ${result.subcategory ? '• ' + result.subcategory : ''}
+                            • Score: ${result.relevance_score.toFixed(1)}
+                            ${result.days_old !== null ? '• ' + result.days_old + ' days ago' : ''}
+                        </div>
+                        <div class="insight-summary">
+                            ${result.summary || result.content.substring(0, 200)}...
+                        </div>
+                        ${result.keywords && result.keywords.length > 0 ? 
+                            '<div class="insight-keywords">' + 
+                            result.keywords.slice(0, 5).map(kw => `<span class="keyword-tag">${kw}</span>`).join('') +
+                            '</div>' : ''
+                        }
+                        <div style="margin-top: 15px;">
+                            <a href="${result.url}" target="_blank" class="btn secondary" style="font-size: 12px; padding: 6px 12px;">Read Full Article</a>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        function searchKnowledge() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) {
+                alert('Please enter a search query');
+                return;
+            }
+            
+            const container = document.getElementById('searchResults');
+            showLoading(container);
+            
+            fetch('/api/marketing-knowledge/search', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify({
+                    query: query,
+                    category: activeCategory === 'all' ? null : activeCategory,
+                    limit: 12
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    displayResults(data.results, query);
+                } else {
+                    container.innerHTML = `<div style="color: #dc2626;">Search failed: ${data.error}</div>`;
+                }
+            })
+            .catch(e => {
+                container.innerHTML = `<div style="color: #dc2626;">Search failed: ${e}</div>`;
+            });
+        }
+        
+        function getSEOTips() {
+            const query = document.getElementById('searchInput').value.trim();
+            const container = document.getElementById('searchResults');
+            showLoading(container);
+            
+            fetch('/api/marketing-knowledge/seo-tips', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify({topic: query})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    displayResults(data.tips, `SEO Tips${query ? ' for "' + query + '"' : ''}`);
+                } else {
+                    container.innerHTML = `<div style="color: #dc2626;">Failed to get SEO tips: ${data.error}</div>`;
+                }
+            })
+            .catch(e => {
+                container.innerHTML = `<div style="color: #dc2626;">Failed to get SEO tips: ${e}</div>`;
+            });
+        }
+        
+        function getContentTips() {
+            const container = document.getElementById('searchResults');
+            showLoading(container);
+            
+            fetch('/api/marketing-knowledge/content-tips', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify({content_type: 'blog'})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    displayResults(data.tips, 'Content Writing Tips');
+                } else {
+                    container.innerHTML = `<div style="color: #dc2626;">Failed to get content tips: ${data.error}</div>`;
+                }
+            })
+            .catch(e => {
+                container.innerHTML = `<div style="color: #dc2626;">Failed to get content tips: ${e}</div>`;
+            });
+        }
+        
+        function getSocialTips() {
+            const container = document.getElementById('searchResults');
+            showLoading(container);
+            
+            fetch('/api/marketing-knowledge/social-tips', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify({platform: null})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    displayResults(data.tips, 'Social Media Tips');
+                } else {
+                    container.innerHTML = `<div style="color: #dc2626;">Failed to get social tips: ${data.error}</div>`;
+                }
+            })
+            .catch(e => {
+                container.innerHTML = `<div style="color: #dc2626;">Failed to get social tips: ${e}</div>`;
+            });
+        }
+        
+        function getMarketingTrends() {
+            searchSpecific('marketing trends 2025 predictions digital marketing');
+        }
+        
+        function getRankMathTips() {
+            searchSpecific('Rank Math optimization WordPress SEO plugin');
+        }
+        
+        function getLocalSEO() {
+            searchSpecific('local SEO google my business local search ranking');
+        }
+        
+        function getTechnicalSEO() {
+            searchSpecific('technical SEO core web vitals site speed crawling');
+        }
+        
+        function searchSpecific(query) {
+            document.getElementById('searchInput').value = query;
+            searchKnowledge();
+        }
+        
+        function toggleMonitor() {
+            const btn = document.getElementById('toggleBtn');
+            btn.textContent = 'Processing...';
+            btn.disabled = true;
+            
+            const action = isMonitorRunning ? 'stop' : 'start';
+            
+            fetch(`/api/rss-monitor/${action}`, {
+                method: 'POST',
+                credentials: 'include'
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    isMonitorRunning = !isMonitorRunning;
+                    btn.textContent = isMonitorRunning ? 'Stop Monitor' : 'Start Monitor';
+                    
+                    // Update status indicator
+                    const dot = document.querySelector('.status-dot');
+                    if (isMonitorRunning) {
+                        dot.classList.add('running');
+                    } else {
+                        dot.classList.remove('running');
+                    }
+                    
+                    alert(data.message);
+                } else {
+                    alert('Action failed: ' + data.error);
+                    btn.textContent = isMonitorRunning ? 'Stop Monitor' : 'Start Monitor';
+                }
+                btn.disabled = false;
+            })
+            .catch(e => {
+                alert('Action failed: ' + e);
+                btn.textContent = isMonitorRunning ? 'Stop Monitor' : 'Start Monitor';
+                btn.disabled = false;
+            });
+        }
+        
+        function forceUpdate() {
+            if (!confirm('Force RSS feed update? This may take several minutes.')) return;
+            
+            const originalText = event.target.textContent;
+            event.target.textContent = 'Updating...';
+            event.target.disabled = true;
+            
+            fetch('/api/rss-monitor/force-update', {
+                method: 'POST',
+                credentials: 'include'
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('RSS feeds updated successfully! Refresh the page to see new content.');
+                } else {
+                    alert('Update failed: ' + data.error);
+                }
+                event.target.textContent = originalText;
+                event.target.disabled = false;
+            })
+            .catch(e => {
+                alert('Update failed: ' + e);
+                event.target.textContent = originalText;
+                event.target.disabled = false;
+            });
+        }
+    </script>
+</body>
+</html>
+'''
 # Section 18: Background Services and Startup
 # Section 18: Background Services and Startup (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)
 # Section 18: Background Services and Startup
@@ -6369,5 +6841,4 @@ if __name__ == '__main__':
             port=port,
             debug=True
         )
-# RSS Marketing Knowledge Dashboard Template
-MARKETING_KNOWLEDGE_TEMPLATE = '''[The complete template from document 2 - it's very long, so I'll include just the reference here to keep this response manageable]'''
+

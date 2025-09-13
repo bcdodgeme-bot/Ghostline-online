@@ -37,9 +37,9 @@ class MarketingKnowledgeRetriever:
             if conn:
                 conn.close()
     
-    def search_marketing_content(self, 
-                                query: str, 
-                                category: str = None, 
+    def search_marketing_content(self,
+                                query: str,
+                                category: str = None,
                                 subcategory: str = None,
                                 limit: int = 5,
                                 fresh_only: bool = True,
@@ -87,7 +87,11 @@ class MarketingKnowledgeRetriever:
                         rs.feed_name,
                         ts_rank(to_tsvector('english', mbp.title || ' ' || mbp.content || ' ' || COALESCE(mbp.summary, '')), 
                                 plainto_tsquery('english', %s)) as search_rank,
-                        EXTRACT(DAYS FROM (CURRENT_DATE - mbp.published_date::date)) as days_old
+                        CASE 
+                            WHEN mbp.published_date IS NOT NULL THEN 
+                                EXTRACT(DAYS FROM (CURRENT_DATE - mbp.published_date::timestamp))::integer
+                            ELSE NULL 
+                        END as days_old
                     FROM marketing_best_practices mbp
                     JOIN rss_sources rs ON mbp.rss_source_id = rs.id
                     WHERE {where_clause}
@@ -280,8 +284,8 @@ class MarketingKnowledgeRetriever:
                 unique_results[result['id']] = result
         
         sorted_results = sorted(
-            unique_results.values(), 
-            key=lambda x: (x['search_rank'], x['relevance_score']), 
+            unique_results.values(),
+            key=lambda x: (x['search_rank'], x['relevance_score']),
             reverse=True
         )
         
