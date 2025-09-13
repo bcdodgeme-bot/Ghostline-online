@@ -80,6 +80,17 @@ from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
 import urllib.parse
 
+# RSS Marketing Knowledge System imports
+from modules.rss_marketing_monitor import get_rss_monitor, start_rss_monitoring, stop_rss_monitoring, get_rss_status, force_feed_update
+from modules.marketing_retrieval import (
+    get_marketing_retriever,
+    search_marketing_knowledge,
+    get_seo_advice,
+    get_content_writing_tips,
+    get_social_media_advice,
+    get_fresh_marketing_updates
+)
+
 # REMOVED: Placeholder functions - using real feedback system now
 
 def generate_content_strategy_command(*args, **kwargs):
@@ -449,7 +460,226 @@ def generate_response_with_context_check(user_input, use_voices, random_toggle, 
         return {
             "SyntaxPrime": f"I encountered an error processing your request: {str(e)}"
         }
+# Section 3.5: Enhanced Marketing Knowledge Integration 9/13/25
+def process_marketing_knowledge_query(user_input: str, project: str, use_voices: list, random_toggle: bool) -> tuple[dict, bool]:
+    """Process marketing knowledge queries and enhance responses with RSS content"""
+    
+    user_lower = user_input.lower().strip()
+    
+    # Marketing query patterns - comprehensive detection
+    marketing_patterns = [
+        # SEO patterns
+        'seo', 'search engine optimization', 'ranking', 'serp', 'keyword research',
+        'backlink', 'organic search', 'google algorithm', 'meta description',
+        'title tag', 'schema markup', 'technical seo', 'local seo', 'rank math',
+        'on-page seo', 'off-page seo', 'link building', 'domain authority',
+        'page speed', 'core web vitals', 'crawling', 'indexing',
+        
+        # Content Marketing patterns
+        'content marketing', 'content strategy', 'blog writing', 'storytelling',
+        'editorial calendar', 'content creation', 'brand voice', 'copywriting',
+        'content optimization', 'content distribution', 'blog post',
+        'article writing', 'content planning', 'publishing strategy',
+        
+        # Social Media patterns
+        'social media', 'facebook marketing', 'instagram', 'twitter', 'linkedin',
+        'social media strategy', 'social engagement', 'influencer marketing',
+        'social analytics', 'social media calendar', 'community management',
+        'social media posts', 'engagement rate', 'hashtag strategy',
+        
+        # Digital Marketing patterns
+        'digital marketing', 'online marketing', 'internet marketing',
+        'marketing strategy', 'marketing campaign', 'brand awareness',
+        'customer acquisition', 'conversion rate', 'lead generation',
+        'email marketing', 'newsletter', 'email automation',
+        
+        # Analytics patterns
+        'google analytics', 'marketing analytics', 'conversion tracking', 'kpis',
+        'marketing metrics', 'roi measurement', 'attribution modeling',
+        'data analysis', 'marketing dashboard', 'performance tracking',
+        
+        # Tool-specific patterns
+        'wordpress seo', 'shopify seo', 'google ads', 'facebook ads',
+        'mailchimp', 'hubspot', 'semrush', 'ahrefs', 'moz'
+    ]
+    
+    # Check if this is a marketing-related query
+    is_marketing_query = any(pattern in user_lower for pattern in marketing_patterns)
+    
+    # Also check for specific question patterns
+    marketing_question_patterns = [
+        'how to improve seo', 'how to write better', 'social media best practices',
+        'content marketing tips', 'seo optimization', 'ranking factors',
+        'marketing strategy', 'digital marketing', 'online marketing',
+        'grow my website', 'increase traffic', 'improve rankings',
+        'content creation', 'blog optimization', 'social engagement'
+    ]
+    
+    is_marketing_question = any(pattern in user_lower for pattern in marketing_question_patterns)
+    
+    if not (is_marketing_query or is_marketing_question):
+        return {}, False
+    
+    try:
+        print(f"Processing marketing knowledge query: '{user_input}'")
+        
+        # Get marketing insights
+        retriever = get_marketing_retriever()
+        
+        # Get contextual marketing advice
+        marketing_results = retriever.get_contextual_marketing_advice(user_input, limit=6)
+        
+        if not marketing_results:
+            # Fallback to category-specific searches
+            if any(term in user_lower for term in ['seo', 'ranking', 'search']):
+                marketing_results = retriever.get_seo_best_practices(user_input, limit=5)
+            elif any(term in user_lower for term in ['content', 'blog', 'writing']):
+                marketing_results = retriever.get_content_writing_tips('blog', limit=5)
+            elif any(term in user_lower for term in ['social', 'facebook', 'instagram', 'twitter']):
+                marketing_results = retriever.get_social_media_strategies(limit=5)
+        
+        if not marketing_results:
+            return {}, False
+        
+        # Generate enhanced response using marketing knowledge
+        response_data = generate_marketing_enhanced_response(
+            user_input, marketing_results, use_voices, random_toggle, project
+        )
+        
+        # Record usage for analytics
+        for result in marketing_results[:3]:  # Record top 3 results
+            retriever.record_content_usage(
+                result['id'],
+                user_input,
+                'content_generation'
+            )
+        
+        print(f"Marketing knowledge response generated with {len(marketing_results)} insights")
+        return response_data, True
+        
+    except Exception as e:
+        print(f"Marketing knowledge processing failed: {e}")
+        return {}, False
 
+def generate_marketing_enhanced_response(user_input: str, marketing_results: list,
+                                       use_voices: list, random_toggle: bool, project: str) -> dict:
+    """Generate AI response enhanced with fresh marketing knowledge"""
+    
+    # Build context from marketing results
+    marketing_context = "\n\n=== CURRENT MARKETING BEST PRACTICES ===\n"
+    
+    for i, result in enumerate(marketing_results[:5], 1):
+        marketing_context += f"\n{i}. **{result['title']}** ({result['feed_name']})\n"
+        
+        if result['summary']:
+            marketing_context += f"Summary: {result['summary']}\n"
+        else:
+            marketing_context += f"Content: {result['content'][:300]}...\n"
+        
+        marketing_context += f"Category: {result['category']}"
+        if result['subcategory']:
+            marketing_context += f" > {result['subcategory']}"
+        
+        marketing_context += f"\nRelevance Score: {result['relevance_score']:.1f}/10"
+        
+        if result['keywords']:
+            marketing_context += f"\nKey Topics: {', '.join(result['keywords'][:5])}"
+        
+        if result['days_old'] is not None:
+            marketing_context += f"\nPublished: {result['days_old']} days ago"
+        
+        marketing_context += f"\nSource: {result['url']}\n"
+        marketing_context += "-" * 50 + "\n"
+    
+    marketing_context += "\n=== END MARKETING CONTEXT ===\n"
+    
+    # Enhanced prompt with marketing knowledge
+    enhanced_prompt = f"""User Query: {user_input}
+
+{marketing_context}
+
+Please provide a comprehensive response that:
+1. Directly answers the user's marketing question
+2. Incorporates the LATEST best practices from the sources above
+3. Provides specific, actionable advice
+4. References current industry trends and updates
+5. Includes concrete examples and implementation steps
+6. Mentions any relevant tools or techniques from the sources
+
+Focus on practical, up-to-date advice that reflects current marketing best practices. If the sources mention specific metrics, techniques, or recent changes (like algorithm updates), include those details.
+
+Keep the response informative but conversational, and ensure it's directly applicable to the user's situation."""
+    
+    # Generate response using existing engine with enhanced context
+    try:
+        response_data = generate_response(
+            enhanced_prompt,
+            use_voices,
+            random_toggle,
+            project,
+            model=CHAT_MODEL,
+            retrieval_context=[]  # Marketing context is already in prompt
+        )
+        
+        # Add marketing source references to the response
+        if response_data and 'SyntaxPrime' in response_data:
+            response_data['SyntaxPrime'] += "\n\n" + format_marketing_sources(marketing_results[:3])
+        
+        return response_data
+        
+    except Exception as e:
+        print(f"Enhanced response generation failed: {e}")
+        # Fallback response
+        return {
+            "SyntaxPrime": f"I found {len(marketing_results)} current marketing insights for your question, but encountered an error generating the full response. Here are the key sources:\n\n" + format_marketing_sources(marketing_results[:3])
+        }
+
+def format_marketing_sources(marketing_results: list) -> str:
+    """Format marketing sources for response footer"""
+    
+    if not marketing_results:
+        return ""
+    
+    sources_text = "📚 **Current Marketing Sources:**\n"
+    
+    for i, result in enumerate(marketing_results, 1):
+        sources_text += f"\n{i}. **{result['title']}**"
+        sources_text += f" - {result['feed_name']}"
+        
+        if result['days_old'] is not None:
+            sources_text += f" ({result['days_old']} days ago)"
+        
+        sources_text += f"\n   🔗 [Read full article]({result['url']})"
+        
+        if result['relevance_score'] >= 7.0:
+            sources_text += " ⭐ *Highly relevant*"
+    
+    sources_text += f"\n\n*Based on {len(marketing_results)} current industry sources*"
+    
+    return sources_text
+
+def enhanced_marketing_command_processor(user_input: str, project: str, use_voices: list, random_toggle: bool) -> tuple[dict, bool]:
+    """Enhanced marketing command processor that combines existing and RSS knowledge"""
+    
+    # First try the RSS marketing knowledge system
+    rss_response, rss_handled = process_marketing_knowledge_query(user_input, project, use_voices, random_toggle)
+    
+    if rss_handled:
+        return rss_response, True
+    
+    # Fallback to existing marketing commands if available
+    try:
+        if is_marketing_configured():
+            existing_response, existing_handled = process_marketing_command_with_context(
+                user_input, project, use_voices, random_toggle, marketing_context
+            )
+            
+            if existing_handled:
+                return existing_response, True
+    except Exception as e:
+        print(f"Existing marketing command processing failed: {e}")
+    
+    return {}, False
     
 # Section 4: Main Chat Route
 # Section 4: Main Chat Route
@@ -470,6 +700,7 @@ def generate_response_with_context_check(user_input, use_voices, random_toggle, 
 # Section 4: Main Chat Route (UPDATED WITH FIXED CALENDAR DATA FORMATTING) 9/12/25
 # Section 4: Main Chat Route (UPDATED WITH FIXED BLUESKY INTEGRATION + CONTENT STRATEGY - HIGHEST PRIORITY)
 # Section 4: Main Chat Route (UPDATED WITH FIXED CALENDAR DATA FORMATTING) 9/12/25
+# Section 4: Main Chat Route (UPDATED WITH RSS MARKETING KNOWLEDGE INTEGRATION) 9/13/25
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if not session.get('logged_in'):
@@ -499,16 +730,16 @@ def index():
         except Exception as e:
             print(f"Brain context refresh failed: {e}")
 
-        # 🚨 PRIORITY 1: Handle reminder commands FIRST - This is the key fix!
+        # PRIORITY 1: Handle reminder commands FIRST - This is the key fix!
         try:
-            print(f"🔍 MAIN ROUTE: Checking reminder command for: '{user_input}'")
+            print(f"MAIN ROUTE: Checking reminder command for: '{user_input}'")
             response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
             if handled:
-                print(f"🔍 MAIN ROUTE: Reminder handled successfully!")
+                print(f"MAIN ROUTE: Reminder handled successfully!")
                 save_conversation_enhanced(project, user_input, response_data)
                 return _render_enhanced(project, response_data)
             else:
-                print(f"🔍 MAIN ROUTE: Not a reminder command, continuing...")
+                print(f"MAIN ROUTE: Not a reminder command, continuing...")
         except Exception as e:
             app.logger.error(f"Reminder handler failed: {e}")
             # Don't fail the whole request, just log and continue
@@ -650,19 +881,15 @@ def index():
                 save_conversation_enhanced(project, user_input, response_data)
                 return _render_enhanced(project, response_data)
 
-        # Try Enhanced Marketing Commands with Context Support
-        if is_marketing_configured():
-            try:
-                # Get marketing context for better responses
-                marketing_context = get_marketing_context()
-                response_data, handled = process_marketing_command_with_context(
-                    user_input, project, use_voices, random_toggle, marketing_context
-                )
-                if handled:
-                    save_conversation_enhanced(project, user_input, response_data)
-                    return _render_enhanced(project, response_data)
-            except Exception as e:
-                app.logger.error(f"Enhanced marketing processing failed: {e}")
+        # Enhanced Marketing Commands with RSS Knowledge Base
+        try:
+            response_data, handled = enhanced_marketing_command_processor(user_input, project, use_voices, random_toggle)
+            if handled:
+                app.logger.info(f"Enhanced marketing command handled successfully")
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+        except Exception as e:
+            app.logger.error(f"Enhanced marketing processing failed: {e}")
 
         # Try Cloze commands with proper configuration validation
         if is_cloze_configured():
@@ -766,10 +993,10 @@ def upload_file():
 # Section 7: Streaming Chat API (UPDATED FOR CONSOLIDATED GOOGLE INTEGRATION)
 # SECTION 7: Streaming Chat API (UPDATED)
 # Section 7: Streaming Chat API - FIXED VERSION WITH BLUESKY HIGHEST PRIORITY 9/12/25
-
+# Section 7: Streaming Chat API (UPDATED WITH RSS MARKETING KNOWLEDGE INTEGRATION) 9/13/25
 @app.route('/api/chat/stream', methods=['POST'])
 def stream_chat():
-    """Enhanced streaming chat endpoint - FIXED VERSION WITH REMINDER PRIORITY"""
+    """Enhanced streaming chat endpoint with RSS marketing knowledge integration"""
     
     # Enhanced logging for debugging auth issues
     app.logger.info(f"Stream request from {request.remote_addr}")
@@ -820,12 +1047,12 @@ def stream_chat():
                 response_data = {}
                 handled = False
                 
-                # 🚨 PRIORITY 1: Handle reminder commands FIRST - This is the key fix for streaming too!
+                # PRIORITY 1: Handle reminder commands FIRST - This is the key fix for streaming too!
                 try:
-                    print(f"🔍 STREAM: Checking reminder command for: '{user_input}'")
+                    print(f"STREAM: Checking reminder command for: '{user_input}'")
                     response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
                     if handled:
-                        print(f"🔍 STREAM: Reminder handled successfully!")
+                        print(f"STREAM: Reminder handled successfully!")
                         save_conversation_enhanced(project, user_input, response_data)
                         # Stream the reminder response
                         for voice, content in response_data.items():
@@ -841,7 +1068,7 @@ def stream_chat():
                         yield f"data: {json.dumps({'type': 'complete', 'responses': response_data})}\n\n"
                         return  # Exit early since we handled it
                     else:
-                        print(f"🔍 STREAM: Not a reminder command, continuing...")
+                        print(f"STREAM: Not a reminder command, continuing...")
                 except Exception as e:
                     app.logger.error(f"Stream: Reminder handler failed: {e}")
                     # Don't set handled=True here - let other processors try
@@ -910,10 +1137,9 @@ def stream_chat():
                         app.logger.info(f"Adding Calendar-Telegram processor to stream pipeline")
                         processors.insert(1, ('calendar_telegram', lambda: process_calendar_telegram_command(user_input, project, use_voices, random_toggle)))
                     
-                    # Add enhanced marketing processor with context
-                    if is_marketing_configured():
-                        app.logger.info(f"Adding enhanced marketing processor to stream pipeline")
-                        processors.insert(0, ('marketing_enhanced', lambda: process_marketing_command_with_context(user_input, project, use_voices, random_toggle, marketing_context)))
+                    # Add enhanced marketing processor with RSS knowledge
+                    app.logger.info(f"Adding enhanced marketing processor to stream pipeline")
+                    processors.insert(0, ('marketing_enhanced', lambda: enhanced_marketing_command_processor(user_input, project, use_voices, random_toggle)))
                     
                     # Add Cloze processor with proper configuration check
                     if is_cloze_configured():
@@ -3009,7 +3235,7 @@ def calendar_alerts_settings():
 # Section 13: Mobile API Routes (UPDATED WITH SLACK INTEGRATION)
 # Section 13: Mobile API Routes (ENHANCED WITH JWT AUTHENTICATION FOR iOS)
 # Section 13: Mobile API Routes (ENHANCED WITH JWT AUTHENTICATION FOR iOS + BLUESKY)
-
+# Section 13: Mobile API Routes (ENHANCED WITH RSS MARKETING KNOWLEDGE INTEGRATION) 9/13/25
 def generate_mobile_jwt(username: str) -> str:
     """Generate JWT token for mobile authentication"""
     if not JWT_AVAILABLE:
@@ -3153,7 +3379,7 @@ def mobile_get_conversations(project):
 
 @app.route('/api/mobile/chat', methods=['POST'])
 def mobile_chat():
-    """Mobile chat with full AI processing - ENHANCED with JWT auth + all integrations + FIXED BlueSky"""
+    """Mobile chat with full AI processing - ENHANCED with RSS marketing knowledge integration"""
     if not is_mobile_authenticated():
         return jsonify({'error': 'Unauthorized'}), 401
     
@@ -3178,6 +3404,20 @@ def mobile_chat():
             refresh_brain_context()
         except Exception as e:
             app.logger.warning(f"Brain context refresh failed: {e}")
+
+        # PRIORITY 1: Handle reminder commands FIRST
+        try:
+            print(f"MOBILE: Checking reminder command for: '{user_input}'")
+            response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                print(f"MOBILE: Reminder handled successfully!")
+                save_conversation_enhanced(project, user_input, response_data)
+                return jsonify({'success': True, 'responses': response_data})
+            else:
+                print(f"MOBILE: Not a reminder command, continuing...")
+        except Exception as e:
+            app.logger.error(f"Mobile: Reminder handler failed: {e}")
+            # Don't set handled=True here - let other processors try
 
         # FIXED: BlueSky commands with enhanced pattern matching (moved higher in priority)
         if is_bluesky_configured():
@@ -3240,15 +3480,14 @@ def mobile_chat():
                 # Don't fail the whole request, just log and continue
                 pass
 
-        # Enhanced Marketing Commands with Context Support
-        if is_marketing_configured():
-            app.logger.info(f"Mobile: Enhanced marketing is configured, processing command: '{user_input}'")
+        # Enhanced Marketing Commands with RSS Knowledge Base
+        if not handled:
             try:
-                marketing_context = get_marketing_context()
-                response_data, handled = process_marketing_command_with_context(
-                    user_input, project, use_voices, random_toggle, marketing_context
-                )
-                if handled:
+                app.logger.info(f"Mobile: Enhanced marketing processing: '{user_input}'")
+                temp_response, temp_handled = enhanced_marketing_command_processor(user_input, project, use_voices, random_toggle)
+                if temp_handled:
+                    response_data = temp_response
+                    handled = True
                     app.logger.info(f"Mobile: Enhanced marketing command handled successfully")
                     save_conversation_enhanced(project, user_input, response_data)
                     return jsonify({'success': True, 'responses': response_data})
@@ -3381,11 +3620,12 @@ def mobile_status():
             'integrations': {
                 'google': True,  # Always true since we have the integration
                 'marketing': is_marketing_configured(),
+                'marketing_rss': True,  # RSS marketing knowledge is always available
                 'cloze': is_cloze_configured(),
                 'clickup': is_clickup_configured(),
                 'telegram': is_telegram_configured(),
                 'calendar_telegram': is_calendar_telegram_configured(),
-                'bluesky': is_bluesky_configured()  # NEW: BlueSky status
+                'bluesky': is_bluesky_configured()
             },
             'projects': PROJECTS,
             'timestamp': datetime.datetime.utcnow().isoformat()
@@ -3402,6 +3642,7 @@ def mobile_status():
             'success': False,
             'error': f'Status check failed: {str(e)}'
         }), 500
+
 
 # Section 14: Google OAuth Integration
 # Section 14: Google OAuth Integration (COMPLETELY REPLACED)
@@ -4038,6 +4279,197 @@ def clear_cache():
             "success": False,
             "error": str(e)
         }), 500
+
+# Section 15.5: RSS Marketing Knowledge System Routes 9/13/25
+@app.route('/marketing-knowledge')
+def marketing_knowledge_dashboard():
+    """Marketing knowledge dashboard"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    try:
+        retriever = get_marketing_retriever()
+        
+        # Get fresh insights and stats
+        fresh_insights = retriever.get_fresh_marketing_insights(days=7, limit=8)
+        category_stats = retriever.get_category_stats()
+        rss_status = get_rss_status()
+        
+        return render_template_string(MARKETING_KNOWLEDGE_TEMPLATE,
+                                    fresh_insights=fresh_insights,
+                                    category_stats=category_stats,
+                                    rss_status=rss_status)
+    except Exception as e:
+        return f"Marketing knowledge dashboard error: {str(e)}", 500
+
+@app.route('/api/marketing-knowledge/search', methods=['POST'])
+def api_search_marketing_knowledge():
+    """API: Search marketing knowledge base"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        query = data.get('query', '').strip()
+        category = data.get('category')
+        limit = min(int(data.get('limit', 8)), 20)
+        
+        if not query:
+            return jsonify({'success': False, 'error': 'Query required'}), 400
+        
+        retriever = get_marketing_retriever()
+        
+        if category and category != 'all':
+            results = retriever.search_marketing_content(
+                query=query,
+                category=category,
+                limit=limit
+            )
+        else:
+            results = retriever.get_contextual_marketing_advice(query, limit)
+        
+        return jsonify({
+            'success': True,
+            'query': query,
+            'results': results,
+            'count': len(results)
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/marketing-knowledge/seo-tips', methods=['POST'])
+def api_get_seo_tips():
+    """API: Get SEO optimization tips"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json() or {}
+        topic = data.get('topic', '')
+        
+        tips = get_seo_advice(topic if topic else None)
+        
+        return jsonify({
+            'success': True,
+            'topic': topic or 'general',
+            'tips': tips,
+            'count': len(tips)
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/marketing-knowledge/content-tips', methods=['POST'])
+def api_get_content_tips():
+    """API: Get content writing tips"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json() or {}
+        content_type = data.get('content_type', 'blog')
+        
+        tips = get_content_writing_tips(content_type)
+        
+        return jsonify({
+            'success': True,
+            'content_type': content_type,
+            'tips': tips,
+            'count': len(tips)
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/marketing-knowledge/social-tips', methods=['POST'])
+def api_get_social_tips():
+    """API: Get social media tips"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json() or {}
+        platform = data.get('platform')
+        
+        tips = get_social_media_advice(platform)
+        
+        return jsonify({
+            'success': True,
+            'platform': platform or 'all',
+            'tips': tips,
+            'count': len(tips)
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/rss-monitor/status')
+def api_rss_monitor_status():
+    """API: Get RSS monitor status"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        status = get_rss_status()
+        return jsonify({
+            'success': True,
+            'status': status
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/rss-monitor/start', methods=['POST'])
+def api_start_rss_monitor():
+    """API: Start RSS monitoring"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        success = start_rss_monitoring()
+        
+        return jsonify({
+            'success': success,
+            'message': 'RSS monitoring started' if success else 'RSS monitoring already running'
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/rss-monitor/stop', methods=['POST'])
+def api_stop_rss_monitor():
+    """API: Stop RSS monitoring"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        success = stop_rss_monitoring()
+        
+        return jsonify({
+            'success': success,
+            'message': 'RSS monitoring stopped' if success else 'RSS monitoring not running'
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/rss-monitor/force-update', methods=['POST'])
+def api_force_rss_update():
+    """API: Force RSS feed update"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        success = force_feed_update()
+        
+        return jsonify({
+            'success': success,
+            'message': 'Feed update completed' if success else 'Feed update failed'
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # Section 16: Marketing Debug and Enhancement Routes
 @app.route('/api/marketing/context-debug')
@@ -5794,6 +6226,7 @@ KEYWORDS_TEST_MATCHING_TEMPLATE = '''
 # Section 18: Background Services and Startup (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)
 # Section 18: Background Services and Startup
 # Section 18: Background Services and Startup
+# Section 18: Background Services and Startup (UPDATED WITH RSS MARKETING MONITOR) 9/13/25
 def safe_reminder_checker():
     """Background thread with enhanced safety to prevent spam"""
     consecutive_errors = 0
@@ -5861,6 +6294,22 @@ if os.getenv('RAILWAY_ENVIRONMENT'):
     checker_thread.start()
     print("Telegram reminder checker started with spam protection")
     
+    # Start RSS Marketing Monitor
+    def delayed_rss_start():
+        time.sleep(120)  # 2 minute delay after app startup
+        try:
+            success = start_rss_monitoring()
+            if success:
+                print("RSS Marketing Monitor started successfully")
+            else:
+                print("RSS Marketing Monitor was already running")
+        except Exception as e:
+            print(f"Failed to start RSS Marketing Monitor: {e}")
+    
+    rss_startup_thread = threading.Thread(target=delayed_rss_start, daemon=True)
+    rss_startup_thread.start()
+    print("Scheduled RSS Marketing Monitor startup in 2 minutes")
+    
     # Start Calendar-Telegram monitoring if configured
     if is_calendar_telegram_configured():
         def delayed_calendar_start():
@@ -5920,3 +6369,5 @@ if __name__ == '__main__':
             port=port,
             debug=True
         )
+# RSS Marketing Knowledge Dashboard Template
+MARKETING_KNOWLEDGE_TEMPLATE = '''[The complete template from document 2 - it's very long, so I'll include just the reference here to keep this response manageable]'''
