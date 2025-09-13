@@ -284,6 +284,9 @@ app.jinja_env.filters['markdown'] = markdown_filter
 def handle_reminder_command(user_input, project, use_voices, random_toggle):
     """Handle reminder creation commands - FIXED DETECTION PATTERNS"""
     
+    # DEBUG: Add this line to see if function is called
+    print(f"🔍 DEBUG: handle_reminder_command called with input: '{user_input}'")
+    
     # FIXED: Updated patterns to catch "remind me in one minute to X"
     explicit_reminder_patterns = [
         r'^remind me to\s+',
