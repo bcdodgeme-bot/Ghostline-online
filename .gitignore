@@ -12,3 +12,10 @@ sessions/
 
 # Ignore environment files
 .env
+AMCF.csv
+bcdodge.csv
+csv_import_keywords.py
+damnitcarl.csv
+mealsnfeelz.csv
+roseandangel.csv
+tvsignals.csv

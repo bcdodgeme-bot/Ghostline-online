@@ -5,6 +5,7 @@
 # Section 1: Imports and Flask Setup (UPDATED WITH ENHANCED MARKETING)
 # Section 1: Imports and Flask Setup (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)
 # Section 1: Imports and Flask Setup (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)9/11/25
+# Section 1: Imports and Flask Setup (UPDATED WITH KEYWORD MANAGEMENT SYSTEM) 9/13/25
 from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify, render_template_string, Response
 from flask_cors import CORS
 from utils.ghostline_engine import generate_response, generate_streaming_response as stream_generate
@@ -60,6 +61,9 @@ from modules.calendar_telegram_integration import (
 )
 
 from modules.bluesky_integration import process_bluesky_command, is_bluesky_configured
+
+# NEW: Keyword Management System
+from modules.site_keyword_manager import keyword_manager, SITE_DOMAINS
 
 # OCR/File Parsing
 from PIL import Image
@@ -4856,6 +4860,935 @@ def slack_setup_page():
     </body>
     </html>
     """, railway_url=railway_url)
+
+# Section 21: Multi-Site Keyword Management System Routes (NEW)
+
+# Keyword Management Routes
+@app.route('/keywords')
+def keywords_dashboard():
+    """Main keyword management dashboard"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    try:
+        stats = keyword_manager.get_keyword_stats()
+        return render_template_string(KEYWORDS_DASHBOARD_TEMPLATE,
+                                    stats=stats,
+                                    sites=SITE_DOMAINS)
+    except Exception as e:
+        return f"Keyword dashboard error: {str(e)}", 500
+
+@app.route('/api/keywords/<site_domain>')
+def api_get_site_keywords(site_domain):
+    """API: Get keywords for a specific site"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        category = request.args.get('category')
+        limit = min(int(request.args.get('limit', 100)), 500)
+        
+        keywords = keyword_manager.get_site_keywords(site_domain, limit=limit, category=category)
+        
+        return jsonify({
+            'success': True,
+            'site_domain': site_domain,
+            'keywords': keywords,
+            'count': len(keywords)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/keywords/<site_domain>/add', methods=['POST'])
+def api_add_keyword(site_domain):
+    """API: Add a single keyword to a site"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        keyword = data.get('keyword', '').strip()
+        
+        if not keyword:
+            return jsonify({'success': False, 'error': 'Keyword required'}), 400
+        
+        # Optional additional data
+        kwargs = {}
+        if 'search_volume' in data:
+            kwargs['search_volume'] = int(data['search_volume'])
+        if 'competition_level' in data:
+            kwargs['competition_level'] = data['competition_level']
+        if 'suggested_bid' in data:
+            kwargs['suggested_bid'] = float(data['suggested_bid'])
+        if 'category' in data:
+            kwargs['category'] = data['category']
+        
+        success = keyword_manager.add_keyword(site_domain, keyword, **kwargs)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': f'Added keyword "{keyword}" to {site_domain}'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to add keyword'
+            }), 500
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/keywords/<site_domain>/remove', methods=['POST'])
+def api_remove_keyword(site_domain):
+    """API: Remove a keyword from a site"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        keyword = data.get('keyword', '').strip()
+        
+        if not keyword:
+            return jsonify({'success': False, 'error': 'Keyword required'}), 400
+        
+        success = keyword_manager.remove_keyword(site_domain, keyword)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': f'Removed keyword "{keyword}" from {site_domain}'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Keyword not found or already removed'
+            }), 404
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/keywords/<site_domain>/import-csv', methods=['POST'])
+def api_import_keywords_csv(site_domain):
+    """API: Import keywords from CSV file"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        if 'csv_file' not in request.files:
+            return jsonify({'success': False, 'error': 'No CSV file provided'}), 400
+        
+        csv_file = request.files['csv_file']
+        if csv_file.filename == '':
+            return jsonify({'success': False, 'error': 'No file selected'}), 400
+        
+        # Read CSV content
+        csv_content = csv_file.read().decode('utf-8')
+        
+        # Import keywords
+        result = keyword_manager.bulk_import_csv(site_domain, csv_content)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        app.logger.error(f"CSV import failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Import failed: {str(e)}'
+        }), 500
+
+@app.route('/api/keywords/match-content', methods=['POST'])
+def api_match_content():
+    """API: Match content topic to best site"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        topic = data.get('topic', '').strip()
+        
+        if not topic:
+            return jsonify({'success': False, 'error': 'Topic required'}), 400
+        
+        match_result = keyword_manager.match_content_to_sites(topic)
+        
+        # Convert to JSON-serializable format
+        return jsonify({
+            'success': True,
+            'topic': match_result.topic,
+            'best_site': match_result.best_site,
+            'confidence_score': match_result.confidence_score,
+            'reasoning': match_result.reasoning,
+            'site_name': SITE_DOMAINS.get(match_result.best_site, {}).get('name', match_result.best_site),
+            'all_matches': [
+                {
+                    'site_domain': match.site_domain,
+                    'site_name': SITE_DOMAINS.get(match.site_domain, {}).get('name', match.site_domain),
+                    'keyword': match.keyword,
+                    'match_score': match.match_score,
+                    'match_type': match.match_type,
+                    'search_volume': match.search_volume,
+                    'competition_level': match.competition_level
+                }
+                for match in match_result.all_matches
+            ]
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/keywords/record-performance', methods=['POST'])
+def api_record_performance():
+    """API: Record keyword performance feedback"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        keyword_id = data.get('keyword_id')
+        content_topic = data.get('content_topic', '').strip()
+        performance_score = float(data.get('performance_score', 5.0))
+        user_feedback = data.get('user_feedback', 'pending')
+        
+        if not keyword_id or not content_topic:
+            return jsonify({
+                'success': False,
+                'error': 'keyword_id and content_topic required'
+            }), 400
+        
+        success = keyword_manager.record_keyword_performance(
+            keyword_id=keyword_id,
+            content_topic=content_topic,
+            performance_score=performance_score,
+            user_feedback=user_feedback
+        )
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'Performance recorded successfully'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to record performance'
+            }), 500
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/keywords/<site_domain>')
+def keywords_site_detail(site_domain):
+    """Detailed keyword view for a specific site"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    if site_domain not in SITE_DOMAINS:
+        return "Site not found", 404
+    
+    try:
+        keywords = keyword_manager.get_site_keywords(site_domain, limit=200)
+        site_info = SITE_DOMAINS[site_domain]
+        
+        return render_template_string(SITE_KEYWORDS_DETAIL_TEMPLATE,
+                                    site_domain=site_domain,
+                                    site_info=site_info,
+                                    keywords=keywords)
+    except Exception as e:
+        return f"Site detail error: {str(e)}", 500
+
+@app.route('/keywords/test-matching')
+def keywords_test_matching():
+    """Test content matching interface"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    return render_template_string(KEYWORDS_TEST_MATCHING_TEMPLATE, sites=SITE_DOMAINS)
+
+# HTML Templates for Keyword Management
+KEYWORDS_DASHBOARD_TEMPLATE = '''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Keyword Management Dashboard</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .btn { 
+            background: #6366f1; color: white; border: none; padding: 12px 24px;
+            border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
+            text-decoration: none; display: inline-block;
+        }
+        .btn:hover { background: #5855eb; }
+        .btn.success { background: #059669; }
+        .btn.warning { background: #d97706; }
+        .btn.secondary { background: #374151; }
+        .btn.secondary:hover { background: #4b5563; }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .site-card {
+            background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
+            padding: 20px; position: relative;
+        }
+        .site-name { font-size: 20px; font-weight: bold; margin-bottom: 10px; }
+        .site-domain { color: #6366f1; font-size: 14px; margin-bottom: 15px; }
+        .stat-row { display: flex; justify-content: space-between; margin: 8px 0; }
+        .stat-label { color: #9ca3af; }
+        .stat-value { font-weight: bold; }
+        .action-bar { margin: 20px 0; }
+        .quick-match {
+            background: #2a2a2a; padding: 20px; border-radius: 8px; margin: 20px 0;
+        }
+        .quick-match input { 
+            width: 70%; padding: 12px; background: #333; color: #fff;
+            border: 1px solid #555; border-radius: 4px; font-size: 16px;
+        }
+        .match-result {
+            margin-top: 15px; padding: 15px; background: #1a1a1a; border-radius: 6px;
+            display: none;
+        }
+        .progress-bar {
+            width: 100%; height: 8px; background: #333; border-radius: 4px; overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill { height: 100%; background: #059669; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Multi-Site Keyword Management</h1>
+        
+        <div class="action-bar">
+            <a href="/keywords/test-matching" class="btn success">Test Content Matching</a>
+            <a href="/" class="btn secondary">Back to Chat</a>
+        </div>
+        
+        <div class="quick-match">
+            <h3>Quick Content Match Test</h3>
+            <input type="text" id="quickMatchInput" placeholder="Enter a content topic to test matching..." onkeypress="handleQuickMatch(event)">
+            <button onclick="testQuickMatch()" class="btn">Test Match</button>
+            <div id="quickMatchResult" class="match-result"></div>
+        </div>
+        
+        <div class="stats-grid">
+            {% for site_domain, site_data in stats.site_stats.items() %}
+            <div class="site-card">
+                <div class="site-name">{{ site_data.site_name }}</div>
+                <div class="site-domain">{{ site_domain }}</div>
+                
+                <div class="stat-row">
+                    <span class="stat-label">Keywords:</span>
+                    <span class="stat-value">{{ site_data.active_keywords }}</span>
+                </div>
+                
+                <div class="stat-row">
+                    <span class="stat-label">Avg Search Volume:</span>
+                    <span class="stat-value">{{ "%.0f"|format(site_data.avg_search_volume) }}</span>
+                </div>
+                
+                <div class="stat-row">
+                    <span class="stat-label">Match Score:</span>
+                    <span class="stat-value">{{ "%.1f"|format(site_data.avg_match_score) }}</span>
+                </div>
+                
+                <div class="stat-row">
+                    <span class="stat-label">Times Used:</span>
+                    <span class="stat-value">{{ site_data.total_usage }}</span>
+                </div>
+                
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ (site_data.avg_match_score / 10 * 100)|int }}%"></div>
+                </div>
+                
+                <div style="margin-top: 15px;">
+                    <a href="/keywords/{{ site_domain }}" class="btn">View Keywords</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if stats.performance_stats %}
+        <div class="site-card" style="margin: 20px 0;">
+            <h3>Overall Performance Stats</h3>
+            <div class="stat-row">
+                <span class="stat-label">Total Performance Logs:</span>
+                <span class="stat-value">{{ stats.performance_stats.total_performance_logs or 0 }}</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Approved:</span>
+                <span class="stat-value">{{ stats.performance_stats.approved_count or 0 }}</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Rejected:</span>
+                <span class="stat-value">{{ stats.performance_stats.rejected_count or 0 }}</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Avg Performance Score:</span>
+                <span class="stat-value">{{ "%.1f"|format(stats.performance_stats.avg_performance_score or 0) }}</span>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <script>
+        function handleQuickMatch(event) {
+            if (event.key === 'Enter') {
+                testQuickMatch();
+            }
+        }
+        
+        function testQuickMatch() {
+            const topic = document.getElementById('quickMatchInput').value.trim();
+            if (!topic) {
+                alert('Please enter a content topic');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('quickMatchResult');
+            resultDiv.innerHTML = '<div style="color: #6366f1;">Testing match...</div>';
+            resultDiv.style.display = 'block';
+            
+            fetch('/api/keywords/match-content', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify({topic: topic})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    let html = '<div style="color: #059669; font-weight: bold; margin-bottom: 10px;">';
+                    html += `Best Match: ${data.site_name} (${data.confidence_score.toFixed(1)}% confidence)</div>`;
+                    html += `<div style="color: #9ca3af; margin-bottom: 10px;">${data.reasoning}</div>`;
+                    
+                    if (data.all_matches && data.all_matches.length > 0) {
+                        html += '<div style="font-size: 14px;"><strong>Top Matches:</strong><br>';
+                        data.all_matches.slice(0, 5).forEach(match => {
+                            html += `<div style="margin: 5px 0; padding: 5px; background: #333; border-radius: 4px;">`;
+                            html += `${match.site_name}: "${match.keyword}" (${match.match_score.toFixed(1)})`;
+                            html += `</div>`;
+                        });
+                        html += '</div>';
+                    }
+                    
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = `<div style="color: #dc2626;">Error: ${data.error}</div>`;
+                }
+            })
+            .catch(e => {
+                resultDiv.innerHTML = `<div style="color: #dc2626;">Request failed: ${e}</div>`;
+            });
+        }
+    </script>
+</body>
+</html>
+'''
+
+SITE_KEYWORDS_DETAIL_TEMPLATE = '''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ site_info.name }} - Keywords</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .btn { 
+            background: #6366f1; color: white; border: none; padding: 12px 24px;
+            border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
+            text-decoration: none; display: inline-block;
+        }
+        .btn:hover { background: #5855eb; }
+        .btn.success { background: #059669; }
+        .btn.danger { background: #dc2626; }
+        .btn.secondary { background: #374151; }
+        .header-section {
+            background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
+            padding: 20px; margin: 20px 0;
+        }
+        .add-keyword-form {
+            background: #2a2a2a; padding: 20px; border-radius: 8px; margin: 20px 0;
+        }
+        .add-keyword-form input, .add-keyword-form select { 
+            padding: 10px; background: #333; color: #fff;
+            border: 1px solid #555; border-radius: 4px; font-size: 16px; margin: 5px;
+        }
+        .csv-upload {
+            background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
+            padding: 20px; margin: 20px 0;
+        }
+        .keywords-table {
+            width: 100%; border-collapse: collapse; margin: 20px 0;
+            background: #1a1a1a;
+        }
+        .keywords-table th, .keywords-table td {
+            padding: 12px; text-align: left; border-bottom: 1px solid #333;
+        }
+        .keywords-table th { background: #2a2a2a; font-weight: bold; }
+        .keywords-table tr:hover { background: #2a2a2a; }
+        .keyword-row { cursor: pointer; }
+        .competition-high { color: #dc2626; }
+        .competition-medium { color: #d97706; }
+        .competition-low { color: #059669; }
+        .match-score { font-weight: bold; }
+        .remove-btn { 
+            background: #dc2626; color: white; border: none; padding: 6px 12px;
+            border-radius: 4px; cursor: pointer; font-size: 12px;
+        }
+        .file-input { background: #333; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-section">
+            <h1>{{ site_info.name }}</h1>
+            <p style="color: #6366f1; font-size: 18px;">{{ site_domain }}</p>
+            <p>{{ site_info.focus_areas | join(', ') }}</p>
+            <div>
+                <a href="/keywords" class="btn secondary">← Back to Dashboard</a>
+                <span style="margin-left: 20px; color: #9ca3af;">{{ keywords|length }} keywords</span>
+            </div>
+        </div>
+        
+        <div class="add-keyword-form">
+            <h3>Add New Keyword</h3>
+            <div style="display: flex; flex-wrap: wrap; align-items: center;">
+                <input type="text" id="newKeyword" placeholder="Enter keyword..." style="flex: 1; min-width: 200px;">
+                <input type="number" id="searchVolume" placeholder="Search Volume" style="width: 120px;">
+                <select id="competitionLevel" style="width: 120px;">
+                    <option value="unknown">Competition</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                </select>
+                <input type="number" id="suggestedBid" placeholder="Bid ($)" step="0.01" style="width: 100px;">
+                <button onclick="addKeyword()" class="btn success">Add Keyword</button>
+            </div>
+        </div>
+        
+        <div class="csv-upload">
+            <h3>Bulk Import from CSV</h3>
+            <p>Upload Google Ads Keyword Planner data or similar CSV format:</p>
+            <input type="file" id="csvFile" accept=".csv" class="file-input">
+            <button onclick="uploadCSV()" class="btn">Import CSV</button>
+            <div id="uploadResult" style="margin-top: 15px;"></div>
+        </div>
+        
+        {% if keywords %}
+        <table class="keywords-table">
+            <thead>
+                <tr>
+                    <th>Keyword</th>
+                    <th>Category</th>
+                    <th>Search Volume</th>
+                    <th>Competition</th>
+                    <th>Suggested Bid</th>
+                    <th>Match Score</th>
+                    <th>Times Used</th>
+                    <th>Source</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for keyword in keywords %}
+                <tr class="keyword-row">
+                    <td style="font-weight: bold;">{{ keyword.keyword }}</td>
+                    <td>{{ keyword.keyword_category }}</td>
+                    <td>{{ "{:,}".format(keyword.search_volume or 0) }}</td>
+                    <td class="competition-{{ keyword.competition_level or 'unknown' }}">
+                        {{ keyword.competition_level or 'unknown' }}
+                    </td>
+                    <td>${{ "%.2f"|format(keyword.suggested_bid or 0) }}</td>
+                    <td class="match-score">{{ "%.1f"|format(keyword.match_score or 0) }}</td>
+                    <td>{{ keyword.times_used or 0 }}</td>
+                    <td>{{ keyword.source }}</td>
+                    <td>
+                        <button onclick="removeKeyword('{{ keyword.keyword }}')" class="remove-btn">Remove</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="text-align: center; padding: 40px; color: #9ca3af;">
+            No keywords found. Add some keywords to get started.
+        </div>
+        {% endif %}
+    </div>
+    
+    <script>
+        function addKeyword() {
+            const keyword = document.getElementById('newKeyword').value.trim();
+            if (!keyword) {
+                alert('Please enter a keyword');
+                return;
+            }
+            
+            const data = {
+                keyword: keyword,
+                search_volume: parseInt(document.getElementById('searchVolume').value) || 0,
+                competition_level: document.getElementById('competitionLevel').value,
+                suggested_bid: parseFloat(document.getElementById('suggestedBid').value) || 0
+            };
+            
+            fetch('/api/keywords/{{ site_domain }}/add', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify(data)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Keyword added successfully!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(e => alert('Request failed: ' + e));
+        }
+        
+        function removeKeyword(keyword) {
+            if (!confirm('Remove keyword "' + keyword + '"?')) return;
+            
+            fetch('/api/keywords/{{ site_domain }}/remove', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify({keyword: keyword})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Keyword removed successfully!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(e => alert('Request failed: ' + e));
+        }
+        
+        function uploadCSV() {
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a CSV file');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('csv_file', file);
+            
+            const resultDiv = document.getElementById('uploadResult');
+            resultDiv.innerHTML = '<div style="color: #6366f1;">Uploading and processing CSV...</div>';
+            
+            fetch('/api/keywords/{{ site_domain }}/import-csv', {
+                method: 'POST',
+                credentials: 'include',
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    let html = `<div style="color: #059669; font-weight: bold;">Import successful!</div>`;
+                    html += `<div>Imported: ${data.imported_count} keywords</div>`;
+                    html += `<div>Skipped: ${data.skipped_count} keywords</div>`;
+                    
+                    if (data.preview && data.preview.length > 0) {
+                        html += '<div style="margin-top: 10px; font-size: 14px;"><strong>Preview:</strong><br>';
+                        data.preview.forEach(kw => {
+                            html += `<div style="margin: 2px 0;">"${kw.keyword}" (Vol: ${kw.search_volume}, Comp: ${kw.competition_level})</div>`;
+                        });
+                        html += '</div>';
+                    }
+                    
+                    if (data.errors && data.errors.length > 0) {
+                        html += '<div style="color: #d97706; margin-top: 10px;">Warnings:<br>';
+                        data.errors.slice(0, 5).forEach(error => {
+                            html += `<div style="font-size: 12px;">${error}</div>`;
+                        });
+                        html += '</div>';
+                    }
+                    
+                    resultDiv.innerHTML = html;
+                    
+                    // Reload page after delay to show new keywords
+                    setTimeout(() => location.reload(), 3000);
+                    
+                } else {
+                    let errorHtml = `<div style="color: #dc2626;">Import failed</div>`;
+                    if (data.errors && data.errors.length > 0) {
+                        errorHtml += '<div style="font-size: 14px; margin-top: 10px;">Errors:<br>';
+                        data.errors.forEach(error => {
+                            errorHtml += `<div>${error}</div>`;
+                        });
+                        errorHtml += '</div>';
+                    }
+                    resultDiv.innerHTML = errorHtml;
+                }
+            })
+            .catch(e => {
+                resultDiv.innerHTML = `<div style="color: #dc2626;">Upload failed: ${e}</div>`;
+            });
+        }
+    </script>
+</body>
+</html>
+'''
+
+KEYWORDS_TEST_MATCHING_TEMPLATE = '''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Content Matching Test</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .btn { 
+            background: #6366f1; color: white; border: none; padding: 12px 24px;
+            border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
+            text-decoration: none; display: inline-block;
+        }
+        .btn:hover { background: #5855eb; }
+        .btn.secondary { background: #374151; }
+        .test-section {
+            background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
+            padding: 20px; margin: 20px 0;
+        }
+        .topic-input { 
+            width: 100%; padding: 15px; background: #333; color: #fff;
+            border: 1px solid #555; border-radius: 4px; font-size: 16px; margin: 10px 0;
+            min-height: 60px; resize: vertical;
+        }
+        .result-section {
+            background: #2a2a2a; padding: 20px; border-radius: 8px; margin: 20px 0;
+            display: none;
+        }
+        .best-match {
+            background: #059669; padding: 15px; border-radius: 6px; margin: 10px 0;
+            font-size: 18px; font-weight: bold;
+        }
+        .confidence-bar {
+            width: 100%; height: 12px; background: #333; border-radius: 6px; overflow: hidden;
+            margin: 10px 0;
+        }
+        .confidence-fill { height: 100%; background: #059669; transition: width 0.3s; }
+        .matches-list {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px; margin: 20px 0;
+        }
+        .match-item {
+            background: #1a1a1a; border: 1px solid #333; border-radius: 6px; padding: 15px;
+        }
+        .match-score { 
+            float: right; background: #6366f1; color: white; padding: 4px 8px;
+            border-radius: 12px; font-size: 12px; font-weight: bold;
+        }
+        .site-name { font-weight: bold; margin-bottom: 5px; }
+        .keyword { color: #9ca3af; font-style: italic; }
+        .example-topics {
+            background: #333; padding: 15px; border-radius: 6px; margin: 10px 0;
+        }
+        .example-topic {
+            cursor: pointer; padding: 8px; border-radius: 4px; margin: 5px 0;
+            background: #444; transition: background 0.2s;
+        }
+        .example-topic:hover { background: #555; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Content Matching Test</h1>
+        
+        <div style="margin: 20px 0;">
+            <a href="/keywords" class="btn secondary">← Back to Dashboard</a>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test Content Topic Matching</h3>
+            <p>Enter a content topic or idea and see which site it matches best:</p>
+            
+            <textarea id="topicInput" class="topic-input" placeholder="Enter your content topic here... e.g., 'How to improve team leadership in remote work environments' or 'Mental health strategies for creative professionals'"></textarea>
+            
+            <button onclick="testMatching()" class="btn">Test Content Match</button>
+            
+            <div class="example-topics">
+                <h4>Example Topics (click to test):</h4>
+                <div class="example-topic" onclick="setTopic('SEO strategies for small business digital marketing')">SEO strategies for small business digital marketing</div>
+                <div class="example-topic" onclick="setTopic('Nonprofit fundraising and community engagement tactics')">Nonprofit fundraising and community engagement tactics</div>
+                <div class="example-topic" onclick="setTopic('Netflix vs Hulu streaming service comparison')">Netflix vs Hulu streaming service comparison</div>
+                <div class="example-topic" onclick="setTopic('Overcoming creative burnout and impostor syndrome')">Overcoming creative burnout and impostor syndrome</div>
+                <div class="example-topic" onclick="setTopic('ROI measurement for marketing consulting clients')">ROI measurement for marketing consulting clients</div>
+                <div class="example-topic" onclick="setTopic('Military leadership principles in business strategy')">Military leadership principles in business strategy</div>
+                <div class="example-topic" onclick="setTopic('Food insecurity solutions in urban communities')">Food insecurity solutions in urban communities</div>
+            </div>
+        </div>
+        
+        <div id="resultSection" class="result-section">
+            <h3>Matching Results</h3>
+            <div id="bestMatch"></div>
+            <div id="confidenceScore"></div>
+            <div id="reasoning"></div>
+            <div id="allMatches"></div>
+            
+            <div style="margin-top: 20px;">
+                <h4>Provide Feedback</h4>
+                <p>Was this match accurate? Your feedback helps improve the system.</p>
+                <button onclick="recordFeedback('approved', 8.0)" class="btn" style="background: #059669;">✓ Good Match</button>
+                <button onclick="recordFeedback('rejected', 2.0)" class="btn" style="background: #dc2626;">✗ Poor Match</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let lastMatchResult = null;
+        
+        function setTopic(topic) {
+            document.getElementById('topicInput').value = topic;
+            testMatching();
+        }
+        
+        function testMatching() {
+            const topic = document.getElementById('topicInput').value.trim();
+            if (!topic) {
+                alert('Please enter a content topic');
+                return;
+            }
+            
+            const resultSection = document.getElementById('resultSection');
+            resultSection.style.display = 'block';
+            
+            document.getElementById('bestMatch').innerHTML = '<div style="color: #6366f1;">Testing match...</div>';
+            document.getElementById('confidenceScore').innerHTML = '';
+            document.getElementById('reasoning').innerHTML = '';
+            document.getElementById('allMatches').innerHTML = '';
+            
+            fetch('/api/keywords/match-content', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify({topic: topic})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    lastMatchResult = data;
+                    displayResults(data);
+                } else {
+                    document.getElementById('bestMatch').innerHTML = 
+                        `<div style="color: #dc2626;">Error: ${data.error}</div>`;
+                }
+            })
+            .catch(e => {
+                document.getElementById('bestMatch').innerHTML = 
+                    `<div style="color: #dc2626;">Request failed: ${e}</div>`;
+            });
+        }
+        
+        function displayResults(data) {
+            // Best match
+            document.getElementById('bestMatch').innerHTML = 
+                `<div class="best-match">Best Match: ${data.site_name}</div>`;
+            
+            // Confidence score
+            const confidenceHtml = `
+                <div style="margin: 15px 0;">
+                    <strong>Confidence: ${data.confidence_score.toFixed(1)}%</strong>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" style="width: ${data.confidence_score}%"></div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('confidenceScore').innerHTML = confidenceHtml;
+            
+            // Reasoning
+            document.getElementById('reasoning').innerHTML = 
+                `<div style="color: #9ca3af; margin: 10px 0;">${data.reasoning}</div>`;
+            
+            // All matches
+            if (data.all_matches && data.all_matches.length > 0) {
+                let matchesHtml = '<h4>All Keyword Matches:</h4><div class="matches-list">';
+                
+                data.all_matches.forEach(match => {
+                    matchesHtml += `
+                        <div class="match-item">
+                            <div class="match-score">${match.match_score.toFixed(1)}</div>
+                            <div class="site-name">${match.site_name}</div>
+                            <div class="keyword">"${match.keyword}"</div>
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 5px;">
+                                ${match.match_type} match • Vol: ${match.search_volume.toLocaleString()}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                matchesHtml += '</div>';
+                document.getElementById('allMatches').innerHTML = matchesHtml;
+            }
+        }
+        
+        function recordFeedback(feedback, score) {
+            if (!lastMatchResult) {
+                alert('No match result to provide feedback for');
+                return;
+            }
+            
+            // Find the top matching keyword ID from the best site
+            const topMatch = lastMatchResult.all_matches.find(match => 
+                match.site_domain === lastMatchResult.best_site
+            );
+            
+            if (!topMatch) {
+                alert('No keyword match found for feedback');
+                return;
+            }
+            
+            const data = {
+                keyword_id: topMatch.keyword_id || 1, // Fallback ID
+                content_topic: lastMatchResult.topic,
+                performance_score: score,
+                user_feedback: feedback
+            };
+            
+            fetch('/api/keywords/record-performance', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify(data)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Thank you! Your feedback has been recorded and will help improve matching accuracy.');
+                } else {
+                    alert('Failed to record feedback: ' + data.error);
+                }
+            })
+            .catch(e => {
+                alert('Feedback request failed: ' + e);
+            });
+        }
+    </script>
+</body>
+</html>
+'''
 
 # Section 18: Background Services and Startup
 # Section 18: Background Services and Startup (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)
