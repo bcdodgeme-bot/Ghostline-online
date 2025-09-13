@@ -279,6 +279,7 @@ app.jinja_env.filters['markdown'] = markdown_filter
 # Section 3: Helper Functions for Chat Processing
 # Section 3: Helper Functions for Chat Processing - FIXED VERSION
 # Section 3: Helper Functions for Chat Processing - FIXED VERSION 9/12/25
+# Section 3: Helper Functions for Chat Processing - FIXED VERSION 9/12/25
 
 def handle_reminder_command(user_input, project, use_voices, random_toggle):
     """Handle reminder creation commands - FIXED DETECTION PATTERNS"""
@@ -419,6 +420,7 @@ def generate_response_with_context_check(user_input, use_voices, random_toggle, 
             "SyntaxPrime": f"I encountered an error processing your request: {str(e)}"
         }
 
+
     
 # Section 4: Main Chat Route
 # Section 4: Main Chat Route
@@ -527,7 +529,7 @@ def index():
 
         # Try hybrid content strategy commands
         try:
-            response_data, handled = generate_content_strategy_command(user_input, project, use_voices, random_toggle)
+            response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
             if handled:
                 save_conversation_enhanced(project, user_input, response_data)
                 return _render_enhanced(project, response_data)
