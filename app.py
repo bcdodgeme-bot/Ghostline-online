@@ -280,26 +280,36 @@ app.jinja_env.filters['markdown'] = markdown_filter
 # Section 3: Helper Functions for Chat Processing - FIXED VERSION
 # Section 3: Helper Functions for Chat Processing - FIXED VERSION 9/12/25
 # Section 3: Helper Functions for Chat Processing - FIXED VERSION 9/12/25
+# Section 3: Helper Functions for Chat Processing - FIXED REMINDER DETECTION
+import re
 
 def handle_reminder_command(user_input, project, use_voices, random_toggle):
-    """Handle reminder creation commands - FIXED DETECTION PATTERNS"""
+    """Handle reminder creation commands - FIXED DETECTION"""
     
     # DEBUG: Add this line to see if function is called
     print(f"🔍 DEBUG: handle_reminder_command called with input: '{user_input}'")
     
-    # FIXED: Updated patterns to catch "remind me in one minute to X"
+    # ENHANCED: More comprehensive patterns to catch all reminder variations
     explicit_reminder_patterns = [
         r'^remind me to\s+',
-        r'^set a reminder\s+',
-        r'^create a reminder\s+',
-        r'^set reminder\s+',
-        r'^reminder:\s+',
-        r'^remind me in\s+',               # ✅ FIXED: Removed \d+ requirement
+        r'^remind me in\s+',               # ✅ "remind me in one minute"
         r'^remind me at\s+',
+        r'^set a reminder\s+',
+        r'^set reminder\s+',
+        r'^create a reminder\s+',
+        r'^reminder:\s+',
         r'^reminder for\s+',
-        r'remind me .+ in\s+',             # ✅ NEW: Catches "remind me to X in Y"
-        r'remind me .+ at\s+',             # ✅ NEW: Catches "remind me to X at Y"
+        r'^alert me\s+',
+        r'^don\'t forget\s+',
+        r'remind me .+ in\s+',             # ✅ "remind me to X in Y"
+        r'remind me .+ at\s+',             # ✅ "remind me to X at Y"
         r'set a reminder .+ (in|at|tomorrow|today)',
+        # NEW: More flexible patterns
+        r'reminder in\s+',
+        r'alert in\s+',
+        r'notify me in\s+',
+        r'ping me in\s+',
+        r'wake me in\s+'
     ]
     
     user_input_lower = user_input.lower().strip()
@@ -310,8 +320,15 @@ def handle_reminder_command(user_input, project, use_voices, random_toggle):
         for pattern in explicit_reminder_patterns
     )
     
+    # DEBUG: Show what we're checking
+    print(f"🔍 DEBUG: User input lowered: '{user_input_lower}'")
+    print(f"🔍 DEBUG: Is explicit reminder: {is_explicit_reminder}")
+    
     if not is_explicit_reminder:
+        print(f"🔍 DEBUG: No reminder patterns matched, returning None")
         return None, False
+    
+    print(f"🔍 DEBUG: Reminder pattern matched! Processing...")
     
     if not is_telegram_configured():
         response_data = {
@@ -323,18 +340,21 @@ def handle_reminder_command(user_input, project, use_voices, random_toggle):
         # Add safety wrapper around the problematic parse function
         try:
             parsed = parse_reminder_command(user_input, project)
+            print(f"🔍 DEBUG: Parse result: {parsed}")
         except Exception as parse_error:
-            app.logger.error(f"Reminder parsing failed: {parse_error}")
+            print(f"🔍 DEBUG: Parsing failed: {parse_error}")
             response_data = {"SyntaxPrime": f"Could not parse reminder request: {str(parse_error)}"}
             return response_data, True
         
         if not parsed or not parsed.get("success"):
             error_msg = parsed.get("error", "Unknown parsing error") if parsed else "Parsing returned None"
+            print(f"🔍 DEBUG: Parse unsuccessful: {error_msg}")
             response_data = {"SyntaxPrime": f"Reminder parsing failed: {error_msg}"}
             return response_data, True
         
         # Add safety wrapper around reminder creation
         try:
+            from modules.telegram_notifications import GhostlineTelegramReminders
             reminders = GhostlineTelegramReminders()
             result = reminders.create_reminder(
                 title=parsed["title"],
@@ -342,29 +362,32 @@ def handle_reminder_command(user_input, project, use_voices, random_toggle):
                 project=parsed["project"],
                 priority=2
             )
+            print(f"🔍 DEBUG: Reminder creation result: {result}")
         except Exception as creation_error:
-            app.logger.error(f"Reminder creation failed: {creation_error}")
+            print(f"🔍 DEBUG: Reminder creation failed: {creation_error}")
             response_data = {"SyntaxPrime": f"Failed to create reminder: {str(creation_error)}"}
             return response_data, True
         
         if result and result.get("success"):
             display_time = parsed.get("display_time", result["remind_at"].strftime('%I:%M %p on %B %d') if result.get("remind_at") else "unknown time")
             
-            response_text = f"Reminder Created!\n\n"
+            response_text = f"⏰ Reminder Created!\n\n"
             response_text += f"**What:** {parsed['title']}\n"
             response_text += f"**When:** {display_time}\n"
             response_text += f"**Project:** {project}\n\n"
             response_text += "You'll receive a Telegram notification with action buttons to mark complete or snooze."
             
             response_data = {"SyntaxPrime": response_text}
+            print(f"🔍 DEBUG: Success response created")
         else:
             error_msg = result.get('error', 'Unknown error') if result else 'No result returned'
             response_data = {"SyntaxPrime": f"Failed to create reminder: {error_msg}"}
+            print(f"🔍 DEBUG: Failed response created: {error_msg}")
         
         return response_data, True
         
     except Exception as e:
-        app.logger.error(f"Reminder command completely failed: {e}", exc_info=True)
+        print(f"🔍 DEBUG: Complete failure: {e}")
         response_data = {"SyntaxPrime": f"Reminder system error: {str(e)}"}
         return response_data, True
 
@@ -423,7 +446,6 @@ def generate_response_with_context_check(user_input, use_voices, random_toggle, 
             "SyntaxPrime": f"I encountered an error processing your request: {str(e)}"
         }
 
-
     
 # Section 4: Main Chat Route
 # Section 4: Main Chat Route
@@ -441,6 +463,8 @@ def generate_response_with_context_check(user_input, use_voices, random_toggle, 
 # Section 4: Main Chat Route (UPDATED WITH FIXED BLUESKY INTEGRATION - HIGHEST PRIORITY)
 # Section 4: Main Chat Route (UPDATED WITH FIXED BLUESKY INTEGRATION + CONTENT STRATEGY - HIGHEST PRIORITY)
 # Section 4: Main Chat Route (UPDATED WITH FIXED CALENDAR DATA FORMATTING) 9/12/25
+# Section 4: Main Chat Route (UPDATED WITH FIXED CALENDAR DATA FORMATTING) 9/12/25
+# Section 4: Main Chat Route (UPDATED WITH FIXED BLUESKY INTEGRATION + CONTENT STRATEGY - HIGHEST PRIORITY)
 # Section 4: Main Chat Route (UPDATED WITH FIXED CALENDAR DATA FORMATTING) 9/12/25
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -470,6 +494,20 @@ def index():
             refresh_brain_context()
         except Exception as e:
             print(f"Brain context refresh failed: {e}")
+
+        # 🚨 PRIORITY 1: Handle reminder commands FIRST - This is the key fix!
+        try:
+            print(f"🔍 MAIN ROUTE: Checking reminder command for: '{user_input}'")
+            response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                print(f"🔍 MAIN ROUTE: Reminder handled successfully!")
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+            else:
+                print(f"🔍 MAIN ROUTE: Not a reminder command, continuing...")
+        except Exception as e:
+            app.logger.error(f"Reminder handler failed: {e}")
+            # Don't fail the whole request, just log and continue
 
         # FIXED: BlueSky commands with enhanced pattern matching (HIGHEST PRIORITY)
         if is_bluesky_configured():
@@ -530,15 +568,6 @@ def index():
                 app.logger.error(f"BlueSky processing failed: {e}")
                 # Don't fail the whole request, just log and continue
                 pass
-
-        # Handle reminder commands with proper error handling (MOVED UP HIGH PRIORITY)
-        try:
-            response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
-            if handled:
-                save_conversation_enhanced(project, user_input, response_data)
-                return _render_enhanced(project, response_data)
-        except Exception as e:
-            app.logger.error(f"Reminder handler failed: {e}")
 
         # Try hybrid content strategy commands
         try:
@@ -730,10 +759,13 @@ def upload_file():
 # Section 7: Streaming Chat API (UPDATED FOR CONSOLIDATED GOOGLE INTEGRATION)
 # SECTION 7: Streaming Chat API (UPDATED)
 # Section 7: Streaming Chat API - FIXED VERSION WITH BLUESKY HIGHEST PRIORITY 9/11/25
+# Section 7: Streaming Chat API (UPDATED FOR CONSOLIDATED GOOGLE INTEGRATION)
+# SECTION 7: Streaming Chat API (UPDATED)
+# Section 7: Streaming Chat API - FIXED VERSION WITH BLUESKY HIGHEST PRIORITY 9/12/25
 
 @app.route('/api/chat/stream', methods=['POST'])
 def stream_chat():
-    """Enhanced streaming chat endpoint - FIXED VERSION WITH BLUESKY"""
+    """Enhanced streaming chat endpoint - FIXED VERSION WITH REMINDER PRIORITY"""
     
     # Enhanced logging for debugging auth issues
     app.logger.info(f"Stream request from {request.remote_addr}")
@@ -784,13 +816,30 @@ def stream_chat():
                 response_data = {}
                 handled = False
                 
-                # FIXED: Handle reminder commands with proper error handling FIRST
+                # 🚨 PRIORITY 1: Handle reminder commands FIRST - This is the key fix for streaming too!
                 try:
+                    print(f"🔍 STREAM: Checking reminder command for: '{user_input}'")
                     response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
                     if handled:
-                        app.logger.info(f"Request handled by reminder system")
+                        print(f"🔍 STREAM: Reminder handled successfully!")
+                        save_conversation_enhanced(project, user_input, response_data)
+                        # Stream the reminder response
+                        for voice, content in response_data.items():
+                            if content and isinstance(content, str):
+                                # Stream text content in chunks
+                                chunk_size = 30
+                                for i in range(0, len(content), chunk_size):
+                                    chunk = content[i:i+chunk_size]
+                                    yield f"data: {json.dumps({'type': 'content', 'voice': voice, 'chunk': chunk})}\n\n"
+                                    time.sleep(0.03)
+                        
+                        # Send completion signal
+                        yield f"data: {json.dumps({'type': 'complete', 'responses': response_data})}\n\n"
+                        return  # Exit early since we handled it
+                    else:
+                        print(f"🔍 STREAM: Not a reminder command, continuing...")
                 except Exception as e:
-                    app.logger.error(f"Reminder handler failed: {e}")
+                    app.logger.error(f"Stream: Reminder handler failed: {e}")
                     # Don't set handled=True here - let other processors try
                 
                 # Try command processors only if reminder didn't handle it
