@@ -282,9 +282,9 @@ class MarketingRSSMonitor:
             
             # Calculate relevance score with item data for potential boosts
             relevance_score = self.calculate_relevance_score(
-                item['title'], 
-                item['content'], 
-                main_category, 
+                item['title'],
+                item['content'],
+                main_category,
                 item  # Pass item data for relevance boosts
             )
             
@@ -475,7 +475,7 @@ class MarketingRSSMonitor:
                 print(f"RSS monitor cycle completed. Sleeping for 1 week...")
                 
                 # Sleep for 1 week between cycles (604800 seconds = 7 days)
-                for _ in range(604800):  
+                for _ in range(604800):
                     if not self.running:
                         break
                     time.sleep(1)
