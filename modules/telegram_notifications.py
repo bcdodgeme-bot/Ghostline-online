@@ -680,13 +680,23 @@ def parse_reminder_command(user_input, project=None):
     
     # Time parsing patterns with more flexibility
     time_patterns = [
-        (r'in (\d+) minutes?', lambda m: datetime.timedelta(minutes=int(m.group(1)))),
-        (r'in (\d+) hours?', lambda m: datetime.timedelta(hours=int(m.group(1)))),
-        (r'in (\d+) days?', lambda m: datetime.timedelta(days=int(m.group(1)))),
-        (r'tomorrow at (\d+)(am|pm)', lambda m: parse_tomorrow_time(m.group(1), m.group(2))),
-        (r'at (\d+)(am|pm)', lambda m: parse_today_time(m.group(1), m.group(2))),
-        (r'in (\d+)m', lambda m: datetime.timedelta(minutes=int(m.group(1)))),
-        (r'in (\d+)h', lambda m: datetime.timedelta(hours=int(m.group(1)))),
+         (r'in one minutes?', lambda m: datetime.timedelta(minutes=1)),
+         (r'in two minutes?', lambda m: datetime.timedelta(minutes=2)),
+         (r'in three minutes?', lambda m: datetime.timedelta(minutes=3)),
+         (r'in five minutes?', lambda m: datetime.timedelta(minutes=5)),
+         (r'in ten minutes?', lambda m: datetime.timedelta(minutes=10)),
+         (r'in fifteen minutes?', lambda m: datetime.timedelta(minutes=15)),
+         (r'in thirty minutes?', lambda m: datetime.timedelta(minutes=30)),
+         (r'in one hours?', lambda m: datetime.timedelta(hours=1)),
+    
+         # Existing digit patterns
+         (r'in (\d+) minutes?', lambda m: datetime.timedelta(minutes=int(m.group(1)))),
+         (r'in (\d+) hours?', lambda m: datetime.timedelta(hours=int(m.group(1)))),
+         (r'in (\d+) days?', lambda m: datetime.timedelta(days=int(m.group(1)))),
+         (r'tomorrow at (\d+)(am|pm)', lambda m: parse_tomorrow_time(m.group(1), m.group(2))),
+         (r'at (\d+)(am|pm)', lambda m: parse_today_time(m.group(1), m.group(2))),
+         (r'in (\d+)m', lambda m: datetime.timedelta(minutes=int(m.group(1)))),
+         (r'in (\d+)h', lambda m: datetime.timedelta(hours=int(m.group(1)))),
     ]
     
     # Extract timing information
