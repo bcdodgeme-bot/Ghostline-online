@@ -54,3 +54,4 @@ elevenlabs==2.13.0
 PyJWT==2.8.0
 pytz
 slack-sdk>=3.19.0
+pytrends>=4.9.0

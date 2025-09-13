@@ -1671,8 +1671,8 @@ def reports_dashboard():
     
 # Section 10: Telegram Integration Routes
 # Section 10: Telegram Integration Routes 9/12/25
-# Section 10: Telegram Integration Routes
-# Section 10: Telegram Integration Routes
+# Section 10: Telegram Integration Routes 9/12/25
+# Section 10: Telegram Integration Routes (UPDATED WITH TRENDS ALERT SUPPORT) 9/13/25
 @app.route('/reminders/check', methods=['POST'])
 def check_telegram_reminders():
     """Manual trigger for reminder checking"""
@@ -1719,7 +1719,7 @@ def emergency_stop_now():
 
 @app.route('/telegram/webhook', methods=['POST'])
 def telegram_webhook():
-    """Enhanced Telegram webhook handler with chat ID capture and detailed logging"""
+    """Enhanced Telegram webhook handler with trends alert support and chat ID capture"""
     try:
         data = request.get_json()
         
@@ -1739,22 +1739,56 @@ def telegram_webhook():
         # Handle callback queries (button presses)
         if 'callback_query' in data:
             callback_query = data['callback_query']
-            app.logger.info(f"Processing callback: {callback_query.get('data', 'no data')}")
+            callback_data = callback_query.get('data', '')
             
-            reminders = GhostlineTelegramReminders()
-            result = reminders.process_callback_query(callback_query)
+            app.logger.info(f"Processing callback: {callback_data}")
             
-            app.logger.info(f"Callback result: {result}")
+            # Check if this is a trends alert callback
+            if any(callback_data.startswith(prefix) for prefix in ['draft_', 'skip_', 'wrong_', 'data_']):
+                try:
+                    from modules.google_trends_monitor import TelegramAlertSystem, get_trends_monitor
+                    
+                    monitor = get_trends_monitor()
+                    alert_system = TelegramAlertSystem(monitor)
+                    result = alert_system.process_alert_callback(callback_data, callback_query)
+                    
+                    app.logger.info(f"Trends callback result: {result}")
+                    
+                    # Send callback answer to remove loading state
+                    callback_id = callback_query.get('id')
+                    if callback_id:
+                        from modules.telegram_notifications import TelegramBot
+                        bot = TelegramBot()
+                        answer_url = f"https://api.telegram.org/bot{bot.token}/answerCallbackQuery"
+                        requests.post(answer_url, json={
+                            "callback_query_id": callback_id,
+                            "text": "Action processed!" if result.get('success') else "Action failed"
+                        })
+                    
+                    return jsonify({"ok": True})
+                    
+                except Exception as e:
+                    app.logger.error(f"Trends callback processing failed: {e}")
+                    # Fall through to regular reminder processing if trends fails
             
-            # Send callback answer to remove loading state
-            callback_id = callback_query.get('id')
-            if callback_id:
-                bot = reminders.bot
-                answer_url = f"https://api.telegram.org/bot{bot.token}/answerCallbackQuery"
-                requests.post(answer_url, json={
-                    "callback_query_id": callback_id,
-                    "text": "Action processed!" if result.get('success') else "Action failed"
-                })
+            # Handle regular reminder callbacks (existing functionality preserved)
+            try:
+                reminders = GhostlineTelegramReminders()
+                result = reminders.process_callback_query(callback_query)
+                
+                app.logger.info(f"Reminder callback result: {result}")
+                
+                # Send callback answer to remove loading state
+                callback_id = callback_query.get('id')
+                if callback_id:
+                    bot = reminders.bot
+                    answer_url = f"https://api.telegram.org/bot{bot.token}/answerCallbackQuery"
+                    requests.post(answer_url, json={
+                        "callback_query_id": callback_id,
+                        "text": "Action processed!" if result.get('success') else "Action failed"
+                    })
+            except Exception as e:
+                app.logger.error(f"Reminder callback processing failed: {e}")
             
             return jsonify({"ok": True})
         
@@ -6221,6 +6255,865 @@ KEYWORDS_TEST_MATCHING_TEMPLATE = '''
 </body>
 </html>
 '''
+
+# Section 22: Google Trends Content Opportunity Routes (NEW) 9/13/25
+
+from modules.google_trends_monitor import (
+    run_trends_monitoring_cycle,
+    get_trends_monitor,
+    start_trends_monitoring,
+    stop_trends_monitoring,
+    get_trends_monitoring_status,
+    is_trends_monitoring_configured
+)
+
+@app.route('/trends-monitor')
+def trends_monitor_dashboard():
+    """Google Trends monitoring dashboard"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    try:
+        status = get_trends_monitoring_status()
+        
+        # Get recent opportunities
+        recent_opportunities = []
+        with get_db_connection() as conn:
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT opportunity_id, trending_query, best_site, confidence_score,
+                           suggested_title, user_response, detected_at, alert_sent
+                    FROM content_opportunities 
+                    ORDER BY detected_at DESC 
+                    LIMIT 20
+                ''')
+                
+                for row in cursor.fetchall():
+                    opportunity_id, query, site, confidence, title, response, detected, alert_sent = row
+                    site_info = SITE_DOMAINS.get(site, {})
+                    
+                    recent_opportunities.append({
+                        'opportunity_id': opportunity_id,
+                        'trending_query': query,
+                        'best_site': site,
+                        'site_name': site_info.get('name', site),
+                        'confidence_score': float(confidence),
+                        'suggested_title': title,
+                        'user_response': response,
+                        'detected_at': detected,
+                        'alert_sent': alert_sent,
+                        'status_color': _get_opportunity_status_color(response)
+                    })
+        
+        return render_template_string(TRENDS_DASHBOARD_TEMPLATE,
+                                    status=status,
+                                    opportunities=recent_opportunities)
+    except Exception as e:
+        return f"Trends dashboard error: {str(e)}", 500
+
+@app.route('/api/trends-monitor/status')
+def api_trends_status():
+    """API: Get trends monitoring status"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        status = get_trends_monitoring_status()
+        return jsonify({
+            'success': True,
+            'status': status
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/trends-monitor/start', methods=['POST'])
+def api_start_trends_monitoring():
+    """API: Start trends monitoring"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        success = start_trends_monitoring()
+        
+        return jsonify({
+            'success': success,
+            'message': 'Trends monitoring started' if success else 'Already running or not configured'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/trends-monitor/stop', methods=['POST'])
+def api_stop_trends_monitoring():
+    """API: Stop trends monitoring"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        success = stop_trends_monitoring()
+        
+        return jsonify({
+            'success': success,
+            'message': 'Trends monitoring stopped' if success else 'Not running'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/trends-monitor/run-cycle', methods=['POST'])
+def api_run_trends_cycle():
+    """API: Manually trigger a trends monitoring cycle"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        result = run_trends_monitoring_cycle()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/trends/opportunities')
+def api_get_content_opportunities():
+    """API: Get content opportunities with filtering"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        # Get query parameters
+        limit = min(int(request.args.get('limit', 50)), 100)
+        site_filter = request.args.get('site')
+        status_filter = request.args.get('status')
+        min_confidence = float(request.args.get('min_confidence', 0))
+        
+        opportunities = []
+        
+        with get_db_connection() as conn:
+            if conn:
+                cursor = conn.cursor()
+                
+                # Build query with filters
+                where_clauses = ['1=1']
+                params = []
+                
+                if site_filter:
+                    where_clauses.append('best_site = %s')
+                    params.append(site_filter)
+                
+                if status_filter:
+                    where_clauses.append('user_response = %s')
+                    params.append(status_filter)
+                
+                if min_confidence > 0:
+                    where_clauses.append('confidence_score >= %s')
+                    params.append(min_confidence)
+                
+                params.append(limit)
+                
+                cursor.execute(f'''
+                    SELECT opportunity_id, trending_query, best_site, confidence_score,
+                           matched_keywords, suggested_title, competition_level,
+                           total_search_volume, reasoning, detected_at, alert_sent,
+                           user_response, performance_score, metadata
+                    FROM content_opportunities 
+                    WHERE {' AND '.join(where_clauses)}
+                    ORDER BY detected_at DESC 
+                    LIMIT %s
+                ''', params)
+                
+                for row in cursor.fetchall():
+                    (opportunity_id, query, site, confidence, keywords, title,
+                     competition, volume, reasoning, detected, alert_sent,
+                     response, score, metadata) = row
+                    
+                    site_info = SITE_DOMAINS.get(site, {})
+                    
+                    opportunities.append({
+                        'opportunity_id': opportunity_id,
+                        'trending_query': query,
+                        'best_site': site,
+                        'site_name': site_info.get('name', site),
+                        'confidence_score': float(confidence),
+                        'matched_keywords': keywords,
+                        'suggested_title': title,
+                        'competition_level': competition,
+                        'total_search_volume': volume,
+                        'reasoning': reasoning,
+                        'detected_at': detected.isoformat() if detected else None,
+                        'alert_sent': alert_sent,
+                        'user_response': response,
+                        'performance_score': float(score) if score else None,
+                        'metadata': metadata
+                    })
+        
+        return jsonify({
+            'success': True,
+            'opportunities': opportunities,
+            'count': len(opportunities)
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/trends/opportunity/<opportunity_id>/feedback', methods=['POST'])
+def api_update_opportunity_feedback(opportunity_id):
+    """API: Update opportunity feedback"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        user_response = data.get('response')
+        performance_score = data.get('score')
+        feedback_text = data.get('feedback', '')
+        
+        with get_db_connection() as conn:
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    UPDATE content_opportunities 
+                    SET user_response = %s, performance_score = %s, user_feedback = %s
+                    WHERE opportunity_id = %s
+                ''', (user_response, performance_score, feedback_text, opportunity_id))
+                
+                conn.commit()
+                
+                if cursor.rowcount > 0:
+                    return jsonify({
+                        'success': True,
+                        'message': 'Feedback updated successfully'
+                    })
+                else:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Opportunity not found'
+                    }), 404
+        
+        return jsonify({'success': False, 'error': 'Database not available'}), 500
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/trends/stats')
+def api_trends_stats():
+    """API: Get trends monitoring statistics"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        stats = {}
+        
+        with get_db_connection() as conn:
+            if conn:
+                cursor = conn.cursor()
+                
+                # Overall stats
+                cursor.execute('''
+                    SELECT 
+                        COUNT(*) as total_opportunities,
+                        AVG(confidence_score) as avg_confidence,
+                        COUNT(*) FILTER (WHERE user_response = 'approved') as approved_count,
+                        COUNT(*) FILTER (WHERE user_response = 'skipped') as skipped_count,
+                        COUNT(*) FILTER (WHERE user_response = 'wrong_site') as wrong_site_count,
+                        COUNT(*) FILTER (WHERE alert_sent = TRUE) as alerts_sent
+                    FROM content_opportunities
+                ''')
+                
+                overall = cursor.fetchone()
+                if overall:
+                    stats['overall'] = {
+                        'total_opportunities': overall[0],
+                        'avg_confidence': float(overall[1]) if overall[1] else 0,
+                        'approved_count': overall[2],
+                        'skipped_count': overall[3],
+                        'wrong_site_count': overall[4],
+                        'alerts_sent': overall[5]
+                    }
+                
+                # Last 7 days stats
+                cursor.execute('''
+                    SELECT 
+                        COUNT(*) as recent_opportunities,
+                        AVG(confidence_score) as recent_avg_confidence
+                    FROM content_opportunities
+                    WHERE detected_at >= CURRENT_DATE - INTERVAL '7 days'
+                ''')
+                
+                recent = cursor.fetchone()
+                if recent:
+                    stats['last_7_days'] = {
+                        'opportunities': recent[0],
+                        'avg_confidence': float(recent[1]) if recent[1] else 0
+                    }
+                
+                # By site breakdown
+                cursor.execute('''
+                    SELECT best_site, COUNT(*), AVG(confidence_score)
+                    FROM content_opportunities
+                    GROUP BY best_site
+                    ORDER BY COUNT(*) DESC
+                ''')
+                
+                site_stats = {}
+                for row in cursor.fetchall():
+                    site, count, avg_conf = row
+                    site_info = SITE_DOMAINS.get(site, {})
+                    site_stats[site] = {
+                        'name': site_info.get('name', site),
+                        'opportunities': count,
+                        'avg_confidence': float(avg_conf) if avg_conf else 0
+                    }
+                
+                stats['by_site'] = site_stats
+        
+        return jsonify({
+            'success': True,
+            'stats': stats
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# Enhanced Telegram webhook handler to process trends alerts
+# UPDATE the existing telegram_webhook route in your app.py:
+
+@app.route('/telegram/webhook', methods=['POST'])
+def telegram_webhook():
+    """Enhanced Telegram webhook handler with trends alert support"""
+    try:
+        data = request.get_json()
+        
+        # Extract chat ID for debugging
+        chat_id = None
+        if 'message' in data and 'chat' in data['message']:
+            chat_id = data['message']['chat']['id']
+            print(f"=== CHAT ID FOUND: {chat_id} ===")
+            app.logger.info(f"CHAT ID FOUND: {chat_id}")
+        elif 'callback_query' in data and 'message' in data['callback_query']:
+            chat_id = data['callback_query']['message']['chat']['id']
+            print(f"=== CHAT ID FOUND FROM CALLBACK: {chat_id} ===")
+            app.logger.info(f"CHAT ID FOUND FROM CALLBACK: {chat_id}")
+        
+        app.logger.info(f"Telegram webhook received: {data}")
+        
+        # Handle callback queries (button presses)
+        if 'callback_query' in data:
+            callback_query = data['callback_query']
+            callback_data = callback_query.get('data', '')
+            
+            app.logger.info(f"Processing callback: {callback_data}")
+            
+            # Check if this is a trends alert callback
+            if any(callback_data.startswith(prefix) for prefix in ['draft_', 'skip_', 'wrong_', 'data_']):
+                try:
+                    from modules.google_trends_monitor import TelegramAlertSystem, get_trends_monitor
+                    
+                    monitor = get_trends_monitor()
+                    alert_system = TelegramAlertSystem(monitor)
+                    result = alert_system.process_alert_callback(callback_data, callback_query)
+                    
+                    app.logger.info(f"Trends callback result: {result}")
+                    
+                    # Send callback answer to remove loading state
+                    callback_id = callback_query.get('id')
+                    if callback_id:
+                        from modules.telegram_notifications import TelegramBot
+                        bot = TelegramBot()
+                        answer_url = f"https://api.telegram.org/bot{bot.token}/answerCallbackQuery"
+                        requests.post(answer_url, json={
+                            "callback_query_id": callback_id,
+                            "text": "Action processed!" if result.get('success') else "Action failed"
+                        })
+                    
+                    return jsonify({"ok": True})
+                    
+                except Exception as e:
+                    app.logger.error(f"Trends callback processing failed: {e}")
+            else:
+                # Handle regular reminder callbacks
+                reminders = GhostlineTelegramReminders()
+                result = reminders.process_callback_query(callback_query)
+                
+                app.logger.info(f"Reminder callback result: {result}")
+                
+                # Send callback answer to remove loading state
+                callback_id = callback_query.get('id')
+                if callback_id:
+                    bot = reminders.bot
+                    answer_url = f"https://api.telegram.org/bot{bot.token}/answerCallbackQuery"
+                    requests.post(answer_url, json={
+                        "callback_query_id": callback_id,
+                        "text": "Action processed!" if result.get('success') else "Action failed"
+                    })
+            
+            return jsonify({"ok": True})
+        
+        # Handle regular messages
+        if 'message' in data:
+            app.logger.info(f"Received message from chat_id {chat_id}: {data['message'].get('text', 'no text')}")
+            return jsonify({"ok": True})
+        
+        app.logger.info("Webhook received unknown data type")
+        return jsonify({"ok": True})
+        
+    except Exception as e:
+        app.logger.error(f"Telegram webhook failed: {e}", exc_info=True)
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+def _get_opportunity_status_color(response):
+    """Get color for opportunity status"""
+    colors = {
+        'approved': '#059669',
+        'skipped': '#d97706',
+        'wrong_site': '#dc2626',
+        None: '#6b7280'
+    }
+    return colors.get(response, '#6b7280')
+
+# HTML Template for Trends Dashboard
+TRENDS_DASHBOARD_TEMPLATE = '''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Trends Content Monitor</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .btn { 
+            background: #6366f1; color: white; border: none; padding: 12px 24px;
+            border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
+            text-decoration: none; display: inline-block;
+        }
+        .btn:hover { background: #5855eb; }
+        .btn.success { background: #059669; }
+        .btn.danger { background: #dc2626; }
+        .btn.warning { background: #d97706; }
+        .btn.secondary { background: #374151; }
+        .status-section {
+            background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
+            padding: 20px; margin: 20px 0;
+        }
+        .status-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px; margin: 15px 0;
+        }
+        .status-card {
+            background: #2a2a2a; padding: 15px; border-radius: 6px;
+            border-left: 4px solid #6366f1;
+        }
+        .status-value { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
+        .status-label { color: #9ca3af; font-size: 14px; }
+        .monitor-controls { margin: 20px 0; }
+        .opportunities-table {
+            width: 100%; border-collapse: collapse; margin: 20px 0;
+            background: #1a1a1a;
+        }
+        .opportunities-table th, .opportunities-table td {
+            padding: 12px; text-align: left; border-bottom: 1px solid #333;
+        }
+        .opportunities-table th { background: #2a2a2a; font-weight: bold; }
+        .opportunities-table tr:hover { background: #2a2a2a; }
+        .confidence-score {
+            padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;
+        }
+        .confidence-high { background: #059669; color: white; }
+        .confidence-medium { background: #d97706; color: white; }
+        .confidence-low { background: #6b7280; color: white; }
+        .status-dot {
+            display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px;
+        }
+        .running { background: #059669; }
+        .stopped { background: #dc2626; }
+        .filter-bar {
+            background: #2a2a2a; padding: 15px; border-radius: 6px; margin: 20px 0;
+        }
+        .filter-bar select, .filter-bar input {
+            background: #333; color: #fff; border: 1px solid #555; border-radius: 4px;
+            padding: 8px; margin: 0 10px 0 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Google Trends Content Monitor</h1>
+        
+        <div class="status-section">
+            <h3>Monitor Status</h3>
+            <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                <span class="status-dot {% if status.running %}running{% else %}stopped{% endif %}"></span>
+                <span style="font-weight: bold;">
+                    {% if status.running %}Running{% else %}Stopped{% endif %}
+                </span>
+                <span style="margin-left: 20px; color: #9ca3af;">
+                    PyTrends: {% if status.pytrends_available %}✅{% else %}❌{% endif %}
+                    | Configured: {% if status.configured %}✅{% else %}❌{% endif %}
+                </span>
+            </div>
+            
+            {% if opportunities %}
+            <table class="opportunities-table" id="opportunitiesTable">
+                <thead>
+                    <tr>
+                        <th>Trending Query</th>
+                        <th>Site Match</th>
+                        <th>Confidence</th>
+                        <th>Suggested Title</th>
+                        <th>Status</th>
+                        <th>Detected</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for opp in opportunities %}
+                    <tr data-site="{{ opp.best_site }}" data-status="{{ opp.user_response or 'pending' }}" 
+                        data-confidence="{{ opp.confidence_score }}">
+                        <td>
+                            <strong>{{ opp.trending_query }}</strong>
+                            {% if opp.alert_sent %}
+                            <span style="color: #059669; font-size: 12px;">📤</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ opp.site_name }}</td>
+                        <td>
+                            <span class="confidence-score {% if opp.confidence_score >= 70 %}confidence-high{% elif opp.confidence_score >= 40 %}confidence-medium{% else %}confidence-low{% endif %}">
+                                {{ "%.0f"|format(opp.confidence_score) }}%
+                            </span>
+                        </td>
+                        <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">
+                            {{ opp.suggested_title }}
+                        </td>
+                        <td>
+                            <span style="color: {{ opp.status_color }};">
+                                {% if opp.user_response == 'approved' %}✅ Approved
+                                {% elif opp.user_response == 'skipped' %}⏭️ Skipped  
+                                {% elif opp.user_response == 'wrong_site' %}🔄 Wrong Site
+                                {% else %}⏳ Pending{% endif %}
+                            </span>
+                        </td>
+                        <td>{{ opp.detected_at.strftime('%m/%d %H:%M') if opp.detected_at else 'N/A' }}</td>
+                        <td>
+                            <button onclick="viewOpportunity('{{ opp.opportunity_id }}')" class="btn secondary" style="font-size: 12px; padding: 6px 12px;">View</button>
+                            {% if not opp.user_response %}
+                            <button onclick="approveOpportunity('{{ opp.opportunity_id }}')" class="btn success" style="font-size: 12px; padding: 6px 12px;">Approve</button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div style="text-align: center; padding: 40px; color: #9ca3af;">
+                No content opportunities found yet. Start monitoring to detect trends!
+            </div>
+            {% endif %}
+        </div>
+        
+        <div style="margin-top: 40px; text-align: center;">
+            <a href="/keywords" class="btn secondary">Keyword Management</a>
+            <a href="/marketing-knowledge" class="btn secondary">Marketing Knowledge</a>
+            <a href="/integrations" class="btn secondary">Integrations</a>
+            <a href="/" class="btn secondary">Back to Chat</a>
+        </div>
+    </div>
+    
+    <!-- Opportunity Detail Modal -->
+    <div id="opportunityModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                                      background: rgba(0,0,0,0.8); z-index: 1000;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                    background: #1a1a1a; padding: 30px; border-radius: 8px; max-width: 800px; width: 90%; max-height: 80%; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3>Content Opportunity Details</h3>
+                <button onclick="closeModal()" style="background: none; border: none; color: #fff; font-size: 20px; cursor: pointer;">×</button>
+            </div>
+            <div id="opportunityDetails">Loading...</div>
+        </div>
+    </div>
+    
+    <script>
+        function refreshStatus() {
+            fetch('/api/trends-monitor/status', {
+                credentials: 'include'
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Failed to refresh status: ' + data.error);
+                }
+            })
+            .catch(e => alert('Status refresh failed: ' + e));
+        }
+        
+        function startMonitoring() {
+            fetch('/api/trends-monitor/start', {
+                method: 'POST',
+                credentials: 'include'
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ Trends monitoring started!');
+                    location.reload();
+                } else {
+                    alert('Failed to start monitoring: ' + data.error);
+                }
+            })
+            .catch(e => alert('Start request failed: ' + e));
+        }
+        
+        function stopMonitoring() {
+            if (!confirm('Stop trends monitoring? You won\\'t receive content opportunity alerts.')) return;
+            
+            fetch('/api/trends-monitor/stop', {
+                method: 'POST',
+                credentials: 'include'
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('🛑 Trends monitoring stopped');
+                    location.reload();
+                } else {
+                    alert('Failed to stop monitoring: ' + data.error);
+                }
+            })
+            .catch(e => alert('Stop request failed: ' + e));
+        }
+        
+        function runCycle() {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = 'Running...';
+            btn.disabled = true;
+            
+            fetch('/api/trends-monitor/run-cycle', {
+                method: 'POST',
+                credentials: 'include'
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`✅ Cycle complete!\\n` +
+                          `Trends found: ${data.trends_found}\\n` +
+                          `Opportunities: ${data.opportunities}\\n` +
+                          `Alerts sent: ${data.alerts_sent}`);
+                    location.reload();
+                } else {
+                    alert('Cycle failed: ' + data.error);
+                }
+                btn.textContent = originalText;
+                btn.disabled = false;
+            })
+            .catch(e => {
+                alert('Cycle request failed: ' + e);
+                btn.textContent = originalText;
+                btn.disabled = false;
+            });
+        }
+        
+        function applyFilters() {
+            const siteFilter = document.getElementById('siteFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const confidenceFilter = parseInt(document.getElementById('confidenceFilter').value) || 0;
+            
+            const rows = document.querySelectorAll('#opportunitiesTable tbody tr');
+            
+            rows.forEach(row => {
+                const site = row.dataset.site;
+                const status = row.dataset.status;
+                const confidence = parseFloat(row.dataset.confidence);
+                
+                let show = true;
+                
+                if (siteFilter && site !== siteFilter) show = false;
+                if (statusFilter && status !== statusFilter) show = false;
+                if (confidenceFilter && confidence < confidenceFilter) show = false;
+                
+                row.style.display = show ? 'table-row' : 'none';
+            });
+        }
+        
+        function viewOpportunity(opportunityId) {
+            document.getElementById('opportunityDetails').innerHTML = 'Loading opportunity details...';
+            document.getElementById('opportunityModal').style.display = 'block';
+            
+            fetch(`/api/trends/opportunities?limit=1`, {
+                credentials: 'include'
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const opportunity = data.opportunities.find(o => o.opportunity_id === opportunityId);
+                    if (opportunity) {
+                        displayOpportunityDetails(opportunity);
+                    } else {
+                        document.getElementById('opportunityDetails').innerHTML = 'Opportunity not found.';
+                    }
+                } else {
+                    document.getElementById('opportunityDetails').innerHTML = 'Error loading details: ' + data.error;
+                }
+            })
+            .catch(e => {
+                document.getElementById('opportunityDetails').innerHTML = 'Failed to load details: ' + e;
+            });
+        }
+        
+        function displayOpportunityDetails(opportunity) {
+            let html = `
+                <div style="margin-bottom: 20px;">
+                    <h4>${opportunity.trending_query}</h4>
+                    <p style="color: #9ca3af;">Detected: ${new Date(opportunity.detected_at).toLocaleString()}</p>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div>
+                        <strong>Best Site Match:</strong><br>
+                        ${opportunity.site_name} (${opportunity.confidence_score.toFixed(1)}% confidence)
+                    </div>
+                    <div>
+                        <strong>Competition:</strong><br>
+                        ${opportunity.competition_level} | ${opportunity.total_search_volume.toLocaleString()} searches
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <strong>Suggested Title:</strong><br>
+                    <em>${opportunity.suggested_title}</em>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <strong>Why This Match:</strong><br>
+                    ${opportunity.reasoning}
+                </div>
+            `;
+            
+            if (opportunity.matched_keywords && opportunity.matched_keywords.length > 0) {
+                html += '<div style="margin-bottom: 20px;"><strong>Matched Keywords:</strong><ul>';
+                opportunity.matched_keywords.slice(0, 5).forEach(kw => {
+                    html += `<li>"${kw.keyword}" (${kw.search_volume.toLocaleString()} vol, ${kw.confidence.toFixed(1)}% match)</li>`;
+                });
+                html += '</ul></div>';
+            }
+            
+            // Feedback section
+            html += `
+                <div style="border-top: 1px solid #333; padding-top: 20px;">
+                    <strong>Provide Feedback:</strong><br>
+                    <div style="margin-top: 10px;">
+                        <button onclick="updateFeedback('${opportunity.opportunity_id}', 'approved', 8.0)" class="btn success">✅ Good Match</button>
+                        <button onclick="updateFeedback('${opportunity.opportunity_id}', 'skipped', 3.0)" class="btn warning">⏭️ Skip This</button>
+                        <button onclick="updateFeedback('${opportunity.opportunity_id}', 'wrong_site', 1.0)" class="btn danger">🔄 Wrong Site</button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('opportunityDetails').innerHTML = html;
+        }
+        
+        function updateFeedback(opportunityId, response, score) {
+            fetch(`/api/trends/opportunity/${opportunityId}/feedback`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify({
+                    response: response,
+                    score: score,
+                    feedback: ''
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Feedback recorded! This will improve future matching.');
+                    closeModal();
+                    location.reload();
+                } else {
+                    alert('Failed to record feedback: ' + data.error);
+                }
+            })
+            .catch(e => alert('Feedback request failed: ' + e));
+        }
+        
+        function approveOpportunity(opportunityId) {
+            updateFeedback(opportunityId, 'approved', 8.0);
+        }
+        
+        function closeModal() {
+            document.getElementById('opportunityModal').style.display = 'none';
+        }
+        
+        // Close modal when clicking outside
+        document.getElementById('opportunityModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
+'''
+            
+            <div class="status-grid">
+                <div class="status-card">
+                    <div class="status-value">{{ status.requests_today or 0 }}/{{ status.max_requests_per_day }}</div>
+                    <div class="status-label">API Requests Today</div>
+                </div>
+                
+                <div class="status-card">
+                    <div class="status-value">{{ status.alerts_sent_today or 0 }}/{{ status.max_alerts_per_day }}</div>
+                    <div class="status-label">Alerts Sent Today</div>
+                </div>
+                
+                <div class="status-card">
+                    <div class="status-value">{{ status.today_trends or 0 }}</div>
+                    <div class="status-label">Trends Checked Today</div>
+                </div>
+                
+                <div class="status-card">
+                    <div class="status-value">{{ status.today_opportunities or 0 }}</div>
+                    <div class="status-label">Opportunities Found Today</div>
+                </div>
+                
+                <div class="status-card">
+                    <div class="status-value">{{ status.total_opportunities or 0 }}</div>
+                    <div class="status-label">Total Opportunities</div>
+                </div>
+            </div>
+            
+            <div class="monitor-controls">
+                {% if status.running %}
+                    <button onclick="stopMonitoring()" class="btn danger">Stop Monitor</button>
+                {% else %}
+                    <button onclick="startMonitoring()" class="btn success">Start Monitor</button>
+                {% endif %}
+                
+                <button onclick="runCycle()" class="btn">Run Check Now</button>
+                <button onclick="refreshStatus()" class="btn secondary">Refresh Status</button>
+            </div>
+        </div>
+        
+        <div class="status-section">
+            <h3>Recent Content Opportunities</h3>
+            
+            <div class="filter-bar">
+                <select id="siteFilter" onchange="applyFilters()">
+                    <option value="">All Sites</option>
+                    {% for site_domain, site_info in SITE_DOMAINS.items() %}
+                    <option value="{{ site_domain }}">{{ site_info.name }}</option>
+                    {% endfor %}
+                </select>
+                
+                <select id="statusFilter" onchange="applyFilters()">
+                    <option value="">All Statuses</option>
+                    <option value="approved">Approved</option>
+                    <option value="skipped">Skipped</option>
+                    <option value="wrong_site">Wrong Site</option>
+                </select>
+                
+                <input type="number" id="confidenceFilter" placeholder="Min Confidence %"
+                       onchange="applyFilters
 # Section 17.5 RSS Marketing Knowledge Dashboard Template 9/13/25
 MARKETING_KNOWLEDGE_TEMPLATE = '''
 <!DOCTYPE html>
@@ -6699,6 +7592,7 @@ MARKETING_KNOWLEDGE_TEMPLATE = '''
 # Section 18: Background Services and Startup
 # Section 18: Background Services and Startup
 # Section 18: Background Services and Startup (UPDATED WITH RSS MARKETING MONITOR) 9/13/25
+# Section 18: Background Services and Startup (UPDATED WITH GOOGLE TRENDS MONITORING) 9/13/25
 def safe_reminder_checker():
     """Background thread with enhanced safety to prevent spam"""
     consecutive_errors = 0
@@ -6782,6 +7676,23 @@ if os.getenv('RAILWAY_ENVIRONMENT'):
     rss_startup_thread.start()
     print("Scheduled RSS Marketing Monitor startup in 2 minutes")
     
+    # Start Google Trends monitoring
+    def delayed_trends_start():
+        time.sleep(180)  # 3 minute delay after app startup
+        try:
+            from modules.google_trends_monitor import start_trends_monitoring
+            success = start_trends_monitoring()
+            if success:
+                print("Google Trends monitoring started successfully")
+            else:
+                print("Google Trends monitoring failed to start (check configuration)")
+        except Exception as e:
+            print(f"Failed to start Google Trends monitoring: {e}")
+    
+    trends_startup_thread = threading.Thread(target=delayed_trends_start, daemon=True)
+    trends_startup_thread.start()
+    print("Scheduled Google Trends monitoring startup in 3 minutes")
+    
     # Start Calendar-Telegram monitoring if configured
     if is_calendar_telegram_configured():
         def delayed_calendar_start():
@@ -6841,4 +7752,3 @@ if __name__ == '__main__':
             port=port,
             debug=True
         )
-
