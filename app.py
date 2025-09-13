@@ -6257,6 +6257,7 @@ KEYWORDS_TEST_MATCHING_TEMPLATE = '''
 '''
 
 # Section 22: Google Trends Content Opportunity Routes (NEW) 9/13/25
+# Section 22: Google Trends Content Opportunity Routes (NEW) 9/13/25
 
 from modules.google_trends_monitor import (
     run_trends_monitoring_cycle,
@@ -6308,7 +6309,8 @@ def trends_monitor_dashboard():
         
         return render_template_string(TRENDS_DASHBOARD_TEMPLATE,
                                     status=status,
-                                    opportunities=recent_opportunities)
+                                    opportunities=recent_opportunities,
+                                    SITE_DOMAINS=SITE_DOMAINS)
     except Exception as e:
         return f"Trends dashboard error: {str(e)}", 500
 
@@ -6572,92 +6574,6 @@ def api_trends_stats():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# Enhanced Telegram webhook handler to process trends alerts
-# UPDATE the existing telegram_webhook route in your app.py:
-
-@app.route('/telegram/webhook', methods=['POST'])
-def telegram_webhook():
-    """Enhanced Telegram webhook handler with trends alert support"""
-    try:
-        data = request.get_json()
-        
-        # Extract chat ID for debugging
-        chat_id = None
-        if 'message' in data and 'chat' in data['message']:
-            chat_id = data['message']['chat']['id']
-            print(f"=== CHAT ID FOUND: {chat_id} ===")
-            app.logger.info(f"CHAT ID FOUND: {chat_id}")
-        elif 'callback_query' in data and 'message' in data['callback_query']:
-            chat_id = data['callback_query']['message']['chat']['id']
-            print(f"=== CHAT ID FOUND FROM CALLBACK: {chat_id} ===")
-            app.logger.info(f"CHAT ID FOUND FROM CALLBACK: {chat_id}")
-        
-        app.logger.info(f"Telegram webhook received: {data}")
-        
-        # Handle callback queries (button presses)
-        if 'callback_query' in data:
-            callback_query = data['callback_query']
-            callback_data = callback_query.get('data', '')
-            
-            app.logger.info(f"Processing callback: {callback_data}")
-            
-            # Check if this is a trends alert callback
-            if any(callback_data.startswith(prefix) for prefix in ['draft_', 'skip_', 'wrong_', 'data_']):
-                try:
-                    from modules.google_trends_monitor import TelegramAlertSystem, get_trends_monitor
-                    
-                    monitor = get_trends_monitor()
-                    alert_system = TelegramAlertSystem(monitor)
-                    result = alert_system.process_alert_callback(callback_data, callback_query)
-                    
-                    app.logger.info(f"Trends callback result: {result}")
-                    
-                    # Send callback answer to remove loading state
-                    callback_id = callback_query.get('id')
-                    if callback_id:
-                        from modules.telegram_notifications import TelegramBot
-                        bot = TelegramBot()
-                        answer_url = f"https://api.telegram.org/bot{bot.token}/answerCallbackQuery"
-                        requests.post(answer_url, json={
-                            "callback_query_id": callback_id,
-                            "text": "Action processed!" if result.get('success') else "Action failed"
-                        })
-                    
-                    return jsonify({"ok": True})
-                    
-                except Exception as e:
-                    app.logger.error(f"Trends callback processing failed: {e}")
-            else:
-                # Handle regular reminder callbacks
-                reminders = GhostlineTelegramReminders()
-                result = reminders.process_callback_query(callback_query)
-                
-                app.logger.info(f"Reminder callback result: {result}")
-                
-                # Send callback answer to remove loading state
-                callback_id = callback_query.get('id')
-                if callback_id:
-                    bot = reminders.bot
-                    answer_url = f"https://api.telegram.org/bot{bot.token}/answerCallbackQuery"
-                    requests.post(answer_url, json={
-                        "callback_query_id": callback_id,
-                        "text": "Action processed!" if result.get('success') else "Action failed"
-                    })
-            
-            return jsonify({"ok": True})
-        
-        # Handle regular messages
-        if 'message' in data:
-            app.logger.info(f"Received message from chat_id {chat_id}: {data['message'].get('text', 'no text')}")
-            return jsonify({"ok": True})
-        
-        app.logger.info("Webhook received unknown data type")
-        return jsonify({"ok": True})
-        
-    except Exception as e:
-        app.logger.error(f"Telegram webhook failed: {e}", exc_info=True)
-        return jsonify({"ok": False, "error": str(e)}), 500
-
 def _get_opportunity_status_color(response):
     """Get color for opportunity status"""
     colors = {
@@ -6694,16 +6610,6 @@ TRENDS_DASHBOARD_TEMPLATE = '''
             background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
             padding: 20px; margin: 20px 0;
         }
-        .status-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px; margin: 15px 0;
-        }
-        .status-card {
-            background: #2a2a2a; padding: 15px; border-radius: 6px;
-            border-left: 4px solid #6366f1;
-        }
-        .status-value { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
-        .status-label { color: #9ca3af; font-size: 14px; }
         .monitor-controls { margin: 20px 0; }
         .opportunities-table {
             width: 100%; border-collapse: collapse; margin: 20px 0;
@@ -6725,18 +6631,11 @@ TRENDS_DASHBOARD_TEMPLATE = '''
         }
         .running { background: #059669; }
         .stopped { background: #dc2626; }
-        .filter-bar {
-            background: #2a2a2a; padding: 15px; border-radius: 6px; margin: 20px 0;
-        }
-        .filter-bar select, .filter-bar input {
-            background: #333; color: #fff; border: 1px solid #555; border-radius: 4px;
-            padding: 8px; margin: 0 10px 0 0;
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔍 Google Trends Content Monitor</h1>
+        <h1>Google Trends Content Monitor</h1>
         
         <div class="status-section">
             <h3>Monitor Status</h3>
@@ -6745,341 +6644,6 @@ TRENDS_DASHBOARD_TEMPLATE = '''
                 <span style="font-weight: bold;">
                     {% if status.running %}Running{% else %}Stopped{% endif %}
                 </span>
-                <span style="margin-left: 20px; color: #9ca3af;">
-                    PyTrends: {% if status.pytrends_available %}✅{% else %}❌{% endif %}
-                    | Configured: {% if status.configured %}✅{% else %}❌{% endif %}
-                </span>
-            </div>
-            
-            {% if opportunities %}
-            <table class="opportunities-table" id="opportunitiesTable">
-                <thead>
-                    <tr>
-                        <th>Trending Query</th>
-                        <th>Site Match</th>
-                        <th>Confidence</th>
-                        <th>Suggested Title</th>
-                        <th>Status</th>
-                        <th>Detected</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for opp in opportunities %}
-                    <tr data-site="{{ opp.best_site }}" data-status="{{ opp.user_response or 'pending' }}" 
-                        data-confidence="{{ opp.confidence_score }}">
-                        <td>
-                            <strong>{{ opp.trending_query }}</strong>
-                            {% if opp.alert_sent %}
-                            <span style="color: #059669; font-size: 12px;">📤</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ opp.site_name }}</td>
-                        <td>
-                            <span class="confidence-score {% if opp.confidence_score >= 70 %}confidence-high{% elif opp.confidence_score >= 40 %}confidence-medium{% else %}confidence-low{% endif %}">
-                                {{ "%.0f"|format(opp.confidence_score) }}%
-                            </span>
-                        </td>
-                        <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">
-                            {{ opp.suggested_title }}
-                        </td>
-                        <td>
-                            <span style="color: {{ opp.status_color }};">
-                                {% if opp.user_response == 'approved' %}✅ Approved
-                                {% elif opp.user_response == 'skipped' %}⏭️ Skipped  
-                                {% elif opp.user_response == 'wrong_site' %}🔄 Wrong Site
-                                {% else %}⏳ Pending{% endif %}
-                            </span>
-                        </td>
-                        <td>{{ opp.detected_at.strftime('%m/%d %H:%M') if opp.detected_at else 'N/A' }}</td>
-                        <td>
-                            <button onclick="viewOpportunity('{{ opp.opportunity_id }}')" class="btn secondary" style="font-size: 12px; padding: 6px 12px;">View</button>
-                            {% if not opp.user_response %}
-                            <button onclick="approveOpportunity('{{ opp.opportunity_id }}')" class="btn success" style="font-size: 12px; padding: 6px 12px;">Approve</button>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <div style="text-align: center; padding: 40px; color: #9ca3af;">
-                No content opportunities found yet. Start monitoring to detect trends!
-            </div>
-            {% endif %}
-        </div>
-        
-        <div style="margin-top: 40px; text-align: center;">
-            <a href="/keywords" class="btn secondary">Keyword Management</a>
-            <a href="/marketing-knowledge" class="btn secondary">Marketing Knowledge</a>
-            <a href="/integrations" class="btn secondary">Integrations</a>
-            <a href="/" class="btn secondary">Back to Chat</a>
-        </div>
-    </div>
-    
-    <!-- Opportunity Detail Modal -->
-    <div id="opportunityModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-                                      background: rgba(0,0,0,0.8); z-index: 1000;">
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-                    background: #1a1a1a; padding: 30px; border-radius: 8px; max-width: 800px; width: 90%; max-height: 80%; overflow-y: auto;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3>Content Opportunity Details</h3>
-                <button onclick="closeModal()" style="background: none; border: none; color: #fff; font-size: 20px; cursor: pointer;">×</button>
-            </div>
-            <div id="opportunityDetails">Loading...</div>
-        </div>
-    </div>
-    
-    <script>
-        function refreshStatus() {
-            fetch('/api/trends-monitor/status', {
-                credentials: 'include'
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert('Failed to refresh status: ' + data.error);
-                }
-            })
-            .catch(e => alert('Status refresh failed: ' + e));
-        }
-        
-        function startMonitoring() {
-            fetch('/api/trends-monitor/start', {
-                method: 'POST',
-                credentials: 'include'
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    alert('✅ Trends monitoring started!');
-                    location.reload();
-                } else {
-                    alert('Failed to start monitoring: ' + data.error);
-                }
-            })
-            .catch(e => alert('Start request failed: ' + e));
-        }
-        
-        function stopMonitoring() {
-            if (!confirm('Stop trends monitoring? You won\\'t receive content opportunity alerts.')) return;
-            
-            fetch('/api/trends-monitor/stop', {
-                method: 'POST',
-                credentials: 'include'
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    alert('🛑 Trends monitoring stopped');
-                    location.reload();
-                } else {
-                    alert('Failed to stop monitoring: ' + data.error);
-                }
-            })
-            .catch(e => alert('Stop request failed: ' + e));
-        }
-        
-        function runCycle() {
-            const btn = event.target;
-            const originalText = btn.textContent;
-            btn.textContent = 'Running...';
-            btn.disabled = true;
-            
-            fetch('/api/trends-monitor/run-cycle', {
-                method: 'POST',
-                credentials: 'include'
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    alert(`✅ Cycle complete!\\n` +
-                          `Trends found: ${data.trends_found}\\n` +
-                          `Opportunities: ${data.opportunities}\\n` +
-                          `Alerts sent: ${data.alerts_sent}`);
-                    location.reload();
-                } else {
-                    alert('Cycle failed: ' + data.error);
-                }
-                btn.textContent = originalText;
-                btn.disabled = false;
-            })
-            .catch(e => {
-                alert('Cycle request failed: ' + e);
-                btn.textContent = originalText;
-                btn.disabled = false;
-            });
-        }
-        
-        function applyFilters() {
-            const siteFilter = document.getElementById('siteFilter').value;
-            const statusFilter = document.getElementById('statusFilter').value;
-            const confidenceFilter = parseInt(document.getElementById('confidenceFilter').value) || 0;
-            
-            const rows = document.querySelectorAll('#opportunitiesTable tbody tr');
-            
-            rows.forEach(row => {
-                const site = row.dataset.site;
-                const status = row.dataset.status;
-                const confidence = parseFloat(row.dataset.confidence);
-                
-                let show = true;
-                
-                if (siteFilter && site !== siteFilter) show = false;
-                if (statusFilter && status !== statusFilter) show = false;
-                if (confidenceFilter && confidence < confidenceFilter) show = false;
-                
-                row.style.display = show ? 'table-row' : 'none';
-            });
-        }
-        
-        function viewOpportunity(opportunityId) {
-            document.getElementById('opportunityDetails').innerHTML = 'Loading opportunity details...';
-            document.getElementById('opportunityModal').style.display = 'block';
-            
-            fetch(`/api/trends/opportunities?limit=1`, {
-                credentials: 'include'
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    const opportunity = data.opportunities.find(o => o.opportunity_id === opportunityId);
-                    if (opportunity) {
-                        displayOpportunityDetails(opportunity);
-                    } else {
-                        document.getElementById('opportunityDetails').innerHTML = 'Opportunity not found.';
-                    }
-                } else {
-                    document.getElementById('opportunityDetails').innerHTML = 'Error loading details: ' + data.error;
-                }
-            })
-            .catch(e => {
-                document.getElementById('opportunityDetails').innerHTML = 'Failed to load details: ' + e;
-            });
-        }
-        
-        function displayOpportunityDetails(opportunity) {
-            let html = `
-                <div style="margin-bottom: 20px;">
-                    <h4>${opportunity.trending_query}</h4>
-                    <p style="color: #9ca3af;">Detected: ${new Date(opportunity.detected_at).toLocaleString()}</p>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                    <div>
-                        <strong>Best Site Match:</strong><br>
-                        ${opportunity.site_name} (${opportunity.confidence_score.toFixed(1)}% confidence)
-                    </div>
-                    <div>
-                        <strong>Competition:</strong><br>
-                        ${opportunity.competition_level} | ${opportunity.total_search_volume.toLocaleString()} searches
-                    </div>
-                </div>
-                
-                <div style="margin-bottom: 20px;">
-                    <strong>Suggested Title:</strong><br>
-                    <em>${opportunity.suggested_title}</em>
-                </div>
-                
-                <div style="margin-bottom: 20px;">
-                    <strong>Why This Match:</strong><br>
-                    ${opportunity.reasoning}
-                </div>
-            `;
-            
-            if (opportunity.matched_keywords && opportunity.matched_keywords.length > 0) {
-                html += '<div style="margin-bottom: 20px;"><strong>Matched Keywords:</strong><ul>';
-                opportunity.matched_keywords.slice(0, 5).forEach(kw => {
-                    html += `<li>"${kw.keyword}" (${kw.search_volume.toLocaleString()} vol, ${kw.confidence.toFixed(1)}% match)</li>`;
-                });
-                html += '</ul></div>';
-            }
-            
-            // Feedback section
-            html += `
-                <div style="border-top: 1px solid #333; padding-top: 20px;">
-                    <strong>Provide Feedback:</strong><br>
-                    <div style="margin-top: 10px;">
-                        <button onclick="updateFeedback('${opportunity.opportunity_id}', 'approved', 8.0)" class="btn success">✅ Good Match</button>
-                        <button onclick="updateFeedback('${opportunity.opportunity_id}', 'skipped', 3.0)" class="btn warning">⏭️ Skip This</button>
-                        <button onclick="updateFeedback('${opportunity.opportunity_id}', 'wrong_site', 1.0)" class="btn danger">🔄 Wrong Site</button>
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('opportunityDetails').innerHTML = html;
-        }
-        
-        function updateFeedback(opportunityId, response, score) {
-            fetch(`/api/trends/opportunity/${opportunityId}/feedback`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                credentials: 'include',
-                body: JSON.stringify({
-                    response: response,
-                    score: score,
-                    feedback: ''
-                })
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Feedback recorded! This will improve future matching.');
-                    closeModal();
-                    location.reload();
-                } else {
-                    alert('Failed to record feedback: ' + data.error);
-                }
-            })
-            .catch(e => alert('Feedback request failed: ' + e));
-        }
-        
-        function approveOpportunity(opportunityId) {
-            updateFeedback(opportunityId, 'approved', 8.0);
-        }
-        
-        function closeModal() {
-            document.getElementById('opportunityModal').style.display = 'none';
-        }
-        
-        // Close modal when clicking outside
-        document.getElementById('opportunityModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeModal();
-            }
-        });
-    </script>
-</body>
-</html>
-'''
-            
-            <div class="status-grid">
-                <div class="status-card">
-                    <div class="status-value">{{ status.requests_today or 0 }}/{{ status.max_requests_per_day }}</div>
-                    <div class="status-label">API Requests Today</div>
-                </div>
-                
-                <div class="status-card">
-                    <div class="status-value">{{ status.alerts_sent_today or 0 }}/{{ status.max_alerts_per_day }}</div>
-                    <div class="status-label">Alerts Sent Today</div>
-                </div>
-                
-                <div class="status-card">
-                    <div class="status-value">{{ status.today_trends or 0 }}</div>
-                    <div class="status-label">Trends Checked Today</div>
-                </div>
-                
-                <div class="status-card">
-                    <div class="status-value">{{ status.today_opportunities or 0 }}</div>
-                    <div class="status-label">Opportunities Found Today</div>
-                </div>
-                
-                <div class="status-card">
-                    <div class="status-value">{{ status.total_opportunities or 0 }}</div>
-                    <div class="status-label">Total Opportunities</div>
-                </div>
             </div>
             
             <div class="monitor-controls">
@@ -7097,23 +6661,149 @@ TRENDS_DASHBOARD_TEMPLATE = '''
         <div class="status-section">
             <h3>Recent Content Opportunities</h3>
             
-            <div class="filter-bar">
-                <select id="siteFilter" onchange="applyFilters()">
-                    <option value="">All Sites</option>
-                    {% for site_domain, site_info in SITE_DOMAINS.items() %}
-                    <option value="{{ site_domain }}">{{ site_info.name }}</option>
+            {% if opportunities %}
+            <table class="opportunities-table">
+                <thead>
+                    <tr>
+                        <th>Trending Query</th>
+                        <th>Site Match</th>
+                        <th>Confidence</th>
+                        <th>Suggested Title</th>
+                        <th>Status</th>
+                        <th>Detected</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for opp in opportunities %}
+                    <tr>
+                        <td>
+                            <strong>{{ opp.trending_query }}</strong>
+                            {% if opp.alert_sent %}
+                            <span style="color: #059669; font-size: 12px;">Sent</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ opp.site_name }}</td>
+                        <td>
+                            <span class="confidence-score {% if opp.confidence_score >= 70 %}confidence-high{% elif opp.confidence_score >= 40 %}confidence-medium{% else %}confidence-low{% endif %}">
+                                {{ "%.0f"|format(opp.confidence_score) }}%
+                            </span>
+                        </td>
+                        <td style="max-width: 300px; overflow: hidden;">
+                            {{ opp.suggested_title }}
+                        </td>
+                        <td>
+                            <span style="color: {{ opp.status_color }};">
+                                {% if opp.user_response == 'approved' %}Approved
+                                {% elif opp.user_response == 'skipped' %}Skipped  
+                                {% elif opp.user_response == 'wrong_site' %}Wrong Site
+                                {% else %}Pending{% endif %}
+                            </span>
+                        </td>
+                        <td>{{ opp.detected_at.strftime('%m/%d %H:%M') if opp.detected_at else 'N/A' }}</td>
+                        <td>
+                            <button onclick="approveOpportunity('{{ opp.opportunity_id }}')" class="btn success" style="font-size: 12px; padding: 6px 12px;">Approve</button>
+                        </td>
+                    </tr>
                     {% endfor %}
-                </select>
-                
-                <select id="statusFilter" onchange="applyFilters()">
-                    <option value="">All Statuses</option>
-                    <option value="approved">Approved</option>
-                    <option value="skipped">Skipped</option>
-                    <option value="wrong_site">Wrong Site</option>
-                </select>
-                
-                <input type="number" id="confidenceFilter" placeholder="Min Confidence %"
-                       onchange="applyFilters
+                </tbody>
+            </table>
+            {% else %}
+            <div style="text-align: center; padding: 40px; color: #9ca3af;">
+                No content opportunities found yet. Start monitoring to detect trends!
+            </div>
+            {% endif %}
+        </div>
+        
+        <div style="margin-top: 40px; text-align: center;">
+            <a href="/keywords" class="btn secondary">Keyword Management</a>
+            <a href="/marketing-knowledge" class="btn secondary">Marketing Knowledge</a>
+            <a href="/" class="btn secondary">Back to Chat</a>
+        </div>
+    </div>
+    
+    <script>
+        function startMonitoring() {
+            fetch('/api/trends-monitor/start', {
+                method: 'POST',
+                credentials: 'include'
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Trends monitoring started!');
+                    location.reload();
+                } else {
+                    alert('Failed to start: ' + data.error);
+                }
+            });
+        }
+        
+        function stopMonitoring() {
+            if (!confirm('Stop trends monitoring?')) return;
+            
+            fetch('/api/trends-monitor/stop', {
+                method: 'POST',
+                credentials: 'include'
+            })
+            .then(r => r.json())
+            .then(data => {
+                alert(data.success ? 'Stopped' : 'Failed: ' + data.error);
+                if (data.success) location.reload();
+            });
+        }
+        
+        function runCycle() {
+            const btn = event.target;
+            btn.textContent = 'Running...';
+            btn.disabled = true;
+            
+            fetch('/api/trends-monitor/run-cycle', {
+                method: 'POST',
+                credentials: 'include'
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Cycle complete! Found: ' + data.opportunities + ' opportunities');
+                    location.reload();
+                } else {
+                    alert('Failed: ' + data.error);
+                }
+                btn.textContent = 'Run Check Now';
+                btn.disabled = false;
+            });
+        }
+        
+        function refreshStatus() {
+            location.reload();
+        }
+        
+        function approveOpportunity(opportunityId) {
+            fetch('/api/trends/opportunity/' + opportunityId + '/feedback', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify({
+                    response: 'approved',
+                    score: 8.0
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Opportunity approved!');
+                    location.reload();
+                } else {
+                    alert('Failed: ' + data.error);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+'''
+
 # Section 17.5 RSS Marketing Knowledge Dashboard Template 9/13/25
 MARKETING_KNOWLEDGE_TEMPLATE = '''
 <!DOCTYPE html>
