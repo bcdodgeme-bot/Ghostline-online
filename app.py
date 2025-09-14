@@ -6,6 +6,7 @@
 # Section 1: Imports and Flask Setup (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)
 # Section 1: Imports and Flask Setup (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)9/11/25
 # Section 1: Imports and Flask Setup (UPDATED WITH KEYWORD MANAGEMENT SYSTEM) 9/13/25
+# Section 1: Imports and Flask Setup (UPDATED WITH PROJECT MAPPING SYSTEM) 9/13/25
 from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify, render_template_string, Response
 from flask_cors import CORS
 from utils.ghostline_engine import generate_response, generate_streaming_response as stream_generate
@@ -64,6 +65,9 @@ from modules.bluesky_integration import process_bluesky_command, is_bluesky_conf
 
 # NEW: Keyword Management System
 from modules.site_keyword_manager import keyword_manager, SITE_DOMAINS
+
+# NEW: Project Mapping System
+from modules.project_mapping import ProjectMappingSystem, integrate_with_ghostline
 
 # OCR/File Parsing
 from PIL import Image
@@ -243,6 +247,90 @@ except Exception:
 personality_integration = PersonalityIntegration()
 
 # Section 2: Database and Module Initialization
+# Section 2: Database and Module Initialization (UPDATED WITH PROJECT MAPPING) 9/13/25
+app = Flask(__name__)
+
+# Enhanced session and CORS configuration for Railway deployment
+app.config.update(
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SECURE=bool(os.getenv('RAILWAY_ENVIRONMENT')),
+    SESSION_COOKIE_DOMAIN=None
+)
+
+# Enable CORS for streaming with credentials support
+CORS(app, supports_credentials=True, origins=['*'])
+
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'ghostline-default-key')
+PASSWORD = os.getenv('GHOSTLINE_PASSWORD', 'open_the_gate')
+
+# Choose model via env
+CHAT_MODEL = os.getenv("CHAT_MODEL", os.getenv("OPENROUTER_MODEL", "openrouter/auto"))
+
+# Sessions directory
+os.makedirs("sessions", exist_ok=True)
+
+PROJECTS = [
+    'Personal Operating Manual','AMCF','BCDodgeme','Rose and Angel','Meals N Feelz',
+    'TV Signals','Damn It Carl','HalalBot','Kitchen','Health','Side Quests'
+]
+
+CORPUS_PATH = "data/cleaned/ghostline_sources.jsonl.gz"
+
+# Global RAG system state
+_rag_building = False
+_rag_build_error = None
+_brain_building = False
+_brain_build_error = None
+
+# Database configuration
+DATABASE_URL = os.getenv('DATABASE_URL')
+if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
+    DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+
+# Initialize personality system
+personality_integration = PersonalityIntegration()
+
+# Initialize project mapping system
+try:
+    project_mapping_system = ProjectMappingSystem(DATABASE_URL)
+    print("✅ Project Mapping System initialized successfully")
+except Exception as e:
+    print(f"⚠️ Project Mapping System initialization failed: {e}")
+    project_mapping_system = None
+
+# JWT for mobile API
+try:
+    import jwt
+    JWT_AVAILABLE = True
+except ImportError:
+    JWT_AVAILABLE = False
+    print("PyJWT not available - mobile API authentication disabled")
+
+def is_mobile_authenticated():
+    """Check if mobile request is authenticated"""
+    if not JWT_AVAILABLE:
+        return False
+    
+    auth_header = request.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return False
+    
+    token = auth_header[7:]  # Remove 'Bearer ' prefix
+    
+    try:
+        payload = jwt.decode(token, app.secret_key, algorithms=['HS256'])
+        return payload.get('mobile_authenticated', False)
+    except jwt.InvalidTokenError:
+        return False
+
+# .env support
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except Exception:
+    pass
+
 from modules.database import (
     get_db_connection,
     init_database,
@@ -994,9 +1082,10 @@ def upload_file():
 # SECTION 7: Streaming Chat API (UPDATED)
 # Section 7: Streaming Chat API - FIXED VERSION WITH BLUESKY HIGHEST PRIORITY 9/12/25
 # Section 7: Streaming Chat API (UPDATED WITH RSS MARKETING KNOWLEDGE INTEGRATION) 9/13/25
+# Section 7: Streaming Chat API (UPDATED WITH PROJECT MAPPING INTEGRATION) 9/13/25
 @app.route('/api/chat/stream', methods=['POST'])
 def stream_chat():
-    """Enhanced streaming chat endpoint with RSS marketing knowledge integration"""
+    """Enhanced streaming chat endpoint with project mapping integration"""
     
     # Enhanced logging for debugging auth issues
     app.logger.info(f"Stream request from {request.remote_addr}")
@@ -1038,6 +1127,34 @@ def stream_chat():
         
         app.logger.info(f"Stream processing: '{user_input[:50]}...' for project '{project}' (session: {session_id[:8]}...)")
         
+        # ==== NEW PROJECT MAPPING INTEGRATION ====
+        # Detect and set project context
+        if project_mapping_system:
+            try:
+                # Identify project from context if not explicitly set
+                context_data = {
+                    'user_input': user_input,
+                    'current_project': project,
+                    'session_data': dict(session)
+                }
+                
+                detected_project = project_mapping_system.identify_project_from_context(context_data)
+                if detected_project != project and detected_project != 'Main':
+                    project = detected_project
+                    app.logger.info(f"🎯 Auto-detected project: {project}")
+                
+                # Set project context for this session
+                project_mapping_system.set_project_context(session_id, project, context_data)
+                
+                # Get project-specific mappings for integration routing
+                project_context = project_mapping_system.get_project_context(session_id)
+                app.logger.info(f"📂 Current project context: {project_context}")
+                
+            except Exception as e:
+                app.logger.error(f"Project mapping error: {e}")
+                # Continue without project mapping on error
+        # ==== END PROJECT MAPPING INTEGRATION ====
+        
         def generate_stream():
             try:
                 # Send initial message
@@ -1047,13 +1164,41 @@ def stream_chat():
                 response_data = {}
                 handled = False
                 
+                # === ENHANCED INTEGRATION ROUTING ===
+                if project_mapping_system:
+                    try:
+                        # Route integration requests based on project context
+                        integration_context = {
+                            'session_id': session_id,
+                            'project': project,
+                            'user_input': user_input
+                        }
+                        
+                        routing_result = project_mapping_system.route_integration_request(
+                            'general', integration_context
+                        )
+                        
+                        # Add project-specific filtering to your existing integration handlers
+                        if routing_result.get('should_filter'):
+                            data['project_mappings'] = routing_result.get('project_mappings', {})
+                            data['filtered_data'] = routing_result.get('filtered_data', {})
+                            
+                    except Exception as e:
+                        app.logger.error(f"Integration routing error: {e}")
+                
                 # PRIORITY 1: Handle reminder commands FIRST - This is the key fix for streaming too!
                 try:
                     print(f"STREAM: Checking reminder command for: '{user_input}'")
                     response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
                     if handled:
                         print(f"STREAM: Reminder handled successfully!")
-                        save_conversation_enhanced(project, user_input, response_data)
+                        save_conversation_enhanced(
+                            project=project,
+                            user_input=user_input,
+                            response_data=response_data,
+                            context_project=project if project_mapping_system else None,
+                            context_data={'session_id': session_id, 'mappings': project_context.get('data', {}) if 'project_context' in locals() else {}}
+                        )
                         # Stream the reminder response
                         for voice, content in response_data.items():
                             if content and isinstance(content, str):
@@ -1231,9 +1376,15 @@ def stream_chat():
                         app.logger.error(f"AI response generation failed: {e}")
                         response_data = {"SyntaxPrime": f"I'm having trouble processing that request right now. Please try again."}
                 
-                # Save conversation
+                # Save conversation with project context
                 try:
-                    save_conversation_enhanced(project, user_input, response_data)
+                    save_conversation_enhanced(
+                        project=project,
+                        user_input=user_input,
+                        response_data=response_data,
+                        context_project=project if project_mapping_system else None,
+                        context_data={'session_id': session_id, 'mappings': project_context.get('data', {}) if 'project_context' in locals() else {}}
+                    )
                     app.logger.info("Conversation saved successfully")
                 except Exception as e:
                     app.logger.error(f"Failed to save conversation: {e}")
@@ -1291,6 +1442,7 @@ def stream_chat():
 # Section 8: Dashboard Routes (Modular) - UPDATED WITH ADMIN CONTROLS
 # Section 8: Feedback System Routes (NEW) 9/11/25
 # Section 8: Feedback System Routes (FIXED DIRECT VERSION) 9/11/25
+# Section 8: Dashboard Routes (Modular) - UPDATED WITH CLICKUP DIAGNOSTICS AND PROJECT MAPPING 9/13/25
 @app.route('/api/feedback', methods=['POST'])
 def record_feedback():
     """Record user feedback for AI responses (👍👎🖕 buttons) - FIXED DIRECT VERSION"""
@@ -1471,6 +1623,191 @@ def feedback_dashboard():
     except Exception as e:
         app.logger.error(f"Feedback dashboard error: {e}")
         return f"Dashboard error: {e}", 500
+
+@app.route('/diagnostics/clickup')
+def clickup_diagnostics():
+    """ClickUp diagnostics and configuration page"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    try:
+        from modules.clickup_diagnostics import generate_clickup_diagnostic_report, get_clickup_workspace_tree
+        
+        report = generate_clickup_diagnostic_report()
+        workspace_tree = get_clickup_workspace_tree()
+        
+        return render_template_string("""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>ClickUp Diagnostics</title>
+            <style>
+                body { font-family: 'Courier New', monospace; background: #0a0a0a; color: #00ff00; padding: 20px; }
+                .container { max-width: 1200px; margin: 0 auto; }
+                .report { background: #1a1a1a; border: 1px solid #333; padding: 20px; margin: 20px 0; border-radius: 5px; }
+                pre { white-space: pre-wrap; }
+                .btn { background: #6366f1; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; text-decoration: none; display: inline-block; margin: 10px 5px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>ClickUp Integration Diagnostics</h1>
+                <div class="report">
+                    <pre>{{ report }}</pre>
+                </div>
+                {% if workspace_tree.workspace_tree %}
+                <div class="report">
+                    <h3>Workspace Structure</h3>
+                    <pre>{{ workspace_tree | tojson(indent=2) }}</pre>
+                </div>
+                {% endif %}
+                <a href="/" class="btn">Back to Chat</a>
+                <a href="/integrations" class="btn">Integrations</a>
+            </div>
+        </body>
+        </html>
+        """, report=report, workspace_tree=workspace_tree)
+        
+    except Exception as e:
+        return f"ClickUp diagnostics failed: {str(e)}", 500
+
+# Project Mapping API Routes
+@app.route('/api/projects/mappings', methods=['GET'])
+def get_all_project_mappings():
+    """API endpoint to get all project mappings"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    if not project_mapping_system:
+        return jsonify({'error': 'Project mapping system not available'}), 500
+        
+    try:
+        mappings = project_mapping_system.get_project_mappings()
+        return jsonify({
+            'success': True,
+            'mappings': mappings,
+            'projects': PROJECTS
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/projects/mappings', methods=['POST'])
+def add_project_mapping():
+    """API endpoint to add a new project mapping"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    if not project_mapping_system:
+        return jsonify({'error': 'Project mapping system not available'}), 500
+    
+    try:
+        data = request.get_json()
+        project = data.get('project')
+        mapping_type = data.get('mapping_type')  # 'websites', 'social', 'analytics', 'email'
+        resource_identifier = data.get('resource_identifier')
+        resource_data = data.get('resource_data', {})
+        
+        if not all([project, mapping_type, resource_identifier]):
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        success = project_mapping_system.add_project_mapping(
+            project, mapping_type, resource_identifier, resource_data
+        )
+        
+        if success:
+            return jsonify({'success': True, 'message': 'Mapping added successfully'})
+        else:
+            return jsonify({'error': 'Failed to add mapping'}), 500
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/projects/context/<session_id>', methods=['GET', 'POST'])
+def manage_project_context(session_id):
+    """API endpoint to get/set project context"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    if not project_mapping_system:
+        return jsonify({'error': 'Project mapping system not available'}), 500
+    
+    try:
+        if request.method == 'GET':
+            context = project_mapping_system.get_project_context(session_id)
+            return jsonify({
+                'success': True,
+                'context': context
+            })
+        
+        elif request.method == 'POST':
+            data = request.get_json()
+            project = data.get('project')
+            context_data = data.get('context_data', {})
+            
+            if not project:
+                return jsonify({'error': 'Project name required'}), 400
+            
+            project_mapping_system.set_project_context(session_id, project, context_data)
+            return jsonify({
+                'success': True,
+                'project': project,
+                'message': f'Project context set to {project}'
+            })
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/projects/<project>/dashboard')
+def get_project_dashboard(project):
+    """API endpoint for project dashboard data"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    if not project_mapping_system:
+        return jsonify({'error': 'Project mapping system not available'}), 500
+    
+    try:
+        dashboard_data = project_mapping_system.get_project_dashboard_data(project)
+        return jsonify({
+            'success': True,
+            'dashboard': dashboard_data
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/projects/<project>/history')
+def get_project_conversation_history(project):
+    """API endpoint for project-specific conversation history"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    if not project_mapping_system:
+        return jsonify({'error': 'Project mapping system not available'}), 500
+    
+    try:
+        limit = request.args.get('limit', 50, type=int)
+        session_id = session.get('session_id')
+        
+        history = project_mapping_system.filter_conversation_history(
+            project=project,
+            session_id=session_id,
+            limit=limit
+        )
+        
+        # Convert datetime objects to strings for JSON serialization
+        for item in history:
+            if 'created_at' in item and item['created_at']:
+                item['created_at'] = item['created_at'].isoformat()
+        
+        return jsonify({
+            'success': True,
+            'project': project,
+            'history': history,
+            'count': len(history)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # Section 9: PDF Report Generation
 from modules.pdf_generation import (

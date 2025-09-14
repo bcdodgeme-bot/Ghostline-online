@@ -1,8 +1,10 @@
 # modules/database.py - Enhanced Database Operations Module
 # Complete replacement file with smart context routing and brain health monitoring
+# UPDATED WITH PROJECT MAPPING INTEGRATION
 
 import os
 import datetime
+import json
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
@@ -85,7 +87,7 @@ def should_include_content(content: str, context_type: str = "mixed") -> bool:
         return tier != "minimal"
 
 def init_database():
-    """Create necessary database tables"""
+    """Create necessary database tables with project mapping support"""
     if not DATABASE_URL:
         print("No database URL - running in file-only mode")
         return
@@ -97,13 +99,15 @@ def init_database():
         cursor = conn.cursor()
         
         try:
-            # Create chat_threads table for conversation storage
+            # Create chat_threads table for conversation storage with project mapping support
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS chat_threads (
                     id SERIAL PRIMARY KEY,
                     project VARCHAR(100) NOT NULL,
                     user_input TEXT NOT NULL,
                     response_data JSONB NOT NULL,
+                    context_project VARCHAR(100),
+                    context_data JSONB DEFAULT '{}',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
@@ -112,6 +116,12 @@ def init_database():
             cursor.execute('''
                 CREATE INDEX IF NOT EXISTS idx_chat_threads_project_date 
                 ON chat_threads (project, created_at DESC)
+            ''')
+            
+            # Create index for context project searches
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_chat_threads_context_project 
+                ON chat_threads (context_project, created_at DESC)
             ''')
             
             # Create uploaded_files table for file tracking
@@ -181,8 +191,40 @@ def init_database():
                 )
             ''')
             
+            # Create project_mappings table for project mapping system
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS project_mappings (
+                    id SERIAL PRIMARY KEY,
+                    project_name VARCHAR(100) NOT NULL,
+                    mapping_type VARCHAR(50) NOT NULL,
+                    resource_identifier VARCHAR(255) NOT NULL,
+                    resource_data JSONB DEFAULT '{}',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(project_name, mapping_type, resource_identifier)
+                )
+            ''')
+            
+            # Create project_contexts table for session context tracking
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS project_contexts (
+                    id SERIAL PRIMARY KEY,
+                    session_id VARCHAR(255) NOT NULL,
+                    project_name VARCHAR(100) NOT NULL,
+                    context_data JSONB DEFAULT '{}',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(session_id)
+                )
+            ''')
+            
+            # Create indexes for project mapping tables
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_project_mappings_project ON project_mappings (project_name)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_project_mappings_type ON project_mappings (mapping_type)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_project_contexts_session ON project_contexts (session_id)')
+            
             conn.commit()
-            print("Database tables initialized successfully")
+            print("Database tables initialized successfully with project mapping support")
             
         except Exception as e:
             conn.rollback()
@@ -646,7 +688,7 @@ def load_conversation_enhanced(project: str, limit: int = 50):
             try:
                 cursor = conn.cursor(cursor_factory=RealDictCursor)
                 cursor.execute('''
-                    SELECT user_input, response_data, created_at 
+                    SELECT user_input, response_data, created_at, context_project, context_data
                     FROM chat_threads 
                     WHERE project = %s 
                     ORDER BY created_at DESC 
@@ -656,9 +698,12 @@ def load_conversation_enhanced(project: str, limit: int = 50):
                 rows = cursor.fetchall()
                 for row in rows:
                     conversations.append({
+                        "id": f"db_{row['created_at'].timestamp()}",
                         "user": row['user_input'],
                         "responses": row['response_data'],
-                        "timestamp": row['created_at'].isoformat()
+                        "timestamp": row['created_at'].isoformat(),
+                        "context_project": row.get('context_project'),
+                        "context_data": row.get('context_data', {})
                     })
                 
                 # Reverse to get chronological order
@@ -672,25 +717,38 @@ def load_conversation_enhanced(project: str, limit: int = 50):
     # Fallback to file system will be handled by calling function
     return []
 
-def save_conversation_enhanced(project: str, user_input: str, response_data: dict):
-    """Save conversation to both database and file"""
+def save_conversation_enhanced(project: str, user_input: str, response_data: dict, context_project: str = None, context_data: dict = None):
+    """Enhanced conversation saving with project context"""
+    if not DATABASE_URL:
+        print("No database URL - conversation not saved to database")
+        return
     
-    # Save to database first
     with get_db_connection() as conn:
-        if conn:
-            try:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    INSERT INTO chat_threads (project, user_input, response_data)
-                    VALUES (%s, %s, %s)
-                ''', (project, user_input, psycopg2.extras.Json(response_data)))
-                
-                conn.commit()
-                print(f"Conversation saved to database for {project}")
-                
-            except Exception as e:
-                print(f"Failed to save conversation to database: {e}")
-                conn.rollback()
+        if not conn:
+            print("No database connection - conversation not saved")
+            return
+        
+        cursor = conn.cursor()
+        
+        try:
+            cursor.execute('''
+                INSERT INTO chat_threads 
+                (project, user_input, response_data, context_project, context_data)
+                VALUES (%s, %s, %s, %s, %s)
+            ''', (
+                project,
+                user_input,
+                json.dumps(response_data, ensure_ascii=False),
+                context_project,
+                json.dumps(context_data or {}, ensure_ascii=False)
+            ))
+            
+            conn.commit()
+            print(f"Conversation saved to database for {project} (context: {context_project})")
+            
+        except Exception as e:
+            print(f"Error saving conversation: {e}")
+            conn.rollback()
 
 def save_daily_log_enhanced(sync_type: str, content: str):
     """Save daily log to both database and file"""
@@ -836,6 +894,8 @@ def get_database_status():
         "uploaded_files_count": 0,
         "daily_logs_count": 0,
         "brain_documents_count": 0,
+        "project_mappings_count": 0,
+        "project_contexts_count": 0,
         "brain_health": None
     }
     
@@ -848,10 +908,11 @@ def get_database_status():
                 # Check if tables exist
                 cursor.execute('''
                     SELECT COUNT(*) FROM information_schema.tables 
-                    WHERE table_name IN ('chat_threads', 'uploaded_files', 'daily_logs', 'user_settings', 'brain_documents', 'brain_health')
+                    WHERE table_name IN ('chat_threads', 'uploaded_files', 'daily_logs', 'user_settings', 
+                                         'brain_documents', 'brain_health', 'project_mappings', 'project_contexts')
                 ''')
                 table_count = cursor.fetchone()[0]
-                status["tables_exist"] = table_count >= 4
+                status["tables_exist"] = table_count >= 6
                 
                 if status["tables_exist"]:
                     # Get record counts
@@ -870,6 +931,17 @@ def get_database_status():
                         status["brain_documents_count"] = cursor.fetchone()[0]
                     except:
                         status["brain_documents_count"] = 0
+                    
+                    # Project mapping counts
+                    try:
+                        cursor.execute('SELECT COUNT(*) FROM project_mappings')
+                        status["project_mappings_count"] = cursor.fetchone()[0]
+                        
+                        cursor.execute('SELECT COUNT(*) FROM project_contexts')
+                        status["project_contexts_count"] = cursor.fetchone()[0]
+                    except:
+                        status["project_mappings_count"] = 0
+                        status["project_contexts_count"] = 0
                 
                 # Get brain health status
                 status["brain_health"] = get_brain_health_status()
