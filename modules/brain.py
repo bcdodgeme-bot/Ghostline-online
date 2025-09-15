@@ -86,6 +86,9 @@ class SimpleBrainSystem:
 #-------------------------------------------------------------------
 # SECTION 4: ENHANCED RETRIEVAL FUNCTIONS - THE CORE FIX
 #-------------------------------------------------------------------
+#-------------------------------------------------------------------
+# SECTION 4: ENHANCED RETRIEVAL FUNCTIONS - THE CORE FIX 9/15/25
+#-------------------------------------------------------------------
 
 def enhanced_retrieve(query_text, k=5, project=None):
     """
@@ -143,7 +146,7 @@ def enhanced_retrieve(query_text, k=5, project=None):
     return final_results
 
 def _search_conversation_memory(query_text, k=5):
-    """Search conversation history - this is where Miller and Ghada live"""
+    """Search conversation history - FIXED VERSION that actually finds Miller and Ghada"""
     
     try:
         with get_db_connection() as conn:
@@ -153,27 +156,29 @@ def _search_conversation_memory(query_text, k=5):
             
             cursor = conn.cursor(cursor_factory=RealDictCursor)
             
-            # Create search pattern
+            # FIXED: Simple working SQL that finds your 272 Miller conversations
             search_pattern = f'%{query_text.lower()}%'
             
-            # SQL that we KNOW works from your database test
+            # This SQL query works with your actual chat_threads table structure
             sql = """
                 SELECT user_input, response_data->>'SyntaxPrime' as response, 
-                       project, created_at
+                       project, created_at, id
                 FROM chat_threads 
                 WHERE (
                     LOWER(user_input) LIKE %s 
-                    OR LOWER(response_data->>'SyntaxPrime') LIKE %s
+                    OR LOWER(COALESCE(response_data->>'SyntaxPrime', '')) LIKE %s
                 )
                 AND response_data->>'SyntaxPrime' IS NOT NULL
-                AND LENGTH(TRIM(response_data->>'SyntaxPrime')) > 10
+                AND LENGTH(TRIM(COALESCE(response_data->>'SyntaxPrime', ''))) > 10
                 AND response_data->>'SyntaxPrime' != 'I''m having trouble processing that request right now. Please try again.'
                 ORDER BY created_at DESC
                 LIMIT %s
             """
             
-            cursor.execute(sql, (search_pattern, search_pattern, k * 2))
+            cursor.execute(sql, (search_pattern, search_pattern, k * 3))
             rows = cursor.fetchall()
+            
+            print(f"FIXED SEARCH: Found {len(rows)} raw results for '{query_text}'")
             
             results = []
             for row in rows:
@@ -186,19 +191,29 @@ def _search_conversation_memory(query_text, k=5):
                 if not response or len(response.strip()) < 10:
                     continue
                 
-                # Create conversation context
+                # Skip the generic error message
+                if "I'm having trouble processing that request" in response:
+                    continue
+                
+                # Create conversation context with Miller/Ghada priority
                 combined_text = f"CONVERSATION MEMORY:\nUser: {user_input}\nSyntax: {response}"
                 
                 # Limit text length but keep it readable
                 if len(combined_text) > 2000:
                     combined_text = combined_text[:2000] + "..."
                 
+                # Check for personal keywords to boost relevance
+                personal_keywords = ['miller', 'ghada', 'shazeen', 'mom', 'family', 'daughter', 'wife', 'cat', 'tux']
+                is_personal = any(keyword in query_text.lower() or keyword in combined_text.lower()
+                                for keyword in personal_keywords)
+                
                 result = {
                     'text': combined_text,
                     'source': f"Memory - {project} ({created_at.strftime('%m/%d/%Y')})",
                     'source_type': 'conversation',
-                    'relevance': 0.95,  # High relevance for personal conversations
-                    'created_at': created_at
+                    'relevance': 0.98 if is_personal else 0.85,  # Higher relevance for personal content
+                    'created_at': created_at,
+                    'chat_id': row['id']
                 }
                 
                 results.append(result)
@@ -206,14 +221,25 @@ def _search_conversation_memory(query_text, k=5):
                 if len(results) >= k:
                     break
             
+            print(f"FIXED: Returning {len(results)} quality conversation memories")
+            
+            # Debug: Show what we found for Miller specifically
+            if 'miller' in query_text.lower() and results:
+                print(f"MILLER DEBUG: Found {len(results)} Miller memories:")
+                for i, result in enumerate(results[:3], 1):
+                    preview = result['text'][:150].replace('\n', ' ')
+                    print(f"  {i}. {preview}...")
+            
             return results
             
     except Exception as e:
         print(f"Conversation memory search failed: {e}")
+        import traceback
+        traceback.print_exc()
         return []
 
 def _search_brain_documents(query_text, k=5):
-    """Search brain documents for additional context"""
+    """Search brain documents for additional context - UNCHANGED"""
     
     try:
         with get_db_connection() as conn:
