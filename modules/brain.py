@@ -148,6 +148,9 @@ class SimpleBrainSystem:
 #-------------------------------------------------------------------
 # SECTION 4: ENHANCED RETRIEVAL FUNCTIONS - THE CORE FIX 9/15/25
 #-------------------------------------------------------------------
+#-------------------------------------------------------------------
+# SECTION 4: ENHANCED RETRIEVAL FUNCTIONS - THE CORE FIX 9/15/25
+#-------------------------------------------------------------------
 
 def enhanced_retrieve(query_text, k=5, project=None):
     """
@@ -205,9 +208,9 @@ def enhanced_retrieve(query_text, k=5, project=None):
     return final_results
 
 def _search_conversation_memory(query_text, k=5):
-    """EMERGENCY SIMPLE VERSION: Bypasses all cursor.execute issues"""
+    """FIXED: Search that actually returns conversations containing the query text"""
     
-    print(f"Emergency search for: '{query_text}' (limit: {k})")
+    print(f"Searching conversation memory for: '{query_text}' (limit: {k})")
     
     # Validate inputs
     if not query_text or not isinstance(query_text, str):
@@ -216,7 +219,6 @@ def _search_conversation_memory(query_text, k=5):
     if k <= 0:
         k = 5
     
-    # Direct connection without context manager to avoid generator issues
     try:
         if not DATABASE_URL:
             print("No DATABASE_URL configured")
@@ -226,57 +228,55 @@ def _search_conversation_memory(query_text, k=5):
         conn = psycopg2.connect(DATABASE_URL, connect_timeout=10)
         cursor = conn.cursor()
         
-        # Ultra-simple query to avoid parameter issues
-        search_pattern = query_text.lower()
+        # FIXED: Use parameterized query and check both user_input AND response content
+        search_term = f"%{query_text.lower()}%"
         
-        # Use string formatting instead of parameters to avoid tuple issues
-        sql = f"""
-            SELECT user_input, response_data->>'SyntaxPrime' as response, 
-                   project, created_at, id
+        sql = """
+            SELECT user_input, response_data, project, created_at, id
             FROM chat_threads 
-            WHERE LOWER(user_input) LIKE '%{search_pattern}%'
-               OR LOWER(response_data->>'SyntaxPrime') LIKE '%{search_pattern}%'
+            WHERE LOWER(user_input) LIKE %s
+               OR LOWER(response_data->>'SyntaxPrime') LIKE %s
             ORDER BY created_at DESC
-            LIMIT {k * 3}
+            LIMIT %s
         """
         
-        cursor.execute(sql)
+        cursor.execute(sql, (search_term, search_term, k * 3))
         rows = cursor.fetchall()
         
-        print(f"Emergency search found {len(rows)} raw results")
+        print(f"Database query found {len(rows)} raw results for '{query_text}'")
         
         results = []
         for row in rows:
             try:
-                # Direct tuple access since we know the order
                 if len(row) >= 5:
                     user_input = row[0] or ''
-                    response = row[1] or ''
+                    response_data = row[1] or {}
+                    response = response_data.get('SyntaxPrime', '') if isinstance(response_data, dict) else ''
                     project = row[2] or 'Unknown'
                     created_at = row[3]
                     chat_id = row[4]
                     
-                    # Basic validation
-                    if len(user_input.strip()) < 1 or len(response.strip()) < 10:
+                    # FIXED: Only basic validation - don't filter out valid conversations
+                    if len(user_input.strip()) < 1:
                         continue
                     
-                    # Skip error responses
-                    if any(error in response.lower() for error in [
-                        'trouble processing', 'try again', 'error generating'
-                    ]):
+                    # FIXED: Verify this conversation actually contains our search term
+                    combined_text = f"{user_input} {response}".lower()
+                    if query_text.lower() not in combined_text:
+                        print(f"  Skipping row {chat_id}: doesn't contain '{query_text}'")
                         continue
                     
-                    # Build result
-                    combined_text = f"CONVERSATION MEMORY:\nUser: {user_input}\nSyntax: {response}"
-                    if len(combined_text) > 2000:
-                        combined_text = combined_text[:2000] + "..."
+                    # Build result - keep full conversation context
+                    conversation_content = f"CONVERSATION MEMORY:\nUser: {user_input}\nSyntax: {response}"
+                    if len(conversation_content) > 2000:
+                        conversation_content = conversation_content[:2000] + "..."
                     
-                    # Check for personal content
+                    # Check for personal content to boost relevance
                     personal_keywords = ['miller', 'ghada', 'shazeen', 'mom', 'family', 'daughter', 'wife', 'cat']
-                    is_personal = any(kw in combined_text.lower() for kw in personal_keywords)
+                    is_personal = any(kw in combined_text for kw in personal_keywords)
                     
                     result = {
-                        'text': combined_text,
+                        'text': conversation_content,
                         'source': f"Memory - {project}",
                         'source_type': 'conversation',
                         'relevance': 0.98 if is_personal else 0.85,
@@ -294,6 +294,8 @@ def _search_conversation_memory(query_text, k=5):
                     
                     results.append(result)
                     
+                    print(f"  Added result {len(results)}: '{user_input[:50]}...' (contains '{query_text}')")
+                    
                     if len(results) >= k:
                         break
                         
@@ -303,25 +305,25 @@ def _search_conversation_memory(query_text, k=5):
         
         conn.close()
         
-        print(f"Emergency search returning {len(results)} results")
+        print(f"Conversation search returning {len(results)} results for '{query_text}'")
         
-        # Debug for personal queries
-        if any(kw in query_text.lower() for kw in ['miller', 'ghada', 'shazeen']):
-            print(f"PERSONAL SEARCH: Found {len(results)} memories for '{query_text}'")
-            for i, result in enumerate(results[:2], 1):
+        # Debug output for Miller searches
+        if 'miller' in query_text.lower():
+            print(f"MILLER SEARCH DEBUG: Found {len(results)} results")
+            for i, result in enumerate(results[:3], 1):
                 preview = result['text'][:100].replace('\n', ' ')
                 print(f"  {i}. {preview}...")
         
         return results
         
     except Exception as e:
-        print(f"Emergency search failed: {e}")
+        print(f"Conversation search failed: {e}")
         import traceback
         traceback.print_exc()
         return []
 
 def _search_brain_documents(query_text, k=5):
-    """Search brain documents - emergency simple version"""
+    """Search brain documents - simple version that finds actual matches"""
     
     try:
         if not DATABASE_URL:
@@ -331,18 +333,18 @@ def _search_brain_documents(query_text, k=5):
         conn = psycopg2.connect(DATABASE_URL, connect_timeout=10)
         cursor = conn.cursor()
         
-        # Simple string formatting query
-        search_pattern = query_text.lower()
-        sql = f"""
+        # Search documents with parameterized query
+        search_term = f"%{query_text.lower()}%"
+        sql = """
             SELECT title, content, metadata
             FROM brain_documents 
-            WHERE LOWER(content) LIKE '%{search_pattern}%'
+            WHERE LOWER(content) LIKE %s
             AND LENGTH(TRIM(content)) > 20
             ORDER BY LENGTH(content) DESC
-            LIMIT {k}
+            LIMIT %s
         """
         
-        cursor.execute(sql)
+        cursor.execute(sql, (search_term, k))
         rows = cursor.fetchall()
         
         results = []
@@ -352,6 +354,10 @@ def _search_brain_documents(query_text, k=5):
                     title = row[0] or 'Untitled'
                     content = row[1] or ''
                     metadata = row[2] or {}
+                    
+                    # Verify content actually contains search term
+                    if query_text.lower() not in content.lower():
+                        continue
                     
                     if len(content.strip()) < 20:
                         continue
