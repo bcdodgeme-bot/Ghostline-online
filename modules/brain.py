@@ -5,6 +5,9 @@
 #-------------------------------------------------------------------
 # SECTION 1: IMPORTS AND CONFIGURATION
 #-------------------------------------------------------------------
+#-------------------------------------------------------------------
+# SECTION 1: IMPORTS AND CONFIGURATION
+#-------------------------------------------------------------------
 
 import os
 import datetime
@@ -12,13 +15,57 @@ import threading
 import json
 from flask import jsonify
 from psycopg2.extras import RealDictCursor
+import psycopg2
+from contextlib import contextmanager
 
-# Database imports
-from modules.database import (
-    get_db_connection,
-    get_database_status,
-    update_brain_health
-)
+# Database connection - FIXED VERSION
+DATABASE_URL = os.getenv('DATABASE_URL')
+if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
+    DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+
+@contextmanager
+def get_db_connection():
+    """FIXED: Database connection without retry loop generator issues"""
+    conn = None
+    try:
+        if DATABASE_URL:
+            conn = psycopg2.connect(
+                DATABASE_URL,
+                connect_timeout=15,
+                keepalives=1,
+                keepalives_idle=30,
+                keepalives_interval=5,
+                keepalives_count=3
+            )
+            yield conn
+        else:
+            print("No DATABASE_URL configured")
+            yield None
+    except Exception as e:
+        print(f"Database connection failed: {e}")
+        yield None
+    finally:
+        if conn:
+            try:
+                conn.close()
+            except:
+                pass
+
+# Import other database functions we need
+try:
+    from modules.database import (
+        get_database_status,
+        update_brain_health
+    )
+except ImportError as e:
+    print(f"Database import warning: {e}")
+    
+    # Fallback functions if imports fail
+    def get_database_status():
+        return {"status": "import_failed"}
+    
+    def update_brain_health(*args, **kwargs):
+        pass
 
 #-------------------------------------------------------------------
 # SECTION 2: GLOBAL STATE AND CONSTANTS
@@ -92,6 +139,9 @@ class SimpleBrainSystem:
 #-------------------------------------------------------------------
 # SECTION 4: ENHANCED RETRIEVAL FUNCTIONS - THE CORE FIX
 #-------------------------------------------------------------------
+#-------------------------------------------------------------------
+# SECTION 4: ENHANCED RETRIEVAL FUNCTIONS - THE CORE FIX 9/15/25
+#-------------------------------------------------------------------
 
 def enhanced_retrieve(query_text, k=5, project=None):
     """
@@ -149,7 +199,7 @@ def enhanced_retrieve(query_text, k=5, project=None):
     return final_results
 
 def _search_conversation_memory(query_text, k=5):
-    """Search conversation history - FIXED VERSION that filters out error messages"""
+    """FIXED: Search conversation history with bulletproof cursor handling"""
     
     try:
         with get_db_connection() as conn:
@@ -163,8 +213,7 @@ def _search_conversation_memory(query_text, k=5):
             search_pattern = f'%{query_text.lower()}%'
             
             sql = """
-                SELECT user_input, response_data->>'SyntaxPrime' as response, 
-                       project, created_at, id
+                SELECT user_input, response_data, project, created_at, id
                 FROM chat_threads 
                 WHERE (
                     LOWER(user_input) LIKE %s 
@@ -187,52 +236,60 @@ def _search_conversation_memory(query_text, k=5):
             
             results = []
             for row in rows:
-                user_input = row['user_input']
-                response = row['response']
-                project = row['project']
-                created_at = row['created_at']
-                
-                # Skip bad responses (double-check)
-                if not response or len(response.strip()) < 10:
+                try:
+                    # FIXED: Bulletproof row data access
+                    user_input = row.get('user_input', '') if row else ''
+                    response_data = row.get('response_data', {}) if row else {}
+                    response = response_data.get('SyntaxPrime', '') if response_data else ''
+                    project = row.get('project', 'Unknown') if row else 'Unknown'
+                    created_at = row.get('created_at') if row else None
+                    chat_id = row.get('id') if row else None
+                    
+                    # Skip bad responses (double-check)
+                    if not response or len(response.strip()) < 10:
+                        continue
+                    
+                    # Skip any remaining error messages that might have slipped through
+                    error_phrases = [
+                        "I'm having trouble processing",
+                        "try again",
+                        "Error generating",
+                        "Response generation failed",
+                        "I encountered an error"
+                    ]
+                    
+                    if any(phrase in response for phrase in error_phrases):
+                        continue
+                    
+                    # Create conversation context
+                    combined_text = f"CONVERSATION MEMORY:\nUser: {user_input}\nSyntax: {response}"
+                    
+                    # Limit text length but keep it readable
+                    if len(combined_text) > 2000:
+                        combined_text = combined_text[:2000] + "..."
+                    
+                    # Check for personal keywords to boost relevance
+                    personal_keywords = ['miller', 'ghada', 'shazeen', 'mom', 'family', 'daughter', 'wife', 'cat', 'tux']
+                    is_personal = any(keyword in query_text.lower() or keyword in combined_text.lower()
+                                    for keyword in personal_keywords)
+                    
+                    result = {
+                        'text': combined_text,
+                        'source': f"Memory - {project} ({created_at.strftime('%m/%d/%Y') if created_at else 'Unknown'})",
+                        'source_type': 'conversation',
+                        'relevance': 0.98 if is_personal else 0.85,  # Higher relevance for personal content
+                        'created_at': created_at,
+                        'chat_id': chat_id
+                    }
+                    
+                    results.append(result)
+                    
+                    if len(results) >= k:
+                        break
+                        
+                except Exception as row_error:
+                    print(f"Error processing row: {row_error}")
                     continue
-                
-                # Skip any remaining error messages that might have slipped through
-                error_phrases = [
-                    "I'm having trouble processing",
-                    "try again",
-                    "Error generating",
-                    "Response generation failed",
-                    "I encountered an error"
-                ]
-                
-                if any(phrase in response for phrase in error_phrases):
-                    continue
-                
-                # Create conversation context
-                combined_text = f"CONVERSATION MEMORY:\nUser: {user_input}\nSyntax: {response}"
-                
-                # Limit text length but keep it readable
-                if len(combined_text) > 2000:
-                    combined_text = combined_text[:2000] + "..."
-                
-                # Check for personal keywords to boost relevance
-                personal_keywords = ['miller', 'ghada', 'shazeen', 'mom', 'family', 'daughter', 'wife', 'cat', 'tux']
-                is_personal = any(keyword in query_text.lower() or keyword in combined_text.lower()
-                                for keyword in personal_keywords)
-                
-                result = {
-                    'text': combined_text,
-                    'source': f"Memory - {project} ({created_at.strftime('%m/%d/%Y')})",
-                    'source_type': 'conversation',
-                    'relevance': 0.98 if is_personal else 0.85,  # Higher relevance for personal content
-                    'created_at': created_at,
-                    'chat_id': row['id']
-                }
-                
-                results.append(result)
-                
-                if len(results) >= k:
-                    break
             
             print(f"FIXED: Returning {len(results)} quality conversation memories (no error messages)")
             
@@ -280,23 +337,28 @@ def _search_brain_documents(query_text, k=5):
             
             results = []
             for row in rows:
-                title = row['title'] or 'Untitled'
-                content = row['content']
-                metadata = row['metadata'] or {}
-                
-                # Limit content length
-                if len(content) > 1500:
-                    content = content[:1500] + "..."
-                
-                result = {
-                    'text': content,
-                    'source': f"Knowledge - {title}",
-                    'source_type': 'document',
-                    'relevance': 0.7,  # Lower than conversation memory
-                    'metadata': metadata
-                }
-                
-                results.append(result)
+                try:
+                    title = row.get('title', 'Untitled') if row else 'Untitled'
+                    content = row.get('content', '') if row else ''
+                    metadata = row.get('metadata', {}) if row else {}
+                    
+                    # Limit content length
+                    if len(content) > 1500:
+                        content = content[:1500] + "..."
+                    
+                    result = {
+                        'text': content,
+                        'source': f"Knowledge - {title}",
+                        'source_type': 'document',
+                        'relevance': 0.7,  # Lower than conversation memory
+                        'metadata': metadata
+                    }
+                    
+                    results.append(result)
+                    
+                except Exception as row_error:
+                    print(f"Error processing document row: {row_error}")
+                    continue
             
             if results:
                 print(f"Document search found {len(results)} knowledge base results")

@@ -25,51 +25,32 @@ if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
 # ==========================================
 # Section 2: Enhanced Database Connection Management 9/15/25
 # ==========================================
+# ==========================================
+# Section 2: Enhanced Database Connection Management 9/15/25
+# ==========================================
 
 @contextmanager
 def get_db_connection():
-    """Enhanced database connection with retry logic and proper error handling - FIXED"""
+    """FIXED: Database connection without retry loop generator issues"""
     conn = None
-    max_retries = 3
-    retry_count = 0
-    
     try:
-        while retry_count < max_retries:
-            try:
-                if DATABASE_URL:
-                    conn = psycopg2.connect(
-                        DATABASE_URL,
-                        connect_timeout=10,
-                        keepalives=1,
-                        keepalives_idle=30,
-                        keepalives_interval=5,
-                        keepalives_count=3
-                    )
-                    yield conn
-                    break
-                else:
-                    print("No DATABASE_URL configured - using file storage only")
-                    yield None
-                    break
-            except Exception as e:
-                retry_count += 1
-                print(f"Database connection attempt {retry_count} failed: {e}")
-                if conn:
-                    try:
-                        conn.rollback()
-                        conn.close()
-                    except:
-                        pass
-                conn = None
-                
-                if retry_count >= max_retries:
-                    print("Max retries exceeded - database operations will use fallback")
-                    yield None
-                    break
-                else:
-                    time.sleep(1)  # Wait before retry
+        if DATABASE_URL:
+            conn = psycopg2.connect(
+                DATABASE_URL,
+                connect_timeout=15,
+                keepalives=1,
+                keepalives_idle=30,
+                keepalives_interval=5,
+                keepalives_count=3
+            )
+            yield conn
+        else:
+            print("No DATABASE_URL configured - using file storage only")
+            yield None
+    except Exception as e:
+        print(f"Database connection failed: {e}")
+        yield None
     finally:
-        # Cleanup happens here, outside the retry loop to prevent generator errors
         if conn:
             try:
                 conn.close()
