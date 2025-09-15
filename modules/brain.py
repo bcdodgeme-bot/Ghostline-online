@@ -89,6 +89,9 @@ class SimpleBrainSystem:
 #-------------------------------------------------------------------
 # SECTION 4: ENHANCED RETRIEVAL FUNCTIONS - THE CORE FIX 9/15/25
 #-------------------------------------------------------------------
+#-------------------------------------------------------------------
+# SECTION 4: ENHANCED RETRIEVAL FUNCTIONS - THE CORE FIX
+#-------------------------------------------------------------------
 
 def enhanced_retrieve(query_text, k=5, project=None):
     """
@@ -146,7 +149,7 @@ def enhanced_retrieve(query_text, k=5, project=None):
     return final_results
 
 def _search_conversation_memory(query_text, k=5):
-    """Search conversation history - FIXED VERSION that actually finds Miller and Ghada"""
+    """Search conversation history - FIXED VERSION that filters out error messages"""
     
     try:
         with get_db_connection() as conn:
@@ -156,10 +159,9 @@ def _search_conversation_memory(query_text, k=5):
             
             cursor = conn.cursor(cursor_factory=RealDictCursor)
             
-            # FIXED: Simple working SQL that finds your 272 Miller conversations
+            # FIXED: Simple working SQL that excludes error message responses
             search_pattern = f'%{query_text.lower()}%'
             
-            # This SQL query works with your actual chat_threads table structure
             sql = """
                 SELECT user_input, response_data->>'SyntaxPrime' as response, 
                        project, created_at, id
@@ -170,7 +172,10 @@ def _search_conversation_memory(query_text, k=5):
                 )
                 AND response_data->>'SyntaxPrime' IS NOT NULL
                 AND LENGTH(TRIM(COALESCE(response_data->>'SyntaxPrime', ''))) > 10
-                AND response_data->>'SyntaxPrime' != 'I''m having trouble processing that request right now. Please try again.'
+                AND response_data->>'SyntaxPrime' NOT LIKE '%trouble processing%'
+                AND response_data->>'SyntaxPrime' NOT LIKE '%try again%'
+                AND response_data->>'SyntaxPrime' NOT LIKE '%Error generating%'
+                AND response_data->>'SyntaxPrime' NOT LIKE '%Response generation failed%'
                 ORDER BY created_at DESC
                 LIMIT %s
             """
@@ -178,7 +183,7 @@ def _search_conversation_memory(query_text, k=5):
             cursor.execute(sql, (search_pattern, search_pattern, k * 3))
             rows = cursor.fetchall()
             
-            print(f"FIXED SEARCH: Found {len(rows)} raw results for '{query_text}'")
+            print(f"FIXED SEARCH: Found {len(rows)} clean results for '{query_text}' (error messages filtered)")
             
             results = []
             for row in rows:
@@ -187,15 +192,23 @@ def _search_conversation_memory(query_text, k=5):
                 project = row['project']
                 created_at = row['created_at']
                 
-                # Skip bad responses
+                # Skip bad responses (double-check)
                 if not response or len(response.strip()) < 10:
                     continue
                 
-                # Skip the generic error message
-                if "I'm having trouble processing that request" in response:
+                # Skip any remaining error messages that might have slipped through
+                error_phrases = [
+                    "I'm having trouble processing",
+                    "try again",
+                    "Error generating",
+                    "Response generation failed",
+                    "I encountered an error"
+                ]
+                
+                if any(phrase in response for phrase in error_phrases):
                     continue
                 
-                # Create conversation context with Miller/Ghada priority
+                # Create conversation context
                 combined_text = f"CONVERSATION MEMORY:\nUser: {user_input}\nSyntax: {response}"
                 
                 # Limit text length but keep it readable
@@ -221,13 +234,13 @@ def _search_conversation_memory(query_text, k=5):
                 if len(results) >= k:
                     break
             
-            print(f"FIXED: Returning {len(results)} quality conversation memories")
+            print(f"FIXED: Returning {len(results)} quality conversation memories (no error messages)")
             
-            # Debug: Show what we found for Miller specifically
-            if 'miller' in query_text.lower() and results:
-                print(f"MILLER DEBUG: Found {len(results)} Miller memories:")
+            # Debug: Show what we found for personal queries
+            if any(keyword in query_text.lower() for keyword in ['miller', 'ghada', 'shazeen']) and results:
+                print(f"PERSONAL MEMORY DEBUG: Found {len(results)} memories for '{query_text}':")
                 for i, result in enumerate(results[:3], 1):
-                    preview = result['text'][:150].replace('\n', ' ')
+                    preview = result['text'][:100].replace('\n', ' ')
                     print(f"  {i}. {preview}...")
             
             return results
@@ -239,7 +252,7 @@ def _search_conversation_memory(query_text, k=5):
         return []
 
 def _search_brain_documents(query_text, k=5):
-    """Search brain documents for additional context - UNCHANGED"""
+    """Search brain documents for additional context"""
     
     try:
         with get_db_connection() as conn:
@@ -284,6 +297,9 @@ def _search_brain_documents(query_text, k=5):
                 }
                 
                 results.append(result)
+            
+            if results:
+                print(f"Document search found {len(results)} knowledge base results")
             
             return results
             
