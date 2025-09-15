@@ -30,40 +30,41 @@ def get_db_connection():
     max_retries = 3
     retry_count = 0
     
-    while retry_count < max_retries:
-        try:
-            if DATABASE_URL:
-                conn = psycopg2.connect(
-                    DATABASE_URL,
-                    connect_timeout=10,
-                    keepalives=1,
-                    keepalives_idle=30,
-                    keepalives_interval=5,
-                    keepalives_count=3
-                )
-                yield conn
-                break
-            else:
-                print("No DATABASE_URL configured - using file storage only")
-                yield None
-                break
-        except Exception as e:
-            retry_count += 1
-            print(f"Database connection attempt {retry_count} failed: {e}")
-            if conn:
-                try:
-                    conn.rollback()
-                    conn.close()
-                except:
-                    pass
-            conn = None
-            
-            if retry_count >= max_retries:
-                print("Max retries exceeded - database operations will use fallback")
-                yield None
-                break
-            else:
-                time.sleep(1)  # Wait before retry
+    try:
+        while retry_count < max_retries:
+            try:
+                if DATABASE_URL:
+                    conn = psycopg2.connect(
+                        DATABASE_URL,
+                        connect_timeout=10,
+                        keepalives=1,
+                        keepalives_idle=30,
+                        keepalives_interval=5,
+                        keepalives_count=3
+                    )
+                    yield conn
+                    break
+                else:
+                    print("No DATABASE_URL configured - using file storage only")
+                    yield None
+                    break
+            except Exception as e:
+                retry_count += 1
+                print(f"Database connection attempt {retry_count} failed: {e}")
+                if conn:
+                    try:
+                        conn.rollback()
+                        conn.close()
+                    except:
+                        pass
+                conn = None
+                
+                if retry_count >= max_retries:
+                    print("Max retries exceeded - database operations will use fallback")
+                    yield None
+                    break
+                else:
+                    time.sleep(1)  # Wait before retry
     finally:
         if conn:
             try:
@@ -139,26 +140,40 @@ def classify_search_intent(query_text: str, conversation_context: List[str] = No
     
     query_lower = query_text.lower().strip()
     
-    # Personal context indicators (people, family, ongoing situations)
+    # Personal context indicators (people, family, ongoing situations) - EXPANDED
     personal_patterns = [
-        # Family and personal relationships - ENHANCED FOR MILLER
+        # Family and personal relationships - COMPREHENSIVE
         "miller", "ghada", "shazeen", "mom", "mother", "wife", "daughter", "cat", "tux cat",
-        "my family", "my daughter", "my wife", "my mom", "my cat", "my child",
+        "my family", "my daughter", "my wife", "my mom", "my cat", "my child", "fajr",
+        "muhi", "inner circle", "family", "hysterectomy", "surgery", "recovery", "tired",
         
-        # Conversational continuity
+        # Work and personal projects - EXPANDED
+        "amcf", "my company", "my work", "my projects", "my sites", "meals n feelz",
+        "mealsnfeelz", "rose and angel", "bcdodgeme", "tv signals", "damn it carl",
+        "halalbot", "kitchen", "health", "side quests", "nonprofit", "giving circle",
+        
+        # Personal situations and locations
+        "nh", "new hampshire", "estate", "mom's estate", "courts", "apartment",
+        "hubspot", "conference", "summit", "ticket sales", "my marketing",
+        
+        # Daily routines and personal contexts
+        "cup one", "coffee", "breakfast", "morning routine", "5am", "5:00", "9 to 16:30",
+        "work windows", "my schedule", "goals", "weekly goals", "deliverables",
+        
+        # Personal tools and AI relationship
+        "ghostline", "syntax", "syntaxprime", "you", "we", "our conversation",
+        "reminder", "reminders", "telegram", "my workflow", "my system",
+        
+        # Conversational continuity - EXPANDED
         "we were talking about", "you mentioned", "earlier you said", "as we discussed",
         "my situation", "my project", "our conversation", "what i told you",
+        "catch me up", "update me", "where are we", "current status", "latest on",
+        "how are things", "what's happening with", "progress", "status update",
         
-        # Current status/updates
-        "update me", "catch me up", "where are we", "current status", "latest on",
-        "how are things", "what's happening with",
-        
-        # Recent activities (contextual)
+        # Time-based personal references - EXPANDED
         "today", "yesterday", "this week", "recently", "just now", "right now",
-        "currently", "at the moment", "these days",
-        
-        # Personal work/projects
-        "amcf", "my company", "my work", "my projects", "my sites"
+        "currently", "at the moment", "these days", "this morning", "tonight",
+        "earlier today", "last night", "this weekend", "past few days"
     ]
     
     # Knowledge base indicators (factual/reference information)
