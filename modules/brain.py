@@ -151,6 +151,9 @@ class SimpleBrainSystem:
 #-------------------------------------------------------------------
 # SECTION 4: ENHANCED RETRIEVAL FUNCTIONS - THE CORE FIX 9/15/25
 #-------------------------------------------------------------------
+#-------------------------------------------------------------------
+# SECTION 4: ENHANCED RETRIEVAL FUNCTIONS - THE CORE FIX 9/15/25 - MILLER MEMORY RESTORED
+#-------------------------------------------------------------------
 
 def enhanced_retrieve(query_text, k=5, project=None):
     """
@@ -208,12 +211,13 @@ def enhanced_retrieve(query_text, k=5, project=None):
     return final_results
 
 def _search_conversation_memory(query_text, k=5):
-    """FIXED: Search that actually returns conversations containing the query text"""
+    """FIXED: Search using proper parameterized queries to avoid SQL errors"""
     
     print(f"Searching conversation memory for: '{query_text}' (limit: {k})")
     
     # Validate inputs
     if not query_text or not isinstance(query_text, str):
+        print("Invalid query input")
         return []
     
     if k <= 0:
@@ -224,11 +228,11 @@ def _search_conversation_memory(query_text, k=5):
             print("No DATABASE_URL configured")
             return []
         
-        # Direct psycopg2 connection
+        # Use direct connection to avoid context manager issues
         conn = psycopg2.connect(DATABASE_URL, connect_timeout=10)
         cursor = conn.cursor()
         
-        # FIXED: Use parameterized query and check both user_input AND response content
+        # CRITICAL FIX: Use proper parameterized queries
         search_term = f"%{query_text.lower()}%"
         
         sql = """
@@ -240,38 +244,44 @@ def _search_conversation_memory(query_text, k=5):
             LIMIT %s
         """
         
+        # Execute with proper parameters (no string formatting!)
         cursor.execute(sql, (search_term, search_term, k * 3))
         rows = cursor.fetchall()
         
-        print(f"Database query found {len(rows)} raw results for '{query_text}'")
+        print(f"SQL executed successfully: {len(rows)} raw results")
         
         results = []
         for row in rows:
             try:
+                # Safe tuple unpacking
                 if len(row) >= 5:
                     user_input = row[0] or ''
                     response_data = row[1] or {}
-                    response = response_data.get('SyntaxPrime', '') if isinstance(response_data, dict) else ''
                     project = row[2] or 'Unknown'
                     created_at = row[3]
                     chat_id = row[4]
                     
-                    # FIXED: Only basic validation - don't filter out valid conversations
+                    # Extract response safely
+                    if isinstance(response_data, dict):
+                        response = response_data.get('SyntaxPrime', '')
+                    else:
+                        response = ''
+                    
+                    # Skip empty conversations
                     if len(user_input.strip()) < 1:
                         continue
                     
-                    # FIXED: Verify this conversation actually contains our search term
+                    # Verify content actually matches query
                     combined_text = f"{user_input} {response}".lower()
                     if query_text.lower() not in combined_text:
-                        print(f"  Skipping row {chat_id}: doesn't contain '{query_text}'")
                         continue
                     
-                    # Build result - keep full conversation context
+                    # Build result
                     conversation_content = f"CONVERSATION MEMORY:\nUser: {user_input}\nSyntax: {response}"
                     if len(conversation_content) > 2000:
                         conversation_content = conversation_content[:2000] + "..."
                     
-                    # Check for personal content to boost relevance
+                    # Personal content boost
                     personal_keywords = ['miller', 'ghada', 'shazeen', 'mom', 'family', 'daughter', 'wife', 'cat']
                     is_personal = any(kw in combined_text for kw in personal_keywords)
                     
@@ -294,8 +304,6 @@ def _search_conversation_memory(query_text, k=5):
                     
                     results.append(result)
                     
-                    print(f"  Added result {len(results)}: '{user_input[:50]}...' (contains '{query_text}')")
-                    
                     if len(results) >= k:
                         break
                         
@@ -316,8 +324,12 @@ def _search_conversation_memory(query_text, k=5):
         
         return results
         
+    except psycopg2.Error as db_error:
+        print(f"PostgreSQL error in conversation search: {db_error}")
+        print(f"Error code: {db_error.pgcode}")
+        return []
     except Exception as e:
-        print(f"Conversation search failed: {e}")
+        print(f"Conversation search failed with exception: {e}")
         import traceback
         traceback.print_exc()
         return []
