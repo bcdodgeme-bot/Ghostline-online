@@ -1,14 +1,17 @@
-# modules/database.py - Enhanced Database Operations Module
-# Complete replacement file with smart context routing and brain health monitoring
-# UPDATED WITH PROJECT MAPPING INTEGRATION
+# modules/database.py - COMPLETE REWRITE with Enhanced Search and Thread Support
+# Fixed database operations with proper full-text search indexes and thread/bookmark functionality
 
+# ==========================================
+# Section 1: Imports and Configuration
+# ==========================================
 import os
 import datetime
 import json
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+import time
 
 # Database configuration
 DATABASE_URL = os.getenv('DATABASE_URL')
@@ -16,36 +19,84 @@ if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
     # Railway provides postgres:// but psycopg2 needs postgresql://
     DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
 
+# ==========================================
+# Section 2: Enhanced Database Connection Management
+# ==========================================
+
 @contextmanager
 def get_db_connection():
-    """Context manager for database connections"""
+    """Enhanced database connection with retry logic and proper error handling"""
     conn = None
-    try:
-        if DATABASE_URL:
-            conn = psycopg2.connect(DATABASE_URL)
-            yield conn
-        else:
-            print("No DATABASE_URL found - using file storage only")
-            yield None
-    except Exception as e:
-        print(f"Database connection failed: {e}")
-        if conn:
-            conn.rollback()
-        yield None
+    max_retries = 3
+    retry_count = 0
+    
+    while retry_count < max_retries:
+        try:
+            if DATABASE_URL:
+                conn = psycopg2.connect(
+                    DATABASE_URL,
+                    connect_timeout=10,
+                    keepalives=1,
+                    keepalives_idle=30,
+                    keepalives_interval=5,
+                    keepalives_count=3
+                )
+                yield conn
+                break
+            else:
+                print("No DATABASE_URL configured - using file storage only")
+                yield None
+                break
+        except Exception as e:
+            retry_count += 1
+            print(f"Database connection attempt {retry_count} failed: {e}")
+            if conn:
+                try:
+                    conn.rollback()
+                    conn.close()
+                except:
+                    pass
+            conn = None
+            
+            if retry_count >= max_retries:
+                print("Max retries exceeded - database operations will use fallback")
+                yield None
+                break
+            else:
+                time.sleep(1)  # Wait before retry
     finally:
         if conn:
-            conn.close()
+            try:
+                conn.close()
+            except:
+                pass
+
+def test_database_connection():
+    """Test database connectivity and return status"""
+    with get_db_connection() as conn:
+        if not conn:
+            return False, "No database connection available"
+        
+        try:
+            cursor = conn.cursor()
+            cursor.execute('SELECT 1')
+            cursor.fetchone()
+            return True, "Database connection successful"
+        except Exception as e:
+            return False, f"Database test failed: {e}"
+
+# ==========================================
+# Section 3: Content Classification and Filtering
+# ==========================================
 
 def get_content_tier(content: str) -> str:
-    """Classify content by length and substance into tiers"""
+    """Classify content by length and substance into tiers for smart filtering"""
     if not content or not content.strip():
         return "minimal"
     
     content = content.strip()
     length = len(content)
     word_count = len(content.split())
-    
-    # Count sentences (rough approximation)
     sentence_count = content.count('.') + content.count('!') + content.count('?')
     
     # Minimal: Very short responses, greetings, confirmations
@@ -73,170 +124,27 @@ def should_include_content(content: str, context_type: str = "mixed") -> bool:
     if context_type == "personal_context":
         # For personal context, include more content types
         return tier in ["basic", "substantial", "comprehensive"]
-    
     elif context_type == "knowledge_base":
         # For knowledge base, prioritize substantial content
         return tier in ["substantial", "comprehensive"]
-    
     elif context_type == "recent_priority":
         # For recent high-priority searches, include most content
         return tier in ["basic", "substantial", "comprehensive"]
-    
     else:  # mixed or default
         # Standard filtering - exclude only minimal content
         return tier != "minimal"
 
-def init_database():
-    """Create necessary database tables with project mapping support"""
-    if not DATABASE_URL:
-        print("No database URL - running in file-only mode")
-        return
-    
-    with get_db_connection() as conn:
-        if not conn:
-            return
-            
-        cursor = conn.cursor()
-        
-        try:
-            # Create chat_threads table for conversation storage with project mapping support
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS chat_threads (
-                    id SERIAL PRIMARY KEY,
-                    project VARCHAR(100) NOT NULL,
-                    user_input TEXT NOT NULL,
-                    response_data JSONB NOT NULL,
-                    context_project VARCHAR(100),
-                    context_data JSONB DEFAULT '{}',
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            ''')
-            
-            # Create index for better performance
-            cursor.execute('''
-                CREATE INDEX IF NOT EXISTS idx_chat_threads_project_date 
-                ON chat_threads (project, created_at DESC)
-            ''')
-            
-            # Create index for context project searches
-            cursor.execute('''
-                CREATE INDEX IF NOT EXISTS idx_chat_threads_context_project 
-                ON chat_threads (context_project, created_at DESC)
-            ''')
-            
-            # Create uploaded_files table for file tracking
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS uploaded_files (
-                    id SERIAL PRIMARY KEY,
-                    filename VARCHAR(255) NOT NULL,
-                    file_type VARCHAR(50) NOT NULL,
-                    content_preview TEXT,
-                    upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    project VARCHAR(100) NOT NULL,
-                    processing_status VARCHAR(50) DEFAULT 'completed'
-                )
-            ''')
-            
-            # Create user_settings table for preferences
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS user_settings (
-                    id SERIAL PRIMARY KEY,
-                    setting_key VARCHAR(100) UNIQUE NOT NULL,
-                    setting_value JSONB NOT NULL,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            ''')
-            
-            # Create daily_logs table for briefings
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS daily_logs (
-                    id SERIAL PRIMARY KEY,
-                    log_date DATE NOT NULL,
-                    log_type VARCHAR(50) NOT NULL,
-                    content TEXT NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(log_date, log_type)
-                )
-            ''')
-            
-            # Create brain_documents table for RAG system storage
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS brain_documents (
-                    id SERIAL PRIMARY KEY,
-                    document_id VARCHAR(255) NOT NULL,
-                    title VARCHAR(500),
-                    content TEXT NOT NULL,
-                    embedding_vector FLOAT8[] NULL,
-                    chunk_index INTEGER DEFAULT 0,
-                    metadata JSONB DEFAULT '{}',
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            ''')
-            
-            # Create indexes for brain_documents
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_brain_docs_id ON brain_documents (document_id)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_brain_docs_title ON brain_documents (title)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_brain_docs_content_fts ON brain_documents USING gin(to_tsvector(\'english\', content))')
-            
-            # Create brain_health table for monitoring
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS brain_health (
-                    id SERIAL PRIMARY KEY,
-                    last_refresh TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    total_documents INTEGER DEFAULT 0,
-                    last_search_query TEXT,
-                    last_search_results INTEGER DEFAULT 0,
-                    health_status VARCHAR(50) DEFAULT 'healthy',
-                    error_log TEXT
-                )
-            ''')
-            
-            # Create project_mappings table for project mapping system
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS project_mappings (
-                    id SERIAL PRIMARY KEY,
-                    project_name VARCHAR(100) NOT NULL,
-                    mapping_type VARCHAR(50) NOT NULL,
-                    resource_identifier VARCHAR(255) NOT NULL,
-                    resource_data JSONB DEFAULT '{}',
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(project_name, mapping_type, resource_identifier)
-                )
-            ''')
-            
-            # Create project_contexts table for session context tracking
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS project_contexts (
-                    id SERIAL PRIMARY KEY,
-                    session_id VARCHAR(255) NOT NULL,
-                    project_name VARCHAR(100) NOT NULL,
-                    context_data JSONB DEFAULT '{}',
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(session_id)
-                )
-            ''')
-            
-            # Create indexes for project mapping tables
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_project_mappings_project ON project_mappings (project_name)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_project_mappings_type ON project_mappings (mapping_type)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_project_contexts_session ON project_contexts (session_id)')
-            
-            conn.commit()
-            print("Database tables initialized successfully with project mapping support")
-            
-        except Exception as e:
-            conn.rollback()
-            print(f"Database initialization failed: {e}")
-
 def classify_search_intent(query_text: str, conversation_context: List[str] = None) -> str:
-    """Classify whether a search needs personal context vs knowledge base"""
+    """Classify whether a search needs personal context vs knowledge base - ENHANCED VERSION"""
     
     query_lower = query_text.lower().strip()
     
-    # Personal context indicators (recent conversation continuation)
+    # Personal context indicators (people, family, ongoing situations)
     personal_patterns = [
+        # Family and personal relationships - ENHANCED FOR MILLER
+        "miller", "ghada", "shazeen", "mom", "mother", "wife", "daughter", "cat", "tux cat",
+        "my family", "my daughter", "my wife", "my mom", "my cat", "my child",
+        
         # Conversational continuity
         "we were talking about", "you mentioned", "earlier you said", "as we discussed",
         "my situation", "my project", "our conversation", "what i told you",
@@ -249,9 +157,8 @@ def classify_search_intent(query_text: str, conversation_context: List[str] = No
         "today", "yesterday", "this week", "recently", "just now", "right now",
         "currently", "at the moment", "these days",
         
-        # Personal references
-        "my family", "my daughter", "my work", "my company", "shazeen", "ghada",
-        "amcf", "my mom", "my projects"
+        # Personal work/projects
+        "amcf", "my company", "my work", "my projects", "my sites"
     ]
     
     # Knowledge base indicators (factual/reference information)
@@ -272,16 +179,8 @@ def classify_search_intent(query_text: str, conversation_context: List[str] = No
         "marketing strategy", "seo", "algorithm", "technology", "history of"
     ]
     
-    # Greeting/casual patterns (minimal context needed)
-    casual_patterns = [
-        "hello", "hi", "good morning", "good afternoon", "hey", "what's up",
-        "how are you", "thanks", "thank you", "ok", "okay", "cool", "great"
-    ]
-    
     # Check patterns in order of specificity
-    if any(pattern in query_lower for pattern in casual_patterns):
-        return "casual"
-    elif any(pattern in query_lower for pattern in personal_patterns):
+    if any(pattern in query_lower for pattern in personal_patterns):
         return "personal_context"
     elif any(pattern in query_lower for pattern in knowledge_patterns):
         return "knowledge_base"
@@ -291,43 +190,135 @@ def classify_search_intent(query_text: str, conversation_context: List[str] = No
         recent_topics = " ".join(conversation_context[-3:]).lower()  # Last 3 exchanges
         
         # If recent conversation mentioned personal topics, lean personal
-        if any(term in recent_topics for term in ["shazeen", "ghada", "amcf", "daughter", "project"]):
+        if any(term in recent_topics for term in ["miller", "ghada", "shazeen", "amcf", "daughter", "project"]):
             return "personal_context"
     
-    # Default to knowledge base for specific questions, personal for general
+    # Default based on query length and structure
     if len(query_text.split()) <= 3:
         return "personal_context"  # Short queries often reference ongoing conversation
     else:
         return "knowledge_base"   # Longer queries often seek information
 
-def search_recent_conversations(query_text: str, k: int = 3, days: int = 7) -> List[Dict[str, Any]]:
-    """Search only recent conversation history with smart filtering"""
+# ==========================================
+# Section 4: Enhanced Full-Text Search Functions
+# ==========================================
+
+def search_personal_context(query_text: str, k: int = 5) -> List[Dict[str, Any]]:
+    """Search personal context using family names and personal keywords - ENHANCED FOR MILLER"""
+    
+    # Enhanced personal context keywords
+    personal_keywords = [
+        'miller', 'ghada', 'shazeen', 'mom', 'mother', 'family', 'daughter', 'wife', 'cat', 'tux',
+        'amcf', 'my daughter', 'my wife', 'my mom', 'my cat', 'tux cat', 'tuxedo cat'
+    ]
+    
+    # Check if query contains personal keywords
+    query_lower = query_text.lower()
+    is_personal = any(keyword in query_lower for keyword in personal_keywords)
+    
+    if not is_personal:
+        return []
     
     with get_db_connection() as conn:
         if not conn:
+            print("No database connection for personal context search")
             return []
         
         try:
             cursor = conn.cursor(cursor_factory=RealDictCursor)
             
-            # Search conversations from last N days only
-            cutoff_date = datetime.datetime.now() - datetime.timedelta(days=days)
-            
-            search_sql = '''
-                SELECT user_input, response_data, created_at, project,
-                       ts_rank(to_tsvector('english', user_input || ' ' || 
+            # Enhanced personal context search with full-text search
+            personal_sql = '''
+                SELECT id, project, user_input, response_data, created_at,
+                       ts_rank(to_tsvector('english', 
+                               user_input || ' ' || 
                                COALESCE(response_data->>'SyntaxPrime', '')), 
                                plainto_tsquery('english', %s)) as rank
                 FROM chat_threads 
-                WHERE created_at >= %s
-                AND to_tsvector('english', user_input || ' ' || 
-                    COALESCE(response_data->>'SyntaxPrime', '')) 
-                    @@ plainto_tsquery('english', %s)
+                WHERE to_tsvector('english', 
+                      user_input || ' ' || 
+                      COALESCE(response_data->>'SyntaxPrime', '')) 
+                      @@ plainto_tsquery('english', %s)
+                   AND (LOWER(user_input) LIKE ANY(%s) 
+                        OR LOWER(COALESCE(response_data->>'SyntaxPrime', '')) LIKE ANY(%s))
                 ORDER BY rank DESC, created_at DESC
                 LIMIT %s
             '''
             
-            cursor.execute(search_sql, (query_text, cutoff_date, query_text, k * 2))  # Get more for filtering
+            like_patterns = [f'%{kw}%' for kw in personal_keywords]
+            
+            cursor.execute(personal_sql, (
+                query_text, query_text, like_patterns, like_patterns, k * 2
+            ))
+            rows = cursor.fetchall()
+            
+            print(f"Personal context search for '{query_text}' found {len(rows)} results")
+            
+            # Convert to RAG format with high priority scoring
+            results = []
+            for row in rows:
+                response_content = row['response_data'].get('SyntaxPrime', '') if row['response_data'] else ''
+                
+                # Apply smart filtering for personal context
+                if should_include_content(response_content, "personal_context"):
+                    combined_text = f"User: {row['user_input']}\nResponse: {response_content}"
+                    
+                    results.append({
+                        'text': combined_text[:1500],
+                        'source': f"Personal Memory - {row['project']} ({row['created_at'].strftime('%m/%d/%Y')})",
+                        'id': f"personal_{row['id']}",
+                        'score': float(row['rank']) + 2.0,  # Boost personal context significantly
+                        'metadata': {
+                            'type': 'personal_context',
+                            'project': row['project'],
+                            'date': row['created_at'].isoformat(),
+                            'chat_id': row['id'],
+                            'priority': 'high',
+                            'content_tier': get_content_tier(response_content)
+                        }
+                    })
+                    
+                    if len(results) >= k:
+                        break
+            
+            print(f"Personal context search returning {len(results)} quality results")
+            return results
+            
+        except Exception as e:
+            print(f"Personal context search failed: {e}")
+            return []
+
+def search_recent_conversations(query_text: str, k: int = 3, days: int = 7) -> List[Dict[str, Any]]:
+    """Search recent conversation history with enhanced full-text search"""
+    
+    with get_db_connection() as conn:
+        if not conn:
+            print("No database connection for recent conversation search")
+            return []
+        
+        try:
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            
+            # Search conversations from last N days with full-text search
+            cutoff_date = datetime.datetime.now() - datetime.timedelta(days=days)
+            
+            search_sql = '''
+                SELECT id, project, user_input, response_data, created_at,
+                       ts_rank(to_tsvector('english', 
+                               user_input || ' ' || 
+                               COALESCE(response_data->>'SyntaxPrime', '')), 
+                               plainto_tsquery('english', %s)) as rank
+                FROM chat_threads 
+                WHERE created_at >= %s
+                   AND to_tsvector('english', 
+                       user_input || ' ' || 
+                       COALESCE(response_data->>'SyntaxPrime', '')) 
+                       @@ plainto_tsquery('english', %s)
+                ORDER BY rank DESC, created_at DESC
+                LIMIT %s
+            '''
+            
+            cursor.execute(search_sql, (query_text, cutoff_date, query_text, k * 2))
             rows = cursor.fetchall()
             
             print(f"Recent conversation search found {len(rows)} results from last {days} days")
@@ -335,32 +326,30 @@ def search_recent_conversations(query_text: str, k: int = 3, days: int = 7) -> L
             # Convert to RAG format with smart filtering
             results = []
             for row in rows:
-                # Get response content for filtering
                 response_content = row['response_data'].get('SyntaxPrime', '') if row['response_data'] else ''
                 
-                # Apply smart filtering - prioritize substantial content for recent conversations
-                if should_include_content(response_content, "personal_context"):
-                    # Combine user input and AI response for context
+                # Apply smart filtering for recent conversations
+                if should_include_content(response_content, "recent_priority"):
                     combined_text = f"User: {row['user_input']}\nResponse: {response_content}"
                     
                     results.append({
-                        'text': combined_text[:1200],  # Reasonable chunk size
-                        'source': f"Recent conversation - {row['project']} ({row['created_at'].strftime('%m/%d')})",
-                        'id': f"conversation_{row['created_at'].timestamp()}",
-                        'score': float(row['rank']),
+                        'text': combined_text[:1200],
+                        'source': f"Recent - {row['project']} ({row['created_at'].strftime('%m/%d')})",
+                        'id': f"recent_{row['id']}",
+                        'score': float(row['rank']) + 1.0,  # Boost recent conversations
                         'metadata': {
                             'type': 'recent_conversation',
                             'project': row['project'],
                             'date': row['created_at'].isoformat(),
+                            'chat_id': row['id'],
                             'content_tier': get_content_tier(response_content)
                         }
                     })
                     
-                    # Stop when we have enough quality results
                     if len(results) >= k:
                         break
             
-            print(f"After smart filtering: {len(results)} quality results retained")
+            print(f"Recent conversation search returning {len(results)} quality results")
             return results
             
         except Exception as e:
@@ -368,16 +357,17 @@ def search_recent_conversations(query_text: str, k: int = 3, days: int = 7) -> L
             return []
 
 def search_knowledge_base_only(query_text: str, k: int = 5) -> List[Dict[str, Any]]:
-    """Search only knowledge base documents with smart filtering"""
+    """Search only knowledge base documents with enhanced filtering"""
     
     with get_db_connection() as conn:
         if not conn:
+            print("No database connection for knowledge base search")
             return []
         
         try:
             cursor = conn.cursor(cursor_factory=RealDictCursor)
             
-            # Search brain documents, excluding conversation-like content
+            # Search brain documents with full-text search
             search_sql = '''
                 SELECT document_id, title, content, metadata,
                        ts_rank(to_tsvector('english', content || ' ' || COALESCE(title, '')), 
@@ -391,7 +381,7 @@ def search_knowledge_base_only(query_text: str, k: int = 5) -> List[Dict[str, An
                 LIMIT %s
             '''
             
-            cursor.execute(search_sql, (query_text, query_text, k * 2))  # Get more for filtering
+            cursor.execute(search_sql, (query_text, query_text, k * 2))
             rows = cursor.fetchall()
             
             if not rows:
@@ -399,7 +389,7 @@ def search_knowledge_base_only(query_text: str, k: int = 5) -> List[Dict[str, An
                 fallback_sql = '''
                     SELECT document_id, title, content, metadata, 1.0 as rank
                     FROM brain_documents 
-                    WHERE LOWER(content) LIKE %s OR LOWER(title) LIKE %s
+                    WHERE LOWER(content) LIKE %s OR LOWER(COALESCE(title, '')) LIKE %s
                     ORDER BY LENGTH(content) DESC
                     LIMIT %s
                 '''
@@ -407,7 +397,6 @@ def search_knowledge_base_only(query_text: str, k: int = 5) -> List[Dict[str, An
                 like_pattern = f'%{query_text.lower()}%'
                 cursor.execute(fallback_sql, (like_pattern, like_pattern, k * 2))
                 rows = cursor.fetchall()
-                
                 print(f"Knowledge base fallback search found {len(rows)} results")
             else:
                 print(f"Knowledge base search found {len(rows)} results")
@@ -417,12 +406,12 @@ def search_knowledge_base_only(query_text: str, k: int = 5) -> List[Dict[str, An
             for row in rows:
                 content = row['content']
                 
-                # Apply smart filtering - prioritize substantial content for knowledge base
+                # Apply smart filtering for knowledge base content
                 if should_include_content(content, "knowledge_base"):
                     results.append({
                         'text': content[:1500],
                         'source': row['title'] or f"Document {row['document_id']}",
-                        'id': row['document_id'],
+                        'id': f"kb_{row['document_id']}",
                         'score': float(row['rank']),
                         'metadata': {
                             'type': 'knowledge_base',
@@ -431,45 +420,49 @@ def search_knowledge_base_only(query_text: str, k: int = 5) -> List[Dict[str, An
                         }
                     })
                     
-                    # Stop when we have enough quality results
                     if len(results) >= k:
                         break
             
-            print(f"After smart filtering: {len(results)} quality knowledge base results")
+            print(f"Knowledge base search returning {len(results)} quality results")
             return results
             
         except Exception as e:
             print(f"Knowledge base search failed: {e}")
             return []
 
-def smart_context_search(query_text: str, k: int = 5, conversation_context: List[str] = None) -> List[Dict[str, Any]]:
-    """Intelligent search routing based on query intent and context"""
+def enhanced_context_search(query_text: str, k: int = 5, conversation_context: List[str] = None) -> List[Dict[str, Any]]:
+    """MAIN SEARCH FUNCTION - Intelligent search routing with Miller-aware personal context"""
     
     # Classify the search intent
     intent = classify_search_intent(query_text, conversation_context)
-    print(f"Smart search classified query '{query_text}' as: {intent}")
+    print(f"Enhanced search classified query '{query_text}' as: {intent}")
     
-    if intent == "casual":
-        # For greetings and casual chat, minimal or no context needed
-        return []
-    
-    elif intent == "personal_context":
-        # Search recent conversations first, then add some knowledge base if needed
-        recent_results = search_recent_conversations(query_text, k=max(3, k//2), days=7)
+    if intent == "personal_context":
+        print("Prioritizing personal context search (family, Miller, ongoing projects)")
         
-        if len(recent_results) < 2:
-            # If not enough recent context, add some knowledge base results
-            kb_results = search_knowledge_base_only(query_text, k=2)
-            recent_results.extend(kb_results)
-            print(f"Personal context search: {len(recent_results)} total results (recent + knowledge)")
+        # Search personal context first with high priority
+        personal_results = search_personal_context(query_text, k=max(3, k//2))
         
-        return recent_results[:k]
+        # Add recent conversations if we need more context
+        if len(personal_results) < 2:
+            recent_results = search_recent_conversations(query_text, k=2, days=7)
+            personal_results.extend(recent_results)
+            print(f"Personal context search: {len(personal_results)} total results (personal + recent)")
+        
+        # Add minimal knowledge base if still not enough
+        if len(personal_results) < k//2:
+            kb_results = search_knowledge_base_only(query_text, k=1)
+            personal_results.extend(kb_results)
+        
+        return personal_results[:k]
     
     elif intent == "knowledge_base":
-        # Search knowledge base primarily, minimal recent context
+        print("Prioritizing knowledge base search")
+        
+        # Search knowledge base primarily
         kb_results = search_knowledge_base_only(query_text, k=k)
         
-        # Add one recent conversation result for continuity if available
+        # Add minimal recent context for continuity
         recent_results = search_recent_conversations(query_text, k=1, days=3)
         if recent_results:
             kb_results.insert(0, recent_results[0])  # Put recent context first
@@ -478,13 +471,217 @@ def smart_context_search(query_text: str, k: int = 5, conversation_context: List
         return kb_results[:k]
     
     else:
-        # Default balanced approach
+        print("Using balanced search approach")
+        
+        # Balanced approach for unclear intent
         recent_results = search_recent_conversations(query_text, k=2, days=7)
         kb_results = search_knowledge_base_only(query_text, k=3)
         
         combined = recent_results + kb_results
         print(f"Balanced search: {len(combined)} results (recent + knowledge)")
         return combined[:k]
+
+# ==========================================
+# Section 5: Legacy Search Function (for compatibility)
+# ==========================================
+
+def search_brain_database(query_text, k=5):
+    """Main search function - uses enhanced context search with full-text indexes"""
+    try:
+        print(f"Search request: '{query_text}' (limit: {k})")
+        
+        # Use the enhanced search system
+        results = enhanced_context_search(query_text, k=k)
+        
+        if results:
+            print(f"Enhanced search found {len(results)} results")
+            
+            # Log the search for monitoring
+            update_brain_health(query_text, len(results))
+            
+            return results
+        else:
+            print(f"No results found for '{query_text}'")
+            update_brain_health(query_text, 0)
+            return []
+            
+    except Exception as e:
+        print(f"Search failed: {e}")
+        update_brain_health(query_text, 0, error=str(e))
+        return []
+
+# ==========================================
+# Section 6: Brain Health Monitoring
+# ==========================================
+
+def update_brain_health(query=None, results_count=0, error=None):
+    """Update brain health monitoring with search statistics"""
+    with get_db_connection() as conn:
+        if not conn:
+            return
+        
+        try:
+            cursor = conn.cursor()
+            
+            # Get current document count
+            cursor.execute('SELECT COUNT(*) FROM brain_documents')
+            doc_count = cursor.fetchone()[0]
+            
+            # Get current conversation count
+            cursor.execute('SELECT COUNT(*) FROM chat_threads')
+            chat_count = cursor.fetchone()[0]
+            
+            # Update or insert health record
+            cursor.execute('''
+                INSERT INTO brain_health (last_refresh, total_documents, last_search_query, 
+                                        last_search_results, health_status, error_log)
+                VALUES (CURRENT_TIMESTAMP, %s, %s, %s, %s, %s)
+                ON CONFLICT DO NOTHING
+            ''', (doc_count, query, results_count, 'healthy' if not error else 'error', error))
+            
+            # Also update the most recent record if it exists
+            cursor.execute('''
+                UPDATE brain_health 
+                SET last_refresh = CURRENT_TIMESTAMP,
+                    total_documents = %s,
+                    last_search_query = %s,
+                    last_search_results = %s,
+                    health_status = %s,
+                    error_log = %s
+                WHERE id = (SELECT MAX(id) FROM brain_health)
+            ''', (doc_count, query, results_count, 'healthy' if not error else 'error', error))
+            
+            conn.commit()
+            
+        except Exception as e:
+            print(f"Failed to update brain health: {e}")
+
+def get_brain_health_status():
+    """Get current brain health status with enhanced monitoring"""
+    with get_db_connection() as conn:
+        if not conn:
+            return {"status": "no_database", "message": "No database connection"}
+        
+        try:
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            
+            # Get latest health record
+            cursor.execute('''
+                SELECT * FROM brain_health 
+                ORDER BY last_refresh DESC 
+                LIMIT 1
+            ''')
+            
+            health_record = cursor.fetchone()
+            
+            # Get conversation count
+            cursor.execute('SELECT COUNT(*) FROM chat_threads')
+            chat_count = cursor.fetchone()[0]
+            
+            # Test search functionality
+            test_query = "miller"
+            test_results = enhanced_context_search(test_query, k=1)
+            search_working = len(test_results) > 0
+            
+            if not health_record:
+                return {
+                    "status": "unknown",
+                    "message": "No health records found",
+                    "chat_threads_count": chat_count,
+                    "search_working": search_working
+                }
+            
+            return {
+                "status": health_record['health_status'],
+                "last_refresh": health_record['last_refresh'].isoformat(),
+                "total_documents": health_record['total_documents'],
+                "chat_threads_count": chat_count,
+                "last_search_query": health_record['last_search_query'],
+                "last_search_results": health_record['last_search_results'],
+                "search_working": search_working,
+                "error_log": health_record['error_log']
+            }
+            
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+# ==========================================
+# Section 7: Conversation Storage and Retrieval
+# ==========================================
+
+def load_conversation_enhanced(project: str, limit: int = 50):
+    """Load conversation history from database with enhanced context"""
+    conversations = []
+    
+    with get_db_connection() as conn:
+        if conn:
+            try:
+                cursor = conn.cursor(cursor_factory=RealDictCursor)
+                cursor.execute('''
+                    SELECT id, user_input, response_data, created_at, context_project, context_data, thread_id
+                    FROM chat_threads 
+                    WHERE project = %s 
+                    ORDER BY created_at DESC 
+                    LIMIT %s
+                ''', (project, limit))
+                
+                rows = cursor.fetchall()
+                for row in rows:
+                    conversations.append({
+                        "id": f"db_{row['id']}",
+                        "chat_id": row['id'],
+                        "user": row['user_input'],
+                        "responses": row['response_data'],
+                        "timestamp": row['created_at'].isoformat(),
+                        "context_project": row.get('context_project'),
+                        "context_data": row.get('context_data', {}),
+                        "thread_id": str(row['thread_id']) if row.get('thread_id') else None
+                    })
+                
+                # Reverse to get chronological order
+                conversations.reverse()
+                print(f"Loaded {len(conversations)} conversations from database for {project}")
+                return conversations
+                
+            except Exception as e:
+                print(f"Failed to load conversations from database: {e}")
+    
+    return []
+
+def save_conversation_enhanced(project: str, user_input: str, response_data: dict,
+                             context_project: str = None, context_data: dict = None):
+    """Enhanced conversation saving with project context and thread support"""
+    with get_db_connection() as conn:
+        if not conn:
+            print("No database connection - conversation not saved")
+            return None
+        
+        cursor = conn.cursor()
+        
+        try:
+            cursor.execute('''
+                INSERT INTO chat_threads 
+                (project, user_input, response_data, context_project, context_data)
+                VALUES (%s, %s, %s, %s, %s)
+                RETURNING id
+            ''', (
+                project,
+                user_input,
+                json.dumps(response_data, ensure_ascii=False),
+                context_project,
+                json.dumps(context_data or {}, ensure_ascii=False)
+            ))
+            
+            chat_id = cursor.fetchone()[0]
+            conn.commit()
+            
+            print(f"Conversation saved to database for {project} (ID: {chat_id}, context: {context_project})")
+            return chat_id
+            
+        except Exception as e:
+            print(f"Error saving conversation: {e}")
+            conn.rollback()
+            return None
 
 def get_conversation_context(project: str, limit: int = 5) -> List[str]:
     """Get recent conversation context for intent classification"""
@@ -520,241 +717,284 @@ def get_conversation_context(project: str, limit: int = 5) -> List[str]:
             print(f"Failed to get conversation context: {e}")
             return []
 
-def search_brain_database(query_text, k=5):
-    """Enhanced search with debugging, smart filtering, and fallback strategies"""
+# ==========================================
+# Section 8: Thread Management System
+# ==========================================
+
+def create_thread(title: str, project: str, tags: List[str] = None) -> Optional[str]:
+    """Create a new conversation thread"""
     with get_db_connection() as conn:
         if not conn:
-            print(f"No DB connection for query: '{query_text}'")
-            return []
+            print("No database connection for thread creation")
+            return None
         
         try:
-            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO chat_thread_metadata (title, project, tags)
+                VALUES (%s, %s, %s)
+                RETURNING thread_id
+            ''', (title, project, tags or []))
             
-            print(f"Searching database for: '{query_text}'")
+            thread_id = cursor.fetchone()[0]
+            conn.commit()
             
-            # Try multiple search strategies
-            results = []
-            
-            # Strategy 1: Full-text search with ranking
-            search_sql = '''
-                SELECT document_id, title, content, metadata,
-                       ts_rank(to_tsvector('english', content || ' ' || COALESCE(title, '')), 
-                               plainto_tsquery('english', %s)) as rank
-                FROM brain_documents 
-                WHERE to_tsvector('english', content || ' ' || COALESCE(title, '')) 
-                      @@ plainto_tsquery('english', %s)
-                ORDER BY rank DESC
-                LIMIT %s
-            '''
-            
-            cursor.execute(search_sql, (query_text, query_text, k * 2))  # Get more for filtering
-            rows = cursor.fetchall()
-            
-            if rows:
-                print(f"Full-text search returned {len(rows)} results")
-                print(f"Top result: {rows[0]['title']} (rank: {rows[0]['rank']:.4f})")
-            else:
-                print("Full-text search found no results")
-                
-                # Strategy 2: Fallback to LIKE search for partial matches
-                fallback_sql = '''
-                    SELECT document_id, title, content, metadata, 1.0 as rank
-                    FROM brain_documents 
-                    WHERE LOWER(content) LIKE %s OR LOWER(title) LIKE %s
-                    ORDER BY LENGTH(title) ASC
-                    LIMIT %s
-                '''
-                
-                like_pattern = f'%{query_text.lower()}%'
-                cursor.execute(fallback_sql, (like_pattern, like_pattern, k * 2))
-                rows = cursor.fetchall()
-                
-                if rows:
-                    print(f"Fallback LIKE search returned {len(rows)} results")
-                else:
-                    print("No results found with any search strategy")
-            
-            # Convert to format expected by RAG system with smart filtering
-            for row in rows:
-                content = row['content']
-                
-                # Apply smart filtering for general brain database search
-                if should_include_content(content, "mixed"):
-                    results.append({
-                        'text': content[:1500],  # Increased chunk size
-                        'source': row['title'] or f"Document {row['document_id']}",
-                        'id': row['document_id'],
-                        'score': float(row['rank']),
-                        'metadata': {
-                            'content_tier': get_content_tier(content),
-                            **(row['metadata'] or {})
-                        }
-                    })
-                    
-                    # Stop when we have enough quality results
-                    if len(results) >= k:
-                        break
-            
-            print(f"After smart filtering: {len(results)} quality results retained")
-            
-            # Log search results for monitoring
-            update_brain_health(query_text, len(results))
-            
-            return results
+            print(f"Created thread '{title}' with ID: {thread_id}")
+            return str(thread_id)
             
         except Exception as e:
-            print(f"Database search failed: {e}")
-            update_brain_health(query_text, 0, error=str(e))
-            return []
+            print(f"Failed to create thread: {e}")
+            conn.rollback()
+            return None
 
-def update_brain_health(query=None, results_count=0, error=None):
-    """Update brain health monitoring"""
+def add_conversation_to_thread(chat_id: int, thread_id: str) -> bool:
+    """Add a conversation to an existing thread"""
     with get_db_connection() as conn:
         if not conn:
-            return
+            return False
         
         try:
             cursor = conn.cursor()
             
-            # Get current document count
-            cursor.execute('SELECT COUNT(*) FROM brain_documents')
-            doc_count = cursor.fetchone()[0]
-            
-            # Update or insert health record
+            # Update the conversation with thread_id
             cursor.execute('''
-                INSERT INTO brain_health (last_refresh, total_documents, last_search_query, 
-                                        last_search_results, health_status, error_log)
-                VALUES (CURRENT_TIMESTAMP, %s, %s, %s, %s, %s)
-                ON CONFLICT DO NOTHING
-            ''', (doc_count, query, results_count, 'healthy' if not error else 'error', error))
+                UPDATE chat_threads 
+                SET thread_id = %s 
+                WHERE id = %s
+            ''', (thread_id, chat_id))
             
-            # Also update the most recent record
+            # Update thread metadata
             cursor.execute('''
-                UPDATE brain_health 
-                SET last_refresh = CURRENT_TIMESTAMP,
-                    total_documents = %s,
-                    last_search_query = %s,
-                    last_search_results = %s,
-                    health_status = %s,
-                    error_log = %s
-                WHERE id = (SELECT MAX(id) FROM brain_health)
-            ''', (doc_count, query, results_count, 'healthy' if not error else 'error', error))
+                UPDATE chat_thread_metadata 
+                SET message_count = (
+                    SELECT COUNT(*) FROM chat_threads WHERE thread_id = %s
+                ),
+                updated_at = CURRENT_TIMESTAMP
+                WHERE thread_id = %s
+            ''', (thread_id, thread_id))
             
             conn.commit()
             
+            print(f"Added conversation {chat_id} to thread {thread_id}")
+            return True
+            
         except Exception as e:
-            print(f"Failed to update brain health: {e}")
+            print(f"Failed to add conversation to thread: {e}")
+            conn.rollback()
+            return False
 
-def get_brain_health_status():
-    """Get current brain health status"""
+def get_thread_conversations(thread_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+    """Get all conversations in a thread"""
     with get_db_connection() as conn:
         if not conn:
-            return {"status": "no_database", "message": "No database connection"}
+            return []
+        
+        try:
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            cursor.execute('''
+                SELECT ct.id, ct.user_input, ct.response_data, ct.created_at, ct.project,
+                       tm.title as thread_title
+                FROM chat_threads ct
+                JOIN chat_thread_metadata tm ON ct.thread_id = tm.thread_id
+                WHERE ct.thread_id = %s
+                ORDER BY ct.created_at ASC
+                LIMIT %s
+            ''', (thread_id, limit))
+            
+            rows = cursor.fetchall()
+            conversations = []
+            
+            for row in rows:
+                conversations.append({
+                    'id': row['id'],
+                    'user_input': row['user_input'],
+                    'response_data': row['response_data'],
+                    'created_at': row['created_at'].isoformat(),
+                    'project': row['project'],
+                    'thread_title': row['thread_title']
+                })
+            
+            return conversations
+            
+        except Exception as e:
+            print(f"Failed to get thread conversations: {e}")
+            return []
+
+def list_threads(project: str = None, limit: int = 20) -> List[Dict[str, Any]]:
+    """List available threads, optionally filtered by project"""
+    with get_db_connection() as conn:
+        if not conn:
+            return []
         
         try:
             cursor = conn.cursor(cursor_factory=RealDictCursor)
             
-            # Get latest health record
-            cursor.execute('''
-                SELECT * FROM brain_health 
-                ORDER BY last_refresh DESC 
-                LIMIT 1
-            ''')
-            
-            health_record = cursor.fetchone()
-            
-            if not health_record:
-                return {"status": "unknown", "message": "No health records found"}
-            
-            return {
-                "status": health_record['health_status'],
-                "last_refresh": health_record['last_refresh'].isoformat(),
-                "total_documents": health_record['total_documents'],
-                "last_search_query": health_record['last_search_query'],
-                "last_search_results": health_record['last_search_results'],
-                "error_log": health_record['error_log']
-            }
-            
-        except Exception as e:
-            return {"status": "error", "message": str(e)}
-
-def load_conversation_enhanced(project: str, limit: int = 50):
-    """Load conversation history from database first, then fallback to file"""
-    conversations = []
-    
-    # Try database first
-    with get_db_connection() as conn:
-        if conn:
-            try:
-                cursor = conn.cursor(cursor_factory=RealDictCursor)
+            if project:
                 cursor.execute('''
-                    SELECT user_input, response_data, created_at, context_project, context_data
-                    FROM chat_threads 
-                    WHERE project = %s 
-                    ORDER BY created_at DESC 
+                    SELECT thread_id, title, project, created_at, updated_at, 
+                           message_count, tags, is_archived
+                    FROM chat_thread_metadata
+                    WHERE project = %s AND NOT is_archived
+                    ORDER BY updated_at DESC
                     LIMIT %s
                 ''', (project, limit))
-                
-                rows = cursor.fetchall()
-                for row in rows:
-                    conversations.append({
-                        "id": f"db_{row['created_at'].timestamp()}",
-                        "user": row['user_input'],
-                        "responses": row['response_data'],
-                        "timestamp": row['created_at'].isoformat(),
-                        "context_project": row.get('context_project'),
-                        "context_data": row.get('context_data', {})
-                    })
-                
-                # Reverse to get chronological order
-                conversations.reverse()
-                print(f"Loaded {len(conversations)} conversations from database for {project}")
-                return conversations
-                
-            except Exception as e:
-                print(f"Failed to load conversations from database: {e}")
-    
-    # Fallback to file system will be handled by calling function
-    return []
+            else:
+                cursor.execute('''
+                    SELECT thread_id, title, project, created_at, updated_at, 
+                           message_count, tags, is_archived
+                    FROM chat_thread_metadata
+                    WHERE NOT is_archived
+                    ORDER BY updated_at DESC
+                    LIMIT %s
+                ''', (limit,))
+            
+            return cursor.fetchall()
+            
+        except Exception as e:
+            print(f"Failed to list threads: {e}")
+            return []
 
-def save_conversation_enhanced(project: str, user_input: str, response_data: dict, context_project: str = None, context_data: dict = None):
-    """Enhanced conversation saving with project context"""
-    if not DATABASE_URL:
-        print("No database URL - conversation not saved to database")
-        return
+# ==========================================
+# Section 9: Bookmark Management System
+# ==========================================
+
+def create_bookmark(chat_id: int, title: str, notes: str = None, bookmark_type: str = 'manual') -> Optional[str]:
+    """Create a bookmark for a specific conversation"""
+    with get_db_connection() as conn:
+        if not conn:
+            print("No database connection for bookmark creation")
+            return None
+        
+        try:
+            cursor = conn.cursor()
+            
+            # Get thread_id if the conversation belongs to a thread
+            cursor.execute('SELECT thread_id FROM chat_threads WHERE id = %s', (chat_id,))
+            result = cursor.fetchone()
+            thread_id = result[0] if result else None
+            
+            cursor.execute('''
+                INSERT INTO conversation_bookmarks (chat_id, thread_id, title, notes, bookmark_type)
+                VALUES (%s, %s, %s, %s, %s)
+                RETURNING bookmark_id
+            ''', (chat_id, thread_id, title, notes, bookmark_type))
+            
+            bookmark_id = cursor.fetchone()[0]
+            conn.commit()
+            
+            print(f"Created bookmark '{title}' for conversation {chat_id}")
+            return str(bookmark_id)
+            
+        except Exception as e:
+            print(f"Failed to create bookmark: {e}")
+            conn.rollback()
+            return None
+
+def get_bookmarks(thread_id: str = None, project: str = None, limit: int = 20) -> List[Dict[str, Any]]:
+    """Get bookmarks, optionally filtered by thread or project"""
+    with get_db_connection() as conn:
+        if not conn:
+            return []
+        
+        try:
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            
+            if thread_id:
+                cursor.execute('''
+                    SELECT cb.bookmark_id, cb.title, cb.notes, cb.bookmark_type, cb.created_at,
+                           cb.chat_id, ct.user_input, ct.project
+                    FROM conversation_bookmarks cb
+                    JOIN chat_threads ct ON cb.chat_id = ct.id
+                    WHERE cb.thread_id = %s
+                    ORDER BY cb.created_at DESC
+                    LIMIT %s
+                ''', (thread_id, limit))
+            elif project:
+                cursor.execute('''
+                    SELECT cb.bookmark_id, cb.title, cb.notes, cb.bookmark_type, cb.created_at,
+                           cb.chat_id, ct.user_input, ct.project
+                    FROM conversation_bookmarks cb
+                    JOIN chat_threads ct ON cb.chat_id = ct.id
+                    WHERE ct.project = %s
+                    ORDER BY cb.created_at DESC
+                    LIMIT %s
+                ''', (project, limit))
+            else:
+                cursor.execute('''
+                    SELECT cb.bookmark_id, cb.title, cb.notes, cb.bookmark_type, cb.created_at,
+                           cb.chat_id, ct.user_input, ct.project
+                    FROM conversation_bookmarks cb
+                    JOIN chat_threads ct ON cb.chat_id = ct.id
+                    ORDER BY cb.created_at DESC
+                    LIMIT %s
+                ''', (limit,))
+            
+            return cursor.fetchall()
+            
+        except Exception as e:
+            print(f"Failed to get bookmarks: {e}")
+            return []
+
+def auto_create_bookmarks():
+    """Automatically create bookmarks for important conversations"""
+    important_patterns = [
+        "error", "fix", "solution", "resolved", "completed", "milestone",
+        "decision", "important", "reminder", "deadline", "meeting"
+    ]
     
     with get_db_connection() as conn:
         if not conn:
-            print("No database connection - conversation not saved")
             return
         
-        cursor = conn.cursor()
-        
         try:
-            cursor.execute('''
-                INSERT INTO chat_threads 
-                (project, user_input, response_data, context_project, context_data)
-                VALUES (%s, %s, %s, %s, %s)
-            ''', (
-                project,
-                user_input,
-                json.dumps(response_data, ensure_ascii=False),
-                context_project,
-                json.dumps(context_data or {}, ensure_ascii=False)
-            ))
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
             
-            conn.commit()
-            print(f"Conversation saved to database for {project} (context: {context_project})")
+            # Find recent conversations that might be important
+            cursor.execute('''
+                SELECT id, user_input, response_data, project, created_at
+                FROM chat_threads
+                WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
+                  AND id NOT IN (SELECT chat_id FROM conversation_bookmarks WHERE chat_id IS NOT NULL)
+                ORDER BY created_at DESC
+                LIMIT 50
+            ''')
+            
+            rows = cursor.fetchall()
+            bookmarks_created = 0
+            
+            for row in rows:
+                text_content = (row['user_input'] + ' ' +
+                              (row['response_data'].get('SyntaxPrime', '') if row['response_data'] else '')).lower()
+                
+                for pattern in important_patterns:
+                    if pattern in text_content:
+                        # Create auto-bookmark
+                        bookmark_title = f"Auto: {pattern.title()} - {row['user_input'][:50]}..."
+                        
+                        result = create_bookmark(
+                            chat_id=row['id'],
+                            title=bookmark_title,
+                            notes=f"Auto-created for keyword: {pattern}",
+                            bookmark_type='auto'
+                        )
+                        
+                        if result:
+                            bookmarks_created += 1
+                        break  # Only create one bookmark per conversation
+            
+            print(f"Auto-created {bookmarks_created} bookmarks")
             
         except Exception as e:
-            print(f"Error saving conversation: {e}")
-            conn.rollback()
+            print(f"Auto-bookmark creation failed: {e}")
+
+# ==========================================
+# Section 10: Database Maintenance and Migration
+# ==========================================
 
 def save_daily_log_enhanced(sync_type: str, content: str):
-    """Save daily log to both database and file"""
+    """Save daily log to database with enhanced metadata"""
     today = datetime.datetime.now().date()
     
-    # Save to database
     with get_db_connection() as conn:
         if conn:
             try:
@@ -774,7 +1014,7 @@ def save_daily_log_enhanced(sync_type: str, content: str):
                 conn.rollback()
 
 def track_uploaded_file(filename: str, file_type: str, project: str, content_preview: str = ""):
-    """Track uploaded files in database"""
+    """Track uploaded files in database with enhanced metadata"""
     with get_db_connection() as conn:
         if conn:
             try:
@@ -792,7 +1032,7 @@ def track_uploaded_file(filename: str, file_type: str, project: str, content_pre
                 conn.rollback()
 
 def save_brain_to_database(corpus_data):
-    """Save processed brain corpus to database with progress tracking and smart filtering"""
+    """Save processed brain corpus to database with smart filtering"""
     with get_db_connection() as conn:
         if not conn:
             print("No database connection - brain will only be saved to file")
@@ -884,18 +1124,146 @@ def load_brain_from_database():
             print(f"Failed to load brain from database: {e}")
             return None
 
+def init_database():
+    """Create necessary database tables with enhanced thread and bookmark support"""
+    if not DATABASE_URL:
+        print("No database URL - running in file-only mode")
+        return
+    
+    with get_db_connection() as conn:
+        if not conn:
+            return
+            
+        cursor = conn.cursor()
+        
+        try:
+            print("Initializing database tables...")
+            
+            # Create chat_threads table (should already exist)
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS chat_threads (
+                    id SERIAL PRIMARY KEY,
+                    project VARCHAR(100) NOT NULL,
+                    user_input TEXT NOT NULL,
+                    response_data JSONB NOT NULL,
+                    context_project VARCHAR(100),
+                    context_data JSONB DEFAULT '{}',
+                    thread_id UUID,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # Create thread metadata table (should already exist)
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS chat_thread_metadata (
+                    thread_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    title VARCHAR(500),
+                    project VARCHAR(100) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    message_count INTEGER DEFAULT 0,
+                    tags TEXT[],
+                    is_archived BOOLEAN DEFAULT FALSE
+                )
+            ''')
+            
+            # Create bookmarks table (should already exist)
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS conversation_bookmarks (
+                    bookmark_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    chat_id INTEGER REFERENCES chat_threads(id),
+                    thread_id UUID REFERENCES chat_thread_metadata(thread_id),
+                    title VARCHAR(300) NOT NULL,
+                    notes TEXT,
+                    bookmark_type VARCHAR(50) DEFAULT 'manual',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # Create other essential tables
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS uploaded_files (
+                    id SERIAL PRIMARY KEY,
+                    filename VARCHAR(255) NOT NULL,
+                    file_type VARCHAR(50) NOT NULL,
+                    content_preview TEXT,
+                    upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    project VARCHAR(100) NOT NULL,
+                    processing_status VARCHAR(50) DEFAULT 'completed'
+                )
+            ''')
+            
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS daily_logs (
+                    id SERIAL PRIMARY KEY,
+                    log_date DATE NOT NULL,
+                    log_type VARCHAR(50) NOT NULL,
+                    content TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(log_date, log_type)
+                )
+            ''')
+            
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS brain_documents (
+                    id SERIAL PRIMARY KEY,
+                    document_id VARCHAR(255) NOT NULL,
+                    title VARCHAR(500),
+                    content TEXT NOT NULL,
+                    embedding_vector FLOAT8[] NULL,
+                    chunk_index INTEGER DEFAULT 0,
+                    metadata JSONB DEFAULT '{}',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS brain_health (
+                    id SERIAL PRIMARY KEY,
+                    last_refresh TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    total_documents INTEGER DEFAULT 0,
+                    last_search_query TEXT,
+                    last_search_results INTEGER DEFAULT 0,
+                    health_status VARCHAR(50) DEFAULT 'healthy',
+                    error_log TEXT
+                )
+            ''')
+            
+            # Ensure all indexes exist (should already be created)
+            indexes = [
+                'CREATE INDEX IF NOT EXISTS idx_chat_threads_project_date ON chat_threads (project, created_at DESC)',
+                'CREATE INDEX IF NOT EXISTS idx_chat_threads_context_project ON chat_threads (context_project, created_at DESC)',
+                'CREATE INDEX IF NOT EXISTS idx_chat_threads_thread_id ON chat_threads (thread_id)',
+                'CREATE INDEX IF NOT EXISTS idx_thread_metadata_project ON chat_thread_metadata (project, created_at DESC)',
+                'CREATE INDEX IF NOT EXISTS idx_bookmarks_thread_id ON conversation_bookmarks (thread_id)',
+                'CREATE INDEX IF NOT EXISTS idx_bookmarks_chat_id ON conversation_bookmarks (chat_id)',
+                'CREATE INDEX IF NOT EXISTS idx_brain_docs_content_fts ON brain_documents USING gin(to_tsvector(\'english\', content))',
+            ]
+            
+            for index_sql in indexes:
+                try:
+                    cursor.execute(index_sql)
+                except Exception as idx_e:
+                    print(f"Index creation note: {idx_e}")
+            
+            conn.commit()
+            print("Database tables and indexes verified successfully")
+            
+        except Exception as e:
+            conn.rollback()
+            print(f"Database initialization failed: {e}")
+
 def get_database_status():
-    """Check database connection and table status with enhanced info"""
+    """Check database connection and enhanced table status"""
     status = {
         "database_url_configured": bool(DATABASE_URL),
         "connection_working": False,
         "tables_exist": False,
         "conversation_count": 0,
-        "uploaded_files_count": 0,
-        "daily_logs_count": 0,
+        "thread_count": 0,
+        "bookmark_count": 0,
         "brain_documents_count": 0,
-        "project_mappings_count": 0,
-        "project_contexts_count": 0,
+        "search_indexes_working": False,
         "brain_health": None
     }
     
@@ -905,43 +1273,35 @@ def get_database_status():
                 cursor = conn.cursor()
                 status["connection_working"] = True
                 
+                # Test search functionality
+                try:
+                    test_results = enhanced_context_search("miller", k=1)
+                    status["search_indexes_working"] = len(test_results) > 0
+                except:
+                    status["search_indexes_working"] = False
+                
                 # Check if tables exist
                 cursor.execute('''
                     SELECT COUNT(*) FROM information_schema.tables 
-                    WHERE table_name IN ('chat_threads', 'uploaded_files', 'daily_logs', 'user_settings', 
-                                         'brain_documents', 'brain_health', 'project_mappings', 'project_contexts')
+                    WHERE table_name IN ('chat_threads', 'chat_thread_metadata', 'conversation_bookmarks', 
+                                         'brain_documents', 'brain_health')
                 ''')
                 table_count = cursor.fetchone()[0]
-                status["tables_exist"] = table_count >= 6
+                status["tables_exist"] = table_count >= 5
                 
                 if status["tables_exist"]:
                     # Get record counts
                     cursor.execute('SELECT COUNT(*) FROM chat_threads')
                     status["conversation_count"] = cursor.fetchone()[0]
                     
-                    cursor.execute('SELECT COUNT(*) FROM uploaded_files')
-                    status["uploaded_files_count"] = cursor.fetchone()[0]
+                    cursor.execute('SELECT COUNT(*) FROM chat_thread_metadata')
+                    status["thread_count"] = cursor.fetchone()[0]
                     
-                    cursor.execute('SELECT COUNT(*) FROM daily_logs')
-                    status["daily_logs_count"] = cursor.fetchone()[0]
+                    cursor.execute('SELECT COUNT(*) FROM conversation_bookmarks')
+                    status["bookmark_count"] = cursor.fetchone()[0]
                     
-                    # Brain-specific counts
-                    try:
-                        cursor.execute('SELECT COUNT(*) FROM brain_documents')
-                        status["brain_documents_count"] = cursor.fetchone()[0]
-                    except:
-                        status["brain_documents_count"] = 0
-                    
-                    # Project mapping counts
-                    try:
-                        cursor.execute('SELECT COUNT(*) FROM project_mappings')
-                        status["project_mappings_count"] = cursor.fetchone()[0]
-                        
-                        cursor.execute('SELECT COUNT(*) FROM project_contexts')
-                        status["project_contexts_count"] = cursor.fetchone()[0]
-                    except:
-                        status["project_mappings_count"] = 0
-                        status["project_contexts_count"] = 0
+                    cursor.execute('SELECT COUNT(*) FROM brain_documents')
+                    status["brain_documents_count"] = cursor.fetchone()[0]
                 
                 # Get brain health status
                 status["brain_health"] = get_brain_health_status()
@@ -950,3 +1310,114 @@ def get_database_status():
                 print(f"Database status check failed: {e}")
     
     return status
+
+# ==========================================
+# Section 11: Testing and Debugging Functions
+# ==========================================
+
+def test_miller_search():
+    """Test function to verify Miller search is working properly"""
+    print("\n" + "="*50)
+    print("TESTING MILLER SEARCH FUNCTIONALITY")
+    print("="*50)
+    
+    test_queries = [
+        "Miller cat",
+        "Miller",
+        "tux cat",
+        "my cat Miller",
+        "Tell me about Miller"
+    ]
+    
+    for query in test_queries:
+        print(f"\nTesting query: '{query}'")
+        print("-" * 30)
+        
+        try:
+            results = enhanced_context_search(query, k=3)
+            
+            if results:
+                print(f"✅ Found {len(results)} results")
+                for i, result in enumerate(results):
+                    print(f"  {i+1}. {result['source']} (score: {result['score']:.2f})")
+                    print(f"     Type: {result['metadata'].get('type', 'unknown')}")
+                    if 'miller' in result['text'].lower():
+                        print(f"     ✅ Contains Miller context")
+                    else:
+                        print(f"     ⚠️  No Miller context found")
+            else:
+                print(f"❌ No results found")
+                
+        except Exception as e:
+            print(f"❌ Search failed: {e}")
+    
+    print("\n" + "="*50)
+    print("MILLER SEARCH TEST COMPLETE")
+    print("="*50)
+
+def debug_database_indexes():
+    """Debug function to check database indexes"""
+    with get_db_connection() as conn:
+        if not conn:
+            print("No database connection")
+            return
+        
+        try:
+            cursor = conn.cursor()
+            
+            print("\nChecking database indexes:")
+            print("-" * 40)
+            
+            # Check for full-text search indexes
+            cursor.execute('''
+                SELECT indexname, indexdef 
+                FROM pg_indexes 
+                WHERE tablename = 'chat_threads' 
+                AND indexdef LIKE '%gin%'
+            ''')
+            
+            indexes = cursor.fetchall()
+            
+            if indexes:
+                print("✅ Full-text search indexes found:")
+                for idx_name, idx_def in indexes:
+                    print(f"  - {idx_name}")
+            else:
+                print("❌ No full-text search indexes found")
+            
+            # Test a simple search
+            cursor.execute('''
+                SELECT COUNT(*) FROM chat_threads 
+                WHERE to_tsvector('english', user_input || ' ' || 
+                      COALESCE(response_data->>'SyntaxPrime', '')) 
+                      @@ plainto_tsquery('english', 'miller')
+            ''')
+            
+            count = cursor.fetchone()[0]
+            print(f"✅ Full-text search test: {count} Miller conversations found")
+            
+        except Exception as e:
+            print(f"❌ Index check failed: {e}")
+
+if __name__ == '__main__':
+    # Run tests when module is executed directly
+    print("Testing enhanced database functionality...")
+    
+    # Test connection
+    connected, msg = test_database_connection()
+    print(f"Database connection: {msg}")
+    
+    if connected:
+        # Debug indexes
+        debug_database_indexes()
+        
+        # Test Miller search
+        test_miller_search()
+        
+        # Show status
+        status = get_database_status()
+        print(f"\nDatabase Status Summary:")
+        print(f"- Conversations: {status['conversation_count']}")
+        print(f"- Threads: {status['thread_count']}")
+        print(f"- Bookmarks: {status['bookmark_count']}")
+        print(f"- Search working: {status['search_indexes_working']}")
