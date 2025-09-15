@@ -1443,6 +1443,7 @@ def stream_chat():
 # Section 8: Feedback System Routes (NEW) 9/11/25
 # Section 8: Feedback System Routes (FIXED DIRECT VERSION) 9/11/25
 # Section 8: Dashboard Routes (Modular) - UPDATED WITH CLICKUP DIAGNOSTICS AND PROJECT MAPPING 9/13/25
+# Section 8: Dashboard Routes (Modular) - UPDATED WITH CLICKUP DIAGNOSTICS AND PROJECT MAPPING 9/15/25
 @app.route('/api/feedback', methods=['POST'])
 def record_feedback():
     """Record user feedback for AI responses (👍👎🖕 buttons) - FIXED DIRECT VERSION"""
@@ -1808,6 +1809,173 @@ def get_project_conversation_history(project):
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# NEW: Miller Debug Routes
+@app.route('/debug/miller')
+def debug_miller_route():
+    """Debug route to test Miller search and find the exact failure point"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+    
+    try:
+        from modules.brain import debug_miller_search
+        
+        # Capture debug output
+        import io
+        import sys
+        from contextlib import redirect_stdout
+        
+        debug_output = io.StringIO()
+        
+        with redirect_stdout(debug_output):
+            debug_miller_search()
+        
+        output_text = debug_output.getvalue()
+        
+        return f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Miller Search Debug Results</title>
+            <style>
+                body {{ font-family: 'Courier New', monospace; background: #0a0a0a; color: #00ff00; padding: 20px; }}
+                .container {{ max-width: 1400px; margin: 0 auto; }}
+                .debug-output {{ background: #1a1a1a; border: 1px solid #333; padding: 20px; margin: 20px 0; border-radius: 5px; }}
+                pre {{ white-space: pre-wrap; font-size: 14px; line-height: 1.4; }}
+                .btn {{ background: #6366f1; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; text-decoration: none; display: inline-block; margin: 10px 5px; }}
+                .success {{ color: #00ff00; }}
+                .error {{ color: #ff4444; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🔍 Miller Search Debug Results</h1>
+                
+                <div class="debug-output">
+                    <h3>Debug Output:</h3>
+                    <pre>{output_text}</pre>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <a href="/debug/brain_diagnostics" class="btn">Full Brain Diagnostics</a>
+                    <a href="/system" class="btn">System Dashboard</a>
+                    <a href="/" class="btn">Back to Chat</a>
+                </div>
+                
+                <div class="debug-output">
+                    <h3>Next Steps:</h3>
+                    <p>1. Check the debug output above for any RED ❌ errors</p>
+                    <p>2. If database connection fails, check DATABASE_URL</p>
+                    <p>3. If SQL query fails, check chat_threads table structure</p>
+                    <p>4. If search function fails, there's a Python import/logic error</p>
+                    <p>5. If everything works here but chat fails, the issue is in app.py routing</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+    except Exception as e:
+        app.logger.error(f"Miller debug route failed: {e}")
+        return f"""
+        <html>
+        <body style="font-family: monospace; background: #0a0a0a; color: #ff4444; padding: 20px;">
+            <h1>❌ Miller Debug Route Failed</h1>
+            <p><strong>Error:</strong> {str(e)}</p>
+            <p>This means the debug_miller_search function couldn't be imported or executed.</p>
+            <p>Check that you added the debug function to modules/brain.py</p>
+            <a href="/" style="color: #00ffff;">← Back to Chat</a>
+        </body>
+        </html>
+        """, 500
+
+@app.route('/debug/brain_diagnostics')
+def debug_brain_diagnostics():
+    """Enhanced brain diagnostics including Miller-specific tests"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    try:
+        from modules.brain import get_brain_diagnostics, test_miller_memory_directly, test_ghada_memory_directly
+        
+        # Get comprehensive diagnostics
+        diagnostics = get_brain_diagnostics()
+        
+        # Run direct memory tests
+        miller_test_result = test_miller_memory_directly()
+        ghada_test_result = test_ghada_memory_directly()
+        
+        return render_template_string("""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Brain System Diagnostics</title>
+            <style>
+                body { font-family: 'Courier New', monospace; background: #0a0a0a; color: #00ff00; padding: 20px; }
+                .container { max-width: 1400px; margin: 0 auto; }
+                .diagnostic-section { background: #1a1a1a; border: 1px solid #333; padding: 20px; margin: 20px 0; border-radius: 5px; }
+                .success { color: #00ff00; }
+                .error { color: #ff4444; }
+                .warning { color: #ffaa00; }
+                pre { white-space: pre-wrap; font-size: 12px; }
+                .btn { background: #6366f1; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; text-decoration: none; display: inline-block; margin: 10px 5px; }
+                table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+                th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+                th { background: #222; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🧠 Brain System Diagnostics</h1>
+                
+                <div class="diagnostic-section">
+                    <h3>Memory Tests</h3>
+                    <p><strong>Miller Test:</strong> <span class="{% if miller_test %}success">✅ PASSED{% else %}error">❌ FAILED{% endif %}</span></p>
+                    <p><strong>Ghada Test:</strong> <span class="{% if ghada_test %}success">✅ PASSED{% else %}error">❌ FAILED{% endif %}</span></p>
+                </div>
+                
+                <div class="diagnostic-section">
+                    <h3>System Status</h3>
+                    <table>
+                        <tr><th>Component</th><th>Status</th><th>Details</th></tr>
+                        {% for component, data in diagnostics.items() %}
+                        <tr>
+                            <td>{{ component.replace('_', ' ').title() }}</td>
+                            <td class="{% if data.get('error') %}error">❌ ERROR{% else %}success">✅ OK{% endif %}</td>
+                            <td>
+                                {% if data.get('error') %}
+                                    {{ data.error }}
+                                {% else %}
+                                    {% for key, value in data.items() %}
+                                        {% if key != 'error' %}
+                                            <strong>{{ key }}:</strong> {{ value }}<br>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+                
+                <div class="diagnostic-section">
+                    <h3>Raw Diagnostics Data</h3>
+                    <pre>{{ diagnostics | tojson(indent=2) }}</pre>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <a href="/debug/miller" class="btn">Miller Debug Test</a>
+                    <a href="/system" class="btn">System Dashboard</a>
+                    <a href="/" class="btn">Back to Chat</a>
+                </div>
+            </div>
+        </body>
+        </html>
+        """, diagnostics=diagnostics, miller_test=miller_test_result, ghada_test=ghada_test_result)
+        
+    except Exception as e:
+        app.logger.error(f"Brain diagnostics failed: {e}")
+        return f"Brain diagnostics error: {str(e)}", 500
 
 # Section 9: PDF Report Generation
 from modules.pdf_generation import (
