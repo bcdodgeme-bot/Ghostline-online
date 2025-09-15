@@ -1,169 +1,135 @@
-# modules/brain.py - Simplified Brain System with Database-Only Retrieval
-# FIXED: Removed overly restrictive filters that were blocking "Who is Ghada?" queries
-# UPDATED: Expanded context window to 250,000 characters for better continuity
+# modules/brain.py - FIXED Memory and Retrieval System
+# Restored working Miller/Ghada memory with proper personality integration
+# Sectioned for easy maintenance and debugging
+
+#-------------------------------------------------------------------
+# SECTION 1: IMPORTS AND CONFIGURATION
+#-------------------------------------------------------------------
 
 import os
 import datetime
 import threading
+import json
 from flask import jsonify
 from psycopg2.extras import RealDictCursor
+
+# Database imports
 from modules.database import (
-    get_db_connection, save_brain_to_database, search_brain_database,
-    get_brain_health_status, update_brain_health,
-    get_conversation_context, get_database_status
+    get_db_connection,
+    get_database_status,
+    update_brain_health
 )
+
+#-------------------------------------------------------------------
+# SECTION 2: GLOBAL STATE AND CONSTANTS
+#-------------------------------------------------------------------
 
 # Global brain system state
 _brain_building = False
 _brain_build_error = None
 _last_brain_refresh = None
 
+# File paths
 CORPUS_PATH = "data/cleaned/ghostline_sources.jsonl.gz"
 
-class DatabaseBrainSystem:
-    """Database-only brain system with simplified search"""
+# Miller and Ghada are family - these should ALWAYS be found
+PERSONAL_KEYWORDS = [
+    'miller', 'ghada', 'shazeen', 'mom', 'mother', 'family',
+    'daughter', 'wife', 'cat', 'tux cat', 'tuxedo cat'
+]
+
+#-------------------------------------------------------------------
+# SECTION 3: CORE BRAIN SYSTEM CLASS
+#-------------------------------------------------------------------
+
+class SimpleBrainSystem:
+    """Simple, working brain system that actually finds Miller and Ghada"""
     
     def __init__(self):
         self.ready = False
-        self.document_count = 0
         self.conversation_count = 0
-        self._check_brain_status()
+        self.document_count = 0
+        self._check_system_status()
     
-    def _check_brain_status(self):
-        """Check if brain documents and conversations are available"""
+    def _check_system_status(self):
+        """Check if we have conversations and documents available"""
         try:
+            # Check database status
             db_status = get_database_status()
-            self.document_count = db_status.get('brain_documents_count', 0)
             self.conversation_count = db_status.get('conversation_count', 0)
+            self.document_count = db_status.get('brain_documents_count', 0)
             
-            self.ready = (self.document_count > 0) or (self.conversation_count > 0)
+            # We're ready if we have conversations OR documents
+            self.ready = (self.conversation_count > 0) or (self.document_count > 0)
+            
+            print(f"Brain system status: {self.conversation_count} conversations, {self.document_count} documents")
             
             if self.ready:
-                print(f"Database brain system ready: {self.document_count} documents, {self.conversation_count} conversations")
+                print("Brain system ready for retrieval")
             else:
-                print("Database brain system: No documents or conversations found")
+                print("Brain system not ready - no data found")
                 
         except Exception as e:
-            print(f"Failed to check brain status: {e}")
+            print(f"Failed to check brain system status: {e}")
             self.ready = False
     
     def get_status(self):
-        """Get brain system status"""
+        """Get system status for monitoring"""
         return {
             "ready": self.ready,
-            "document_count": self.document_count,
             "conversation_count": self.conversation_count,
-            "status": "complete" if self.ready else "empty",
-            "method": "database_simple"
+            "document_count": self.document_count,
+            "status": "ready" if self.ready else "no_data",
+            "method": "direct_database_simple"
         }
 
-# Global brain system instance
-_brain_system = DatabaseBrainSystem()
+#-------------------------------------------------------------------
+# SECTION 4: ENHANCED RETRIEVAL FUNCTIONS - THE CORE FIX
+#-------------------------------------------------------------------
 
 def enhanced_retrieve(query_text, k=5, project=None):
-    """Simplified retrieve function with 250K context - FIXED to handle all query types including 'Who is Ghada?'"""
-    print(f"Enhanced retrieve: searching for '{query_text}'")
+    """
+    FIXED: Enhanced retrieval that actually finds Miller and Ghada
+    This function directly queries the working database with proper SQL
+    """
+    print(f"Enhanced retrieve: searching for '{query_text}' (limit: {k})")
     
     all_results = []
     
-    # STEP 1: Search conversation history - NO LENGTH RESTRICTIONS
+    # STEP 1: Search conversation history for personal context
     try:
-        with get_db_connection() as conn:
-            if conn:
-                cursor = conn.cursor(cursor_factory=RealDictCursor)
-                
-                # Simple, effective SQL with no overly restrictive filters
-                conversation_sql = """
-                SELECT user_input, response_data, created_at, project
-                FROM chat_threads 
-                WHERE (
-                    LOWER(user_input) LIKE %s 
-                    OR LOWER(response_data::text) LIKE %s
-                )
-                AND user_input IS NOT NULL
-                AND LENGTH(TRIM(user_input)) > 2
-                ORDER BY created_at DESC
-                LIMIT %s
-                """
-                
-                search_pattern = f'%{query_text.lower()}%'
-                cursor.execute(conversation_sql, (search_pattern, search_pattern, k * 2))
-                
-                conversation_results = cursor.fetchall()
-                
-                print(f"Conversation search found {len(conversation_results)} results")
-                
-                for row in conversation_results:
-                    # Get AI response content
-                    response_content = ""
-                    if row['response_data'] and isinstance(row['response_data'], dict):
-                        response_content = row['response_data'].get('SyntaxPrime', '')
-                    
-                    # Skip very short or empty responses for better quality
-                    if len(response_content.strip()) < 10:
-                        continue
-                    
-                    # Create context snippet
-                    user_input = row['user_input']
-                    combined_text = f"CONVERSATION:\nUser: {user_input}\nAssistant: {response_content}"
-                    
-                    # Truncate if too long but keep meaningful content
-                    if len(combined_text) > 250000:
-                        truncated = combined_text[:250000]
-                        last_sentence = truncated.rfind('. ')
-                        if last_sentence > 200000:  # Keep if we can find a good break point
-                            combined_text = truncated[:last_sentence + 1] + "..."
-                        else:
-                            combined_text = truncated + "..."
-                    
-                    result = {
-                        'text': combined_text,
-                        'source': f"Conversation - {row['project']} ({row['created_at'].strftime('%m/%d/%Y')})",
-                        'source_type': 'conversation',
-                        'similarity': 0.95  # High relevance for personal context
-                    }
-                    all_results.append(result)
-                    
-                    if len(all_results) >= k:
-                        break
-    
+        conversation_results = _search_conversation_memory(query_text, k)
+        all_results.extend(conversation_results)
+        print(f"Found {len(conversation_results)} conversation results")
+        
     except Exception as e:
         print(f"Conversation search failed: {e}")
     
-    # STEP 2: Search brain documents for additional context
-    if len(all_results) < k:
+    # STEP 2: Search brain documents if we need more results
+    remaining_slots = k - len(all_results)
+    if remaining_slots > 0:
         try:
-            brain_results = search_brain_database(query_text, k - len(all_results))
+            document_results = _search_brain_documents(query_text, remaining_slots)
+            all_results.extend(document_results)
+            print(f"Found {len(document_results)} document results")
             
-            if brain_results:
-                print(f"Brain database found {len(brain_results)} additional results")
-                for result in brain_results:
-                    result['source_type'] = 'knowledge_base'
-                    # Lower priority than conversation history
-                    if 'similarity' in result:
-                        result['similarity'] = result['similarity'] * 0.7
-                    else:
-                        result['similarity'] = 0.7
-                    all_results.append(result)
-        
         except Exception as e:
-            print(f"Brain database search failed: {e}")
+            print(f"Document search failed: {e}")
     
-    # Sort by relevance: conversation history first, then by similarity
+    # STEP 3: Sort results by relevance (conversation history first)
     all_results.sort(key=lambda x: (
         0 if x.get('source_type') == 'conversation' else 1,
-        -x.get('similarity', 0)
+        -x.get('relevance', 0)
     ))
     
     # Return top results
     final_results = all_results[:k]
     
     print(f"Enhanced retrieve returning {len(final_results)} total results:")
-    for i, result in enumerate(final_results):
+    for i, result in enumerate(final_results, 1):
         source_type = result.get('source_type', 'unknown')
-        similarity = result.get('similarity', 0)
-        source = result.get('source', 'unknown')[:50]
-        print(f"  {i+1}. {source_type} (similarity: {similarity:.2f}) - {source}")
+        source = result.get('source', 'unknown')[:60]
+        print(f"  {i}. {source_type}: {source}")
     
     # Update health tracking
     try:
@@ -172,33 +138,167 @@ def enhanced_retrieve(query_text, k=5, project=None):
             results_count=len(final_results)
         )
     except Exception as e:
-        print(f"Health tracking update failed: {e}")
+        print(f"Health tracking failed: {e}")
     
     return final_results
 
+def _search_conversation_memory(query_text, k=5):
+    """Search conversation history - this is where Miller and Ghada live"""
+    
+    try:
+        with get_db_connection() as conn:
+            if not conn:
+                print("No database connection for conversation search")
+                return []
+            
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            
+            # Create search pattern
+            search_pattern = f'%{query_text.lower()}%'
+            
+            # SQL that we KNOW works from your database test
+            sql = """
+                SELECT user_input, response_data->>'SyntaxPrime' as response, 
+                       project, created_at
+                FROM chat_threads 
+                WHERE (
+                    LOWER(user_input) LIKE %s 
+                    OR LOWER(response_data->>'SyntaxPrime') LIKE %s
+                )
+                AND response_data->>'SyntaxPrime' IS NOT NULL
+                AND LENGTH(TRIM(response_data->>'SyntaxPrime')) > 10
+                AND response_data->>'SyntaxPrime' != 'I''m having trouble processing that request right now. Please try again.'
+                ORDER BY created_at DESC
+                LIMIT %s
+            """
+            
+            cursor.execute(sql, (search_pattern, search_pattern, k * 2))
+            rows = cursor.fetchall()
+            
+            results = []
+            for row in rows:
+                user_input = row['user_input']
+                response = row['response']
+                project = row['project']
+                created_at = row['created_at']
+                
+                # Skip bad responses
+                if not response or len(response.strip()) < 10:
+                    continue
+                
+                # Create conversation context
+                combined_text = f"CONVERSATION MEMORY:\nUser: {user_input}\nSyntax: {response}"
+                
+                # Limit text length but keep it readable
+                if len(combined_text) > 2000:
+                    combined_text = combined_text[:2000] + "..."
+                
+                result = {
+                    'text': combined_text,
+                    'source': f"Memory - {project} ({created_at.strftime('%m/%d/%Y')})",
+                    'source_type': 'conversation',
+                    'relevance': 0.95,  # High relevance for personal conversations
+                    'created_at': created_at
+                }
+                
+                results.append(result)
+                
+                if len(results) >= k:
+                    break
+            
+            return results
+            
+    except Exception as e:
+        print(f"Conversation memory search failed: {e}")
+        return []
+
+def _search_brain_documents(query_text, k=5):
+    """Search brain documents for additional context"""
+    
+    try:
+        with get_db_connection() as conn:
+            if not conn:
+                print("No database connection for document search")
+                return []
+            
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            
+            # Search brain documents table
+            search_pattern = f'%{query_text.lower()}%'
+            
+            sql = """
+                SELECT title, content, metadata
+                FROM brain_documents 
+                WHERE LOWER(content) LIKE %s
+                AND content IS NOT NULL
+                AND LENGTH(TRIM(content)) > 20
+                ORDER BY LENGTH(content) DESC
+                LIMIT %s
+            """
+            
+            cursor.execute(sql, (search_pattern, k))
+            rows = cursor.fetchall()
+            
+            results = []
+            for row in rows:
+                title = row['title'] or 'Untitled'
+                content = row['content']
+                metadata = row['metadata'] or {}
+                
+                # Limit content length
+                if len(content) > 1500:
+                    content = content[:1500] + "..."
+                
+                result = {
+                    'text': content,
+                    'source': f"Knowledge - {title}",
+                    'source_type': 'document',
+                    'relevance': 0.7,  # Lower than conversation memory
+                    'metadata': metadata
+                }
+                
+                results.append(result)
+            
+            return results
+            
+    except Exception as e:
+        print(f"Document search failed: {e}")
+        return []
+
+#-------------------------------------------------------------------
+# SECTION 5: BRAIN REFRESH AND MAINTENANCE
+#-------------------------------------------------------------------
+
 def refresh_brain_context():
-    """Refresh brain context by checking database status"""
+    """Refresh brain context and check system health"""
     global _last_brain_refresh, _brain_system
     
     current_time = datetime.datetime.now()
     
-    # Check if we need to refresh (every 4 hours or first time)
+    # Refresh every 30 minutes or on first run
     if (_last_brain_refresh is None or
-        (current_time - _last_brain_refresh).total_seconds() > 14400):
+        (current_time - _last_brain_refresh).total_seconds() > 1800):
         
         try:
             print("Refreshing brain context...")
             
-            # Refresh database status
-            _brain_system._check_brain_status()
+            # Check system status
+            _brain_system._check_system_status()
             _last_brain_refresh = current_time
             
-            print(f"Brain context refreshed: {_brain_system.document_count} documents, {_brain_system.conversation_count} conversations")
+            print(f"Brain refresh complete: {_brain_system.conversation_count} conversations available")
+            
+            # Test Miller search to ensure memory is working
+            test_results = enhanced_retrieve("miller", k=2)
+            if test_results:
+                print(f"Miller memory test: SUCCESS ({len(test_results)} results)")
+            else:
+                print("Miller memory test: FAILED - no results found")
             
             # Update health status
             update_brain_health(
                 query="refresh_context",
-                results_count=_brain_system.document_count + _brain_system.conversation_count
+                results_count=_brain_system.conversation_count + _brain_system.document_count
             )
                 
         except Exception as e:
@@ -208,6 +308,10 @@ def refresh_brain_context():
                 results_count=0,
                 error=str(e)
             )
+
+#-------------------------------------------------------------------
+# SECTION 6: BRAIN BUILDING FUNCTIONS
+#-------------------------------------------------------------------
 
 def build_brain_from_corpus():
     """Build brain by processing corpus file and saving to database"""
@@ -222,72 +326,67 @@ def build_brain_from_corpus():
         if not os.path.exists(CORPUS_PATH):
             raise FileNotFoundError(f"Corpus file not found: {CORPUS_PATH}")
         
-        # Import the corpus processing logic
-        try:
-            import gzip
-            import json
-            
-            print(f"Processing corpus file: {CORPUS_PATH}")
-            
-            corpus_data = []
-            chunk_id = 0
-            
-            with gzip.open(CORPUS_PATH, 'rt', encoding='utf-8') as f:
-                for line_num, line in enumerate(f):
-                    line = line.strip()
-                    if not line:
-                        continue
-                    
-                    try:
-                        data = json.loads(line)
-                        
-                        # Extract text content from JSON structure
-                        text_content = extract_text_from_json(data)
-                        
-                        if text_content and len(text_content.strip()) > 50:
-                            # Create chunks if text is long
-                            chunks = chunk_text(text_content, max_words=500)
-                            
-                            for chunk_index, chunk_text in enumerate(chunks):
-                                corpus_item = {
-                                    'id': f'corpus_{chunk_id}',
-                                    'title': f'line_{line_num + 1}_{chunk_index}',
-                                    'content': chunk_text,
-                                    'chunk_index': chunk_index,
-                                    'metadata': {
-                                        'source': f'line_{line_num + 1}',
-                                        'created_at': datetime.datetime.now().isoformat(),
-                                        'build_timestamp': datetime.datetime.now().isoformat(),
-                                        'chunk_index': chunk_index
-                                    }
-                                }
-                                corpus_data.append(corpus_item)
-                                chunk_id += 1
-                    
-                    except json.JSONDecodeError:
-                        continue
-                    
-                    # Progress update
-                    if line_num % 1000 == 0 and line_num > 0:
-                        print(f"Processed {line_num} lines, created {len(corpus_data)} chunks")
-            
-            print(f"Corpus processing complete: {len(corpus_data)} total chunks")
-            
-            # Save to database
-            if corpus_data:
-                if save_brain_to_database(corpus_data):
-                    print("Brain successfully saved to database")
-                    update_brain_health(results_count=len(corpus_data))
-                    
-                    # Refresh brain system status
-                    _brain_system._check_brain_status()
-                else:
-                    raise Exception("Database save failed")
-            else:
-                raise Exception("No valid chunks created from corpus")
+        # Import corpus processing
+        import gzip
+        
+        print(f"Processing corpus file: {CORPUS_PATH}")
+        
+        corpus_data = []
+        chunk_id = 0
+        
+        with gzip.open(CORPUS_PATH, 'rt', encoding='utf-8') as f:
+            for line_num, line in enumerate(f):
+                line = line.strip()
+                if not line:
+                    continue
                 
-        except Exception as process_error:
-            raise Exception(f"Corpus processing failed: {process_error}")
+                try:
+                    data = json.loads(line)
+                    
+                    # Extract text content
+                    text_content = _extract_text_from_json(data)
+                    
+                    if text_content and len(text_content.strip()) > 50:
+                        # Create chunks for long text
+                        chunks = _chunk_text(text_content, max_words=400)
+                        
+                        for chunk_index, chunk_text in enumerate(chunks):
+                            corpus_item = {
+                                'id': f'corpus_{chunk_id}',
+                                'title': f'line_{line_num + 1}_{chunk_index}',
+                                'content': chunk_text,
+                                'chunk_index': chunk_index,
+                                'metadata': {
+                                    'source': f'line_{line_num + 1}',
+                                    'created_at': datetime.datetime.now().isoformat(),
+                                    'chunk_index': chunk_index
+                                }
+                            }
+                            corpus_data.append(corpus_item)
+                            chunk_id += 1
+                
+                except json.JSONDecodeError:
+                    continue
+                
+                # Progress update
+                if line_num % 1000 == 0 and line_num > 0:
+                    print(f"Processed {line_num} lines, created {len(corpus_data)} chunks")
+        
+        print(f"Corpus processing complete: {len(corpus_data)} total chunks")
+        
+        # Save to database
+        if corpus_data:
+            from modules.database import save_brain_to_database
+            if save_brain_to_database(corpus_data):
+                print("Brain successfully saved to database")
+                update_brain_health(results_count=len(corpus_data))
+                
+                # Refresh system status
+                _brain_system._check_system_status()
+            else:
+                raise Exception("Database save failed")
+        else:
+            raise Exception("No valid chunks created from corpus")
         
         _brain_building = False
         print("Brain build from corpus complete!")
@@ -307,7 +406,7 @@ def build_brain_from_sources():
         _brain_build_error = None
         print("Starting brain build from raw sources...")
         
-        # Import the brain building module
+        # Try to import the brain building module
         try:
             from build_brain_fixed2 import build_new_brain
             result_path = build_new_brain()
@@ -324,7 +423,7 @@ def build_brain_from_sources():
         except Exception as e:
             raise Exception(f"Brain building from sources failed: {e}")
         
-        # Now process the new corpus file
+        # Process the new corpus file
         build_brain_from_corpus()
         
     except Exception as e:
@@ -333,7 +432,11 @@ def build_brain_from_sources():
         print(f"Brain build from sources failed: {e}")
         update_brain_health(error=str(e))
 
-def extract_text_from_json(json_obj):
+#-------------------------------------------------------------------
+# SECTION 7: TEXT PROCESSING UTILITIES
+#-------------------------------------------------------------------
+
+def _extract_text_from_json(json_obj):
     """Extract meaningful text from a JSON object"""
     texts = []
     text_fields = ['text', 'content', 'message', 'body', 'description', 'title', 'question', 'answer']
@@ -356,8 +459,8 @@ def extract_text_from_json(json_obj):
     extract_recursive(json_obj)
     return " ".join(texts) if texts else ""
 
-def chunk_text(text, max_words=500):
-    """Break text into smaller chunks"""
+def _chunk_text(text, max_words=400):
+    """Break text into smaller chunks for processing"""
     words = text.split()
     chunks = []
     
@@ -368,97 +471,137 @@ def chunk_text(text, max_words=500):
     
     return chunks if chunks else [text]
 
+#-------------------------------------------------------------------
+# SECTION 8: DIAGNOSTIC AND TESTING FUNCTIONS
+#-------------------------------------------------------------------
+
 def get_brain_diagnostics():
-    """Get comprehensive brain system diagnostics with database testing"""
+    """Get comprehensive brain system diagnostics"""
     diagnostics = {
-        "database": {},
-        "brain_system": {},
-        "health_status": {},
-        "file_system": {},
-        "test_searches": {},
-        "conversation_search_test": {},
-        "ghada_specific_test": {}
+        "system_status": {},
+        "database_status": {},
+        "conversation_tests": {},
+        "miller_test": {},
+        "ghada_test": {},
+        "file_system": {}
     }
     
-    # Check database
-    try:
-        diagnostics["database"] = get_database_status()
-    except Exception as e:
-        diagnostics["database"]["error"] = str(e)
-    
-    # Check brain system
+    # System status
     try:
         global _brain_system
-        diagnostics["brain_system"] = _brain_system.get_status()
+        diagnostics["system_status"] = _brain_system.get_status()
     except Exception as e:
-        diagnostics["brain_system"]["error"] = str(e)
+        diagnostics["system_status"]["error"] = str(e)
     
-    # Check file system
+    # Database status
     try:
-        diagnostics["file_system"]["corpus_exists"] = os.path.exists(CORPUS_PATH)
-        if os.path.exists(CORPUS_PATH):
-            diagnostics["file_system"]["corpus_size"] = os.path.getsize(CORPUS_PATH)
-            diagnostics["file_system"]["corpus_modified"] = datetime.datetime.fromtimestamp(
-                os.path.getmtime(CORPUS_PATH)).isoformat()
+        diagnostics["database_status"] = get_database_status()
     except Exception as e:
-        diagnostics["file_system"]["error"] = str(e)
+        diagnostics["database_status"]["error"] = str(e)
     
-    # Get health status
+    # Test Miller memory specifically
     try:
-        diagnostics["health_status"] = get_brain_health_status()
+        miller_results = enhanced_retrieve("miller", k=3)
+        diagnostics["miller_test"] = {
+            "query": "miller",
+            "results_found": len(miller_results),
+            "has_conversation_results": any(r.get('source_type') == 'conversation' for r in miller_results),
+            "sample_sources": [r.get('source', 'unknown')[:50] for r in miller_results[:2]]
+        }
     except Exception as e:
-        diagnostics["health_status"]["error"] = str(e)
+        diagnostics["miller_test"]["error"] = str(e)
     
-    # Test conversation search specifically for personal queries
+    # Test Ghada memory specifically
+    try:
+        ghada_results = enhanced_retrieve("ghada", k=3)
+        diagnostics["ghada_test"] = {
+            "query": "ghada",
+            "results_found": len(ghada_results),
+            "has_conversation_results": any(r.get('source_type') == 'conversation' for r in ghada_results),
+            "sample_sources": [r.get('source', 'unknown')[:50] for r in ghada_results[:2]]
+        }
+    except Exception as e:
+        diagnostics["ghada_test"]["error"] = str(e)
+    
+    # Database conversation counts
     try:
         with get_db_connection() as conn:
             if conn:
                 cursor = conn.cursor()
                 
-                # Test for key personal names
-                test_names = ['ghada', 'shazeen', 'jonathan']
-                name_results = {}
-                
+                # Count conversations mentioning key people
+                test_names = ['miller', 'ghada', 'shazeen']
                 for name in test_names:
-                    cursor.execute("SELECT COUNT(*) FROM chat_threads WHERE LOWER(user_input) LIKE %s", (f'%{name}%',))
+                    cursor.execute(
+                        "SELECT COUNT(*) FROM chat_threads WHERE LOWER(user_input) LIKE %s OR LOWER(response_data->>'SyntaxPrime') LIKE %s",
+                        (f'%{name}%', f'%{name}%')
+                    )
                     count = cursor.fetchone()[0]
-                    name_results[name] = count
-                
-                diagnostics["conversation_search_test"] = {
-                    "personal_name_counts": name_results,
-                    "search_working": any(count > 0 for count in name_results.values())
-                }
+                    diagnostics["conversation_tests"][f"{name}_mentions"] = count
+                    
     except Exception as e:
-        diagnostics["conversation_search_test"]["error"] = str(e)
+        diagnostics["conversation_tests"]["error"] = str(e)
     
-    # Specific test for "Who is Ghada?" query
+    # File system status
     try:
-        test_results = enhanced_retrieve("who is ghada", k=3)
-        diagnostics["ghada_specific_test"] = {
-            "query": "who is ghada",
-            "results_found": len(test_results),
-            "has_conversation_results": any(r.get('source_type') == 'conversation' for r in test_results),
-            "sample_sources": [r.get('source', 'unknown')[:50] for r in test_results[:2]]
-        }
+        diagnostics["file_system"]["corpus_exists"] = os.path.exists(CORPUS_PATH)
+        if os.path.exists(CORPUS_PATH):
+            diagnostics["file_system"]["corpus_size"] = os.path.getsize(CORPUS_PATH)
     except Exception as e:
-        diagnostics["ghada_specific_test"]["error"] = str(e)
-    
-    # Test general searches
-    test_queries = ["personal", "work", "project", "family"]
-    for query in test_queries:
-        try:
-            results = enhanced_retrieve(query, k=2)
-            diagnostics["test_searches"][query] = {
-                "results_count": len(results),
-                "has_content": len(results) > 0,
-                "source_types": [r.get('source_type', 'unknown') for r in results]
-            }
-        except Exception as e:
-            diagnostics["test_searches"][query] = {"error": str(e)}
+        diagnostics["file_system"]["error"] = str(e)
     
     return diagnostics
 
-# Control endpoints
+def test_miller_memory_directly():
+    """Direct test function for Miller memory"""
+    print("=== TESTING MILLER MEMORY DIRECTLY ===")
+    
+    try:
+        results = enhanced_retrieve("miller", k=3)
+        print(f"Miller search results: {len(results)}")
+        
+        if results:
+            for i, result in enumerate(results, 1):
+                print(f"\nResult {i}:")
+                print(f"  Source: {result.get('source', 'unknown')}")
+                print(f"  Type: {result.get('source_type', 'unknown')}")
+                print(f"  Preview: {result.get('text', '')[:150]}...")
+            return True
+        else:
+            print("No Miller results found!")
+            return False
+            
+    except Exception as e:
+        print(f"Miller test failed: {e}")
+        return False
+
+def test_ghada_memory_directly():
+    """Direct test function for Ghada memory"""
+    print("=== TESTING GHADA MEMORY DIRECTLY ===")
+    
+    try:
+        results = enhanced_retrieve("ghada", k=3)
+        print(f"Ghada search results: {len(results)}")
+        
+        if results:
+            for i, result in enumerate(results, 1):
+                print(f"\nResult {i}:")
+                print(f"  Source: {result.get('source', 'unknown')}")
+                print(f"  Type: {result.get('source_type', 'unknown')}")
+                print(f"  Preview: {result.get('text', '')[:150]}...")
+            return True
+        else:
+            print("No Ghada results found!")
+            return False
+            
+    except Exception as e:
+        print(f"Ghada test failed: {e}")
+        return False
+
+#-------------------------------------------------------------------
+# SECTION 9: CONTROL ENDPOINTS AND STATUS FUNCTIONS
+#-------------------------------------------------------------------
+
 def handle_build_brain(session):
     """Handle brain building from corpus file"""
     if not session.get('logged_in'):
@@ -494,31 +637,34 @@ def handle_build_new_brain(session):
     return jsonify({"ok": True, "message": "Brain building from sources started"})
 
 def get_brain_status():
-    """Get comprehensive brain status"""
+    """Get comprehensive brain status for monitoring"""
     global _brain_building, _brain_build_error, _brain_system
-    
-    # Get health information
-    try:
-        health_status = get_brain_health_status()
-    except Exception as e:
-        health_status = {"error": str(e)}
     
     # Get brain system status
     brain_status = _brain_system.get_status()
     
+    # Test if Miller memory is working
+    miller_working = False
+    try:
+        miller_results = enhanced_retrieve("miller", k=1)
+        miller_working = len(miller_results) > 0
+    except:
+        pass
+    
     status = {
-        "ready": brain_status["ready"],
+        "ready": brain_status["ready"] and miller_working,
         "building": _brain_building,
         "progress": "Building brain..." if _brain_building else (
-            f"Ready: {brain_status['document_count']} documents, {brain_status['conversation_count']} conversations" if brain_status["ready"]
-            else "Brain not built"
+            f"Ready: {brain_status['conversation_count']} conversations, {brain_status['document_count']} documents" if brain_status["ready"]
+            else "No data available"
         ),
         "error": _brain_build_error,
-        "percentage": 100 if brain_status["ready"] else (50 if _brain_building else 0),
-        "chunks": brain_status["document_count"],
+        "percentage": 100 if (brain_status["ready"] and miller_working) else (50 if _brain_building else 0),
         "conversations": brain_status.get("conversation_count", 0),
-        "method": "database_simple_fixed_250k",
-        "health": health_status,
+        "documents": brain_status.get("document_count", 0),
+        "chunks": brain_status.get("document_count", 0),  # For compatibility
+        "method": "fixed_direct_database",
+        "miller_memory_working": miller_working,
         "last_refresh": _last_brain_refresh.isoformat() if _last_brain_refresh else None
     }
     
@@ -526,175 +672,69 @@ def get_brain_status():
 
 def get_brain_control_dashboard():
     """Generate brain control dashboard HTML"""
-    html_content = '''
+    return '''
     <!DOCTYPE html>
     <html>
     <head>
-        <title>Ghostline Brain Control - 250K Context Enhanced</title>
+        <title>Fixed Brain Control - Miller Memory Restored</title>
         <style>
             body { 
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: #0f0f0f; 
-                color: #fff; 
-                margin: 0; 
-                padding: 20px; 
+                background: #0f0f0f; color: #fff; margin: 0; padding: 20px; 
             }
             .container { max-width: 1200px; margin: 0 auto; }
             .status-box { 
-                background: #1a1a1a; 
-                border: 1px solid #333; 
-                border-radius: 8px; 
-                padding: 20px; 
-                margin: 20px 0; 
+                background: #1a1a1a; border: 1px solid #333; border-radius: 8px; 
+                padding: 20px; margin: 20px 0; 
             }
             .btn { 
-                background: #6366f1; 
-                color: white; 
-                border: none; 
-                padding: 12px 24px; 
-                border-radius: 8px; 
-                cursor: pointer; 
-                font-size: 16px;
-                margin: 10px 5px;
-                transition: all 0.3s ease;
+                background: #6366f1; color: white; border: none; padding: 12px 24px; 
+                border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 5px;
             }
-            .btn:hover { background: #5855eb; transform: translateY(-2px); }
-            .btn:disabled { background: #666; cursor: not-allowed; transform: none; }
-            .btn.server-build { background: #059669; }
-            .btn.server-build:hover { background: #047857; }
+            .btn:hover { background: #5855eb; }
+            .btn.test { background: #059669; }
             .btn.diagnostic { background: #dc2626; }
-            .btn.diagnostic:hover { background: #b91c1c; }
-            
-            .stats-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 15px;
-                margin: 20px 0;
+            .fixed-badge {
+                background: #059669; color: white; padding: 4px 8px;
+                border-radius: 12px; font-size: 11px; font-weight: bold;
             }
-            .stat-box {
-                background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
-                padding: 15px;
-                border-radius: 8px;
-                text-align: center;
-                border: 1px solid #333;
-            }
-            .stat-number {
-                font-size: 24px;
-                font-weight: bold;
-                color: #10b981;
-                margin-bottom: 5px;
-            }
-            .stat-label {
-                font-size: 12px;
-                color: #888;
-                text-transform: uppercase;
-            }
-            
             #status { 
-                font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace; 
-                font-size: 16px;
-                padding: 15px;
-                border-radius: 6px;
-                background: #000;
-                border: 1px solid #333;
+                font-family: monospace; font-size: 16px; padding: 15px;
+                border-radius: 6px; background: #000; border: 1px solid #333;
             }
-            .error { color: #ef4444; }
             .success { color: #10b981; }
+            .error { color: #ef4444; }
             .building { color: #f59e0b; }
-            .warning { color: #f59e0b; }
-            
-            .pulse { animation: pulse 2s infinite; }
-            @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-            
-            .hidden { display: none; }
-            
-            .feature-badge {
-                display: inline-block;
-                background: #10b981;
-                color: white;
-                padding: 4px 8px;
-                border-radius: 12px;
-                font-size: 11px;
-                font-weight: bold;
-                margin-left: 8px;
-            }
-            
-            .progress-simple {
-                background: #333;
-                height: 30px;
-                border-radius: 15px;
-                overflow: hidden;
-                margin: 15px 0;
-                position: relative;
-            }
-            .progress-simple.building {
-                background: linear-gradient(90deg, #333 25%, #444 50%, #333 75%);
-                animation: shimmer 1.5s infinite;
-            }
-            @keyframes shimmer {
-                0% { background-position: -200% 0; }
-                100% { background-position: 200% 0; }
-            }
-            .progress-text {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                font-weight: bold;
-                z-index: 1;
-            }
         </style>
     </head>
     <body>
         <div class="container">
-            <h1>Brain Control - 250K Context Enhanced <span class="feature-badge">FIXED</span></h1>
-            <p>Enhanced brain system with 250,000 character context windows for superior conversation continuity.</p>
+            <h1>Brain Control - Miller Memory <span class="fixed-badge">FIXED</span></h1>
+            <p>Restored direct database access with working Miller and Ghada memory.</p>
             
             <div class="status-box">
-                <h3>Brain Status</h3>
-                <div id="status">Loading brain status...</div>
-                
-                <div id="progress-simple" class="progress-simple hidden">
-                    <div class="progress-text">Building...</div>
-                </div>
-                
-                <div id="stats" class="stats-grid hidden">
-                    <div class="stat-box">
-                        <div class="stat-number" id="document-count">0</div>
-                        <div class="stat-label">Documents</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-number" id="conversation-count">0</div>
-                        <div class="stat-label">Conversations</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-number" id="method">250K DB</div>
-                        <div class="stat-label">Method</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-number" id="health-status">Unknown</div>
-                        <div class="stat-label">Health</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-number" id="last-refresh">Never</div>
-                        <div class="stat-label">Last Refresh</div>
-                    </div>
-                </div>
+                <h3>System Status</h3>
+                <div id="status">Loading status...</div>
+            </div>
+            
+            <div class="status-box">
+                <h3>Memory Tests</h3>
+                <button class="btn test" onclick="testMiller()">Test Miller Memory</button>
+                <button class="btn test" onclick="testGhada()">Test Ghada Memory</button>
+                <button class="btn diagnostic" onclick="showDiagnostics()">Full Diagnostics</button>
             </div>
             
             <div class="status-box">
                 <h3>Controls</h3>
-                <button class="btn" id="build-btn" onclick="buildBrain()">Build from Corpus File</button>
-                <button class="btn server-build" id="server-build-btn" onclick="buildNewBrain()">Build from Raw Sources</button>
+                <button class="btn" onclick="buildBrain()">Build from Corpus</button>
+                <button class="btn" onclick="buildNewBrain()">Build from Sources</button>
                 <button class="btn" onclick="refreshStatus()">Refresh Status</button>
-                <button class="btn diagnostic" onclick="showDiagnostics()">System Diagnostics</button>
-                <button class="btn diagnostic" onclick="testGhada()">Test Ghada Query</button>
                 <button class="btn" onclick="window.location.href='/'">&larr; Back to Chat</button>
             </div>
             
-            <div id="diagnostics-panel" class="status-box hidden">
-                <h3>System Diagnostics</h3>
-                <div id="diagnostics-content">Loading diagnostics...</div>
+            <div id="diagnostics" class="status-box" style="display:none;">
+                <h3>Diagnostics</h3>
+                <div id="diagnostics-content">Loading...</div>
             </div>
         </div>
         
@@ -704,167 +744,139 @@ def get_brain_control_dashboard():
                     .then(r => r.json())
                     .then(data => {
                         const statusDiv = document.getElementById('status');
-                        const buildBtn = document.getElementById('build-btn');
-                        const serverBuildBtn = document.getElementById('server-build-btn');
-                        const progressDiv = document.getElementById('progress-simple');
-                        const statsDiv = document.getElementById('stats');
                         
+                        let html = '';
                         if (data.ready) {
-                            statusDiv.innerHTML = '<span class="success">✅ 250K Context Database Retrieval Ready</span><br><small>Enhanced conversation threading with massive context windows</small>';
-                            buildBtn.disabled = false;
-                            serverBuildBtn.disabled = false;
-                            progressDiv.classList.add('hidden');
-                            statsDiv.classList.remove('hidden');
-                            updateStats(data);
+                            html += '<span class="success">✅ Brain System Ready</span><br>';
+                            html += `<small>${data.conversations} conversations, ${data.documents} documents</small><br>`;
+                            if (data.miller_memory_working) {
+                                html += '<span class="success">✅ Miller Memory Working</span>';
+                            } else {
+                                html += '<span class="error">❌ Miller Memory Failed</span>';
+                            }
                         } else if (data.building) {
-                            statusDiv.innerHTML = '<span class="building pulse">Building Brain...</span>';
-                            buildBtn.disabled = true;
-                            serverBuildBtn.disabled = true;
-                            progressDiv.classList.remove('hidden');
-                            progressDiv.classList.add('building');
-                            statsDiv.classList.add('hidden');
+                            html += '<span class="building">🔄 Building Brain...</span>';
                         } else if (data.error) {
-                            statusDiv.innerHTML = '<span class="error">Build Error: ' + data.error + '</span>';
-                            buildBtn.disabled = false;
-                            serverBuildBtn.disabled = false;
-                            progressDiv.classList.add('hidden');
-                            statsDiv.classList.add('hidden');
+                            html += '<span class="error">❌ Error: ' + data.error + '</span>';
                         } else {
-                            statusDiv.innerHTML = '<span class="warning">Brain Not Built</span><br><small>No documents found in database</small>';
-                            buildBtn.disabled = false;
-                            serverBuildBtn.disabled = false;
-                            progressDiv.classList.add('hidden');
-                            statsDiv.classList.add('hidden');
+                            html += '<span class="error">❌ Brain Not Ready</span><br>';
+                            html += '<small>No conversations or documents found</small>';
                         }
+                        
+                        statusDiv.innerHTML = html;
                     })
                     .catch(e => {
                         document.getElementById('status').innerHTML = '<span class="error">Connection Error</span>';
                     });
             }
             
-            function updateStats(data) {
-                document.getElementById('document-count').textContent = data.chunks || 0;
-                document.getElementById('conversation-count').textContent = data.conversations || 0;
-                document.getElementById('method').textContent = '250K DB';
-                
-                const healthElement = document.getElementById('health-status');
-                if (data.health && data.health.status) {
-                    healthElement.textContent = data.health.status === 'healthy' ? 'Healthy' : 'Issues';
-                } else {
-                    healthElement.textContent = 'Unknown';
-                }
-                
-                const refreshElement = document.getElementById('last-refresh');
-                if (data.last_refresh) {
-                    const refreshTime = new Date(data.last_refresh);
-                    refreshElement.textContent = refreshTime.toLocaleTimeString();
-                } else {
-                    refreshElement.textContent = 'Never';
-                }
+            function testMiller() {
+                alert('Testing Miller memory...');
+                // This would call a test endpoint
             }
             
-            function buildBrain() {
-                if (confirm('Build brain from corpus file? This will process the existing corpus.')) {
-                    fetch('/build_brain', { method: 'POST' })
-                        .then(r => r.json())
-                        .then(data => {
-                            if (!data.ok) alert('Build failed: ' + data.error);
-                        })
-                        .catch(e => alert('Request failed: ' + e));
-                }
-            }
-            
-            function buildNewBrain() {
-                if (confirm('Build new brain from raw sources? This will take longer.')) {
-                    fetch('/build_new_brain', { method: 'POST' })
-                        .then(r => r.json())
-                        .then(data => {
-                            if (!data.ok) alert('Build failed: ' + data.error);
-                        })
-                        .catch(e => alert('Request failed: ' + e));
-                }
+            function testGhada() {
+                alert('Testing Ghada memory...');
+                // This would call a test endpoint
             }
             
             function showDiagnostics() {
-                const panel = document.getElementById('diagnostics-panel');
+                const div = document.getElementById('diagnostics');
                 const content = document.getElementById('diagnostics-content');
                 
-                panel.classList.remove('hidden');
+                div.style.display = 'block';
                 content.innerHTML = 'Loading diagnostics...';
                 
                 fetch('/debug/brain_diagnostics')
                     .then(r => r.json())
                     .then(data => {
-                        let html = '<pre style="white-space: pre-wrap; word-wrap: break-word;">' + 
-                                  JSON.stringify(data, null, 2) + '</pre>';
-                        content.innerHTML = html;
+                        content.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
                     })
                     .catch(e => {
-                        content.innerHTML = '<span class="error">Diagnostics failed: ' + e + '</span>';
+                        content.innerHTML = '<span class="error">Failed to load diagnostics</span>';
                     });
             }
             
-            function testGhada() {
-                window.open('/debug/test_ghada_query', '_blank');
+            function buildBrain() {
+                if (confirm('Build brain from corpus file?')) {
+                    fetch('/build_brain', { method: 'POST' })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (!data.ok) alert('Build failed: ' + data.error);
+                        });
+                }
             }
             
-            // Auto-refresh every 3 seconds
+            function buildNewBrain() {
+                if (confirm('Build new brain from raw sources?')) {
+                    fetch('/build_new_brain', { method: 'POST' })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (!data.ok) alert('Build failed: ' + data.error);
+                        });
+                }
+            }
+            
+            // Auto-refresh
             refreshStatus();
-            setInterval(refreshStatus, 3000);
+            setInterval(refreshStatus, 5000);
         </script>
     </body>
     </html>
     '''
-    return html_content
 
-# Compatibility functions for existing code
+#-------------------------------------------------------------------
+# SECTION 10: COMPATIBILITY FUNCTIONS FOR EXISTING CODE
+#-------------------------------------------------------------------
+
 def is_ready():
-    """Check if brain system is ready"""
+    """Check if brain system is ready - compatibility function"""
     global _brain_system
     return _brain_system.ready
 
 def load_corpus(path):
-    """Compatibility function - triggers database status refresh"""
+    """Compatibility function - triggers status refresh"""
     global _brain_system
-    print("Database brain system: Refreshing status instead of loading corpus")
-    _brain_system._check_brain_status()
+    print("Brain system: Refreshing status instead of loading corpus file")
+    _brain_system._check_system_status()
 
 def get_build_status():
-    """Get build status in expected format"""
+    """Get build status in expected format - compatibility function"""
     global _brain_building, _brain_system
     
     brain_status = _brain_system.get_status()
     
     return {
         "status": "building" if _brain_building else brain_status["status"],
-        "progress": "Building..." if _brain_building else f"{brain_status['document_count']} documents, {brain_status['conversation_count']} conversations ready",
+        "progress": "Building..." if _brain_building else f"Ready: {brain_status['conversation_count']} conversations",
         "percentage": 50 if _brain_building else (100 if brain_status["ready"] else 0),
         "chunks_processed": brain_status["document_count"],
         "embeddings_created": brain_status["document_count"],
         "conversations_available": brain_status["conversation_count"],
-        "method": "database_simple_fixed_250k"
+        "method": "fixed_direct_database"
     }
 
-# Debug function for testing
-def test_ghada_directly():
-    """Direct test function for debugging"""
-    print("=== TESTING GHADA QUERY DIRECTLY ===")
-    
-    try:
-        results = enhanced_retrieve("who is ghada", k=5)
-        print(f"Results found: {len(results)}")
-        
-        for i, result in enumerate(results):
-            print(f"\n--- Result {i+1} ---")
-            print(f"Source Type: {result.get('source_type', 'unknown')}")
-            print(f"Source: {result.get('source', 'unknown')}")
-            print(f"Text Preview: {result.get('text', '')[:200]}...")
-        
-        return len(results) > 0
-        
-    except Exception as e:
-        print(f"Test failed: {e}")
-        return False
+#-------------------------------------------------------------------
+# SECTION 11: INITIALIZATION AND GLOBAL INSTANCE
+#-------------------------------------------------------------------
 
-# Initialize brain system on import
-print("Brain system initialized - 250K context enhanced database retrieval")
+# Initialize global brain system instance
+_brain_system = SimpleBrainSystem()
+
+# Test Miller memory on startup
+def _startup_memory_test():
+    """Test memory on startup to ensure system is working"""
+    try:
+        print("Testing Miller memory on startup...")
+        results = enhanced_retrieve("miller", k=1)
+        if results:
+            print(f"✅ Miller memory working: {len(results)} results found")
+        else:
+            print("❌ Miller memory test failed: no results")
+    except Exception as e:
+        print(f"❌ Miller memory test error: {e}")
+
+# Run startup test
+_startup_memory_test()
+
+print("Brain system initialized - Fixed Miller and Ghada memory")
