@@ -142,6 +142,9 @@ class SimpleBrainSystem:
 #-------------------------------------------------------------------
 # SECTION 4: ENHANCED RETRIEVAL FUNCTIONS - THE CORE FIX 9/15/25
 #-------------------------------------------------------------------
+#-------------------------------------------------------------------
+# SECTION 4: ENHANCED RETRIEVAL FUNCTIONS - THE CORE FIX 9/15/25
+#-------------------------------------------------------------------
 
 def enhanced_retrieve(query_text, k=5, project=None):
     """
@@ -199,58 +202,112 @@ def enhanced_retrieve(query_text, k=5, project=None):
     return final_results
 
 def _search_conversation_memory(query_text, k=5):
-    """FIXED: Search conversation history with bulletproof cursor handling"""
+    """TUPLE-SAFE: Conversation search that handles all cursor types without tuple errors"""
+    
+    print(f"Searching conversation memory for: '{query_text}' (limit: {k})")
+    
+    # Input validation
+    if not query_text or not isinstance(query_text, str):
+        print("Invalid query text provided")
+        return []
+    
+    if k <= 0:
+        k = 5
+    
+    results = []
     
     try:
         with get_db_connection() as conn:
-            if not conn:
+            if conn is None:
                 print("No database connection for conversation search")
                 return []
             
             cursor = conn.cursor(cursor_factory=RealDictCursor)
             
-            # FIXED: Simple working SQL that excludes error message responses
-            search_pattern = f'%{query_text.lower()}%'
+            # Safe SQL query with proper parameterization
+            search_term = f'%{query_text.lower()}%'
             
-            sql = """
-                SELECT user_input, response_data, project, created_at, id
+            sql_query = """
+                SELECT id, user_input, response_data, project, created_at
                 FROM chat_threads 
                 WHERE (
                     LOWER(user_input) LIKE %s 
                     OR LOWER(COALESCE(response_data->>'SyntaxPrime', '')) LIKE %s
                 )
+                AND response_data IS NOT NULL
                 AND response_data->>'SyntaxPrime' IS NOT NULL
-                AND LENGTH(TRIM(COALESCE(response_data->>'SyntaxPrime', ''))) > 10
+                AND LENGTH(TRIM(response_data->>'SyntaxPrime')) > 10
                 AND response_data->>'SyntaxPrime' NOT LIKE '%trouble processing%'
                 AND response_data->>'SyntaxPrime' NOT LIKE '%try again%'
                 AND response_data->>'SyntaxPrime' NOT LIKE '%Error generating%'
-                AND response_data->>'SyntaxPrime' NOT LIKE '%Response generation failed%'
                 ORDER BY created_at DESC
                 LIMIT %s
             """
             
-            cursor.execute(sql, (search_pattern, search_pattern, k * 3))
+            # Execute query with proper error handling
+            cursor.execute(sql_query, (search_term, search_term, k * 3))
             rows = cursor.fetchall()
             
-            print(f"FIXED SEARCH: Found {len(rows)} clean results for '{query_text}' (error messages filtered)")
+            print(f"Database returned {len(rows)} raw conversation results")
             
-            results = []
-            for row in rows:
+            # Process each row with maximum safety against tuple errors
+            for row_index, row in enumerate(rows):
                 try:
-                    # FIXED: Bulletproof row data access
-                    user_input = row.get('user_input', '') if row else ''
-                    response_data = row.get('response_data', {}) if row else {}
-                    response = response_data.get('SyntaxPrime', '') if response_data else ''
-                    project = row.get('project', 'Unknown') if row else 'Unknown'
-                    created_at = row.get('created_at') if row else None
-                    chat_id = row.get('id') if row else None
+                    # Initialize variables with defaults
+                    row_id = None
+                    user_input = ""
+                    response_text = ""
+                    project_name = "Unknown"
+                    created_date = None
                     
-                    # Skip bad responses (double-check)
-                    if not response or len(response.strip()) < 10:
+                    # TUPLE-SAFE data extraction with multiple fallback methods
+                    if row is None:
                         continue
                     
-                    # Skip any remaining error messages that might have slipped through
-                    error_phrases = [
+                    try:
+                        # Method 1: Try dictionary-like access (RealDictCursor)
+                        if hasattr(row, 'get') and callable(getattr(row, 'get')):
+                            row_id = row.get('id')
+                            user_input = row.get('user_input') or ''
+                            project_name = row.get('project') or 'Unknown'
+                            created_date = row.get('created_at')
+                            
+                            response_data = row.get('response_data') or {}
+                            if isinstance(response_data, dict):
+                                response_text = response_data.get('SyntaxPrime', '')
+                        
+                        # Method 2: Try tuple/list access as fallback
+                        elif hasattr(row, '__len__') and len(row) >= 5:
+                            row_id = row[0] if len(row) > 0 else None
+                            user_input = row[1] if len(row) > 1 else ''
+                            response_data = row[2] if len(row) > 2 else {}
+                            project_name = row[3] if len(row) > 3 else 'Unknown'
+                            created_date = row[4] if len(row) > 4 else None
+                            
+                            # Safe JSON extraction
+                            if isinstance(response_data, dict):
+                                response_text = response_data.get('SyntaxPrime', '')
+                        
+                        else:
+                            print(f"Row {row_index}: Unsupported row type {type(row)}")
+                            continue
+                    
+                    except (IndexError, TypeError, KeyError, AttributeError) as extract_error:
+                        print(f"Row {row_index} extraction failed: {extract_error}")
+                        continue
+                    
+                    # Validate extracted data
+                    if not user_input or not response_text:
+                        continue
+                    
+                    user_input = str(user_input).strip()
+                    response_text = str(response_text).strip()
+                    
+                    if len(user_input) < 1 or len(response_text) < 10:
+                        continue
+                    
+                    # Filter out error responses
+                    error_indicators = [
                         "I'm having trouble processing",
                         "try again",
                         "Error generating",
@@ -258,42 +315,55 @@ def _search_conversation_memory(query_text, k=5):
                         "I encountered an error"
                     ]
                     
-                    if any(phrase in response for phrase in error_phrases):
+                    if any(indicator.lower() in response_text.lower() for indicator in error_indicators):
                         continue
                     
-                    # Create conversation context
-                    combined_text = f"CONVERSATION MEMORY:\nUser: {user_input}\nSyntax: {response}"
+                    # Build conversation context safely
+                    combined_text = f"CONVERSATION MEMORY:\nUser: {user_input}\nSyntax: {response_text}"
                     
-                    # Limit text length but keep it readable
+                    # Truncate if too long
                     if len(combined_text) > 2000:
                         combined_text = combined_text[:2000] + "..."
                     
-                    # Check for personal keywords to boost relevance
+                    # Check for personal keywords for relevance boosting
                     personal_keywords = ['miller', 'ghada', 'shazeen', 'mom', 'family', 'daughter', 'wife', 'cat', 'tux']
-                    is_personal = any(keyword in query_text.lower() or keyword in combined_text.lower()
-                                    for keyword in personal_keywords)
+                    is_personal = any(
+                        keyword.lower() in query_text.lower() or keyword.lower() in combined_text.lower()
+                        for keyword in personal_keywords
+                    )
                     
+                    # Create result object
                     result = {
                         'text': combined_text,
-                        'source': f"Memory - {project} ({created_at.strftime('%m/%d/%Y') if created_at else 'Unknown'})",
+                        'source': f"Memory - {project_name}",
                         'source_type': 'conversation',
-                        'relevance': 0.98 if is_personal else 0.85,  # Higher relevance for personal content
-                        'created_at': created_at,
-                        'chat_id': chat_id
+                        'relevance': 0.98 if is_personal else 0.85,
+                        'created_at': created_date,
+                        'chat_id': row_id
                     }
+                    
+                    # Add formatted date if available
+                    if created_date:
+                        try:
+                            if hasattr(created_date, 'strftime'):
+                                date_str = created_date.strftime('%m/%d/%Y')
+                                result['source'] = f"Memory - {project_name} ({date_str})"
+                        except (AttributeError, ValueError):
+                            pass
                     
                     results.append(result)
                     
+                    # Stop if we have enough results
                     if len(results) >= k:
                         break
                         
                 except Exception as row_error:
-                    print(f"Error processing row: {row_error}")
+                    print(f"Error processing conversation row {row_index}: {row_error}")
                     continue
             
-            print(f"FIXED: Returning {len(results)} quality conversation memories (no error messages)")
+            print(f"Successfully processed {len(results)} conversation memories")
             
-            # Debug: Show what we found for personal queries
+            # Debug output for personal queries
             if any(keyword in query_text.lower() for keyword in ['miller', 'ghada', 'shazeen']) and results:
                 print(f"PERSONAL MEMORY DEBUG: Found {len(results)} memories for '{query_text}':")
                 for i, result in enumerate(results[:3], 1):
@@ -302,14 +372,17 @@ def _search_conversation_memory(query_text, k=5):
             
             return results
             
-    except Exception as e:
-        print(f"Conversation memory search failed: {e}")
+    except psycopg2.Error as db_error:
+        print(f"PostgreSQL error in conversation search: {db_error}")
+        return []
+    except Exception as general_error:
+        print(f"General error in conversation search: {general_error}")
         import traceback
         traceback.print_exc()
         return []
 
 def _search_brain_documents(query_text, k=5):
-    """Search brain documents for additional context"""
+    """Search brain documents for additional context with tuple-safe handling"""
     
     try:
         with get_db_connection() as conn:
@@ -336,11 +409,28 @@ def _search_brain_documents(query_text, k=5):
             rows = cursor.fetchall()
             
             results = []
-            for row in rows:
+            for row_index, row in enumerate(rows):
                 try:
-                    title = row.get('title', 'Untitled') if row else 'Untitled'
-                    content = row.get('content', '') if row else ''
-                    metadata = row.get('metadata', {}) if row else {}
+                    # Tuple-safe data extraction
+                    title = ""
+                    content = ""
+                    metadata = {}
+                    
+                    if hasattr(row, 'get') and callable(getattr(row, 'get')):
+                        title = row.get('title') or 'Untitled'
+                        content = row.get('content') or ''
+                        metadata = row.get('metadata') or {}
+                    elif hasattr(row, '__len__') and len(row) >= 3:
+                        title = row[0] if len(row) > 0 and row[0] else 'Untitled'
+                        content = row[1] if len(row) > 1 and row[1] else ''
+                        metadata = row[2] if len(row) > 2 and row[2] else {}
+                    else:
+                        continue
+                    
+                    # Validate content
+                    content = str(content).strip()
+                    if len(content) < 20:
+                        continue
                     
                     # Limit content length
                     if len(content) > 1500:
@@ -351,13 +441,13 @@ def _search_brain_documents(query_text, k=5):
                         'source': f"Knowledge - {title}",
                         'source_type': 'document',
                         'relevance': 0.7,  # Lower than conversation memory
-                        'metadata': metadata
+                        'metadata': metadata if isinstance(metadata, dict) else {}
                     }
                     
                     results.append(result)
                     
                 except Exception as row_error:
-                    print(f"Error processing document row: {row_error}")
+                    print(f"Error processing document row {row_index}: {row_error}")
                     continue
             
             if results:

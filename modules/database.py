@@ -28,30 +28,40 @@ if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
 # ==========================================
 # Section 2: Enhanced Database Connection Management 9/15/25
 # ==========================================
+# ==========================================
+# Section 2: Enhanced Database Connection Management 9/15/25
+# ==========================================
 
 @contextmanager
 def get_db_connection():
-    """FIXED: Database connection without retry loop generator issues"""
+    """TUPLE-SAFE: Database connection that prevents generator/tuple errors"""
     conn = None
     try:
-        if DATABASE_URL:
-            conn = psycopg2.connect(
-                DATABASE_URL,
-                connect_timeout=15,
-                keepalives=1,
-                keepalives_idle=30,
-                keepalives_interval=5,
-                keepalives_count=3
-            )
-            yield conn
-        else:
+        if not DATABASE_URL:
             print("No DATABASE_URL configured - using file storage only")
             yield None
-    except Exception as e:
-        print(f"Database connection failed: {e}")
+            return
+        
+        # Single connection attempt without problematic retry loops
+        conn = psycopg2.connect(
+            DATABASE_URL,
+            connect_timeout=15,
+            keepalives=1,
+            keepalives_idle=30,
+            keepalives_interval=5,
+            keepalives_count=3
+        )
+        yield conn
+        
+    except psycopg2.Error as db_error:
+        print(f"PostgreSQL connection error: {db_error}")
+        yield None
+    except Exception as general_error:
+        print(f"Database connection error: {general_error}")
         yield None
     finally:
-        if conn:
+        # Safe cleanup that won't cause generator errors
+        if conn is not None:
             try:
                 conn.close()
             except:
@@ -66,8 +76,11 @@ def test_database_connection():
         try:
             cursor = conn.cursor()
             cursor.execute('SELECT 1')
-            cursor.fetchone()
-            return True, "Database connection successful"
+            result = cursor.fetchone()
+            if result and len(result) > 0:
+                return True, "Database connection successful"
+            else:
+                return False, "Database query returned no results"
         except Exception as e:
             return False, f"Database test failed: {e}"
 
@@ -88,19 +101,30 @@ def get_database_connection_info():
             if conn:
                 cursor = conn.cursor()
                 cursor.execute('SELECT version()')
-                version = cursor.fetchone()[0]
+                version_result = cursor.fetchone()
                 
                 info['connection_working'] = True
                 info['connection_test_time'] = time.time() - start_time
-                info['database_version'] = version[:100]  # Truncate long version strings
                 
-                # Test table existence
+                # Safe version string extraction
+                if version_result and len(version_result) > 0:
+                    version_str = str(version_result[0])
+                    info['database_version'] = version_str[:100]  # Truncate long version strings
+                
+                # Test table existence with tuple-safe handling
                 cursor.execute('''
                     SELECT table_name FROM information_schema.tables 
                     WHERE table_schema = 'public' 
                     AND table_name IN ('chat_threads', 'brain_documents')
                 ''')
-                tables = [row[0] for row in cursor.fetchall()]
+                table_results = cursor.fetchall()
+                
+                # Safe table name extraction
+                tables = []
+                for table_result in table_results:
+                    if table_result and len(table_result) > 0:
+                        tables.append(str(table_result[0]))
+                
                 info['essential_tables'] = tables
                 info['tables_exist'] = len(tables) >= 2
                 
@@ -154,7 +178,7 @@ def get_simple_db_connection():
                 pass
 
 def execute_safe_query(query, params=None, fetch_one=False, fetch_all=False):
-    """Execute a database query with automatic connection management and error handling"""
+    """Execute a database query with automatic connection management and tuple-safe error handling"""
     try:
         with get_db_connection() as conn:
             if not conn:
@@ -169,19 +193,24 @@ def execute_safe_query(query, params=None, fetch_one=False, fetch_all=False):
                 cursor.execute(query)
             
             if fetch_one:
-                return cursor.fetchone()
+                result = cursor.fetchone()
+                return result
             elif fetch_all:
-                return cursor.fetchall()
+                results = cursor.fetchall()
+                return results
             else:
                 conn.commit()
                 return cursor.rowcount
                 
-    except Exception as e:
-        print(f"Safe query execution failed: {e}")
+    except psycopg2.Error as db_error:
+        print(f"PostgreSQL query error: {db_error}")
+        return None
+    except Exception as general_error:
+        print(f"Safe query execution failed: {general_error}")
         return None
 
 def get_database_health_check():
-    """Comprehensive database health check"""
+    """Comprehensive database health check with tuple-safe operations"""
     health = {
         'timestamp': datetime.datetime.now().isoformat(),
         'connection_info': get_database_connection_info(),
@@ -195,38 +224,51 @@ def get_database_health_check():
             if conn:
                 cursor = conn.cursor()
                 
-                # Get table counts
+                # Get table counts with safe result handling
                 tables_to_check = ['chat_threads', 'brain_documents', 'brain_health']
                 for table in tables_to_check:
                     try:
                         cursor.execute(f'SELECT COUNT(*) FROM {table}')
-                        health['table_counts'][table] = cursor.fetchone()[0]
+                        count_result = cursor.fetchone()
+                        if count_result and len(count_result) > 0:
+                            health['table_counts'][table] = int(count_result[0])
+                        else:
+                            health['table_counts'][table] = 0
                     except Exception as e:
                         health['table_counts'][table] = f'Error: {e}'
                 
-                # Get recent activity
+                # Get recent activity with tuple-safe handling
                 try:
                     cursor.execute('''
                         SELECT COUNT(*) FROM chat_threads 
                         WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
                     ''')
-                    health['recent_activity']['conversations_last_7_days'] = cursor.fetchone()[0]
+                    activity_result = cursor.fetchone()
+                    if activity_result and len(activity_result) > 0:
+                        health['recent_activity']['conversations_last_7_days'] = int(activity_result[0])
+                    else:
+                        health['recent_activity']['conversations_last_7_days'] = 0
                 except Exception as e:
                     health['recent_activity']['conversations_last_7_days'] = f'Error: {e}'
                 
-                # Test a simple Miller search
+                # Test a simple Miller search with safe result extraction
                 try:
                     cursor.execute('''
                         SELECT COUNT(*) FROM chat_threads 
                         WHERE LOWER(user_input) LIKE '%miller%' 
                            OR LOWER(response_data->>'SyntaxPrime') LIKE '%miller%'
                     ''')
-                    miller_count = cursor.fetchone()[0]
-                    health['miller_conversations'] = miller_count
-                    
-                    if miller_count > 0:
-                        health['health_status'] = 'healthy'
+                    miller_result = cursor.fetchone()
+                    if miller_result and len(miller_result) > 0:
+                        miller_count = int(miller_result[0])
+                        health['miller_conversations'] = miller_count
+                        
+                        if miller_count > 0:
+                            health['health_status'] = 'healthy'
+                        else:
+                            health['health_status'] = 'no_data'
                     else:
+                        health['miller_conversations'] = 0
                         health['health_status'] = 'no_data'
                         
                 except Exception as e:
@@ -241,6 +283,121 @@ def get_database_health_check():
     
     return health
 
+def debug_tuple_error():
+    """Diagnostic function to identify the exact source of tuple index errors"""
+    
+    print("\n" + "="*60)
+    print("DEBUGGING TUPLE INDEX ERROR - COMPREHENSIVE TEST")
+    print("="*60)
+    
+    # Test 1: Database URL and basic connection
+    print("\n1. Testing database configuration...")
+    if not DATABASE_URL:
+        print("❌ No DATABASE_URL configured")
+        return
+    else:
+        print(f"✅ DATABASE_URL configured (length: {len(DATABASE_URL)})")
+    
+    # Test 2: Basic connection without context manager
+    print("\n2. Testing direct connection...")
+    try:
+        conn = psycopg2.connect(DATABASE_URL, connect_timeout=10)
+        print("✅ Direct connection successful")
+        
+        # Test 3: Simple query
+        print("\n3. Testing simple query...")
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM chat_threads WHERE LOWER(user_input) LIKE '%miller%'")
+        count_result = cursor.fetchone()
+        
+        if count_result and len(count_result) > 0:
+            print(f"✅ Simple query works: {count_result[0]} Miller conversations")
+        else:
+            print("❌ Simple query returned empty result")
+            
+        # Test 4: RealDictCursor
+        print("\n4. Testing RealDictCursor...")
+        dict_cursor = conn.cursor(cursor_factory=RealDictCursor)
+        dict_cursor.execute("""
+            SELECT id, user_input, response_data, project, created_at
+            FROM chat_threads 
+            WHERE LOWER(user_input) LIKE '%miller%'
+            LIMIT 1
+        """)
+        
+        row = dict_cursor.fetchone()
+        if row:
+            print(f"✅ RealDictCursor works")
+            print(f"   Row type: {type(row)}")
+            
+            # Test 5: Different access methods
+            print("\n5. Testing data access methods...")
+            
+            # Method 1: Dictionary access
+            try:
+                if hasattr(row, 'get'):
+                    test_id = row.get('id')
+                    test_input = row.get('user_input', '')
+                    print(f"✅ Dictionary access: ID={test_id}")
+                    print(f"   Input preview: {test_input[:50]}...")
+                else:
+                    print("❌ Row doesn't support dictionary access")
+            except Exception as dict_error:
+                print(f"❌ Dictionary access failed: {dict_error}")
+            
+            # Method 2: Tuple access
+            try:
+                if hasattr(row, '__len__'):
+                    print(f"   Row length: {len(row)}")
+                    if len(row) >= 5:
+                        test_id_tuple = row[0]
+                        test_input_tuple = row[1] if row[1] else ''
+                        print(f"✅ Tuple access: ID={test_id_tuple}")
+                        print(f"   Input preview: {test_input_tuple[:50]}...")
+                    else:
+                        print(f"❌ Row too short for tuple access: length {len(row)}")
+                else:
+                    print("❌ Row doesn't support length/indexing")
+            except IndexError as idx_error:
+                print(f"❌ Tuple access failed with IndexError: {idx_error}")
+            except Exception as tuple_error:
+                print(f"❌ Tuple access failed: {tuple_error}")
+            
+        else:
+            print("❌ No Miller rows found in database")
+        
+        # Test 6: Context manager
+        print("\n6. Testing context manager...")
+        try:
+            with get_db_connection() as test_conn:
+                if test_conn:
+                    print("✅ Context manager connection works")
+                    test_cursor = test_conn.cursor()
+                    test_cursor.execute("SELECT 1")
+                    test_result = test_cursor.fetchone()
+                    if test_result and len(test_result) > 0:
+                        print("✅ Context manager query works")
+                    else:
+                        print("❌ Context manager query returned empty")
+                else:
+                    print("❌ Context manager returned None")
+        except Exception as cm_error:
+            print(f"❌ Context manager failed: {cm_error}")
+            import traceback
+            traceback.print_exc()
+        
+        conn.close()
+        
+    except psycopg2.Error as db_error:
+        print(f"❌ PostgreSQL error: {db_error}")
+    except Exception as general_error:
+        print(f"❌ General connection error: {general_error}")
+        import traceback
+        traceback.print_exc()
+    
+    print("\n" + "="*60)
+    print("TUPLE ERROR DEBUG COMPLETE")
+    print("="*60)
 # ==========================================
 # Section 3: Content Classification and Filtering
 # ==========================================
