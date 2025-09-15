@@ -500,6 +500,125 @@ def _chunk_text(text, max_words=400):
 #-------------------------------------------------------------------
 # SECTION 8: DIAGNOSTIC AND TESTING FUNCTIONS
 #-------------------------------------------------------------------
+#-------------------------------------------------------------------
+# SECTION 8: DIAGNOSTIC AND TESTING FUNCTIONS 9/15/25
+#-------------------------------------------------------------------
+
+def debug_miller_search():
+    """Debug function to test Miller search step by step - CRITICAL FIX"""
+    print("\n" + "="*60)
+    print("DEBUGGING MILLER SEARCH - STEP BY STEP")
+    print("="*60)
+    
+    # Test 1: Database connection
+    print("\n1. Testing database connection...")
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                print("✅ Database connection: SUCCESS")
+                
+                # Test 2: Raw SQL query
+                print("\n2. Testing raw SQL query...")
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT COUNT(*) FROM chat_threads 
+                    WHERE LOWER(user_input) LIKE '%miller%' 
+                       OR LOWER(response_data->>'SyntaxPrime') LIKE '%miller%'
+                """)
+                count = cursor.fetchone()[0]
+                print(f"✅ Raw SQL found {count} Miller conversations")
+                
+                # Test 3: Get sample conversation
+                print("\n3. Getting sample Miller conversation...")
+                cursor.execute("""
+                    SELECT user_input, response_data->>'SyntaxPrime' as response, project, created_at
+                    FROM chat_threads 
+                    WHERE LOWER(user_input) LIKE '%miller%' 
+                       OR LOWER(response_data->>'SyntaxPrime') LIKE '%miller%'
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                """)
+                
+                row = cursor.fetchone()
+                if row:
+                    print(f"✅ Sample conversation found:")
+                    print(f"   User: {row[0][:100]}...")
+                    print(f"   Response: {row[1][:100] if row[1] else 'None'}...")
+                    print(f"   Project: {row[2]}")
+                    print(f"   Date: {row[3]}")
+                else:
+                    print("❌ No sample conversation found")
+                    
+            else:
+                print("❌ Database connection: FAILED")
+                
+    except Exception as e:
+        print(f"❌ Database test failed: {e}")
+        import traceback
+        traceback.print_exc()
+    
+    # Test 4: Test the fixed search function directly
+    print("\n4. Testing fixed search function...")
+    try:
+        results = _search_conversation_memory("miller", k=2)
+        if results:
+            print(f"✅ Fixed search function found {len(results)} results")
+            for i, result in enumerate(results, 1):
+                print(f"   {i}. {result['source']}")
+                print(f"      Preview: {result['text'][:150]}...")
+        else:
+            print("❌ Fixed search function returned no results")
+    except Exception as e:
+        print(f"❌ Fixed search function failed: {e}")
+        import traceback
+        traceback.print_exc()
+    
+    # Test 5: Test full enhanced_retrieve
+    print("\n5. Testing full enhanced_retrieve...")
+    try:
+        results = enhanced_retrieve("miller", k=2)
+        if results:
+            print(f"✅ Enhanced retrieve found {len(results)} results")
+            for i, result in enumerate(results, 1):
+                print(f"   {i}. {result.get('source', 'Unknown source')}")
+        else:
+            print("❌ Enhanced retrieve returned no results")
+    except Exception as e:
+        print(f"❌ Enhanced retrieve failed: {e}")
+        import traceback
+        traceback.print_exc()
+    
+    # Test 6: Test the ghostline_engine integration
+    print("\n6. Testing ghostline_engine generate_response...")
+    try:
+        from utils.ghostline_engine import generate_response
+        response_data = generate_response(
+            user_input="Who is Miller?",
+            use_voices=['SyntaxPrime'],
+            random_toggle=False,
+            project='Personal Operating Manual'
+        )
+        
+        if response_data and 'SyntaxPrime' in response_data:
+            response_text = response_data['SyntaxPrime']
+            if "trouble processing" in response_text:
+                print("❌ Ghostline engine returning generic error message")
+                print(f"   Response: {response_text[:200]}...")
+            else:
+                print("✅ Ghostline engine generated real response")
+                print(f"   Response: {response_text[:200]}...")
+        else:
+            print("❌ Ghostline engine returned no SyntaxPrime response")
+            print(f"   Full response: {response_data}")
+            
+    except Exception as e:
+        print(f"❌ Ghostline engine test failed: {e}")
+        import traceback
+        traceback.print_exc()
+    
+    print("\n" + "="*60)
+    print("DEBUG COMPLETE - CHECK RESULTS ABOVE")
+    print("="*60)
 
 def get_brain_diagnostics():
     """Get comprehensive brain system diagnostics"""
@@ -521,6 +640,7 @@ def get_brain_diagnostics():
     
     # Database status
     try:
+        from modules.database import get_database_status
         diagnostics["database_status"] = get_database_status()
     except Exception as e:
         diagnostics["database_status"]["error"] = str(e)
@@ -623,6 +743,94 @@ def test_ghada_memory_directly():
     except Exception as e:
         print(f"Ghada test failed: {e}")
         return False
+
+def test_search_integration():
+    """Test the complete search integration pipeline"""
+    print("=== TESTING COMPLETE SEARCH INTEGRATION ===")
+    
+    test_queries = [
+        ("miller", "Should find your tux cat"),
+        ("ghada", "Should find your wife"),
+        ("shazeen", "Should find your daughter"),
+        ("coffee", "Should find morning routine references"),
+        ("2am", "Should find late night coding sessions")
+    ]
+    
+    for query, description in test_queries:
+        print(f"\nTesting: '{query}' - {description}")
+        try:
+            results = enhanced_retrieve(query, k=2)
+            if results:
+                print(f"  ✅ Found {len(results)} results")
+                for result in results:
+                    source_type = result.get('source_type', 'unknown')
+                    print(f"    - {source_type}: {result.get('source', 'unknown')[:60]}")
+            else:
+                print(f"  ❌ No results found")
+        except Exception as e:
+            print(f"  ❌ Search failed: {e}")
+    
+    print("\n=== SEARCH INTEGRATION TEST COMPLETE ===")
+
+def comprehensive_memory_test():
+    """Run all memory tests to verify system is working"""
+    print("\n" + "="*80)
+    print("COMPREHENSIVE MEMORY TEST - FULL SYSTEM CHECK")
+    print("="*80)
+    
+    # Test 1: Database connectivity
+    print("\n1. DATABASE CONNECTIVITY TEST")
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT COUNT(*) FROM chat_threads")
+                total_conversations = cursor.fetchone()[0]
+                print(f"✅ Database connected: {total_conversations} total conversations")
+            else:
+                print("❌ Database connection failed")
+                return False
+    except Exception as e:
+        print(f"❌ Database test failed: {e}")
+        return False
+    
+    # Test 2: Personal memory searches
+    print("\n2. PERSONAL MEMORY TESTS")
+    personal_tests = [
+        ("miller", 272),  # You confirmed 272 Miller conversations exist
+        ("ghada", 50),    # Estimate
+        ("shazeen", 30)   # Estimate
+    ]
+    
+    for name, expected_min in personal_tests:
+        try:
+            results = enhanced_retrieve(name, k=3)
+            print(f"   {name}: Found {len(results)} results (expected >= 1)")
+            if len(results) > 0:
+                print(f"      ✅ Memory working for {name}")
+            else:
+                print(f"      ❌ No memory found for {name}")
+        except Exception as e:
+            print(f"      ❌ Search failed for {name}: {e}")
+    
+    # Test 3: System integration
+    print("\n3. SYSTEM INTEGRATION TEST")
+    test_search_integration()
+    
+    # Test 4: Brain system status
+    print("\n4. BRAIN SYSTEM STATUS")
+    try:
+        status = get_brain_status()
+        print(f"   Ready: {status['ready']}")
+        print(f"   Conversations: {status['conversations']}")
+        print(f"   Documents: {status['documents']}")
+        print(f"   Miller Memory: {status.get('miller_memory_working', 'Unknown')}")
+    except Exception as e:
+        print(f"   ❌ Status check failed: {e}")
+    
+    print("\n" + "="*80)
+    print("COMPREHENSIVE MEMORY TEST COMPLETE")
+    print("="*80)
 
 #-------------------------------------------------------------------
 # SECTION 9: CONTROL ENDPOINTS AND STATUS FUNCTIONS
