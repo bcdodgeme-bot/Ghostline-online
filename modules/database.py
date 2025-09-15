@@ -22,10 +22,13 @@ if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
 # ==========================================
 # Section 2: Enhanced Database Connection Management
 # ==========================================
+# ==========================================
+# Section 2: Enhanced Database Connection Management 9/15/25
+# ==========================================
 
 @contextmanager
 def get_db_connection():
-    """Enhanced database connection with retry logic and proper error handling"""
+    """Enhanced database connection with retry logic and proper error handling - FIXED"""
     conn = None
     max_retries = 3
     retry_count = 0
@@ -66,6 +69,7 @@ def get_db_connection():
                 else:
                     time.sleep(1)  # Wait before retry
     finally:
+        # Cleanup happens here, outside the retry loop to prevent generator errors
         if conn:
             try:
                 conn.close()
@@ -85,6 +89,176 @@ def test_database_connection():
             return True, "Database connection successful"
         except Exception as e:
             return False, f"Database test failed: {e}"
+
+def get_database_connection_info():
+    """Get database connection information for diagnostics"""
+    info = {
+        'database_url_configured': bool(DATABASE_URL),
+        'database_url_length': len(DATABASE_URL) if DATABASE_URL else 0,
+        'connection_working': False,
+        'connection_test_time': None,
+        'error_message': None
+    }
+    
+    start_time = time.time()
+    
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT version()')
+                version = cursor.fetchone()[0]
+                
+                info['connection_working'] = True
+                info['connection_test_time'] = time.time() - start_time
+                info['database_version'] = version[:100]  # Truncate long version strings
+                
+                # Test table existence
+                cursor.execute('''
+                    SELECT table_name FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name IN ('chat_threads', 'brain_documents')
+                ''')
+                tables = [row[0] for row in cursor.fetchall()]
+                info['essential_tables'] = tables
+                info['tables_exist'] = len(tables) >= 2
+                
+            else:
+                info['error_message'] = "Database connection returned None"
+                
+    except Exception as e:
+        info['error_message'] = str(e)
+        info['connection_test_time'] = time.time() - start_time
+    
+    return info
+
+def get_reliable_db_connection():
+    """Alternative connection function with simpler retry logic"""
+    if not DATABASE_URL:
+        return None
+    
+    try:
+        conn = psycopg2.connect(
+            DATABASE_URL,
+            connect_timeout=15,
+            keepalives=1,
+            keepalives_idle=30,
+            keepalives_interval=10,
+            keepalives_count=3
+        )
+        return conn
+    except Exception as e:
+        print(f"Reliable connection failed: {e}")
+        return None
+
+@contextmanager
+def get_simple_db_connection():
+    """Simplified database connection without complex retry logic"""
+    conn = None
+    
+    try:
+        if DATABASE_URL:
+            conn = psycopg2.connect(DATABASE_URL, connect_timeout=10)
+            yield conn
+        else:
+            yield None
+    except Exception as e:
+        print(f"Simple database connection failed: {e}")
+        yield None
+    finally:
+        if conn:
+            try:
+                conn.close()
+            except:
+                pass
+
+def execute_safe_query(query, params=None, fetch_one=False, fetch_all=False):
+    """Execute a database query with automatic connection management and error handling"""
+    try:
+        with get_db_connection() as conn:
+            if not conn:
+                print("No database connection available for query")
+                return None
+            
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            
+            if params:
+                cursor.execute(query, params)
+            else:
+                cursor.execute(query)
+            
+            if fetch_one:
+                return cursor.fetchone()
+            elif fetch_all:
+                return cursor.fetchall()
+            else:
+                conn.commit()
+                return cursor.rowcount
+                
+    except Exception as e:
+        print(f"Safe query execution failed: {e}")
+        return None
+
+def get_database_health_check():
+    """Comprehensive database health check"""
+    health = {
+        'timestamp': datetime.datetime.now().isoformat(),
+        'connection_info': get_database_connection_info(),
+        'table_counts': {},
+        'recent_activity': {},
+        'health_status': 'unknown'
+    }
+    
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                cursor = conn.cursor()
+                
+                # Get table counts
+                tables_to_check = ['chat_threads', 'brain_documents', 'brain_health']
+                for table in tables_to_check:
+                    try:
+                        cursor.execute(f'SELECT COUNT(*) FROM {table}')
+                        health['table_counts'][table] = cursor.fetchone()[0]
+                    except Exception as e:
+                        health['table_counts'][table] = f'Error: {e}'
+                
+                # Get recent activity
+                try:
+                    cursor.execute('''
+                        SELECT COUNT(*) FROM chat_threads 
+                        WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
+                    ''')
+                    health['recent_activity']['conversations_last_7_days'] = cursor.fetchone()[0]
+                except Exception as e:
+                    health['recent_activity']['conversations_last_7_days'] = f'Error: {e}'
+                
+                # Test a simple Miller search
+                try:
+                    cursor.execute('''
+                        SELECT COUNT(*) FROM chat_threads 
+                        WHERE LOWER(user_input) LIKE '%miller%' 
+                           OR LOWER(response_data->>'SyntaxPrime') LIKE '%miller%'
+                    ''')
+                    miller_count = cursor.fetchone()[0]
+                    health['miller_conversations'] = miller_count
+                    
+                    if miller_count > 0:
+                        health['health_status'] = 'healthy'
+                    else:
+                        health['health_status'] = 'no_data'
+                        
+                except Exception as e:
+                    health['miller_conversations'] = f'Error: {e}'
+                    health['health_status'] = 'error'
+            else:
+                health['health_status'] = 'no_connection'
+                
+    except Exception as e:
+        health['health_status'] = 'error'
+        health['error'] = str(e)
+    
+    return health
 
 # ==========================================
 # Section 3: Content Classification and Filtering
