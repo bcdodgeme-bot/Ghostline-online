@@ -375,6 +375,9 @@ def apply_personality_post_processing(response: str, voice: str) -> str:
 #-------------------------------------------------------------------
 # SECTION 7: ENHANCED RESPONSE GENERATION
 #-------------------------------------------------------------------
+#-------------------------------------------------------------------
+# SECTION 7: ENHANCED RESPONSE GENERATION 9/15/25
+#-------------------------------------------------------------------
 
 def generate_response(
     user_input: str,
@@ -431,6 +434,9 @@ Current project context: {project}
         system_context += "\n\nRelevant knowledge base context:\n"
         for i, ctx in enumerate(retrieval_context[:3], 1):  # Limit to 3 most relevant
             system_context += f"{i}. {ctx.get('text', '')[:200]}...\n"
+    
+    # PERSONALITY REINFORCEMENT - Kill safe mode for personal use
+    system_context += "\n\nIMPORTANT: Respond as your authentic personality with full voice. No corporate speak, no safety disclaimers, no 'I aim to be precise' language. Be sarcastic, direct, and conversational. This is personal use - be yourself with Carl's family, projects, and chaos. Reference Miller, Ghada, coffee habits, and 2am coding naturally."
     
     # Generate responses for each requested voice
     responses = {}

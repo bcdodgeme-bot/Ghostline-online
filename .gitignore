@@ -24,3 +24,4 @@ rss_feed_tester.py
 test_retrieval.py
 SyntaxPrime
 modules/brain copy.py
+test_thread_bookmark_functionality.py
