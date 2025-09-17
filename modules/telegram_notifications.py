@@ -1,6 +1,6 @@
 # modules/telegram_notifications.py
 # Telegram Bot notification system with reminder persistence and timezone handling
-# FIXED VERSION - PREVENTS SPAM + FLASK CONTEXT ISSUE RESOLVED
+# FIXED VERSION - PREVENTS SPAM + FLASK CONTEXT ISSUE RESOLVED + MISSING SCHEDULE_REMINDER METHOD ADDED
 
 #-- Section 1: Imports and Configuration
 import os
@@ -185,54 +185,77 @@ class GhostlineTelegramReminders:
         except RuntimeError:
             print(f"INFO: {message}")
 
-#-- Section 4: Reminder Creation with Flask Context Fix
-    def create_reminder(self, title, content="", remind_at=None, reminder_type='general',
-                       project=None, priority=3, repeat_pattern=None, metadata=None):
-        """Create a persistent reminder - FIXED FLASK CONTEXT ISSUE"""
+#-- Section 4: Reminder Creation (Fixed Method)
+    def create_reminder(self, title: str, remind_at: datetime.datetime,
+                       project: str = None, priority: int = 3, content: str = None,
+                       reminder_type: str = "user_reminder", repeat_pattern: str = None,
+                       metadata: dict = None) -> dict:
+        """Create a reminder - FIXED method with proper error handling"""
         
-        if remind_at is None:
-            remind_at = datetime.datetime.now() + datetime.timedelta(hours=1)
+        if not self.bot:
+            return {"success": False, "error": "Telegram not configured"}
         
         # Generate unique reminder ID
-        reminder_id = hashlib.md5(
-            f"{title}{remind_at}{datetime.datetime.now()}".encode()
-        ).hexdigest()[:16]
+        reminder_id = hashlib.md5(f"{title}{remind_at}{datetime.datetime.now()}".encode()).hexdigest()
         
-        # FLASK CONTEXT FIX: Try with app context first, fallback if needed
-        try:
-            # Try to get Flask app context
-            from flask import current_app
-            
-            # If we're already in an app context, proceed normally
-            if current_app:
-                return self._create_reminder_with_db(
-                    reminder_id, reminder_type, title, content, remind_at,
-                    project, priority, repeat_pattern, metadata
-                )
-        except RuntimeError:
-            # We're outside Flask context, try to create one
-            try:
-                # Import app from main module
-                import sys
-                if 'app' in sys.modules:
-                    app_module = sys.modules['app']
-                    if hasattr(app_module, 'app'):
-                        with app_module.app.app_context():
-                            return self._create_reminder_with_db(
-                                reminder_id, reminder_type, title, content, remind_at,
-                                project, priority, repeat_pattern, metadata
-                            )
-            except Exception as context_error:
-                self._safe_log_error(f"Failed to create app context: {context_error}")
-        
-        # Fallback: create without Flask context (database only)
-        return self._create_reminder_with_db(
-            reminder_id, reminder_type, title, content, remind_at,
-            project, priority, repeat_pattern, metadata
+        return self._actually_create_reminder(
+            reminder_id=reminder_id,
+            reminder_type=reminder_type,
+            title=title,
+            content=content,
+            remind_at=remind_at,
+            project=project,
+            priority=priority,
+            repeat_pattern=repeat_pattern,
+            metadata=metadata
         )
     
-    def _create_reminder_with_db(self, reminder_id, reminder_type, title, content,
-                                remind_at, project, priority, repeat_pattern, metadata):
+    def schedule_reminder(self, title: str, remind_at: datetime.datetime,
+                         project: str = None, priority: int = 2, content: str = None,
+                         repeat_pattern: str = None, metadata: dict = None) -> dict:
+        """
+        Schedule a reminder with the provided parameters - FIXED MISSING METHOD.
+        This method was being called but was missing from the GhostlineTelegramReminders class.
+        
+        Args:
+            title (str): The reminder title/content
+            remind_at (datetime): When to send the reminder
+            project (str): Associated project name
+            priority (int): Priority level (1=urgent, 2=high, 3=normal)
+            content (str): Additional reminder content
+            repeat_pattern (str): Optional repeat pattern ('daily', 'weekly', 'workdays')
+            metadata (dict): Additional metadata
+        
+        Returns:
+            dict: Result with success status and details
+        """
+        try:
+            # Use the existing create_reminder method internally
+            result = self.create_reminder(
+                title=title,
+                content=content,
+                remind_at=remind_at,
+                project=project,
+                priority=priority,
+                repeat_pattern=repeat_pattern,
+                metadata=metadata
+            )
+            
+            if result.get('success'):
+                self._safe_log_info(f"Scheduled reminder via schedule_reminder: {title} at {remind_at}")
+            
+            return result
+            
+        except Exception as e:
+            self._safe_log_error(f"Failed to schedule reminder: {e}")
+            return {
+                "success": False,
+                "error": f"Reminder scheduling failed: {str(e)}"
+            }
+    
+    def _actually_create_reminder(self, reminder_id: str, reminder_type: str, title: str,
+                                 content: str, remind_at: datetime.datetime, project: str,
+                                 priority: int, repeat_pattern: str, metadata: dict) -> dict:
         """Actually create the reminder in database"""
         try:
             with get_db_connection() as conn:
@@ -374,7 +397,6 @@ class GhostlineTelegramReminders:
                             self._safe_log_error(f"Failed to send reminder {reminder_id}: {result['error']}")
                     
                     conn.commit()
-                    
                     return {"sent": sent_count, "total_due": len(due_reminders)}
                     
                 except Exception as e:
@@ -483,12 +505,12 @@ class GhostlineTelegramReminders:
                         
                         # Send confirmation using the existing bot instance
                         if self.bot:
-                            self.bot.send_message("✅ *Reminder marked as completed!*")
-                        self._safe_log_info(f"Reminder {reminder_id} marked as completed")
+                            self.bot.send_message("✅ *Reminder marked as completed!*\n\nNice work getting that done.")
+                        
                         return {"success": True, "action": "completed"}
                         
                     except Exception as e:
-                        self._safe_log_error(f"Failed to mark reminder as done: {e}")
+                        self._safe_log_error(f"Failed to mark reminder complete: {e}")
                         return {"success": False, "error": str(e)}
             
             return {"success": False, "error": "Database not available"}
@@ -499,9 +521,9 @@ class GhostlineTelegramReminders:
     
     def _handle_snooze(self, reminder_id, minutes, message_id):
         """Snooze reminder for specified minutes"""
-        snooze_until = datetime.datetime.now() + datetime.timedelta(minutes=minutes)
-        
         try:
+            snooze_until = datetime.datetime.now() + datetime.timedelta(minutes=minutes)
+            
             with get_db_connection() as conn:
                 if conn:
                     try:
@@ -514,13 +536,14 @@ class GhostlineTelegramReminders:
                         
                         conn.commit()
                         
-                        # Convert to Eastern for display and send confirmation
-                        eastern_snooze = self._utc_to_eastern(snooze_until)
-                        time_str = eastern_snooze.strftime('%I:%M %p')
+                        # Send confirmation
+                        eastern_snooze_time = self._utc_to_eastern(snooze_until)
+                        snooze_display = eastern_snooze_time.strftime('%I:%M %p')
+                        
                         if self.bot:
-                            self.bot.send_message(f"⏰ *Reminder snoozed until {time_str}*")
-                        self._safe_log_info(f"Reminder {reminder_id} snoozed until {snooze_until}")
-                        return {"success": True, "action": "snoozed", "until": snooze_until}
+                            self.bot.send_message(f"⏰ *Reminder snoozed until {snooze_display}*\n\nI'll remind you again then.")
+                        
+                        return {"success": True, "action": f"snoozed_{minutes}min", "snooze_until": snooze_until}
                         
                     except Exception as e:
                         self._safe_log_error(f"Failed to snooze reminder: {e}")
@@ -533,23 +556,24 @@ class GhostlineTelegramReminders:
             return {"success": False, "error": "Database not available"}
     
     def _handle_info_request(self, reminder_id):
-        """Handle more info request"""
+        """Send detailed info about reminder"""
         try:
             with get_db_connection() as conn:
                 if conn:
                     try:
                         cursor = conn.cursor()
                         cursor.execute('''
-                            SELECT title, content, project, created_at, priority
+                            SELECT title, content, project, priority, created_at, remind_at, status
                             FROM telegram_reminders 
                             WHERE reminder_id = %s
                         ''', (reminder_id,))
                         
                         result = cursor.fetchone()
+                        
                         if result:
-                            title, content, project, created_at, priority = result
+                            title, content, project, priority, created_at, remind_at, status = result
                             
-                            info_parts = [f"📝 *Reminder Details*"]
+                            info_parts = [f"📝 *Reminder Details*\n"]
                             info_parts.append(f"*Title:* {title}")
                             
                             if content:
@@ -596,15 +620,18 @@ class GhostlineTelegramReminders:
                         cursor = conn.cursor()
                         cursor.execute('''
                             UPDATE telegram_reminders 
-                            SET status = 'emergency_stopped', 
-                                snooze_until = NULL
-                            WHERE status IN ('pending', 'sent')
+                            SET status = 'cancelled' 
+                            WHERE status = 'pending'
                         ''')
                         
                         stopped_count = cursor.rowcount
                         conn.commit()
                         
-                        self._safe_log_info(f"Emergency stop: {stopped_count} reminders stopped")
+                        self._safe_log_info(f"Emergency stop: cancelled {stopped_count} pending reminders")
+                        
+                        if self.bot:
+                            self.bot.send_message(f"🛑 *EMERGENCY STOP EXECUTED*\n\nCancelled {stopped_count} pending reminders.")
+                        
                         return {"success": True, "stopped_count": stopped_count}
                         
                     except Exception as e:
@@ -614,89 +641,71 @@ class GhostlineTelegramReminders:
             return {"success": False, "error": "Database not available"}
             
         except Exception as e:
-            self._safe_log_error(f"Database connection failed in emergency_stop_all: {e}")
+            self._safe_log_error(f"Database connection failed during emergency stop: {e}")
             return {"success": False, "error": "Database not available"}
-    
-    def quick_reminder(self, message, minutes_from_now=60, project=None):
-        """Create a quick reminder for X minutes from now"""
-        remind_time = datetime.datetime.now() + datetime.timedelta(minutes=minutes_from_now)
-        
-        return self.create_reminder(
-            title=f"Quick Reminder",
-            content=message,
-            remind_at=remind_time,
-            reminder_type="quick",
-            project=project,
-            priority=2
-        )
-    
-    def get_active_reminders(self, limit=10):
-        """Get list of active reminders"""
-        try:
-            with get_db_connection() as conn:
-                if conn:
-                    try:
-                        cursor = conn.cursor()
-                        cursor.execute('''
-                            SELECT reminder_id, title, remind_at, priority, project, status
-                            FROM telegram_reminders 
-                            WHERE status IN ('pending', 'sent')
-                            ORDER BY remind_at ASC
-                            LIMIT %s
-                        ''', (limit,))
-                        
-                        results = cursor.fetchall()
-                        
-                        reminders = []
-                        for row in results:
-                            reminders.append({
-                                'reminder_id': row[0],
-                                'title': row[1],
-                                'remind_at': row[2],
-                                'priority': row[3],
-                                'project': row[4],
-                                'status': row[5]
-                            })
-                        
-                        return reminders
-                        
-                    except Exception as e:
-                        self._safe_log_error(f"Failed to get active reminders: {e}")
-                        return []
-            
-            return []
-            
-        except Exception as e:
-            self._safe_log_error(f"Database connection failed in get_active_reminders: {e}")
-            return []
 
-#-- Section 9: Natural Language Parsing Functions
-def parse_reminder_command(user_input, project=None):
-    """Parse natural language reminder commands with correct timezone handling"""
-    
-    # Clean up the input
-    original_input = user_input
+#-- Section 9: Reminder Parsing System
+def parse_reminder_command(user_input: str, project: str) -> dict:
+    """Parse natural language reminder commands - ENHANCED"""
+    original_input = user_input.strip()
     user_input = user_input.lower().strip()
     
-    # Time parsing patterns with more flexibility
-    time_patterns = [
-         (r'in one minutes?', lambda m: datetime.timedelta(minutes=1)),
-         (r'in two minutes?', lambda m: datetime.timedelta(minutes=2)),
-         (r'in three minutes?', lambda m: datetime.timedelta(minutes=3)),
-         (r'in five minutes?', lambda m: datetime.timedelta(minutes=5)),
-         (r'in ten minutes?', lambda m: datetime.timedelta(minutes=10)),
-         (r'in fifteen minutes?', lambda m: datetime.timedelta(minutes=15)),
-         (r'in thirty minutes?', lambda m: datetime.timedelta(minutes=30)),
-         (r'in one hours?', lambda m: datetime.timedelta(hours=1)),
+    # Enhanced time parsing helpers
+    def parse_today_time(hour_str, ampm):
+        """Parse time for today"""
+        try:
+            hour = int(hour_str)
+            if ampm == 'pm' and hour != 12:
+                hour += 12
+            elif ampm == 'am' and hour == 12:
+                hour = 0
+            
+            now = datetime.datetime.now()
+            target_time = now.replace(hour=hour, minute=0, second=0, microsecond=0)
+            
+            # If the time has passed today, assume tomorrow
+            if target_time <= now:
+                target_time += datetime.timedelta(days=1)
+            
+            return target_time - now
+            
+        except ValueError:
+            return datetime.timedelta(hours=1)  # Default fallback
     
-         # Existing digit patterns
-         (r'in (\d+) minutes?', lambda m: datetime.timedelta(minutes=int(m.group(1)))),
-         (r'in (\d+) hours?', lambda m: datetime.timedelta(hours=int(m.group(1)))),
-         (r'in (\d+) days?', lambda m: datetime.timedelta(days=int(m.group(1)))),
-         (r'tomorrow at (\d+)(am|pm)', lambda m: parse_tomorrow_time(m.group(1), m.group(2))),
-         (r'at (\d+)(am|pm)', lambda m: parse_today_time(m.group(1), m.group(2))),
-         (r'in (\d+)m', lambda m: datetime.timedelta(minutes=int(m.group(1)))),
-         (r'in (\d+)h', lambda m: datetime.timedelta(hours=int(m.group(1)))),
+    def parse_tomorrow_time(hour_str, ampm):
+        """Parse time for tomorrow"""
+        try:
+            hour = int(hour_str)
+            if ampm == 'pm' and hour != 12:
+                hour += 12
+            elif ampm == 'am' and hour == 12:
+                hour = 0
+            
+            tomorrow = datetime.datetime.now() + datetime.timedelta(days=1)
+            target_time = tomorrow.replace(hour=hour, minute=0, second=0, microsecond=0)
+            
+            return target_time - datetime.datetime.now()
+            
+        except ValueError:
+            return datetime.timedelta(days=1)  # Default tomorrow
+    
+    # Enhanced time pattern matching with natural language support
+    time_patterns = [
+        # Natural language times
+        (r'in five minutes?', lambda m: datetime.timedelta(minutes=5)),
+        (r'in ten minutes?', lambda m: datetime.timedelta(minutes=10)),
+        (r'in fifteen minutes?', lambda m: datetime.timedelta(minutes=15)),
+        (r'in thirty minutes?', lambda m: datetime.timedelta(minutes=30)),
+        (r'in one hours?', lambda m: datetime.timedelta(hours=1)),
+    
+        # Existing digit patterns
+        (r'in (\d+) minutes?', lambda m: datetime.timedelta(minutes=int(m.group(1)))),
+        (r'in (\d+) hours?', lambda m: datetime.timedelta(hours=int(m.group(1)))),
+        (r'in (\d+) days?', lambda m: datetime.timedelta(days=int(m.group(1)))),
+        (r'tomorrow at (\d+)(am|pm)', lambda m: parse_tomorrow_time(m.group(1), m.group(2))),
+        (r'at (\d+)(am|pm)', lambda m: parse_today_time(m.group(1), m.group(2))),
+        (r'in (\d+)m', lambda m: datetime.timedelta(minutes=int(m.group(1)))),
+        (r'in (\d+)h', lambda m: datetime.timedelta(hours=int(m.group(1)))),
     ]
     
     # Extract timing information
@@ -726,66 +735,33 @@ def parse_reminder_command(user_input, project=None):
     if not reminder_text:
         return {
             "success": False,
-            "error": "No reminder content found. Try: 'remind me to call John in 30 minutes'"
+            "error": "No reminder content found. Please specify what you want to be reminded about."
         }
     
-    # CORRECTED TIMEZONE LOGIC:
-    # Work entirely in UTC (server time), only convert to Eastern for display
-    utc_now = datetime.datetime.now()  # Server runs in UTC
-    utc_remind_time = utc_now + remind_delta  # Target time in UTC
+    # Calculate target time
+    remind_at = datetime.datetime.now() + remind_delta
     
-    # Convert UTC to Eastern for display only - SUBTRACT hours because Eastern is behind UTC
-    now = datetime.datetime.now()
-    is_dst = now.month >= 3 and now.month <= 10  # March through October (rough DST check)
-    
-    if is_dst:
-        # EDT = UTC-4, so UTC - 4 hours = Eastern
-        eastern_display_time = utc_remind_time - datetime.timedelta(hours=4)
-    else:
-        # EST = UTC-5, so UTC - 5 hours = Eastern
-        eastern_display_time = utc_remind_time - datetime.timedelta(hours=5)
+    # Format display time
+    display_time = remind_at.strftime('%I:%M %p on %B %d')
     
     return {
         "success": True,
         "title": reminder_text,
-        "remind_at": utc_remind_time,  # Store in UTC
+        "remind_at": remind_at,
         "project": project,
-        "remind_delta": remind_delta,
-        "display_time": eastern_display_time.strftime('%I:%M %p on %B %d')  # Display in Eastern
+        "display_time": display_time,
+        "original_input": original_input
     }
 
-def parse_tomorrow_time(hour, period):
-    """Parse tomorrow at specific time"""
-    hour = int(hour)
-    if period.lower() == 'pm' and hour != 12:
-        hour += 12
-    elif period.lower() == 'am' and hour == 12:
-        hour = 0
-    
-    tomorrow = datetime.datetime.now().replace(
-        hour=hour, minute=0, second=0, microsecond=0
-    ) + datetime.timedelta(days=1)
-    
-    return tomorrow - datetime.datetime.now()
+#-- Section 10: Utility Functions
+def is_telegram_configured() -> bool:
+    """Check if Telegram is properly configured"""
+    return bool(os.getenv('TELEGRAM_BOT_TOKEN') and os.getenv('TELEGRAM_CHAT_ID'))
 
-def parse_today_time(hour, period):
-    """Parse today at specific time"""
-    hour = int(hour)
-    if period.lower() == 'pm' and hour != 12:
-        hour += 12
-    elif period.lower() == 'am' and hour == 12:
-        hour = 0
-    
-    today = datetime.datetime.now().replace(
-        hour=hour, minute=0, second=0, microsecond=0
-    )
-    
-    if today <= datetime.datetime.now():
-        today += datetime.timedelta(days=1)
-    
-    return today - datetime.datetime.now()
-
-#-- Section 10: Configuration Check
-def is_telegram_configured():
-    """Check if Telegram bot is configured"""
-    return bool(os.getenv('TELEGRAM_BOT_TOKEN'))
+# Export the classes and functions for import
+__all__ = [
+    'TelegramBot',
+    'GhostlineTelegramReminders',
+    'parse_reminder_command',
+    'is_telegram_configured'
+]

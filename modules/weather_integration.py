@@ -95,133 +95,123 @@ WEATHER_CODES = {
     8000: {"desc": "Thunderstorm", "icon": "⛈️", "category": "storm"}
 }
 
+#-- Section 1: Data Structures
 @dataclass
 class ComprehensiveWeatherData:
-    """Comprehensive weather data structure for health-aware monitoring"""
+    """Comprehensive weather data structure for health monitoring"""
     timestamp: datetime.datetime
-    temperature: float
-    feels_like: float
-    pressure_surface_level: float
+    temperature: float  # Celsius
+    feels_like: float  # Celsius (temperatureApparent)
+    pressure_surface_level: float  # mbar/hPa
     uv_index: float
-    uv_health_concern: str
-    humidity: float
-    wind_speed: float
-    wind_direction: float
-    wind_gust: float
-    visibility: float
-    cloud_cover: float
-    weather_code: int
-    precipitation_intensity: float
-    precipitation_probability: float
-    precipitation_type: int
+    uv_health_concern: str  # Tomorrow.io's health concern level
+    humidity: float  # Percentage
+    wind_speed: float  # m/s
+    wind_direction: float  # Degrees
+    wind_gust: float  # m/s
+    visibility: float  # km
+    cloud_cover: float  # Percentage
+    weather_code: int  # Tomorrow.io weather code
+    precipitation_intensity: float  # mm/hr
+    precipitation_probability: float  # Percentage
+    precipitation_type: int  # Tomorrow.io precipitation type code
     location: str
     
-    # Derived properties
+    # Derived fields (set after initialization)
     weather_description: str = ""
     weather_icon: str = ""
     weather_category: str = ""
     pressure_trend: str = ""
     uv_alert_level: str = ""
 
-
+#-- Section 2: Tomorrow.io API Client
 class TomorrowIOClient:
-    """Tomorrow.io API client with error handling and rate limiting"""
+    """Enhanced client for Tomorrow.io Weather API with comprehensive data"""
     
-    def __init__(self, api_key: str, base_url: str):
+    def __init__(self, api_key: str):
         self.api_key = api_key
-        self.base_url = base_url
+        self.base_url = TOMORROW_IO_BASE_URL
         self.session = requests.Session()
-        self.session.headers.update({
-            "accept": "application/json",
-            "content-type": "application/json"
-        })
-        if not api_key:
-            raise ValueError("Tomorrow.io API key is required")
     
-    def _make_request(self, endpoint: str, params: Dict[str, Any]) -> requests.Response:
-        """Make API request with error handling"""
-        url = f"{self.base_url}/{endpoint}"
+    def _make_request(self, endpoint: str, params: dict) -> dict:
+        """Make authenticated request to Tomorrow.io API"""
+        if not self.api_key:
+            raise ValueError("Tomorrow.io API key is required")
+        
         params["apikey"] = self.api_key
         
         try:
-            print(f"🌐 Tomorrow.io API: Requesting {endpoint}")
-            response = self.session.get(url, params=params, timeout=10)
+            url = f"{self.base_url}/{endpoint}"
+            response = self.session.get(url, params=params, timeout=30)
             response.raise_for_status()
-            return response
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 429:
-                print("🚫 Tomorrow.io: Rate limit exceeded")
-                raise Exception("Tomorrow.io API: Rate limit exceeded. Try again later.")
-            elif e.response.status_code == 401:
-                print("🔑 Tomorrow.io: Invalid API key")
-                raise Exception("Tomorrow.io API: Invalid API key. Check your configuration.")
-            else:
-                print(f"🚨 Tomorrow.io HTTP Error: {e.response.status_code}")
-                raise Exception(f"Tomorrow.io API error: {e.response.status_code}")
-                
-        except requests.exceptions.Timeout:
-            print("⏱️  Tomorrow.io: Request timeout")
-            raise Exception("Tomorrow.io API: Request timeout. Try again later.")
-        except requests.exceptions.ConnectionError:
-            print("🌐 Tomorrow.io: Connection failed")
-            raise Exception("Tomorrow.io API: Connection failed. Check your internet connection.")
-        except Exception as e:
-            print(f"🚨 Tomorrow.io: Unexpected error: {e}")
-            raise
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            raise Exception(f"Tomorrow.io API request failed: {str(e)}")
     
-    def get_comprehensive_weather(self, location: str = None) -> dict:
-        """Get comprehensive current weather including all the good bits"""
-        location = location or DEFAULT_LOCATION
+    def get_comprehensive_weather(self, location: str) -> dict:
+        """Get comprehensive current weather data for location"""
         
-        params = {
-            "location": location,
-            "fields": ",".join(COMPREHENSIVE_WEATHER_FIELDS)
-        }
-        
-        response = self._make_request("weather/realtime", params)
-        return response.json()
-    
-    def get_comprehensive_forecast(self, location: str = None, hours: int = 24) -> dict:
-        """Get comprehensive forecast with all weather details"""
-        location = location or DEFAULT_LOCATION
+        # Handle different location formats
+        if isinstance(location, tuple):
+            location = f"{location[0]},{location[1]}"
+        elif not isinstance(location, str):
+            location = str(location)
         
         params = {
             "location": location,
             "fields": ",".join(COMPREHENSIVE_WEATHER_FIELDS),
-            "timesteps": "1h",
-            "endTime": (datetime.datetime.now() + datetime.timedelta(hours=hours)).isoformat() + "Z"
+            "units": "metric",  # Use metric units consistently
+            "timesteps": "current"
         }
         
-        response = self._make_request("weather/forecast", params)
-        return response.json()
+        try:
+            return self._make_request("weather/realtime", params)
+        except Exception as e:
+            print(f"⚠️  Tomorrow.io API error for location {location}: {e}")
+            raise
 
-
+#-- Section 3: Weather Monitor Core Class
 class WeatherMonitor:
-    """Weather monitoring system for health-related alerts and comprehensive weather info"""
+    """Comprehensive weather monitoring with health-focused alerts"""
     
     def __init__(self):
-        self.client = TomorrowIOClient(TOMORROW_IO_API_KEY, TOMORROW_IO_BASE_URL)
+        if not TOMORROW_IO_API_KEY:
+            raise ValueError("Tomorrow.io API key not configured. Set TOMORROW_IO_API_KEY environment variable.")
+        
+        self.client = TomorrowIOClient(TOMORROW_IO_API_KEY)
+        self.pressure_history = []
         self._load_pressure_history()
+        
+        print("🌦️ WeatherMonitor initialized with comprehensive health monitoring")
     
     def _load_pressure_history(self):
-        """Load pressure history for trend analysis"""
+        """Load pressure history from storage"""
         try:
-            with open("sessions/weather_history.json", "r") as f:
-                self.pressure_history = json.load(f)
-        except FileNotFoundError:
+            history_file = "pressure_history.json"
+            if os.path.exists(history_file):
+                with open(history_file, 'r') as f:
+                    self.pressure_history = json.load(f)
+                    # Keep only last 7 days of data
+                    cutoff = datetime.datetime.now() - timedelta(days=7)
+                    self.pressure_history = [
+                        entry for entry in self.pressure_history
+                        if datetime.datetime.fromisoformat(entry["timestamp"]) > cutoff
+                    ]
+        except Exception as e:
+            print(f"⚠️  Failed to load pressure history: {e}")
             self.pressure_history = []
     
     def _save_pressure_history(self):
-        """Save pressure history"""
+        """Save pressure history to storage"""
         try:
-            os.makedirs("sessions", exist_ok=True)
-            with open("sessions/weather_history.json", "w") as f:
-                json.dump(self.pressure_history[-100:], f)  # Keep last 100 readings
+            history_file = "pressure_history.json"
+            with open(history_file, 'w') as f:
+                json.dump(self.pressure_history, f, indent=2)
         except Exception as e:
             print(f"⚠️  Failed to save pressure history: {e}")
     
-    def _check_comprehensive_cache(self, location: str) -> Optional[ComprehensiveWeatherData]:
-        """Check if we have cached comprehensive weather data"""
+    def _check_comprehensive_cache(self, location: str):
+        """Check if comprehensive weather data is cached and still valid"""
         cache_key = f"comprehensive_weather_{location}"
         if cache_key in _weather_cache:
             cached_data, cached_time = _weather_cache[cache_key]
@@ -327,50 +317,59 @@ class WeatherMonitor:
         old_pressure = recent_pressures[0]["pressure"]
         pressure_change = current_pressure - old_pressure
         
-        # Classify pressure trends with headache risk assessment
-        if pressure_change <= -3.0:
-            return f"Dropping rapidly ({pressure_change:.1f}mbar) - High headache risk"
+        if pressure_change <= -PRESSURE_DROP_THRESHOLD:
+            return f"Rapid pressure drop ({pressure_change:.1f}mbar) - High headache risk"
         elif pressure_change <= -1.5:
-            return f"Dropping ({pressure_change:.1f}mbar) - Moderate headache risk"
+            return f"Moderate pressure drop ({pressure_change:.1f}mbar) - Moderate headache risk"
         elif pressure_change >= 3.0:
-            return f"Rising rapidly ({pressure_change:.1f}mbar)"
-        elif pressure_change >= 1.5:
-            return f"Rising ({pressure_change:.1f}mbar)"
+            return f"Pressure rising (+{pressure_change:.1f}mbar) - Stable conditions"
         else:
-            return f"Stable ({pressure_change:.1f}mbar)"
+            return f"Stable pressure ({pressure_change:+.1f}mbar) - Low headache risk"
     
     def _analyze_uv_level(self, uv_index: float) -> str:
-        """Analyze UV levels for sun sensitivity"""
+        """Analyze UV index for sun safety alerts"""
         if uv_index >= VERY_HIGH_UV_THRESHOLD:
-            return "Very High - Avoid sun exposure"
+            return "Very High"
         elif uv_index >= HIGH_UV_THRESHOLD:
-            return "High - Sun protection required"
+            return "High"
         elif uv_index >= 3:
-            return "Moderate - Some protection advised"
+            return "Moderate"
+        elif uv_index >= 1:
+            return "Low"
         else:
-            return "Low - Minimal risk"
+            return "Minimal"
     
     def get_health_alerts(self, weather_data: ComprehensiveWeatherData) -> List[str]:
-        """Get health-related weather alerts"""
+        """Generate health-focused alerts based on current conditions"""
         alerts = []
         
         # Pressure-based headache alerts
         if "High headache risk" in weather_data.pressure_trend:
-            alerts.append(f"🤕 High headache risk due to rapid pressure drop")
+            alerts.append("🧠 High headache risk detected - pressure dropping rapidly")
         elif "Moderate headache risk" in weather_data.pressure_trend:
-            alerts.append(f"⚠️ Moderate headache risk from pressure changes")
+            alerts.append("⚠️ Moderate headache risk - pressure decline noted")
         
-        # UV-based sun sensitivity alerts
+        # UV-based sun safety alerts
         if weather_data.uv_index >= VERY_HIGH_UV_THRESHOLD:
-            alerts.append(f"☀️ Very high UV index ({weather_data.uv_index}) - Avoid prolonged sun exposure")
+            alerts.append("☀️ Very high UV index - avoid sun exposure, use SPF 30+")
         elif weather_data.uv_index >= HIGH_UV_THRESHOLD:
-            alerts.append(f"🕶️ High UV index ({weather_data.uv_index}) - Use sun protection")
+            alerts.append("🌞 High UV index - limit sun exposure, use sunscreen")
         
-        # Weather-specific health alerts
-        if weather_data.weather_category == "storm":
-            alerts.append("⛈️ Thunderstorm conditions may affect sensitive individuals")
-        elif weather_data.humidity > 80 and weather_data.temperature > 25:
-            alerts.append("💧 High humidity and temperature may cause discomfort")
+        # Temperature comfort alerts
+        temp_f = weather_data.temperature * 9/5 + 32
+        if temp_f >= 95:
+            alerts.append("🔥 Extreme heat warning - stay hydrated and seek shade")
+        elif temp_f <= 10:
+            alerts.append("🧊 Extreme cold warning - dress warmly and limit exposure")
+        
+        # Wind safety alerts
+        wind_mph = weather_data.wind_speed * 2.237
+        if wind_mph >= 40:
+            alerts.append("💨 High wind warning - avoid outdoor activities")
+        
+        # Visibility alerts
+        if weather_data.visibility < 1:  # km
+            alerts.append("🌫️ Dense fog - extremely poor visibility, drive with extreme caution")
         elif weather_data.visibility < 2:  # km
             alerts.append("🌫️ Poor visibility conditions - drive carefully")
         
@@ -437,6 +436,28 @@ class WeatherMonitor:
         report += f"• UV concern level: {weather_data.uv_health_concern}\n"
         
         return report
+
+    def format_weather_summary(self, weather_data: ComprehensiveWeatherData) -> str:
+        """Format weather summary for dashboard display - FIXED MISSING METHOD"""
+        temp_f = weather_data.temperature * 9/5 + 32
+        feels_like_f = weather_data.feels_like * 9/5 + 32
+        wind_mph = weather_data.wind_speed * 2.237
+        visibility_miles = weather_data.visibility * 0.621371
+        
+        summary = f"🌦️ Current Weather Conditions\n\n"
+        summary += f"{weather_data.weather_icon} {weather_data.weather_description}\n"
+        summary += f"Temperature: {weather_data.temperature:.1f}°C ({temp_f:.0f}°F)\n"
+        summary += f"Feels like: {weather_data.feels_like:.1f}°C ({feels_like_f:.0f}°F)\n"
+        summary += f"Humidity: {weather_data.humidity:.0f}%\n"
+        summary += f"Wind: {wind_mph:.0f} mph from {self._get_wind_direction(weather_data.wind_direction)}\n"
+        summary += f"Visibility: {visibility_miles:.1f} miles\n"
+        summary += f"Barometric Pressure: {weather_data.pressure_surface_level:.1f} mbar ({weather_data.pressure_trend})\n"
+        summary += f"UV Index: {weather_data.uv_index:.1f} ({weather_data.uv_alert_level})\n"
+        
+        if weather_data.precipitation_probability > 20:
+            summary += f"Precipitation Chance: {weather_data.precipitation_probability:.0f}%\n"
+        
+        return summary
     
     def _get_wind_direction(self, degrees: float) -> str:
         """Convert wind direction degrees to compass direction"""
