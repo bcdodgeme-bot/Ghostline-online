@@ -30,6 +30,7 @@ import zipfile
 import tempfile
 import datetime
 import requests
+from typing import List, Dict, Optional, Any, Tuple
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
