@@ -1368,6 +1368,95 @@ All data below is verified and extracted from actual sources.
 # =============================================================================
 # SECTION 7: GOOGLE DOCS AND SHEETS INTEGRATION
 # =============================================================================
+# =============================================================================
+# SECTION 7: GOOGLE DOCS AND SHEETS INTEGRATION 9/17/25
+# =============================================================================
+
+    def create_google_doc(self, title: str, content: str, apply_formatting: bool = True) -> Dict[str, Any]:
+        """Create a new Google Doc with formatted content
+        
+        Args:
+            title: Document title
+            content: Document content (markdown formatted)
+            apply_formatting: Whether to apply markdown formatting
+            
+        Returns:
+            Dictionary with success status and document info
+        """
+        if 'docs' not in self.services:
+            return {
+                'success': False,
+                'error': 'Google Docs service not initialized. Check if docs scope is granted.'
+            }
+        
+        try:
+            # Create the document
+            document = {'title': title}
+            doc = self.services['docs'].documents().create(body=document).execute()
+            document_id = doc.get('documentId')
+            
+            print(f"Created Google Doc: {title} (ID: {document_id})")
+            
+            # Clean content for insertion
+            clean_content = self._clean_markdown_for_docs(content)
+            
+            # Insert the content
+            requests = [{
+                'insertText': {
+                    'location': {'index': 1},
+                    'text': clean_content
+                }
+            }]
+            
+            # Execute content insertion
+            if requests:
+                self.services['docs'].documents().batchUpdate(
+                    documentId=document_id,
+                    body={'requests': requests}
+                ).execute()
+            
+            # Make document shareable (optional)
+            try:
+                if 'drive' in self.services:
+                    self.services['drive'].permissions().create(
+                        fileId=document_id,
+                        body={'role': 'reader', 'type': 'anyone'}
+                    ).execute()
+            except Exception as e:
+                print(f"Warning: Could not make document shareable: {e}")
+            
+            return {
+                'success': True,
+                'document_id': document_id,
+                'document_url': f"https://docs.google.com/document/d/{document_id}",
+                'title': title,
+                'content_length': len(clean_content)
+            }
+            
+        except Exception as e:
+            error_msg = f"Document creation failed: {str(e)}"
+            print(error_msg)
+            return {
+                'success': False,
+                'error': error_msg
+            }
+
+    def _clean_markdown_for_docs(self, markdown_content: str) -> str:
+        """Clean markdown content for Google Docs insertion"""
+        import re
+        content = markdown_content
+        
+        # Remove markdown syntax but keep the text
+        content = re.sub(r'^#{1,6}\s+', '', content, flags=re.MULTILINE)  # Headings
+        content = re.sub(r'\*\*(.*?)\*\*', r'\1', content)  # Bold
+        content = re.sub(r'__(.*?)__', r'\1', content)      # Bold alt
+        content = re.sub(r'\*(.*?)\*', r'\1', content)      # Italic
+        content = re.sub(r'_(.*?)_', r'\1', content)        # Italic alt
+        content = re.sub(r'`([^`]+)`', r'\1', content)      # Inline code
+        content = re.sub(r'^```.*$', '', content, flags=re.MULTILINE)  # Code blocks
+        content = re.sub(r'\n{3,}', '\n\n', content)  # Remove excessive newlines
+        
+        return content.strip()
 
     def append_to_document(self, document_id: str, content: str) -> Dict:
         """Append content to an existing Google Doc"""
@@ -1403,13 +1492,13 @@ All data below is verified and extracted from actual sources.
             return {'success': False, 'error': str(e)}
 
     def read_sheet_data(self, spreadsheet_id: str, range_name: str = "A1:Z1000") -> Dict:
-        """Read data from a Google Sheet - FIXED: Preserve case in spreadsheet_id"""
+        """Read data from a Google Sheets spreadsheet"""
         if 'sheets' not in self.services:
             return {'success': False, 'error': 'Google Sheets API not available'}
         
         try:
             result = self.services['sheets'].spreadsheets().values().get(
-                spreadsheetId=spreadsheet_id,  # Keep original case
+                spreadsheetId=spreadsheet_id,
                 range=range_name
             ).execute()
             
@@ -1418,110 +1507,86 @@ All data below is verified and extracted from actual sources.
             return {
                 'success': True,
                 'data': values,
-                'rows': len(values),
-                'spreadsheet_url': f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}"
+                'row_count': len(values),
+                'spreadsheet_id': spreadsheet_id,
+                'range': range_name
             }
             
         except Exception as e:
             return {'success': False, 'error': str(e)}
 
-    def handle_sheets_command(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
-        """Handle Google Sheets commands with enhanced URL/name parsing"""
-        user_lower = user_input.lower().strip()
+    def create_spreadsheet(self, title: str, data: List[List] = None) -> Dict:
+        """Create a new Google Sheets spreadsheet"""
+        if 'sheets' not in self.services:
+            return {'success': False, 'error': 'Google Sheets API not available'}
         
-        # Create spreadsheet command
-        if 'create spreadsheet' in user_lower or 'create sheet' in user_lower:
-            title_match = re.search(r'create (?:spreadsheet|sheet) (?:called |titled |named )?["\']?([^"\']+)["\']?', user_lower)
-            if title_match:
-                title = title_match.group(1).strip()
-                
-                result = self.create_spreadsheet(title)
-                
-                if result['success']:
-                    response_text = f"**Spreadsheet Created Successfully!**\n\n"
-                    response_text += f"**Title:** {result['title']}\n"
-                    response_text += f"**Spreadsheet ID:** {result['spreadsheet_id']}\n"
-                    response_text += f"**URL:** {result['spreadsheet_url']}\n\n"
-                    response_text += f"You can now add data or read it using commands like:\n"
-                    response_text += f"- 'read sheet {result['title']}' (by name)\n"
-                    response_text += f"- 'read sheet {result['spreadsheet_url']}' (by URL)"
-                else:
-                    response_text = f"Failed to create spreadsheet: {result['error']}"
-                
-                response_data = {"SyntaxPrime": response_text}
-                save_conversation_enhanced(project, user_input, response_data)
-                return response_data, True
+        try:
+            spreadsheet = {
+                'properties': {
+                    'title': title
+                }
+            }
+            
+            result = self.services['sheets'].spreadsheets().create(
+                body=spreadsheet,
+                fields='spreadsheetId,spreadsheetUrl'
+            ).execute()
+            
+            spreadsheet_id = result.get('spreadsheetId')
+            spreadsheet_url = result.get('spreadsheetUrl')
+            
+            # Add data if provided
+            if data:
+                self.services['sheets'].spreadsheets().values().update(
+                    spreadsheetId=spreadsheet_id,
+                    range='A1',
+                    valueInputOption='RAW',
+                    body={'values': data}
+                ).execute()
+            
+            # Make spreadsheet shareable
+            try:
+                if 'drive' in self.services:
+                    self.services['drive'].permissions().create(
+                        fileId=spreadsheet_id,
+                        body={'role': 'reader', 'type': 'anyone'}
+                    ).execute()
+            except Exception as e:
+                print(f"Warning: Could not make spreadsheet shareable: {e}")
+            
+            return {
+                'success': True,
+                'spreadsheet_id': spreadsheet_id,
+                'spreadsheet_url': spreadsheet_url,
+                'title': title,
+                'row_count': len(data) if data else 0
+            }
+            
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    def update_sheet_data(self, spreadsheet_id: str, range_name: str, data: List[List]) -> Dict:
+        """Update data in a Google Sheets spreadsheet"""
+        if 'sheets' not in self.services:
+            return {'success': False, 'error': 'Google Sheets API not available'}
         
-        # Enhanced read spreadsheet command - supports URL, ID, and name
-        if 'read sheet' in user_lower or 'get data from sheet' in user_lower:
-            spreadsheet_id = None
+        try:
+            result = self.services['sheets'].spreadsheets().values().update(
+                spreadsheetId=spreadsheet_id,
+                range=range_name,
+                valueInputOption='RAW',
+                body={'values': data}
+            ).execute()
             
-            # Try to parse Google Sheets URL
-            url_match = re.search(r'(?:read sheet|get data from sheet)\s+https://docs\.google\.com/spreadsheets/d/([a-zA-Z0-9_-]+)', user_input)
-            if url_match:
-                spreadsheet_id = url_match.group(1)
-            else:
-                # Try direct ID or name format
-                sheet_match = re.search(r'(?:read sheet|get data from sheet)\s+(.+)', user_input)
-                if sheet_match:
-                    sheet_identifier = sheet_match.group(1).strip()
-                    
-                    # Check if it looks like a spreadsheet ID
-                    if re.match(r'^[a-zA-Z0-9_-]+$', sheet_identifier) and len(sheet_identifier) > 20:
-                        spreadsheet_id = sheet_identifier
-                    else:
-                        # Try to find by name using Drive API
-                        if 'drive' in self.services:
-                            try:
-                                query_string = f"name='{sheet_identifier}' and mimeType='application/vnd.google-apps.spreadsheet'"
-                                results = self.services['drive'].files().list(q=query_string, fields="files(id,name)").execute()
-                                files = results.get('files', [])
-                                
-                                if files:
-                                    spreadsheet_id = files[0]['id']
-                                else:
-                                    response_text = f"No spreadsheet found with name '{sheet_identifier}'. Try using the full URL or spreadsheet ID."
-                                    response_data = {"SyntaxPrime": response_text}
-                                    save_conversation_enhanced(project, user_input, response_data)
-                                    return response_data, True
-                            except Exception as e:
-                                response_text = f"Error searching for spreadsheet by name: {str(e)}"
-                                response_data = {"SyntaxPrime": response_text}
-                                save_conversation_enhanced(project, user_input, response_data)
-                                return response_data, True
-                        else:
-                            response_text = "Drive API not available for name-based lookup. Please use the spreadsheet URL or ID."
-                            response_data = {"SyntaxPrime": response_text}
-                            save_conversation_enhanced(project, user_input, response_data)
-                            return response_data, True
+            return {
+                'success': True,
+                'updated_rows': result.get('updatedRows', 0),
+                'updated_columns': result.get('updatedColumns', 0),
+                'updated_cells': result.get('updatedCells', 0)
+            }
             
-            if not spreadsheet_id:
-                response_text = "Please provide either:\n- The full Google Sheets URL\n- The spreadsheet ID\n- The exact spreadsheet name"
-                response_data = {"SyntaxPrime": response_text}
-                save_conversation_enhanced(project, user_input, response_data)
-                return response_data, True
-            
-            result = self.read_sheet_data(spreadsheet_id)
-            
-            if result['success']:
-                response_text = f"**Sheet Data Retrieved:**\n\n"
-                response_text += f"**Rows found:** {result['rows']}\n"
-                response_text += f"**Spreadsheet URL:** {result['spreadsheet_url']}\n\n"
-                
-                if result['data']:
-                    response_text += f"**Sample data (first 5 rows):**\n"
-                    for i, row in enumerate(result['data'][:5]):
-                        response_text += f"Row {i+1}: {row}\n"
-                else:
-                    response_text += "No data found in the spreadsheet."
-            else:
-                response_text = f"Failed to read spreadsheet: {result['error']}"
-            
-            response_data = {"SyntaxPrime": response_text}
-            save_conversation_enhanced(project, user_input, response_data)
-            return response_data, True
-        
-        return {}, False
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
         
 # =============================================================================
 # SECTION 8: GA4 ANALYTICS AND SEARCH CONSOLE INTEGRATION WITH DATA VALIDATION

@@ -243,7 +243,7 @@ class TrendsDataCollector:
                             # Get interest over time for spike detection
                             spike_data = self._get_spike_data(query, geo)
                             
-                            if spike_data['spike_percentage'] > 50:  # Only significant spikes
+                            if spike_data['spike_percentage'] > 15:  # Only significant spikes
                                 topic = TrendingTopic(
                                     query=query,
                                     search_volume=spike_data['current_volume'],
@@ -336,7 +336,7 @@ class ContentOpportunityDetector:
     
     def __init__(self, monitor):
         self.monitor = monitor
-        self.confidence_threshold = 15.0  # Minimum confidence for alerts
+        self.confidence_threshold = 8.0  # Minimum confidence for alerts
     
     def analyze_trending_topics(self, trending_topics: List[TrendingTopic]) -> List[ContentOpportunity]:
         """Analyze trending topics for content opportunities"""
@@ -853,7 +853,7 @@ def run_trends_monitoring_cycle():
         opportunities.sort(key=lambda x: x.confidence_score, reverse=True)
         
         for opportunity in opportunities[:3]:  # Max 3 per cycle
-            if opportunity.confidence_score >= 20.0:  # Higher threshold for auto-alerts
+            if opportunity.confidence_score >= 12.0:  # Higher threshold for auto-alerts
                 if alert_system.send_opportunity_alert(opportunity):
                     alerts_sent += 1
         

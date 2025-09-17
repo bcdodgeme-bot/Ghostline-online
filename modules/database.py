@@ -1184,41 +1184,86 @@ def list_threads(project: str = None, limit: int = 20) -> List[Dict[str, Any]]:
 # ==========================================
 # Section 9: Bookmark Management System
 # ==========================================
+# ==========================================
+# Section 9: Bookmark Management System (UPDATED WITH FIXES) 9/17/25
+# ==========================================
 
-def create_bookmark(chat_id: int, title: str, notes: str = None, bookmark_type: str = 'manual') -> Optional[str]:
-    """Create a bookmark for a specific conversation"""
+def create_bookmark(chat_id: int, title: str, notes: str = None, bookmark_type: str = 'manual') -> str:
+    """Create a bookmark for a conversation with better error handling"""
     with get_db_connection() as conn:
         if not conn:
-            print("No database connection for bookmark creation")
+            print("No database connection available")
             return None
-        
+            
         try:
-            cursor = conn.cursor()
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
             
-            # Get thread_id if the conversation belongs to a thread
-            cursor.execute('SELECT thread_id FROM chat_threads WHERE id = %s', (chat_id,))
-            result = cursor.fetchone()
-            thread_id = result[0] if result else None
+            # First, verify the conversation exists and get thread_id
+            cursor.execute('''
+                SELECT id, thread_id, project, user_input
+                FROM chat_threads
+                WHERE id = %s
+            ''', (chat_id,))
             
+            conversation = cursor.fetchone()
+            if not conversation:
+                print(f"Conversation {chat_id} not found")
+                return None
+            
+            thread_id = conversation['thread_id']
+            
+            # Check if bookmark already exists for this conversation
+            cursor.execute('''
+                SELECT bookmark_id FROM conversation_bookmarks 
+                WHERE chat_id = %s
+            ''', (chat_id,))
+            
+            existing = cursor.fetchone()
+            if existing:
+                print(f"Bookmark already exists for conversation {chat_id}: {existing['bookmark_id']}")
+                return str(existing['bookmark_id'])
+            
+            # Ensure thread_id is set (create if missing)
+            if not thread_id:
+                print(f"Creating thread_id for conversation {chat_id}")
+                cursor.execute('''
+                    UPDATE chat_threads 
+                    SET thread_id = gen_random_uuid()
+                    WHERE id = %s
+                    RETURNING thread_id
+                ''', (chat_id,))
+                result = cursor.fetchone()
+                thread_id = result['thread_id'] if result else None
+                
+                if thread_id:
+                    # Also create thread metadata
+                    cursor.execute('''
+                        INSERT INTO chat_thread_metadata (thread_id, title, project)
+                        VALUES (%s, %s, %s)
+                        ON CONFLICT (thread_id) DO NOTHING
+                    ''', (thread_id, title[:500], conversation['project']))
+            
+            # Create the bookmark
             cursor.execute('''
                 INSERT INTO conversation_bookmarks (chat_id, thread_id, title, notes, bookmark_type)
                 VALUES (%s, %s, %s, %s, %s)
                 RETURNING bookmark_id
             ''', (chat_id, thread_id, title, notes, bookmark_type))
             
-            bookmark_id = cursor.fetchone()[0]
+            result = cursor.fetchone()
+            bookmark_id = result['bookmark_id']
             conn.commit()
             
-            print(f"Created bookmark '{title}' for conversation {chat_id}")
+            print(f"✅ Successfully created bookmark '{title}' with ID {bookmark_id} for conversation {chat_id}")
             return str(bookmark_id)
             
         except Exception as e:
-            print(f"Failed to create bookmark: {e}")
+            print(f"❌ Failed to create bookmark: {e}")
             conn.rollback()
             return None
 
-def get_bookmarks(thread_id: str = None, project: str = None, limit: int = 20) -> List[Dict[str, Any]]:
-    """Get bookmarks, optionally filtered by thread or project"""
+def get_bookmarks(thread_id: str = None, project: str = None, limit: int = 20, bookmark_ids: list = None) -> List[Dict[str, Any]]:
+    """Get bookmarks with enhanced data, optionally filtered by thread, project, or specific IDs"""
     with get_db_connection() as conn:
         if not conn:
             return []
@@ -1226,41 +1271,217 @@ def get_bookmarks(thread_id: str = None, project: str = None, limit: int = 20) -
         try:
             cursor = conn.cursor(cursor_factory=RealDictCursor)
             
-            if thread_id:
+            if bookmark_ids:
+                # Get specific bookmarks by ID
+                placeholders = ','.join(['%s'] * len(bookmark_ids))
+                cursor.execute(f'''
+                    SELECT cb.bookmark_id, cb.title, cb.notes, cb.bookmark_type, cb.created_at,
+                           cb.chat_id, ct.user_input, ct.project, ct.response_data
+                    FROM conversation_bookmarks cb
+                    JOIN chat_threads ct ON cb.chat_id = ct.id
+                    WHERE cb.bookmark_id IN ({placeholders})
+                    ORDER BY cb.created_at DESC
+                ''', bookmark_ids)
+                
+            elif thread_id:
                 cursor.execute('''
                     SELECT cb.bookmark_id, cb.title, cb.notes, cb.bookmark_type, cb.created_at,
-                           cb.chat_id, ct.user_input, ct.project
+                           cb.chat_id, ct.user_input, ct.project, ct.response_data
                     FROM conversation_bookmarks cb
                     JOIN chat_threads ct ON cb.chat_id = ct.id
                     WHERE cb.thread_id = %s
                     ORDER BY cb.created_at DESC
                     LIMIT %s
                 ''', (thread_id, limit))
+                
             elif project:
                 cursor.execute('''
                     SELECT cb.bookmark_id, cb.title, cb.notes, cb.bookmark_type, cb.created_at,
-                           cb.chat_id, ct.user_input, ct.project
+                           cb.chat_id, ct.user_input, ct.project, ct.response_data
                     FROM conversation_bookmarks cb
                     JOIN chat_threads ct ON cb.chat_id = ct.id
                     WHERE ct.project = %s
                     ORDER BY cb.created_at DESC
                     LIMIT %s
                 ''', (project, limit))
+                
             else:
                 cursor.execute('''
                     SELECT cb.bookmark_id, cb.title, cb.notes, cb.bookmark_type, cb.created_at,
-                           cb.chat_id, ct.user_input, ct.project
+                           cb.chat_id, ct.user_input, ct.project, ct.response_data
                     FROM conversation_bookmarks cb
                     JOIN chat_threads ct ON cb.chat_id = ct.id
                     ORDER BY cb.created_at DESC
                     LIMIT %s
                 ''', (limit,))
             
-            return cursor.fetchall()
+            bookmarks = cursor.fetchall()
+            print(f"✅ Retrieved {len(bookmarks)} bookmarks from database")
+            return bookmarks
             
         except Exception as e:
-            print(f"Failed to get bookmarks: {e}")
+            print(f"❌ Failed to get bookmarks: {e}")
             return []
+
+def delete_bookmark(bookmark_id: str) -> bool:
+    """Delete a bookmark by ID"""
+    with get_db_connection() as conn:
+        if not conn:
+            return False
+        
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                DELETE FROM conversation_bookmarks 
+                WHERE bookmark_id = %s
+                RETURNING bookmark_id
+            ''', (bookmark_id,))
+            
+            deleted = cursor.fetchone()
+            conn.commit()
+            
+            if deleted:
+                print(f"✅ Successfully deleted bookmark {bookmark_id}")
+                return True
+            else:
+                print(f"❌ Bookmark {bookmark_id} not found")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Failed to delete bookmark: {e}")
+            conn.rollback()
+            return False
+
+def update_bookmark(bookmark_id: str, title: str = None, notes: str = None) -> bool:
+    """Update bookmark title and/or notes"""
+    with get_db_connection() as conn:
+        if not conn:
+            return False
+        
+        try:
+            cursor = conn.cursor()
+            
+            # Build update query dynamically
+            updates = []
+            params = []
+            
+            if title is not None:
+                updates.append("title = %s")
+                params.append(title)
+            
+            if notes is not None:
+                updates.append("notes = %s")
+                params.append(notes)
+            
+            if not updates:
+                print("No updates provided")
+                return False
+            
+            # Add bookmark_id as last parameter
+            params.append(bookmark_id)
+            
+            cursor.execute(f'''
+                UPDATE conversation_bookmarks 
+                SET {', '.join(updates)}
+                WHERE bookmark_id = %s
+                RETURNING bookmark_id
+            ''', params)
+            
+            updated = cursor.fetchone()
+            conn.commit()
+            
+            if updated:
+                print(f"✅ Successfully updated bookmark {bookmark_id}")
+                return True
+            else:
+                print(f"❌ Bookmark {bookmark_id} not found")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Failed to update bookmark: {e}")
+            conn.rollback()
+            return False
+
+def get_bookmark_by_id(bookmark_id: str) -> Optional[Dict[str, Any]]:
+    """Get a specific bookmark by ID with full details"""
+    with get_db_connection() as conn:
+        if not conn:
+            return None
+        
+        try:
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            cursor.execute('''
+                SELECT cb.bookmark_id, cb.title, cb.notes, cb.bookmark_type, cb.created_at,
+                       cb.chat_id, cb.thread_id, ct.user_input, ct.response_data, ct.project,
+                       ctm.title as thread_title
+                FROM conversation_bookmarks cb
+                JOIN chat_threads ct ON cb.chat_id = ct.id
+                LEFT JOIN chat_thread_metadata ctm ON cb.thread_id = ctm.thread_id
+                WHERE cb.bookmark_id = %s
+            ''', (bookmark_id,))
+            
+            bookmark = cursor.fetchone()
+            
+            if bookmark:
+                print(f"✅ Retrieved bookmark {bookmark_id}: {bookmark['title']}")
+                return bookmark
+            else:
+                print(f"❌ Bookmark {bookmark_id} not found")
+                return None
+                
+        except Exception as e:
+            print(f"❌ Failed to get bookmark by ID: {e}")
+            return None
+
+def get_bookmark_stats(project: str = None) -> Dict[str, int]:
+    """Get bookmark statistics"""
+    with get_db_connection() as conn:
+        if not conn:
+            return {'total': 0, 'by_type': {}}
+        
+        try:
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            
+            # Base query for total count
+            if project:
+                cursor.execute('''
+                    SELECT COUNT(*) as total
+                    FROM conversation_bookmarks cb
+                    JOIN chat_threads ct ON cb.chat_id = ct.id
+                    WHERE ct.project = %s
+                ''', (project,))
+            else:
+                cursor.execute('SELECT COUNT(*) as total FROM conversation_bookmarks')
+            
+            total_count = cursor.fetchone()['total']
+            
+            # Get counts by type
+            if project:
+                cursor.execute('''
+                    SELECT cb.bookmark_type, COUNT(*) as count
+                    FROM conversation_bookmarks cb
+                    JOIN chat_threads ct ON cb.chat_id = ct.id
+                    WHERE ct.project = %s
+                    GROUP BY cb.bookmark_type
+                ''', (project,))
+            else:
+                cursor.execute('''
+                    SELECT bookmark_type, COUNT(*) as count
+                    FROM conversation_bookmarks
+                    GROUP BY bookmark_type
+                ''')
+            
+            by_type = {row['bookmark_type']: row['count'] for row in cursor.fetchall()}
+            
+            return {
+                'total': total_count,
+                'by_type': by_type,
+                'project': project
+            }
+            
+        except Exception as e:
+            print(f"❌ Failed to get bookmark stats: {e}")
+            return {'total': 0, 'by_type': {}}
 
 def auto_create_bookmarks():
     """Automatically create bookmarks for important conversations"""
@@ -1309,10 +1530,56 @@ def auto_create_bookmarks():
                             bookmarks_created += 1
                         break  # Only create one bookmark per conversation
             
-            print(f"Auto-created {bookmarks_created} bookmarks")
+            print(f"✅ Auto-created {bookmarks_created} bookmarks")
             
         except Exception as e:
-            print(f"Auto-bookmark creation failed: {e}")
+            print(f"❌ Auto-bookmark creation failed: {e}")
+
+def search_bookmarks(query: str, project: str = None, limit: int = 20) -> List[Dict[str, Any]]:
+    """Search bookmarks by title, notes, or conversation content"""
+    with get_db_connection() as conn:
+        if not conn:
+            return []
+        
+        try:
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            
+            # Use ILIKE for case-insensitive search
+            search_pattern = f'%{query.lower()}%'
+            
+            if project:
+                cursor.execute('''
+                    SELECT cb.bookmark_id, cb.title, cb.notes, cb.bookmark_type, cb.created_at,
+                           cb.chat_id, ct.user_input, ct.project, ct.response_data
+                    FROM conversation_bookmarks cb
+                    JOIN chat_threads ct ON cb.chat_id = ct.id
+                    WHERE ct.project = %s
+                      AND (LOWER(cb.title) LIKE %s 
+                           OR LOWER(cb.notes) LIKE %s 
+                           OR LOWER(ct.user_input) LIKE %s)
+                    ORDER BY cb.created_at DESC
+                    LIMIT %s
+                ''', (project, search_pattern, search_pattern, search_pattern, limit))
+            else:
+                cursor.execute('''
+                    SELECT cb.bookmark_id, cb.title, cb.notes, cb.bookmark_type, cb.created_at,
+                           cb.chat_id, ct.user_input, ct.project, ct.response_data
+                    FROM conversation_bookmarks cb
+                    JOIN chat_threads ct ON cb.chat_id = ct.id
+                    WHERE LOWER(cb.title) LIKE %s 
+                       OR LOWER(cb.notes) LIKE %s 
+                       OR LOWER(ct.user_input) LIKE %s
+                    ORDER BY cb.created_at DESC
+                    LIMIT %s
+                ''', (search_pattern, search_pattern, search_pattern, limit))
+            
+            results = cursor.fetchall()
+            print(f"✅ Found {len(results)} bookmarks matching '{query}'")
+            return results
+            
+        except Exception as e:
+            print(f"❌ Failed to search bookmarks: {e}")
+            return []
 
 # ==========================================
 # Section 10: Database Maintenance and Migration
