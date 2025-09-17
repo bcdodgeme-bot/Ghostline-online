@@ -802,9 +802,9 @@ User's original request: {user_input}"""
                 "SyntaxPrime": f"I'm having trouble processing that request right now. The error was: {str(e)}\n\nPlease try rephrasing your request or try again in a moment."
             }
     
-# Section 4: Main Chat Route
+
 # ========================================
-# Section 4: Main Chat Route (UPDATED WITH WEATHER INTEGRATION FIX)
+# Section 4: Main Chat Route (UPDATED WITH ENHANCED MARKETING)
 # Section 4: Main Chat Route (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)
 # Section 4: Main Chat Route (UPDATED WITH UNIFIED CONVERSATION CONTEXT)
 # Section 4: Main Chat Route (UPDATED WITH SLACK INTEGRATION)
@@ -888,28 +888,97 @@ def index():
                 app.logger.error(f"Weather processing failed: {e}")
                 # Continue with normal processing if weather fails
 
-            # PRIORITY 1: Weather integration - check FIRST for weather commands
+            # PRIORITY 1: Weather integration - FIXED VERSION
             try:
-                from modules.weather_integration import (
-                    detect_weather_command,
-                    handle_weather_integration,
-                    is_weather_configured
-                )
+                # Direct check for weather commands - bypass complex routing
+                user_lower = user_input.lower().strip()
+                weather_keywords = [
+                    "weather", "weather now", "weather today", "temperature", "temp",
+                    "pressure", "barometric", "uv", "humidity", "conditions",
+                    "outside", "headache weather", "weather alerts"
+                ]
                 
-                # Check if this is a weather command and integration is configured
-                if is_weather_configured() and detect_weather_command(user_input):
-                    app.logger.info(f"Weather command detected: '{user_input}'")
-                    response_data = handle_weather_integration(user_input, project)
-                    if response_data:
-                        app.logger.info("Weather command handled successfully")
-                        save_conversation_enhanced(project, user_input, response_data)
-                        return _render_enhanced(project, response_data)
+                is_weather_command = any(keyword in user_lower for keyword in weather_keywords)
+                
+                if is_weather_command:
+                    app.logger.info(f"WEATHER: Direct weather command detected: '{user_input}'")
+                    print(f"🌦️ WEATHER: Processing weather command: '{user_input}'")
+                    
+                    # Check if API key is configured
+                    weather_api_key = os.getenv("TOMORROW_IO_API_KEY")
+                    if not weather_api_key:
+                        response_data = {"SyntaxPrime": "🌦️ Weather monitoring not configured. Set TOMORROW_IO_API_KEY environment variable to enable weather features."}
+                        app.logger.info("WEATHER: API key not configured")
+                    else:
+                        # Direct API call to test
+                        try:
+                            import requests
+                            
+                            url = "https://api.tomorrow.io/v4/weather/realtime"
+                            params = {
+                                "location": "38.8606,-77.2287",  # Merrifield, VA
+                                "fields": "temperature,humidity,windSpeed,weatherCode,pressureSurfaceLevel,uvIndex",
+                                "units": "metric",
+                                "timesteps": "current",
+                                "apikey": weather_api_key
+                            }
+                            
+                            print(f"🌦️ WEATHER: Making direct API call to {url}")
+                            app.logger.info(f"WEATHER: Direct API call with params: {params}")
+                            
+                            response = requests.get(url, params=params, timeout=10)
+                            print(f"🌦️ WEATHER: API Response status: {response.status_code}")
+                            
+                            if response.status_code == 200:
+                                data = response.json()
+                                values = data['data']['values']
+                                
+                                temp_c = values.get('temperature', 0)
+                                temp_f = temp_c * 9/5 + 32
+                                humidity = values.get('humidity', 0)
+                                pressure = values.get('pressureSurfaceLevel', 0)
+                                uv_index = values.get('uvIndex', 0)
+                                wind_speed = values.get('windSpeed', 0) * 2.237  # Convert to mph
+                                
+                                weather_response = f"""🌦️ **Current Weather Conditions**
+
+📍 **Location**: Merrifield, VA
+🌡️ **Temperature**: {temp_c:.1f}°C ({temp_f:.0f}°F)
+💧 **Humidity**: {humidity:.0f}%
+🌪️ **Pressure**: {pressure:.1f} mbar
+☀️ **UV Index**: {uv_index:.1f}
+💨 **Wind**: {wind_speed:.0f} mph
+
+**Health Monitoring**:
+• Pressure: {pressure:.1f} mbar (tracking for headache prediction)
+• UV: {uv_index:.1f} {'⚠️ HIGH - use sun protection' if uv_index >= 6 else '✅ Safe levels' if uv_index < 3 else 'Moderate - use sunscreen'}
+
+*Weather data updated every 30 minutes*"""
+                                
+                                response_data = {"SyntaxPrime": weather_response}
+                                print(f"🌦️ WEATHER: Successfully generated weather response")
+                                app.logger.info("WEATHER: Direct API call successful, response generated")
+                                
+                            else:
+                                error_msg = f"Weather API returned status {response.status_code}: {response.text}"
+                                response_data = {"SyntaxPrime": f"🌦️ Weather service temporarily unavailable: {error_msg}"}
+                                print(f"🌦️ WEATHER: API Error - {error_msg}")
+                                app.logger.error(f"WEATHER: API Error - {error_msg}")
+                                
+                        except Exception as api_error:
+                            error_msg = f"Weather API request failed: {str(api_error)}"
+                            response_data = {"SyntaxPrime": f"🌦️ Weather service error: {error_msg}"}
+                            print(f"🌦️ WEATHER: Exception - {error_msg}")
+                            app.logger.error(f"WEATHER: Exception - {error_msg}")
+                    
+                    # Save and return weather response
+                    save_conversation_enhanced(project, user_input, response_data)
+                    return _render_enhanced(project, response_data)
                         
-            except ImportError:
-                app.logger.info("Weather integration module not available")
             except Exception as e:
-                app.logger.error(f"Weather integration failed: {e}")
-                # Continue to other processors if weather fails
+                app.logger.error(f"Weather integration completely failed: {e}")
+                print(f"🌦️ WEATHER: Complete failure - {e}")
+                # Don't return here - let other processors handle it
 
             # PRIORITY 2: Handle reminder commands FIRST - This is the key fix!
             try:
