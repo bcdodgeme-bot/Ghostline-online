@@ -829,6 +829,199 @@ def enhanced_marketing_command_processor(user_input: str, project: str, use_voic
 # Section 4: Main Chat Route (UPDATED WITH WEATHER INTEGRATION) 9/16/25
 # Section 4: Main Chat Route (UPDATED WITH COMMAND PARSING) 9/16/25
 # Try hybrid content strategy commands
+# Section 4: Main Chat Route (FIXED INDENTATION)
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    """Main chat route with enhanced integration processing"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    if request.method == 'GET':
+        try:
+            # Load personality preferences
+            apply_session_preferences(session)
+            selected_project = session.get('current_project', PROJECTS[0])
+            
+            # Brain status check
+            brain_ready = is_ready()
+            brain_status = get_build_status() if brain_ready else {"status": "not_ready", "progress": 0}
+            
+            # Load conversation history
+            conversations = load_conversation_enhanced(selected_project, limit=50)
+            
+            # Prepare rendering context
+            context = {
+                'projects': PROJECTS,
+                'selected_project': selected_project,
+                'conversations': conversations,
+                'brain_ready': brain_ready,
+                'brain_status': brain_status,
+                'use_voices': session.get('use_voices', ['SyntaxPrime']),
+                'random_toggle': session.get('random_toggle', False),
+                'default_voice': get_default_voice()
+            }
+            
+            # Add integration status if available
+            try:
+                context.update({
+                    'telegram_configured': is_telegram_configured(),
+                    'clickup_configured': is_clickup_configured(),
+                    'cloze_configured': is_cloze_configured(),
+                    'marketing_configured': is_marketing_configured(),
+                    'google_configured': is_google_configured(),
+                    'slack_configured': is_slack_configured(),
+                    'bluesky_configured': is_bluesky_configured(),
+                    'calendar_telegram_configured': is_calendar_telegram_configured()
+                })
+            except Exception as e:
+                app.logger.warning(f"Integration status check failed: {e}")
+            
+            return render_template('index.html', **context)
+            
+        except Exception as e:
+            app.logger.error(f"Index GET request failed: {e}")
+            return render_template('index.html',
+                                 projects=PROJECTS,
+                                 error=f"Dashboard load error: {str(e)}")
+    
+    # POST request processing
+    try:
+        # Get form data
+        user_input = request.form.get('user_input', '').strip()
+        project = request.form.get('project', PROJECTS[0])
+        use_voices = request.form.getlist('voices') or ['SyntaxPrime']
+        random_toggle = 'random' in request.form
+        
+        # Store preferences in session
+        session['current_project'] = project
+        session['use_voices'] = use_voices
+        session['random_toggle'] = random_toggle
+        
+        if not user_input:
+            return redirect('/')
+        
+        app.logger.info(f"Processing request: '{user_input}' for project '{project}'")
+        
+        # Auto-refresh brain context periodically
+        try:
+            refresh_brain_context()
+        except Exception as e:
+            app.logger.warning(f"Brain context refresh failed: {e}")
+
+        # === INTEGRATION COMMAND PROCESSING ===
+        response_data = {}
+        handled = False
+        
+        # PRIORITY 1: Handle reminder commands FIRST
+        try:
+            print(f"Checking reminder command for: '{user_input}'")
+            response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                print(f"Reminder handled successfully!")
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+            else:
+                print(f"Not a reminder command, continuing...")
+        except Exception as e:
+            app.logger.error(f"Reminder handler failed: {e}")
+            # Don't set handled=True here - let other processors try
+
+        # Try BlueSky integration with enhanced pattern matching
+        if is_bluesky_configured():
+            app.logger.info(f"BlueSky is configured, processing command: '{user_input}'")
+            try:
+                # Enhanced BlueSky command detection
+                user_lower = user_input.lower().strip()
+                
+                bluesky_patterns = [
+                    'bluesky', 'bsky', 'blue sky',
+                    'analyze bluesky', 'check bluesky', 'my bluesky', 'bluesky feed',
+                    'bluesky timeline', 'bluesky posts', 'bluesky analysis',
+                    'bluesky engagement', 'bluesky suggestions', 'who should i follow',
+                    'bluesky opportunities', 'social engagement', 'feed analysis',
+                    'bluesky high priority', 'best bluesky posts', 'top bluesky',
+                    'bluesky test', 'test bluesky', 'bluesky connection'
+                ]
+                
+                bluesky_detected = any(pattern in user_lower for pattern in bluesky_patterns)
+                
+                # Also check for standalone keywords
+                standalone_keywords = ['bsky', 'bluesky']
+                if not bluesky_detected:
+                    for keyword in standalone_keywords:
+                        if user_lower == keyword or user_lower.startswith(keyword + ' ') or user_lower.endswith(' ' + keyword):
+                            bluesky_detected = True
+                            break
+                
+                if bluesky_detected:
+                    app.logger.info(f"Processing BlueSky command: '{user_input}'")
+                    response_content = process_bluesky_command(user_input)
+                    
+                    if response_content and "Available BlueSky commands" not in response_content:
+                        app.logger.info(f"BlueSky command successfully processed")
+                        response_data = {"SyntaxPrime": response_content}
+                        handled = True
+                        save_conversation_enhanced(project, user_input, response_data)
+                        return _render_enhanced(project, response_data)
+                    else:
+                        app.logger.info(f"BlueSky returned help menu, falling through")
+                
+            except Exception as e:
+                app.logger.error(f"BlueSky processing failed: {e}")
+
+        # Enhanced Marketing Commands with RSS Knowledge Base
+        if not handled:
+            try:
+                app.logger.info(f"Enhanced marketing processing: '{user_input}'")
+                response_data, handled = enhanced_marketing_command_processor(user_input, project, use_voices, random_toggle)
+                if handled:
+                    app.logger.info(f"Enhanced marketing command handled successfully")
+                    save_conversation_enhanced(project, user_input, response_data)
+                    return _render_enhanced(project, response_data)
+            except Exception as e:
+                app.logger.error(f"Enhanced marketing processing failed: {e}")
+
+        # Try Google integration commands
+        if not handled:
+            try:
+                response_data, handled = process_google_ecosystem_commands(user_input, project, use_voices, random_toggle)
+                if handled:
+                    save_conversation_enhanced(project, user_input, response_data)
+                    return _render_enhanced(project, response_data)
+            except Exception as e:
+                app.logger.error(f"Google integration failed: {e}")
+
+        # Try Calendar-Telegram integration
+        if is_calendar_telegram_configured() and not handled:
+            try:
+                response_data, handled = process_calendar_telegram_command(user_input, project, use_voices, random_toggle)
+                if handled:
+                    save_conversation_enhanced(project, user_input, response_data)
+                    return _render_enhanced(project, response_data)
+            except Exception as e:
+                app.logger.error(f"Calendar-Telegram integration failed: {e}")
+
+        # Try Cloze integration commands
+        if is_cloze_configured() and not handled:
+            try:
+                response_data, handled = process_cloze_command(user_input, project, use_voices, random_toggle)
+                if handled:
+                    save_conversation_enhanced(project, user_input, response_data)
+                    return _render_enhanced(project, response_data)
+            except Exception as e:
+                app.logger.error(f"Cloze integration failed: {e}")
+
+        # Try ClickUp integration commands
+        if is_clickup_configured() and not handled:
+            try:
+                response_data, handled = process_clickup_command(user_input, project, use_voices, random_toggle)
+                if handled:
+                    save_conversation_enhanced(project, user_input, response_data)
+                    return _render_enhanced(project, response_data)
+            except Exception as e:
+                app.logger.error(f"ClickUp integration failed: {e}")
+
+        # Try hybrid content strategy commands
         try:
             response_data, handled = generate_content_strategy_command(user_input, project, use_voices, random_toggle)
             if handled:
@@ -869,6 +1062,74 @@ def enhanced_marketing_command_processor(user_input: str, project: str, use_voic
                     response_data = {"SyntaxPrime": f"Integration module import failed: {str(e)}\nCheck if modules/cloze_clickup_integration.py exists and has no syntax errors."}
                     save_conversation_enhanced(project, user_input, response_data)
                     return _render_enhanced(project, response_data)
+        
+        # Handle scrape command
+        if user_input.lower().startswith("scrape "):
+            try:
+                url = user_input.split(" ", 1)[1].strip()
+                result = scrape_url(url)
+                if not result["ok"]:
+                    response_data = {"SyntaxPrime": f"Could not fetch content: {result['error']}"}
+                else:
+                    summary_prompt = (
+                        "Summarize the key points from the following webpage for Carl. "
+                        "Focus on actionable insights and key information:\n\n"
+                        f"{result['content']}"
+                    )
+                    
+                    retrieval_ctx = enhanced_retrieve(summary_prompt, k=5, project=project) if is_ready() else []
+                    
+                    response_data = generate_response(
+                        summary_prompt, use_voices, random_toggle,
+                        project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
+                    )
+                
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+                
+            except Exception as e:
+                app.logger.error(f"Scrape command failed: {e}")
+                response_data = {"SyntaxPrime": f"Scraping failed: {e}"}
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+
+        # Gmail/Calendar commands
+        try:
+            from modules.gmail import process_gmail_command
+            response_data, handled = process_gmail_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+        except Exception as e:
+            app.logger.error(f"Gmail processor failed: {e}")
+
+        # Normal AI response generation
+        try:
+            app.logger.info("Using normal AI response generation")
+            
+            # Get conversation context
+            retrieval_ctx = enhanced_retrieve(user_input, k=5, project=project) if is_ready() else []
+            
+            # Use enhanced response generation with context validation
+            response_data = generate_response_with_context_check(
+                user_input, use_voices, random_toggle,
+                project, CHAT_MODEL, retrieval_ctx
+            )
+            
+            save_conversation_enhanced(project, user_input, response_data)
+            return _render_enhanced(project, response_data)
+            
+        except Exception as e:
+            app.logger.error(f"AI response generation failed: {e}")
+            response_data = {"SyntaxPrime": f"I'm having trouble processing that request right now. Please try again."}
+            save_conversation_enhanced(project, user_input, response_data)
+            return _render_enhanced(project, response_data)
+            
+    except Exception as e:
+        app.logger.error(f"Main route failed: {e}", exc_info=True)
+        return render_template('index.html',
+                             projects=PROJECTS,
+                             error=f"Request processing failed: {str(e)}")
     
     
     
