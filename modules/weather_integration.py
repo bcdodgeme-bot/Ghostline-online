@@ -97,7 +97,7 @@ WEATHER_CODES = {
 
 @dataclass
 class ComprehensiveWeatherData:
-    """Enhanced weather data structure with all the good bits"""
+    """Comprehensive weather data structure for health-aware monitoring"""
     timestamp: datetime.datetime
     temperature: float
     feels_like: float
@@ -117,54 +117,44 @@ class ComprehensiveWeatherData:
     location: str
     
     # Derived properties
-    pressure_trend: Optional[str] = None
-    uv_alert_level: Optional[str] = None
-    weather_description: Optional[str] = None
-    weather_icon: Optional[str] = None
-    weather_category: Optional[str] = None
+    weather_description: str = ""
+    weather_icon: str = ""
+    weather_category: str = ""
+    pressure_trend: str = ""
+    uv_alert_level: str = ""
 
 
 class TomorrowIOClient:
-    """Tomorrow.io API client with error handling matching OpenRouter patterns"""
+    """Tomorrow.io API client with error handling and rate limiting"""
     
     def __init__(self, api_key: str, base_url: str):
         self.api_key = api_key
         self.base_url = base_url
-        
-        if not api_key:
-            print("⚠️  Warning: No Tomorrow.io API key configured")
-    
-    def _make_request(self, endpoint: str, params: dict = None):
-        """Make HTTP request to Tomorrow.io API with comprehensive error handling"""
-        headers = {
+        self.session = requests.Session()
+        self.session.headers.update({
             "accept": "application/json",
             "content-type": "application/json"
-        }
-        
-        if params is None:
-            params = {}
-        
-        params['apikey'] = self.api_key
+        })
+        if not api_key:
+            raise ValueError("Tomorrow.io API key is required")
+    
+    def _make_request(self, endpoint: str, params: Dict[str, Any]) -> requests.Response:
+        """Make API request with error handling"""
         url = f"{self.base_url}/{endpoint}"
+        params["apikey"] = self.api_key
         
         try:
-            response = requests.get(url, headers=headers, params=params, timeout=30)
+            print(f"🌐 Tomorrow.io API: Requesting {endpoint}")
+            response = self.session.get(url, params=params, timeout=10)
             response.raise_for_status()
             return response
-            
         except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 401:
-                print("🔑 Tomorrow.io: Authentication failed")
-                raise Exception("Tomorrow.io API: Authentication failed. Check your API key.")
-            elif e.response.status_code == 429:
-                print("⏱️  Tomorrow.io: Rate limit exceeded")
-                raise Exception("Tomorrow.io API: Rate limit exceeded. You've exceeded your daily quota.")
-            elif e.response.status_code == 400:
-                print("📝 Tomorrow.io: Bad request")
-                raise Exception("Tomorrow.io API: Bad request. Check your parameters.")
-            elif e.response.status_code == 404:
-                print("🌍 Tomorrow.io: Location not found")
-                raise Exception("Tomorrow.io API: Location not found. Check your coordinates.")
+            if e.response.status_code == 429:
+                print("🚫 Tomorrow.io: Rate limit exceeded")
+                raise Exception("Tomorrow.io API: Rate limit exceeded. Try again later.")
+            elif e.response.status_code == 401:
+                print("🔑 Tomorrow.io: Invalid API key")
+                raise Exception("Tomorrow.io API: Invalid API key. Check your configuration.")
             else:
                 print(f"🚨 Tomorrow.io HTTP Error: {e.response.status_code}")
                 raise Exception(f"Tomorrow.io API error: {e.response.status_code}")
@@ -283,7 +273,7 @@ class WeatherMonitor:
             # Add derived properties
             weather_info = WEATHER_CODES.get(weather_data.weather_code, {
                 "desc": f"Unknown condition {weather_data.weather_code}",
-                "icon": "🌤️",
+                "icon": "🌦️",
                 "category": "unknown"
             })
             
@@ -291,50 +281,54 @@ class WeatherMonitor:
             weather_data.weather_icon = weather_info["icon"]
             weather_data.weather_category = weather_info["category"]
             
-            # Analyze trends and alerts
+            # Analyze pressure trend
             weather_data.pressure_trend = self._analyze_pressure_trend(weather_data.pressure_surface_level)
+            
+            # Analyze UV level
             weather_data.uv_alert_level = self._analyze_uv_level(weather_data.uv_index)
             
-            # Cache the comprehensive data
+            # Cache the data
             self._cache_comprehensive_weather_data(location, weather_data)
             
-            # Save to pressure history
-            self.pressure_history.append({
+            # Update pressure history
+            pressure_entry = {
                 "timestamp": weather_data.timestamp.isoformat(),
                 "pressure": weather_data.pressure_surface_level
-            })
+            }
+            self.pressure_history.append(pressure_entry)
             self._save_pressure_history()
             
+            print(f"✅ Comprehensive weather data updated: {weather_data.weather_description}, {weather_data.temperature:.1f}°C")
             return weather_data
             
         except Exception as e:
-            print(f"🌦️  Comprehensive weather fetch error: {e}")
-            raise Exception(f"Weather monitoring failed: {e}")
+            print(f"❌ Failed to get comprehensive weather data: {e}")
+            raise
     
     def get_current_conditions(self, location: str = None) -> ComprehensiveWeatherData:
-        """Alias for get_comprehensive_conditions for backward compatibility"""
+        """Alias for get_comprehensive_conditions for compatibility"""
         return self.get_comprehensive_conditions(location)
     
     def _analyze_pressure_trend(self, current_pressure: float) -> str:
-        """Analyze pressure trends for headache prediction"""
-        if not self.pressure_history or len(self.pressure_history) < 2:
-            return "Insufficient data"
+        """Analyze pressure trend for headache prediction"""
+        if not self.pressure_history:
+            return "No trend data available"
         
-        # Get recent pressure readings (last 24 hours)
-        recent_cutoff = datetime.datetime.now() - timedelta(hours=24)
-        recent_readings = [
-            reading for reading in self.pressure_history[-24:]
-            if datetime.datetime.fromisoformat(reading["timestamp"]) > recent_cutoff
+        # Get pressure from 3-6 hours ago for trend analysis
+        recent_pressures = [
+            entry for entry in self.pressure_history[-20:]
+            if entry["pressure"] is not None
         ]
         
-        if len(recent_readings) < 2:
-            return "Insufficient recent data"
+        if len(recent_pressures) < 2:
+            return "Insufficient data for trend analysis"
         
-        # Calculate pressure change
-        oldest_pressure = recent_readings[0]["pressure"]
-        pressure_change = current_pressure - oldest_pressure
+        # Calculate pressure change over recent period
+        old_pressure = recent_pressures[0]["pressure"]
+        pressure_change = current_pressure - old_pressure
         
-        if pressure_change <= -PRESSURE_DROP_THRESHOLD:
+        # Classify pressure trends with headache risk assessment
+        if pressure_change <= -3.0:
             return f"Dropping rapidly ({pressure_change:.1f}mbar) - High headache risk"
         elif pressure_change <= -1.5:
             return f"Dropping ({pressure_change:.1f}mbar) - Moderate headache risk"
@@ -426,25 +420,21 @@ class WeatherMonitor:
         report += f"**{weather_data.weather_icon} Current Conditions:**\n"
         report += f"• {weather_data.weather_description}\n"
         report += f"• Cloud cover: {weather_data.cloud_cover:.0f}%\n"
-        report += f"• Visibility: {visibility_miles:.1f} miles\n\n"
+        report += f"• Visibility: {visibility_miles:.1f} miles\n"
         
-        report += f"**💨 Wind Conditions:**\n"
-        report += f"• Speed: {wind_mph:.1f} mph\n"
-        report += f"• Direction: {self._get_wind_direction(weather_data.wind_direction)} ({weather_data.wind_direction:.0f}°)\n"
-        report += f"• Gusts: {wind_gust_mph:.1f} mph\n\n"
+        if weather_data.precipitation_probability > 0:
+            report += f"• Precipitation: {weather_data.precipitation_probability:.0f}% chance\n"
         
-        report += f"**🌧️ Precipitation:**\n"
-        report += f"• Probability: {weather_data.precipitation_probability:.0f}%\n"
-        report += f"• Intensity: {weather_data.precipitation_intensity:.2f} mm/hr\n"
-        if weather_data.precipitation_type > 0:
-            report += f"• Type: {self._get_precipitation_type(weather_data.precipitation_type)}\n"
-        report += f"\n"
+        report += f"\n**🌪️ Wind & Pressure:**\n"
+        report += f"• Wind: {wind_mph:.0f} mph from {self._get_wind_direction(weather_data.wind_direction)}\n"
+        if wind_gust_mph > wind_mph:
+            report += f"• Gusts: up to {wind_gust_mph:.0f} mph\n"
+        report += f"• Barometric pressure: {weather_data.pressure_surface_level:.1f} mbar\n"
+        report += f"• Pressure trend: {weather_data.pressure_trend}\n\n"
         
         report += f"**🏥 Health Monitoring:**\n"
-        report += f"• Barometric pressure: {weather_data.pressure_surface_level:.2f} mbar\n"
-        report += f"• Pressure trend: {weather_data.pressure_trend}\n"
-        report += f"• UV index: {weather_data.uv_index:.1f}\n"
-        report += f"• UV risk level: {weather_data.uv_alert_level}\n"
+        report += f"• UV index: {weather_data.uv_index:.1f} ({weather_data.uv_alert_level})\n"
+        report += f"• UV concern level: {weather_data.uv_health_concern}\n"
         
         return report
     
@@ -452,72 +442,56 @@ class WeatherMonitor:
         """Convert wind direction degrees to compass direction"""
         directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
                      "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
-        index = round(degrees / 22.5) % 16
+        index = int((degrees + 11.25) / 22.5) % 16
         return directions[index]
     
-    def _get_precipitation_type(self, precip_type: int) -> str:
-        """Convert precipitation type code to readable string"""
-        types = {
-            0: "None",
-            1: "Rain",
-            2: "Snow",
-            3: "Freezing Rain",
-            4: "Ice Pellets"
-        }
-        return types.get(precip_type, "Unknown")
-    
     def answer_simple_weather_questions(self, question: str, weather_data: ComprehensiveWeatherData) -> str:
-        """Answer simple weather questions conversationally"""
+        """Answer simple weather questions intelligently"""
         q = question.lower()
         
         # Temperature questions
-        if any(word in q for word in ["temperature", "temp", "hot", "cold", "warm", "cool"]):
+        if any(word in q for word in ["temp", "temperature", "hot", "cold", "warm", "cool"]):
             temp_f = weather_data.temperature * 9/5 + 32
             feels_like_f = weather_data.feels_like * 9/5 + 32
             
             if "feels like" in q or "feel" in q:
-                return f"It feels like {weather_data.feels_like:.1f}°C ({feels_like_f:.0f}°F) outside right now."
+                return f"It feels like {feels_like_f:.0f}°F ({weather_data.feels_like:.1f}°C) outside."
             else:
-                temp_desc = "warm" if weather_data.temperature > 20 else "cool" if weather_data.temperature > 10 else "cold"
-                return f"It's {weather_data.temperature:.1f}°C ({temp_f:.0f}°F) - quite {temp_desc} today."
+                temp_desc = "warm" if temp_f > 75 else "cool" if temp_f < 60 else "comfortable"
+                return f"It's currently {temp_f:.0f}°F ({weather_data.temperature:.1f}°C) - {temp_desc}."
         
-        # Precipitation questions
-        if any(word in q for word in ["rain", "raining", "wet", "precipitation", "storm"]):
+        # Rain/precipitation questions
+        if any(word in q for word in ["rain", "raining", "wet", "precipitation"]):
             if weather_data.precipitation_probability > 70:
-                return f"Yes, there's a {weather_data.precipitation_probability:.0f}% chance of precipitation right now."
+                return f"Yes, there's a high chance of rain ({weather_data.precipitation_probability:.0f}%)."
             elif weather_data.precipitation_probability > 30:
                 return f"Possibly - there's a {weather_data.precipitation_probability:.0f}% chance of rain."
             else:
-                return "No significant precipitation expected right now."
+                return f"No rain expected (only {weather_data.precipitation_probability:.0f}% chance)."
         
         # Wind questions
         if any(word in q for word in ["wind", "windy", "breeze"]):
             wind_mph = weather_data.wind_speed * 2.237
-            if wind_mph > 25:
-                return f"It's quite windy - {wind_mph:.0f} mph from the {self._get_wind_direction(weather_data.wind_direction)}."
+            if wind_mph > 20:
+                return f"It's quite windy at {wind_mph:.0f} mph from the {self._get_wind_direction(weather_data.wind_direction).lower()}."
             elif wind_mph > 10:
-                return f"There's a moderate {wind_mph:.0f} mph wind from the {self._get_wind_direction(weather_data.wind_direction)}."
+                return f"Moderate winds at {wind_mph:.0f} mph from the {self._get_wind_direction(weather_data.wind_direction).lower()}."
             else:
-                return f"It's relatively calm with light {wind_mph:.0f} mph winds."
+                return f"Light winds at {wind_mph:.0f} mph - quite calm."
         
         # UV/sun questions
-        if any(word in q for word in ["sunny", "sun", "uv", "bright"]):
-            if weather_data.uv_index >= HIGH_UV_THRESHOLD:
-                return f"It's quite sunny with a UV index of {weather_data.uv_index:.1f}. You'll want sun protection if heading out."
-            elif weather_data.uv_index >= 3:
-                return f"Moderate sun exposure with UV index {weather_data.uv_index:.1f}. Some protection recommended."
-            else:
-                return f"Low sun exposure today with UV index {weather_data.uv_index:.1f}."
+        if any(word in q for word in ["uv", "sun", "sunny", "sunlight"]):
+            return f"UV index is {weather_data.uv_index:.1f} ({weather_data.uv_alert_level}). {weather_data.uv_health_concern.title()} concern level."
         
-        # Pressure/headache questions
-        if any(word in q for word in ["pressure", "headache", "head", "barometric"]):
-            return f"Barometric pressure is {weather_data.pressure_surface_level:.1f} mbar and {weather_data.pressure_trend}."
+        # Pressure questions
+        if any(word in q for word in ["pressure", "headache", "barometric"]):
+            return f"Barometric pressure is {weather_data.pressure_surface_level:.1f} mbar. {weather_data.pressure_trend}."
         
         # Visibility questions
-        if any(word in q for word in ["see", "visibility", "clear", "fog"]):
+        if any(word in q for word in ["visibility", "clear", "see", "fog", "foggy"]):
             visibility_miles = weather_data.visibility * 0.621371
             if visibility_miles < 1:
-                return f"Very poor visibility - only {visibility_miles:.1f} miles due to weather conditions."
+                return f"Very poor visibility - less than {visibility_miles:.1f} mile. Dense fog present."
             elif visibility_miles < 3:
                 return f"Poor visibility - only {visibility_miles:.1f} miles."
             elif visibility_miles < 10:
@@ -631,64 +605,77 @@ def handle_weather_alerts_command(user_input: str, project: str) -> Dict[str, st
         if not monitor:
             return {"SyntaxPrime": "🌦️ Weather monitoring is currently unavailable."}
         
-        # Get current conditions for context
+        # Get current weather data
         weather_data = monitor.get_comprehensive_conditions()
-        alerts = monitor.get_health_alerts(weather_data)
         
-        analysis = f"📊 **Weather Pattern Analysis**\n\n"
+        user_lower = user_input.lower()
         
-        # Current alerts
-        if alerts:
-            analysis += f"**🚨 Active Health Alerts:**\n"
-            for alert in alerts:
-                analysis += f"• {alert}\n"
-            analysis += f"\n"
-        else:
-            analysis += f"✅ **No active health alerts**\n\n"
-        
-        # Pressure history analysis
-        if len(monitor.pressure_history) >= 24:
-            recent_readings = monitor.pressure_history[-24:]
-            pressures = [reading["pressure"] for reading in recent_readings]
+        if any(word in user_lower for word in ["alert", "alerts", "warning", "warnings"]):
+            # Health alerts analysis
+            alerts = monitor.get_health_alerts(weather_data)
             
-            analysis += f"**📈 24-Hour Pressure Analysis:**\n"
-            analysis += f"• Current: {weather_data.pressure_surface_level:.1f} mbar\n"
-            analysis += f"• 24hr High: {max(pressures):.1f} mbar\n"
-            analysis += f"• 24hr Low: {min(pressures):.1f} mbar\n"
-            analysis += f"• Trend: {weather_data.pressure_trend}\n\n"
-        
-        # UV monitoring
-        analysis += f"**☀️ UV Monitoring:**\n"
-        analysis += f"• Current UV index: {weather_data.uv_index:.1f}\n"
-        analysis += f"• Risk level: {weather_data.uv_alert_level}\n"
-        if weather_data.uv_index >= HIGH_UV_THRESHOLD:
-            analysis += f"• ⚠️ Sun protection recommended\n"
-        analysis += f"\n"
-        
-        # Weather condition impact
-        analysis += f"**🌦️ Current Conditions Impact:**\n"
-        analysis += f"• Condition: {weather_data.weather_description}\n"
-        analysis += f"• Humidity: {weather_data.humidity:.0f}% "
-        if weather_data.humidity > 70:
-            analysis += "(may increase discomfort)\n"
-        else:
-            analysis += "(comfortable)\n"
-        
-        visibility_miles = weather_data.visibility * 0.621371
-        analysis += f"• Visibility: {visibility_miles:.1f} miles "
-        if visibility_miles < 3:
-            analysis += "(poor - drive carefully)\n"
-        else:
-            analysis += "(good)\n"
-        analysis += f"**\n"
-        
-        analysis += f"\n💡 **Monitoring Settings**:\n"
-        analysis += f"• Headache threshold: {PRESSURE_DROP_THRESHOLD}mbar drop\n"
-        analysis += f"• UV alert threshold: {HIGH_UV_THRESHOLD} UV index\n"
-        analysis += f"• Data cached for: {_cache_duration//60} minutes\n"
-        
-        return {"SyntaxPrime": analysis}
-        
+            analysis = f"🚨 **Weather Health Alerts Analysis**\n\n"
+            
+            if alerts:
+                analysis += f"**Active Alerts ({len(alerts)}):**\n"
+                for alert in alerts:
+                    analysis += f"• {alert}\n"
+                analysis += "\n"
+            else:
+                analysis += "✅ **No active health alerts**\n\n"
+            
+            analysis += f"**Current Monitoring Status:**\n"
+            analysis += f"• Barometric pressure: {weather_data.pressure_surface_level:.1f}mbar ({weather_data.pressure_trend})\n"
+            analysis += f"• UV index: {weather_data.uv_index:.1f} ({weather_data.uv_alert_level})\n"
+            analysis += f"• General conditions: {weather_data.weather_description}\n\n"
+            
+            analysis += f"**Alert Thresholds:**\n"
+            analysis += f"• Headache risk: Pressure drops ≥{PRESSURE_DROP_THRESHOLD}mbar\n"
+            analysis += f"• UV alert: Index ≥{HIGH_UV_THRESHOLD} (high), ≥{VERY_HIGH_UV_THRESHOLD} (very high)\n"
+            
+            return {"SyntaxPrime": analysis}
+            
+        elif any(word in user_lower for word in ["pattern", "patterns", "history", "trend", "analysis"]):
+            # Pattern analysis
+            analysis = f"📊 **Weather Pattern Analysis**\n\n"
+            
+            analysis += f"**Current Conditions:**\n"
+            analysis += f"• Pressure: {weather_data.pressure_surface_level:.1f}mbar ({weather_data.pressure_trend})\n"
+            analysis += f"• UV: {weather_data.uv_index:.1f} ({weather_data.uv_alert_level})\n"
+            analysis += f"• Temperature: {weather_data.temperature:.1f}°C\n"
+            analysis += f"• Humidity: {weather_data.humidity:.0f}%\n\n"
+            
+            analysis += f"**Pressure History:**\n"
+            if monitor.pressure_history:
+                recent_entries = monitor.pressure_history[-5:]
+                for entry in recent_entries:
+                    timestamp = datetime.datetime.fromisoformat(entry["timestamp"])
+                    analysis += f"• {timestamp.strftime('%m/%d %H:%M')}: {entry['pressure']:.1f}mbar\n"
+            else:
+                analysis += "• No historical data available yet\n"
+            
+            analysis += f"\n**Health Impact Assessment:**\n"
+            analysis += f"• Headache risk: {'High' if 'High headache risk' in weather_data.pressure_trend else 'Moderate' if 'Moderate headache risk' in weather_data.pressure_trend else 'Low'}\n"
+            analysis += f"• UV protection needed: {'Yes' if weather_data.uv_index >= HIGH_UV_THRESHOLD else 'No'}\n"
+            
+            # Add visibility assessment
+            visibility_miles = weather_data.visibility * 0.621371
+            analysis += f"• Visibility: {visibility_miles:.1f} miles "
+            if visibility_miles < 1:
+                analysis += "(very poor - fog conditions)\n"
+            elif visibility_miles < 3:
+                analysis += "(poor - drive carefully)\n"
+            else:
+                analysis += "(good)\n"
+            analysis += f"**\n"
+            
+            analysis += f"\n💡 **Monitoring Settings**:\n"
+            analysis += f"• Headache threshold: {PRESSURE_DROP_THRESHOLD}mbar drop\n"
+            analysis += f"• UV alert threshold: {HIGH_UV_THRESHOLD} UV index\n"
+            analysis += f"• Data cached for: {_cache_duration//60} minutes\n"
+            
+            return {"SyntaxPrime": analysis}
+            
     except Exception as e:
         error_msg = f"📊 Weather pattern analysis error: {str(e)}"
         print(error_msg)
@@ -807,6 +794,16 @@ WEATHER_COMMANDS = {
 }
 
 
+# Compatibility aliases for backward compatibility
+def handle_weather_command(user_input: str, project: str) -> Dict[str, str]:
+    """
+    Compatibility alias for handle_comprehensive_weather_command
+    DEPRECATED: Use handle_comprehensive_weather_command instead
+    """
+    print("⚠️  Warning: handle_weather_command is deprecated, use handle_comprehensive_weather_command")
+    return handle_comprehensive_weather_command(user_input, project)
+
+
 def test_weather_integration():
     """Test weather integration for diagnostics"""
     print("🌦️  Testing Tomorrow.io Weather Integration...")
@@ -832,5 +829,66 @@ def test_weather_integration():
         return False
 
 
+# Export all available functions for proper imports
+__all__ = [
+    # Main handler functions
+    'handle_comprehensive_weather_command',
+    'handle_weather_alerts_command',
+    'handle_weather_integration',
+    'detect_weather_command',
+    
+    # Data structures and configuration
+    'WEATHER_COMMANDS',
+    'ComprehensiveWeatherData',
+    'WeatherMonitor',
+    'TomorrowIOClient',
+    
+    # Utility functions
+    'get_weather_monitor',
+    'is_weather_configured',
+    'get_weather_status',
+    'test_weather_integration',
+    
+    # Compatibility (deprecated)
+    'handle_weather_command',  # Deprecated alias
+]
+
+
+def verify_weather_integration_exports():
+    """Verify all expected functions are available for import"""
+    print("🔍 Verifying weather integration exports...")
+    
+    expected_functions = [
+        'handle_comprehensive_weather_command',
+        'handle_weather_alerts_command',
+        'handle_weather_integration',
+        'detect_weather_command',
+        'get_weather_monitor',
+        'is_weather_configured',
+        'get_weather_status'
+    ]
+    
+    current_module = globals()
+    missing_functions = []
+    
+    for func_name in expected_functions:
+        if func_name not in current_module:
+            missing_functions.append(func_name)
+        else:
+            if callable(current_module[func_name]):
+                print(f"✅ {func_name} - Available")
+            else:
+                print(f"❌ {func_name} - Not callable")
+                missing_functions.append(func_name)
+    
+    if missing_functions:
+        print(f"❌ Missing functions: {missing_functions}")
+        return False
+    else:
+        print("✅ All weather integration functions are available")
+        return True
+
+
 if __name__ == "__main__":
+    verify_weather_integration_exports()
     test_weather_integration()

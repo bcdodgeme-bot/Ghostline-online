@@ -929,11 +929,20 @@ __all__.extend([
 # SECTION 13: WEATHER INTEGRATION FOR HEALTH MONITORING
 #-------------------------------------------------------------------
 
-# Import the weather module
+# Fix for utils/ghostline_engine.py - Weather Integration Import Issue
+# Replace the existing import block in SECTION 13: WEATHER INTEGRATION FOR HEALTH MONITORING
+
+#-------------------------------------------------------------------
+# SECTION 13: WEATHER INTEGRATION FOR HEALTH MONITORING
+#-------------------------------------------------------------------
+
+# Import the weather module with correct function names
 try:
     from modules.weather_integration import (
-        handle_weather_command,
+        handle_comprehensive_weather_command,  # Fixed: was handle_weather_command
         handle_weather_alerts_command,
+        handle_weather_integration,            # Added: main integration router
+        detect_weather_command,               # Added: command detection
         WEATHER_COMMANDS,
         get_weather_monitor,
         is_weather_configured,
@@ -977,218 +986,9 @@ def handle_weather_integration(user_input: str, project: str) -> Optional[Dict[s
     # Fallback to general weather handler for weather-related queries
     if detect_weather_command(user_input):
         try:
-            return handle_weather_command(user_input, project)
+            # Use the correct function name
+            return handle_comprehensive_weather_command(user_input, project)
         except Exception as e:
             return {"SyntaxPrime": f"🌦️ Weather integration error: {str(e)}"}
     
     return None
-
-def enhance_ai_response_with_weather_context(messages: List[Dict], user_input: str) -> List[Dict]:
-    """Add weather context to AI responses when relevant for health awareness"""
-    if not WEATHER_INTEGRATION_AVAILABLE or not is_weather_configured():
-        return messages
-    
-    # Check if weather context would be helpful
-    weather_relevant_keywords = [
-        'headache', 'migraine', 'head hurts', 'pressure', 'head pain',
-        'sun', 'outside', 'outdoors', 'sunny', 'uv', 'sunlight',
-        'weather', 'going out', 'should i go outside', 'light sensitive'
-    ]
-    
-    user_lower = user_input.lower()
-    if not any(keyword in user_lower for keyword in weather_relevant_keywords):
-        return messages
-    
-    try:
-        monitor = get_weather_monitor()
-        if monitor:
-            weather_data = monitor.get_current_conditions()
-            alerts = monitor.get_health_alerts(weather_data)
-            
-            # Only add context if there are relevant health concerns
-            pressure_concerning = weather_data.pressure_trend in ['dropping_significantly', 'dropping_moderately']
-            uv_concerning = weather_data.uv_index >= 6
-            
-            if alerts or pressure_concerning or uv_concerning:
-                # Add weather context to the system message
-                weather_context = f"""
-
-CURRENT WEATHER CONTEXT (for health-aware responses):
-- Barometric pressure: {weather_data.pressure_surface_level:.1f}mbar ({weather_data.pressure_trend.replace('_', ' ')})
-- UV index: {weather_data.uv_index:.1f} ({weather_data.uv_health_concern})
-- Active health alerts: {', '.join(alerts) if alerts else 'None'}
-
-Consider this weather information when giving health or outdoor activity advice."""
-                
-                if messages and messages[0]["role"] == "system":
-                    messages[0]["content"] += weather_context
-                else:
-                    messages.insert(0, {
-                        "role": "system",
-                        "content": f"You are Ghostline AI with weather awareness.{weather_context}"
-                    })
-                
-                print(f"🌦️ Added weather context: pressure {weather_data.pressure_trend}, UV {weather_data.uv_index}")
-                
-    except Exception as e:
-        print(f"⚠️  Failed to add weather context: {e}")
-    
-    return messages
-
-def generate_response_with_weather_awareness(
-    user_input: str,
-    use_voices: List[str],
-    random_toggle: bool,
-    project: str = "default",
-    model: str = None,
-    retrieval_context: List[Dict] = None,
-    **kwargs
-) -> Dict[str, str]:
-    """Enhanced response generation with weather integration and health awareness"""
-    
-    # First check if this is a direct weather command
-    if WEATHER_INTEGRATION_AVAILABLE:
-        weather_response = handle_weather_integration(user_input, project)
-        if weather_response:
-            print("🌦️ Handling direct weather command")
-            return weather_response
-    
-    # Continue with normal response generation but add weather context
-    try:
-        # Use environment model if none specified, then filter it
-        if model is None:
-            model = os.getenv("CHAT_MODEL", "openrouter/auto")
-        
-        # Apply model filtering for safety
-        filtered_model = filter_model_selection(model)
-        
-        # Get conversation history context
-        conversation_context = load_user_history_only(project, max_tokens=500)
-        
-        # Get current time context
-        time_context = get_current_time_context()
-        
-        # Build comprehensive system context
-        system_context = f"""You are Ghostline AI, Carl's advanced personal assistant and creative partner.
-
-{time_context}
-
-{conversation_context}
-
-{ANSWER_RULES}
-
-Current project context: {project}
-"""
-        
-        # Add retrieval context if available
-        if retrieval_context and len(retrieval_context) > 0:
-            system_context += "\n\nRelevant knowledge base context:\n"
-            for i, ctx in enumerate(retrieval_context[:3], 1):  # Limit to 3 most relevant
-                system_context += f"{i}. {ctx.get('text', '')[:200]}...\n"
-        
-        # Generate responses for each requested voice
-        responses = {}
-        
-        for voice in use_voices:
-            try:
-                print(f"🎭 Generating weather-aware {voice} response using {filtered_model}")
-                
-                # Prepare messages with base system context
-                messages = [
-                    {"role": "system", "content": system_context},
-                    {"role": "user", "content": user_input}
-                ]
-                
-                # Add weather context if relevant
-                if WEATHER_INTEGRATION_AVAILABLE:
-                    messages = enhance_ai_response_with_weather_context(messages, user_input)
-                
-                # Apply authentic personality to messages
-                messages = apply_authentic_personality(messages, voice)
-                
-                # Make API call
-                response = _client.chat_completion(
-                    model=filtered_model,
-                    messages=messages,
-                    temperature=0.7
-                )
-                
-                # Extract response content
-                if 'choices' in response and len(response['choices']) > 0:
-                    raw_content = response['choices'][0]['message']['content']
-                    
-                    # Apply personality post-processing
-                    processed_content = apply_personality_post_processing(raw_content, voice)
-                    
-                    responses[voice] = processed_content
-                    print(f"✅ {voice} weather-aware response generated successfully")
-                else:
-                    responses[voice] = f"Error: No response generated for {voice}"
-                    print(f"❌ No response generated for {voice}")
-                    
-            except Exception as e:
-                print(f"❌ Error generating weather-aware {voice} response: {e}")
-                responses[voice] = f"Error generating {voice} response: {str(e)}"
-        
-        return responses
-        
-    except Exception as e:
-        print(f"Weather-aware response generation error: {e}")
-        return {"SyntaxPrime": f"Response generation failed: {e}"}
-
-def get_enhanced_engine_status():
-    """Enhanced engine status including weather integration"""
-    base_status = get_engine_status()  # Your existing function
-    
-    if WEATHER_INTEGRATION_AVAILABLE:
-        base_status['weather_integration'] = get_weather_status()
-        base_status['weather_integration']['available'] = True
-    else:
-        base_status['weather_integration'] = {
-            "configured": False,
-            "available": False,
-            "error": "Weather module not imported"
-        }
-    
-    return base_status
-
-def test_weather_integration_in_engine():
-    """Test weather integration within the Ghostline engine"""
-    print("🌦️ Testing weather integration in Ghostline engine...")
-    
-    if not WEATHER_INTEGRATION_AVAILABLE:
-        print("❌ Weather integration not available")
-        return False
-    
-    # Test weather command detection
-    test_inputs = [
-        "what's the weather like?",
-        "check pressure for headaches",
-        "uv index today",
-        "weather alerts",
-        "my head hurts, is it the weather?"
-    ]
-    
-    print("Testing weather command detection:")
-    for test_input in test_inputs:
-        detected = detect_weather_command(test_input)
-        print(f"  '{test_input}' -> Weather detected: {detected}")
-    
-    # Test actual weather integration
-    try:
-        if is_weather_configured():
-            test_response = handle_weather_integration("weather now", "test_project")
-            if test_response:
-                print("✅ Weather integration test successful")
-                print(f"   Response preview: {test_response['SyntaxPrime'][:100]}...")
-                return True
-            else:
-                print("❌ Weather integration returned no response")
-                return False
-        else:
-            print("⚠️ Weather integration not configured (missing API key)")
-            return False
-            
-    except Exception as e:
-        print(f"❌ Weather integration test failed: {e}")
-        return False
