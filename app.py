@@ -7,6 +7,8 @@
 # Section 1: Imports and Flask Setup (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)9/11/25
 # Section 1: Imports and Flask Setup (UPDATED WITH KEYWORD MANAGEMENT SYSTEM) 9/13/25
 # Section 1: Imports and Flask Setup (UPDATED WITH PROJECT MAPPING SYSTEM) 9/13/25
+# Section 1: Imports and Flask Setup (UPDATED WITH GOOGLE DRIVE EXPORT INTEGRATION)
+# Section 1: Imports and Flask Setup (UPDATED WITH GOOGLE DRIVE EXPORT) 9/16/25
 from flask import Flask, render_template, request, redirect, session, url_for, send_file, jsonify, render_template_string, Response
 from flask_cors import CORS
 from utils.ghostline_engine import generate_response, generate_streaming_response as stream_generate
@@ -69,6 +71,9 @@ from modules.site_keyword_manager import keyword_manager, SITE_DOMAINS
 # NEW: Project Mapping System
 from modules.project_mapping import ProjectMappingSystem, integrate_with_ghostline
 
+# NEW: Google Drive Export Integration
+from modules.chat_export_integration import handle_export_command, get_export_help
+
 # OCR/File Parsing
 from PIL import Image
 import fitz
@@ -108,6 +113,38 @@ def get_default_voice():
 def apply_session_preferences(*args, **kwargs):
     """Placeholder preferences function"""
     pass
+
+def is_google_configured():
+    """Check if Google OAuth is properly configured for document export"""
+    try:
+        from modules.enhanced_google_integration import EnhancedGoogleIntegration
+        google_integration = EnhancedGoogleIntegration()
+        
+        # Check if we have valid credentials and required scopes
+        if not google_integration.is_configured():
+            return False
+            
+        # Check if we have the required document creation scope
+        required_scopes = [
+            'https://www.googleapis.com/auth/documents',
+            'https://www.googleapis.com/auth/drive.file'
+        ]
+        
+        # Get current scopes from credentials
+        if hasattr(google_integration, 'get_credentials'):
+            credentials = google_integration.get_credentials()
+            if credentials and hasattr(credentials, 'scopes'):
+                current_scopes = credentials.scopes or []
+                return all(scope in current_scopes for scope in required_scopes)
+        
+        # Fallback: assume configured if basic google integration works
+        return google_integration.is_configured()
+        
+    except ImportError:
+        return False
+    except Exception as e:
+        print(f"Google configuration check failed: {e}")
+        return False
 
 # JWT for mobile API
 try:
@@ -789,110 +826,9 @@ def enhanced_marketing_command_processor(user_input: str, project: str, use_voic
 # Section 4: Main Chat Route (UPDATED WITH FIXED BLUESKY INTEGRATION + CONTENT STRATEGY - HIGHEST PRIORITY)
 # Section 4: Main Chat Route (UPDATED WITH FIXED CALENDAR DATA FORMATTING) 9/12/25
 # Section 4: Main Chat Route (UPDATED WITH RSS MARKETING KNOWLEDGE INTEGRATION) 9/13/25
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-
-    response_data = {}
-    selected_project = PROJECTS[0]
-
-    if request.method == 'POST':
-        user_input = request.form['user_input'].strip()
-        app.logger.info(f"POST request received with input: {user_input}")
-        project = request.form['project']
-        selected_project = project
-        use_voices = request.form.getlist('voices') or ['SyntaxPrime']
-        random_toggle = 'random' in request.form
-
-        # Generate session ID for context tracking
-        session_id = session.get('session_id')
-        if not session_id:
-            import uuid
-            session_id = str(uuid.uuid4())
-            session['session_id'] = session_id
-
-        # Auto-refresh brain context periodically
-        try:
-            refresh_brain_context()
-        except Exception as e:
-            print(f"Brain context refresh failed: {e}")
-
-        # PRIORITY 1: Handle reminder commands FIRST - This is the key fix!
-        try:
-            print(f"MAIN ROUTE: Checking reminder command for: '{user_input}'")
-            response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
-            if handled:
-                print(f"MAIN ROUTE: Reminder handled successfully!")
-                save_conversation_enhanced(project, user_input, response_data)
-                return _render_enhanced(project, response_data)
-            else:
-                print(f"MAIN ROUTE: Not a reminder command, continuing...")
-        except Exception as e:
-            app.logger.error(f"Reminder handler failed: {e}")
-            # Don't fail the whole request, just log and continue
-
-        # FIXED: BlueSky commands with enhanced pattern matching (HIGHEST PRIORITY)
-        if is_bluesky_configured():
-            app.logger.info(f"Checking BlueSky command patterns for: '{user_input}'")
-            try:
-                # Enhanced BlueSky command detection with more flexible patterns
-                user_lower = user_input.lower().strip()
-                
-                # Comprehensive BlueSky trigger patterns
-                bluesky_patterns = [
-                    # Direct BlueSky mentions
-                    'bluesky', 'bsky', 'blue sky',
-                    # Action patterns
-                    'analyze bluesky', 'check bluesky', 'my bluesky', 'bluesky feed',
-                    'bluesky timeline', 'bluesky posts', 'bluesky analysis',
-                    # Engagement patterns
-                    'bluesky engagement', 'bluesky suggestions', 'who should i follow',
-                    'bluesky opportunities', 'social engagement', 'feed analysis',
-                    # High priority patterns
-                    'bluesky high priority', 'best bluesky posts', 'top bluesky',
-                    # Test patterns
-                    'bluesky test', 'test bluesky', 'bluesky connection'
-                ]
-                
-                # Check if input matches any BlueSky pattern
-                bluesky_detected = False
-                for pattern in bluesky_patterns:
-                    if pattern in user_lower:
-                        bluesky_detected = True
-                        app.logger.info(f"BlueSky pattern matched: '{pattern}'")
-                        break
-                
-                # Also check for standalone keywords that might be BlueSky related
-                standalone_keywords = ['bsky', 'bluesky']
-                if not bluesky_detected:
-                    for keyword in standalone_keywords:
-                        if user_lower == keyword or user_lower.startswith(keyword + ' ') or user_lower.endswith(' ' + keyword):
-                            bluesky_detected = True
-                            app.logger.info(f"BlueSky standalone keyword matched: '{keyword}'")
-                            break
-                
-                if bluesky_detected:
-                    app.logger.info(f"Processing BlueSky command: '{user_input}'")
-                    response_content = process_bluesky_command(user_input)
-                    
-                    # Check if we got a real response (not just the help menu)
-                    if response_content and "Available BlueSky commands" not in response_content:
-                        app.logger.info(f"BlueSky command successfully processed")
-                        response_data = {"SyntaxPrime": response_content}
-                        save_conversation_enhanced(project, user_input, response_data)
-                        return _render_enhanced(project, response_data)
-                    else:
-                        # If it's just the help menu, let it fall through to normal processing
-                        # but log that we tried BlueSky
-                        app.logger.info(f"BlueSky returned help menu, falling through to normal processing")
-                
-            except Exception as e:
-                app.logger.error(f"BlueSky processing failed: {e}")
-                # Don't fail the whole request, just log and continue
-                pass
-
-        # Try hybrid content strategy commands
+# Section 4: Main Chat Route (UPDATED WITH WEATHER INTEGRATION) 9/16/25
+# Section 4: Main Chat Route (UPDATED WITH COMMAND PARSING) 9/16/25
+# Try hybrid content strategy commands
         try:
             response_data, handled = generate_content_strategy_command(user_input, project, use_voices, random_toggle)
             if handled:
@@ -900,6 +836,24 @@ def index():
                 return _render_enhanced(project, response_data)
         except Exception as e:
             app.logger.error(f"Content strategy command failed: {e}")
+
+        # Try Google Drive export commands
+        if is_google_configured():
+            try:
+                response_data, handled = handle_export_command(user_input, project, use_voices, random_toggle)
+                if handled:
+                    app.logger.info(f"Export command handled successfully")
+                    save_conversation_enhanced(project, user_input, response_data)
+                    return _render_enhanced(project, response_data)
+            except Exception as e:
+                app.logger.error(f"Export command processing failed: {e}")
+                # Continue to normal processing if export fails
+
+        # Help command for exports
+        if user_input.lower().strip() in ['export help', 'google docs help', 'drive export help']:
+            response_data = {"SyntaxPrime": get_export_help()}
+            save_conversation_enhanced(project, user_input, response_data)
+            return _render_enhanced(project, response_data)
 
         # Try Cloze + ClickUp integration commands
         if is_cloze_configured() and is_clickup_configured():
@@ -915,112 +869,9 @@ def index():
                     response_data = {"SyntaxPrime": f"Integration module import failed: {str(e)}\nCheck if modules/cloze_clickup_integration.py exists and has no syntax errors."}
                     save_conversation_enhanced(project, user_input, response_data)
                     return _render_enhanced(project, response_data)
-
-        # Try ClickUp-only commands
-        if is_clickup_configured():
-            response_data, handled = process_clickup_command(user_input, project, use_voices, random_toggle)
-            if handled:
-                save_conversation_enhanced(project, user_input, response_data)
-                return _render_enhanced(project, response_data)
-
-        # Handle scrape command
-        if user_input.lower().startswith("scrape "):
-            url = user_input.split(" ", 1)[1].strip()
-            try:
-                result = scrape_url(url)
-                if not result["ok"]:
-                    response_data = {"SyntaxPrime": f"Could not fetch/extract content: {result['error']}"}
-                else:
-                    summary_prompt = (
-                        "Summarize the key points from the following webpage for Carl. "
-                        "Use bullets and keep it tight and actionable.\n\n"
-                        f"--- SCRAPED CONTENT START ---\n{result['text']}\n--- SCRAPED CONTENT END ---"
-                    )
-                    retrieval_ctx = enhanced_retrieve(summary_prompt, k=5, project=project) if is_ready() else []
-                    response_data = generate_response(
-                        summary_prompt, use_voices, random_toggle,
-                        project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
-                    )
-                handled = True
-            except Exception as e:
-                app.logger.error(f"Scrape command failed: {e}")
-                response_data = {"SyntaxPrime": f"Scrape failed: {e}"}
-                handled = True
-            
-            save_conversation_enhanced(project, user_input, response_data)
-            return _render_enhanced(project, response_data)
-
-        # Try Unified Google Integration (Gmail, Calendar, Analytics, Search Console, Docs, Sheets)
-        if is_google_configured():
-            try:
-                response_data, handled = process_google_ecosystem_commands(
-                    user_input, project, use_voices, random_toggle
-                )
-                if handled:
-                    save_conversation_enhanced(project, user_input, response_data)
-                    return _render_enhanced(project, response_data)
-            except Exception as e:
-                app.logger.error(f"Google integration processing failed: {e}")
-
-        # Try Slack integration
-        if is_slack_configured():
-            response_data, handled = process_slack_command(user_input, project, use_voices, random_toggle)
-            if handled:
-                save_conversation_enhanced(project, user_input, response_data)
-                return _render_enhanced(project, response_data)
-
-        # Enhanced Marketing Commands with RSS Knowledge Base
-        try:
-            response_data, handled = enhanced_marketing_command_processor(user_input, project, use_voices, random_toggle)
-            if handled:
-                app.logger.info(f"Enhanced marketing command handled successfully")
-                save_conversation_enhanced(project, user_input, response_data)
-                return _render_enhanced(project, response_data)
-        except Exception as e:
-            app.logger.error(f"Enhanced marketing processing failed: {e}")
-
-        # Try Cloze commands with proper configuration validation
-        if is_cloze_configured():
-            response_data, handled = process_cloze_command(user_input, project, use_voices, random_toggle)
-            if handled:
-                save_conversation_enhanced(project, user_input, response_data)
-                return _render_enhanced(project, response_data)
-
-        # Try Telegram integration
-        if is_telegram_configured():
-            response_data, handled = process_telegram_command(user_input, project, use_voices, random_toggle)
-            if handled:
-                save_conversation_enhanced(project, user_input, response_data)
-                return _render_enhanced(project, response_data)
-
-        # Try Calendar-Telegram integration
-        if is_calendar_telegram_configured():
-            response_data, handled = process_calendar_telegram_command(user_input, project, use_voices, random_toggle)
-            if handled:
-                save_conversation_enhanced(project, user_input, response_data)
-                return _render_enhanced(project, response_data)
-
-        # Normal AI response as fallback (same enhanced logic as web version)
-        if not response_data:
-            try:
-                retrieval_ctx = enhanced_retrieve(user_input, k=5, project=project) if is_ready() else []
-                
-                # Use enhanced response generation with context validation
-                response_data = generate_response_with_context_check(
-                    user_input, use_voices, random_toggle,
-                    project, CHAT_MODEL, retrieval_ctx
-                )
-                
-                save_conversation_enhanced(project, user_input, response_data)
-            except Exception as e:
-                app.logger.error(f"Normal response generation failed: {e}")
-                response_data = {"SyntaxPrime": f"Response generation failed: {e}"}
-                save_conversation_enhanced(project, user_input, response_data)
-
-        return _render_enhanced(project, response_data)
-
-    # GET request - render the chat interface
-    return render_template('index.html', projects=PROJECTS, selected_project=selected_project, response_data=response_data)
+    
+    
+    
 # Section 5: Brain Building Routes
 from modules.brain import handle_build_brain, handle_build_new_brain, get_brain_status, get_brain_control_dashboard
 
@@ -1083,9 +934,10 @@ def upload_file():
 # Section 7: Streaming Chat API - FIXED VERSION WITH BLUESKY HIGHEST PRIORITY 9/12/25
 # Section 7: Streaming Chat API (UPDATED WITH RSS MARKETING KNOWLEDGE INTEGRATION) 9/13/25
 # Section 7: Streaming Chat API (UPDATED WITH PROJECT MAPPING INTEGRATION) 9/13/25
+# Section 7: Streaming Chat API (UPDATED WITH RSS MARKETING KNOWLEDGE INTEGRATION AND GOOGLE DRIVE EXPORT) 9/16/25
 @app.route('/api/chat/stream', methods=['POST'])
 def stream_chat():
-    """Enhanced streaming chat endpoint with project mapping integration"""
+    """Enhanced streaming chat endpoint with project mapping integration and Google Drive export"""
     
     # Enhanced logging for debugging auth issues
     app.logger.info(f"Stream request from {request.remote_addr}")
@@ -1285,6 +1137,11 @@ def stream_chat():
                     # Add enhanced marketing processor with RSS knowledge
                     app.logger.info(f"Adding enhanced marketing processor to stream pipeline")
                     processors.insert(0, ('marketing_enhanced', lambda: enhanced_marketing_command_processor(user_input, project, use_voices, random_toggle)))
+                    
+                    # Add Google Drive export processor
+                    if is_google_configured():
+                        app.logger.info(f"Adding Google Drive export processor to stream pipeline")
+                        processors.insert(1, ('google_export', lambda: handle_export_command(user_input, project, use_voices, random_toggle)))
                     
                     # Add Cloze processor with proper configuration check
                     if is_cloze_configured():
@@ -4182,6 +4039,278 @@ def mobile_status():
             'error': f'Status check failed: {str(e)}'
         }), 500
 
+
+# Section 25: Google Drive Export API Routes (NEW)
+@app.route('/api/export/status')
+def api_export_status():
+    """Check Google Drive export capability status"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        status = {
+            'google_configured': is_google_configured(),
+            'export_available': False,
+            'scopes_granted': [],
+            'missing_scopes': [],
+            'error': None
+        }
+        
+        if is_google_configured():
+            try:
+                from modules.enhanced_google_integration import EnhancedGoogleIntegration
+                google_integration = EnhancedGoogleIntegration()
+                
+                if google_integration.is_configured():
+                    status['export_available'] = True
+                    # Try to get scopes if available
+                    try:
+                        credentials = google_integration.get_credentials()
+                        if credentials and hasattr(credentials, 'scopes'):
+                            status['scopes_granted'] = credentials.scopes or []
+                    except:
+                        pass
+                else:
+                    status['error'] = 'No valid Google credentials'
+            except Exception as e:
+                status['error'] = f'Google integration error: {str(e)}'
+        else:
+            status['error'] = 'Google integration not configured or missing required scopes'
+            status['missing_scopes'] = [
+                'https://www.googleapis.com/auth/documents',
+                'https://www.googleapis.com/auth/drive.file'
+            ]
+        
+        return jsonify(status)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/export/bookmarks', methods=['POST'])
+def api_export_bookmarks():
+    """API endpoint to export bookmarks to Google Docs"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json() or {}
+        project_filter = data.get('project') or session.get('current_project', 'Personal Operating Manual')
+        include_responses = data.get('include_responses', True)
+        bookmark_ids = data.get('bookmark_ids', [])  # Optional: specific bookmark IDs
+        
+        from modules.database import get_bookmarks
+        
+        if not is_google_configured():
+            return jsonify({
+                'success': False,
+                'error': 'Google Drive export not available. Please configure Google OAuth with document creation scopes.'
+            }), 400
+        
+        # Get bookmarks
+        if bookmark_ids:
+            # Get specific bookmarks (implementation depends on your bookmark system)
+            bookmarks = get_bookmarks(bookmark_ids=bookmark_ids)
+        else:
+            # Get all bookmarks for project
+            bookmarks = get_bookmarks(project=project_filter, limit=50)
+        
+        if not bookmarks:
+            return jsonify({
+                'success': False,
+                'error': f'No bookmarks found for project "{project_filter}"'
+            }), 404
+        
+        # Convert to export format and use the chat export command
+        export_request = f"export my bookmarks for {project_filter}"
+        if not include_responses:
+            export_request += " without AI responses"
+        
+        response_data, handled = handle_export_command(export_request, project_filter, ['SyntaxPrime'], False)
+        
+        if handled and response_data:
+            return jsonify({
+                'success': True,
+                'message': 'Bookmarks exported successfully',
+                'export_result': response_data
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Export command failed to process'
+            }), 500
+        
+    except Exception as e:
+        app.logger.error(f"Bookmark export API failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/export/conversation', methods=['POST'])
+def api_export_conversation():
+    """API endpoint to export a specific conversation to Google Docs"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json() or {}
+        conversation_id = data.get('conversation_id')
+        project_filter = data.get('project') or session.get('current_project', 'Personal Operating Manual')
+        include_responses = data.get('include_responses', True)
+        
+        if not is_google_configured():
+            return jsonify({
+                'success': False,
+                'error': 'Google Drive export not available. Please configure Google OAuth with document creation scopes.'
+            }), 400
+        
+        # Create export request
+        if conversation_id:
+            export_request = f"export conversation {conversation_id}"
+        else:
+            export_request = f"export recent conversation"
+        
+        if not include_responses:
+            export_request += " without AI responses"
+        
+        response_data, handled = handle_export_command(export_request, project_filter, ['SyntaxPrime'], False)
+        
+        if handled and response_data:
+            return jsonify({
+                'success': True,
+                'message': 'Conversation exported successfully',
+                'export_result': response_data
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Export command failed to process'
+            }), 500
+        
+    except Exception as e:
+        app.logger.error(f"Conversation export API failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/diagnostics/google-export')
+def google_export_diagnostics():
+    """Google Drive export diagnostics page"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    try:
+        diagnostics = {
+            'export_available': is_google_configured(),
+            'google_configured': is_google_configured(),
+            'required_scopes': [
+                'https://www.googleapis.com/auth/documents',
+                'https://www.googleapis.com/auth/drive.file'
+            ],
+            'granted_scopes': [],
+            'test_results': {}
+        }
+        
+        if is_google_configured():
+            try:
+                from modules.enhanced_google_integration import EnhancedGoogleIntegration
+                google_integration = EnhancedGoogleIntegration()
+                
+                # Test basic connectivity
+                if google_integration.is_configured():
+                    diagnostics['test_results']['connectivity'] = {
+                        'success': True,
+                        'message': 'Google integration is configured and ready'
+                    }
+                    
+                    # Try to get scopes
+                    try:
+                        credentials = google_integration.get_credentials()
+                        if credentials and hasattr(credentials, 'scopes'):
+                            diagnostics['granted_scopes'] = credentials.scopes or []
+                    except:
+                        diagnostics['granted_scopes'] = ['Unable to retrieve scope information']
+                else:
+                    diagnostics['test_results']['connectivity'] = {
+                        'success': False,
+                        'message': 'Google integration is not properly configured'
+                    }
+                    
+            except Exception as e:
+                diagnostics['test_results']['connectivity'] = {
+                    'success': False,
+                    'error': str(e)
+                }
+        else:
+            diagnostics['test_results']['connectivity'] = {
+                'success': False,
+                'message': 'Google integration not configured'
+            }
+        
+        return render_template_string("""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Google Drive Export Diagnostics</title>
+            <style>
+                body { font-family: 'Courier New', monospace; background: #0a0a0a; color: #00ff00; padding: 20px; }
+                .container { max-width: 1200px; margin: 0 auto; }
+                .diagnostic-section { background: #1a1a1a; border: 1px solid #333; padding: 20px; margin: 20px 0; border-radius: 5px; }
+                .success { color: #00ff00; }
+                .error { color: #ff4444; }
+                .warning { color: #ffaa00; }
+                pre { white-space: pre-wrap; }
+                .btn { background: #6366f1; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; text-decoration: none; display: inline-block; margin: 10px 5px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Google Drive Export Diagnostics</h1>
+                
+                <div class="diagnostic-section">
+                    <h3>Export System Status</h3>
+                    <p><strong>Export Available:</strong> <span class="{% if diagnostics.export_available %}success">✅ Yes{% else %}error">❌ No{% endif %}</span></p>
+                    <p><strong>Google Configured:</strong> <span class="{% if diagnostics.google_configured %}success">✅ Yes{% else %}error">❌ No{% endif %}</span></p>
+                </div>
+                
+                <div class="diagnostic-section">
+                    <h3>Required Scopes</h3>
+                    {% for scope in diagnostics.required_scopes %}
+                    <p>{{ scope }}</p>
+                    {% endfor %}
+                </div>
+                
+                {% if diagnostics.granted_scopes %}
+                <div class="diagnostic-section">
+                    <h3>Granted Scopes</h3>
+                    {% for scope in diagnostics.granted_scopes %}
+                    <p>{{ scope }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                {% if diagnostics.test_results %}
+                <div class="diagnostic-section">
+                    <h3>Test Results</h3>
+                    <pre>{{ diagnostics.test_results | tojson(indent=2) }}</pre>
+                </div>
+                {% endif %}
+                
+                <div class="diagnostic-section">
+                    <h3>Available Commands</h3>
+                    <pre>{{ export_help }}</pre>
+                </div>
+                
+                <a href="/integrations" class="btn">Google Integration Setup</a>
+                <a href="/" class="btn">Back to Chat</a>
+            </div>
+        </body>
+        </html>
+        """, diagnostics=diagnostics, export_help=get_export_help())
+        
+    except Exception as e:
+        return f"Export diagnostics failed: {str(e)}", 500
 
 # Section 14: Google OAuth Integration
 # Section 14: Google OAuth Integration (COMPLETELY REPLACED)
@@ -7782,6 +7911,1325 @@ MARKETING_KNOWLEDGE_TEMPLATE = '''
 </body>
 </html>
 '''
+
+# Section 23: Thread Management and Bookmark API Routes (NEW)
+# Add this section to your app.py file
+
+@app.route('/api/threads', methods=['GET'])
+def api_list_threads():
+    """API: List all conversation threads with timestamps"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        # Get query parameters
+        project = request.args.get('project')  # Optional project filter
+        limit = min(int(request.args.get('limit', 50)), 100)
+        include_archived = request.args.get('include_archived', 'false').lower() == 'true'
+        
+        threads = []
+        
+        with get_db_connection() as conn:
+            if not conn:
+                return jsonify({
+                    'success': False,
+                    'error': 'Database not available'
+                }), 500
+            
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            
+            # Build query with optional filters
+            where_clauses = []
+            params = []
+            
+            if project:
+                where_clauses.append('project = %s')
+                params.append(project)
+            
+            if not include_archived:
+                where_clauses.append('NOT is_archived')
+            
+            where_sql = 'WHERE ' + ' AND '.join(where_clauses) if where_clauses else ''
+            params.append(limit)
+            
+            cursor.execute(f'''
+                SELECT tm.thread_id, tm.title, tm.project, tm.created_at, tm.updated_at,
+                       tm.message_count, tm.tags, tm.is_archived,
+                       COUNT(ct.id) as actual_message_count,
+                       MAX(ct.created_at) as last_message_at,
+                       MIN(ct.created_at) as first_message_at
+                FROM chat_thread_metadata tm
+                LEFT JOIN chat_threads ct ON tm.thread_id = ct.thread_id
+                {where_sql}
+                GROUP BY tm.thread_id, tm.title, tm.project, tm.created_at, 
+                         tm.updated_at, tm.message_count, tm.tags, tm.is_archived
+                ORDER BY tm.updated_at DESC
+                LIMIT %s
+            ''', params)
+            
+            rows = cursor.fetchall()
+            
+            for row in rows:
+                threads.append({
+                    'thread_id': str(row['thread_id']),
+                    'title': row['title'],
+                    'project': row['project'],
+                    'created_at': row['created_at'].isoformat(),
+                    'updated_at': row['updated_at'].isoformat(),
+                    'message_count': row['actual_message_count'] or 0,
+                    'tags': row['tags'] or [],
+                    'is_archived': row['is_archived'],
+                    'first_message_at': row['first_message_at'].isoformat() if row['first_message_at'] else None,
+                    'last_message_at': row['last_message_at'].isoformat() if row['last_message_at'] else None
+                })
+        
+        return jsonify({
+            'success': True,
+            'threads': threads,
+            'count': len(threads),
+            'project_filter': project,
+            'include_archived': include_archived
+        })
+        
+    except Exception as e:
+        app.logger.error(f"List threads API failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/threads/<thread_id>', methods=['GET'])
+def api_get_thread_content(thread_id):
+    """API: Get specific thread content with all conversations"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        limit = min(int(request.args.get('limit', 100)), 500)
+        include_metadata = request.args.get('include_metadata', 'true').lower() == 'true'
+        
+        thread_data = {
+            'thread_id': thread_id,
+            'metadata': None,
+            'conversations': [],
+            'bookmarks': []
+        }
+        
+        with get_db_connection() as conn:
+            if not conn:
+                return jsonify({
+                    'success': False,
+                    'error': 'Database not available'
+                }), 500
+            
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            
+            # Get thread metadata
+            if include_metadata:
+                cursor.execute('''
+                    SELECT thread_id, title, project, created_at, updated_at,
+                           message_count, tags, is_archived
+                    FROM chat_thread_metadata
+                    WHERE thread_id = %s
+                ''', (thread_id,))
+                
+                metadata_row = cursor.fetchone()
+                if metadata_row:
+                    thread_data['metadata'] = {
+                        'thread_id': str(metadata_row['thread_id']),
+                        'title': metadata_row['title'],
+                        'project': metadata_row['project'],
+                        'created_at': metadata_row['created_at'].isoformat(),
+                        'updated_at': metadata_row['updated_at'].isoformat(),
+                        'message_count': metadata_row['message_count'],
+                        'tags': metadata_row['tags'] or [],
+                        'is_archived': metadata_row['is_archived']
+                    }
+                else:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Thread not found'
+                    }), 404
+            
+            # Get conversations in thread
+            cursor.execute('''
+                SELECT id, user_input, response_data, created_at, project,
+                       context_project, context_data
+                FROM chat_threads
+                WHERE thread_id = %s
+                ORDER BY created_at ASC
+                LIMIT %s
+            ''', (thread_id, limit))
+            
+            conversation_rows = cursor.fetchall()
+            
+            for row in conversation_rows:
+                thread_data['conversations'].append({
+                    'id': row['id'],
+                    'user_input': row['user_input'],
+                    'response_data': row['response_data'],
+                    'created_at': row['created_at'].isoformat(),
+                    'project': row['project'],
+                    'context_project': row['context_project'],
+                    'context_data': row['context_data'] or {}
+                })
+            
+            # Get bookmarks for this thread
+            cursor.execute('''
+                SELECT cb.bookmark_id, cb.title, cb.notes, cb.bookmark_type,
+                       cb.created_at, cb.chat_id,
+                       ct.user_input as conversation_preview
+                FROM conversation_bookmarks cb
+                LEFT JOIN chat_threads ct ON cb.chat_id = ct.id
+                WHERE cb.thread_id = %s
+                ORDER BY cb.created_at DESC
+            ''', (thread_id,))
+            
+            bookmark_rows = cursor.fetchall()
+            
+            for row in bookmark_rows:
+                thread_data['bookmarks'].append({
+                    'bookmark_id': str(row['bookmark_id']),
+                    'title': row['title'],
+                    'notes': row['notes'],
+                    'bookmark_type': row['bookmark_type'],
+                    'created_at': row['created_at'].isoformat(),
+                    'chat_id': row['chat_id'],
+                    'conversation_preview': row['conversation_preview'][:100] + '...' if row['conversation_preview'] else None
+                })
+        
+        return jsonify({
+            'success': True,
+            **thread_data,
+            'conversation_count': len(thread_data['conversations']),
+            'bookmark_count': len(thread_data['bookmarks'])
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Get thread content API failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/bookmark', methods=['POST'])
+def api_create_bookmark():
+    """API: Create bookmark at current conversation point"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No JSON data provided'
+            }), 400
+        
+        # Required fields
+        chat_id = data.get('chat_id')
+        title = data.get('title', '').strip()
+        
+        # Optional fields
+        notes = data.get('notes', '').strip()
+        bookmark_type = data.get('bookmark_type', 'manual')
+        
+        if not chat_id:
+            return jsonify({
+                'success': False,
+                'error': 'chat_id is required'
+            }), 400
+        
+        if not title:
+            return jsonify({
+                'success': False,
+                'error': 'title is required'
+            }), 400
+        
+        # Validate that the conversation exists
+        with get_db_connection() as conn:
+            if not conn:
+                return jsonify({
+                    'success': False,
+                    'error': 'Database not available'
+                }), 500
+            
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            
+            # Check if conversation exists
+            cursor.execute('''
+                SELECT id, thread_id, project, user_input, created_at
+                FROM chat_threads
+                WHERE id = %s
+            ''', (chat_id,))
+            
+            conversation = cursor.fetchone()
+            if not conversation:
+                return jsonify({
+                    'success': False,
+                    'error': 'Conversation not found'
+                }), 404
+            
+            # Create the bookmark
+            cursor.execute('''
+                INSERT INTO conversation_bookmarks (chat_id, thread_id, title, notes, bookmark_type)
+                VALUES (%s, %s, %s, %s, %s)
+                RETURNING bookmark_id, created_at
+            ''', (
+                chat_id,
+                conversation['thread_id'],
+                title,
+                notes if notes else None,
+                bookmark_type
+            ))
+            
+            bookmark_result = cursor.fetchone()
+            bookmark_id = bookmark_result['bookmark_id']
+            created_at = bookmark_result['created_at']
+            
+            conn.commit()
+            
+            return jsonify({
+                'success': True,
+                'bookmark': {
+                    'bookmark_id': str(bookmark_id),
+                    'chat_id': chat_id,
+                    'thread_id': str(conversation['thread_id']) if conversation['thread_id'] else None,
+                    'title': title,
+                    'notes': notes,
+                    'bookmark_type': bookmark_type,
+                    'created_at': created_at.isoformat(),
+                    'conversation_preview': conversation['user_input'][:100] + '...' if len(conversation['user_input']) > 100 else conversation['user_input'],
+                    'project': conversation['project']
+                },
+                'message': f'Bookmark "{title}" created successfully'
+            })
+        
+    except Exception as e:
+        app.logger.error(f"Create bookmark API failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/search', methods=['GET', 'POST'])
+def api_search_conversations():
+    """API: Search across all conversations in chat_tables"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        # Handle both GET and POST requests
+        if request.method == 'POST':
+            data = request.get_json() or {}
+            query = data.get('query', '').strip()
+            project_filter = data.get('project')
+            limit = min(int(data.get('limit', 20)), 100)
+            search_type = data.get('search_type', 'all')  # 'all', 'threads', 'bookmarks'
+            include_context = data.get('include_context', True)
+        else:
+            query = request.args.get('q', '').strip()
+            project_filter = request.args.get('project')
+            limit = min(int(request.args.get('limit', 20)), 100)
+            search_type = request.args.get('type', 'all')
+            include_context = request.args.get('include_context', 'true').lower() == 'true'
+        
+        if not query:
+            return jsonify({
+                'success': False,
+                'error': 'Search query is required'
+            }), 400
+        
+        search_results = {
+            'query': query,
+            'conversations': [],
+            'threads': [],
+            'bookmarks': [],
+            'total_results': 0
+        }
+        
+        with get_db_connection() as conn:
+            if not conn:
+                return jsonify({
+                    'success': False,
+                    'error': 'Database not available'
+                }), 500
+            
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            
+            # Search conversations
+            if search_type in ['all', 'conversations']:
+                conversation_params = []
+                conversation_where = []
+                
+                # Base search using full-text search if available, fallback to LIKE
+                conversation_sql = '''
+                    SELECT ct.id, ct.user_input, ct.response_data, ct.created_at, 
+                           ct.project, ct.thread_id, ct.context_project,
+                           tm.title as thread_title
+                '''
+                
+                # Try full-text search first
+                try:
+                    conversation_sql += ''',
+                           ts_rank(to_tsvector('english', 
+                                   ct.user_input || ' ' || 
+                                   COALESCE(ct.response_data->>'SyntaxPrime', '')), 
+                                   plainto_tsquery('english', %s)) as rank
+                    FROM chat_threads ct
+                    LEFT JOIN chat_thread_metadata tm ON ct.thread_id = tm.thread_id
+                    WHERE to_tsvector('english', 
+                          ct.user_input || ' ' || 
+                          COALESCE(ct.response_data->>'SyntaxPrime', '')) 
+                          @@ plainto_tsquery('english', %s)
+                    '''
+                    conversation_params.extend([query, query])
+                    using_fts = True
+                except:
+                    # Fallback to LIKE search
+                    conversation_sql += '''
+                    FROM chat_threads ct
+                    LEFT JOIN chat_thread_metadata tm ON ct.thread_id = tm.thread_id
+                    WHERE (LOWER(ct.user_input) LIKE %s 
+                           OR LOWER(ct.response_data->>'SyntaxPrime') LIKE %s)
+                    '''
+                    like_pattern = f'%{query.lower()}%'
+                    conversation_params.extend([like_pattern, like_pattern])
+                    using_fts = False
+                
+                # Add project filter if specified
+                if project_filter:
+                    conversation_sql += ' AND ct.project = %s'
+                    conversation_params.append(project_filter)
+                
+                # Add ordering and limit
+                if using_fts:
+                    conversation_sql += ' ORDER BY rank DESC, ct.created_at DESC'
+                else:
+                    conversation_sql += ' ORDER BY ct.created_at DESC'
+                
+                conversation_sql += ' LIMIT %s'
+                conversation_params.append(limit)
+                
+                cursor.execute(conversation_sql, conversation_params)
+                conversation_rows = cursor.fetchall()
+                
+                for row in conversation_rows:
+                    result_item = {
+                        'id': row['id'],
+                        'type': 'conversation',
+                        'user_input': row['user_input'],
+                        'created_at': row['created_at'].isoformat(),
+                        'project': row['project'],
+                        'thread_id': str(row['thread_id']) if row['thread_id'] else None,
+                        'thread_title': row['thread_title'],
+                        'context_project': row['context_project']
+                    }
+                    
+                    # Include AI response if requested
+                    if include_context and row['response_data']:
+                        ai_response = row['response_data'].get('SyntaxPrime', '')
+                        if ai_response:
+                            result_item['ai_response_preview'] = ai_response[:200] + '...' if len(ai_response) > 200 else ai_response
+                    
+                    # Add relevance score if available
+                    if using_fts and 'rank' in row:
+                        result_item['relevance_score'] = float(row['rank'])
+                    
+                    search_results['conversations'].append(result_item)
+            
+            # Search threads
+            if search_type in ['all', 'threads']:
+                thread_params = [f'%{query.lower()}%']
+                thread_sql = '''
+                    SELECT thread_id, title, project, created_at, updated_at,
+                           message_count, tags, is_archived
+                    FROM chat_thread_metadata
+                    WHERE LOWER(title) LIKE %s
+                '''
+                
+                if project_filter:
+                    thread_sql += ' AND project = %s'
+                    thread_params.append(project_filter)
+                
+                thread_sql += ' ORDER BY updated_at DESC LIMIT %s'
+                thread_params.append(min(limit // 2, 10))  # Fewer thread results
+                
+                cursor.execute(thread_sql, thread_params)
+                thread_rows = cursor.fetchall()
+                
+                for row in thread_rows:
+                    search_results['threads'].append({
+                        'thread_id': str(row['thread_id']),
+                        'type': 'thread',
+                        'title': row['title'],
+                        'project': row['project'],
+                        'created_at': row['created_at'].isoformat(),
+                        'updated_at': row['updated_at'].isoformat(),
+                        'message_count': row['message_count'],
+                        'tags': row['tags'] or [],
+                        'is_archived': row['is_archived']
+                    })
+            
+            # Search bookmarks
+            if search_type in ['all', 'bookmarks']:
+                bookmark_params = [f'%{query.lower()}%', f'%{query.lower()}%']
+                bookmark_sql = '''
+                    SELECT cb.bookmark_id, cb.title, cb.notes, cb.bookmark_type,
+                           cb.created_at, cb.chat_id, cb.thread_id,
+                           ct.user_input as conversation_preview, ct.project,
+                           tm.title as thread_title
+                    FROM conversation_bookmarks cb
+                    LEFT JOIN chat_threads ct ON cb.chat_id = ct.id
+                    LEFT JOIN chat_thread_metadata tm ON cb.thread_id = tm.thread_id
+                    WHERE LOWER(cb.title) LIKE %s
+                       OR LOWER(cb.notes) LIKE %s
+                '''
+                
+                if project_filter:
+                    bookmark_sql += ' AND ct.project = %s'
+                    bookmark_params.append(project_filter)
+                
+                bookmark_sql += ' ORDER BY cb.created_at DESC LIMIT %s'
+                bookmark_params.append(min(limit // 3, 10))  # Even fewer bookmark results
+                
+                cursor.execute(bookmark_sql, bookmark_params)
+                bookmark_rows = cursor.fetchall()
+                
+                for row in bookmark_rows:
+                    search_results['bookmarks'].append({
+                        'bookmark_id': str(row['bookmark_id']),
+                        'type': 'bookmark',
+                        'title': row['title'],
+                        'notes': row['notes'],
+                        'bookmark_type': row['bookmark_type'],
+                        'created_at': row['created_at'].isoformat(),
+                        'chat_id': row['chat_id'],
+                        'thread_id': str(row['thread_id']) if row['thread_id'] else None,
+                        'thread_title': row['thread_title'],
+                        'conversation_preview': row['conversation_preview'][:100] + '...' if row['conversation_preview'] and len(row['conversation_preview']) > 100 else row['conversation_preview'],
+                        'project': row['project']
+                    })
+        
+        # Calculate total results
+        search_results['total_results'] = (
+            len(search_results['conversations']) +
+            len(search_results['threads']) +
+            len(search_results['bookmarks'])
+        )
+        
+        return jsonify({
+            'success': True,
+            'search_results': search_results,
+            'search_type': search_type,
+            'project_filter': project_filter,
+            'include_context': include_context
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Search API failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/export-to-drive', methods=['POST'])
+def api_export_to_drive():
+    """API: Export bookmarked content to Google Docs"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No JSON data provided'
+            }), 400
+        
+        # Get export parameters
+        bookmark_ids = data.get('bookmark_ids', [])  # List of bookmark IDs to export
+        thread_id = data.get('thread_id')  # Or export entire thread
+        export_format = data.get('format', 'google_docs')  # 'google_docs' or 'markdown'
+        document_title = data.get('title', f'Ghostline Export - {datetime.datetime.now().strftime("%Y-%m-%d")}')
+        include_responses = data.get('include_responses', True)
+        
+        if not bookmark_ids and not thread_id:
+            return jsonify({
+                'success': False,
+                'error': 'Either bookmark_ids or thread_id must be provided'
+            }), 400
+        
+        # Check Google integration availability
+        try:
+            from modules.enhanced_google_integration import EnhancedGoogleIntegration
+            google_integration = EnhancedGoogleIntegration()
+            
+            if not google_integration.is_configured():
+                return jsonify({
+                    'success': False,
+                    'error': 'Google integration not configured. Please set up Google OAuth first.'
+                }), 400
+                
+        except ImportError:
+            return jsonify({
+                'success': False,
+                'error': 'Google integration module not available'
+            }), 500
+        
+        export_content = []
+        
+        with get_db_connection() as conn:
+            if not conn:
+                return jsonify({
+                    'success': False,
+                    'error': 'Database not available'
+                }), 500
+            
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            
+            # Export by bookmark IDs
+            if bookmark_ids:
+                placeholders = ','.join(['%s'] * len(bookmark_ids))
+                cursor.execute(f'''
+                    SELECT cb.bookmark_id, cb.title, cb.notes, cb.created_at,
+                           ct.id as chat_id, ct.user_input, ct.response_data,
+                           ct.created_at as conversation_date, ct.project,
+                           tm.title as thread_title
+                    FROM conversation_bookmarks cb
+                    JOIN chat_threads ct ON cb.chat_id = ct.id
+                    LEFT JOIN chat_thread_metadata tm ON cb.thread_id = tm.thread_id
+                    WHERE cb.bookmark_id IN ({placeholders})
+                    ORDER BY cb.created_at ASC
+                ''', bookmark_ids)
+                
+                bookmark_rows = cursor.fetchall()
+                
+                for row in bookmark_rows:
+                    content_item = {
+                        'type': 'bookmark',
+                        'title': row['title'],
+                        'notes': row['notes'],
+                        'bookmark_date': row['created_at'].isoformat(),
+                        'conversation_date': row['conversation_date'].isoformat(),
+                        'project': row['project'],
+                        'thread_title': row['thread_title'],
+                        'user_input': row['user_input']
+                    }
+                    
+                    if include_responses and row['response_data']:
+                        content_item['ai_response'] = row['response_data'].get('SyntaxPrime', '')
+                    
+                    export_content.append(content_item)
+            
+            # Export by thread ID
+            elif thread_id:
+                cursor.execute('''
+                    SELECT tm.title as thread_title, tm.project, tm.created_at as thread_created,
+                           ct.id as chat_id, ct.user_input, ct.response_data,
+                           ct.created_at as conversation_date,
+                           cb.bookmark_id, cb.title as bookmark_title, cb.notes
+                    FROM chat_thread_metadata tm
+                    JOIN chat_threads ct ON tm.thread_id = ct.thread_id
+                    LEFT JOIN conversation_bookmarks cb ON ct.id = cb.chat_id
+                    WHERE tm.thread_id = %s
+                    ORDER BY ct.created_at ASC
+                ''', (thread_id,))
+                
+                thread_rows = cursor.fetchall()
+                
+                if not thread_rows:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Thread not found or empty'
+                    }), 404
+                
+                # Get thread info from first row
+                thread_info = thread_rows[0]
+                document_title = f"{thread_info['thread_title']} - {document_title}"
+                
+                for row in thread_rows:
+                    content_item = {
+                        'type': 'thread_conversation',
+                        'thread_title': row['thread_title'],
+                        'project': row['project'],
+                        'conversation_date': row['conversation_date'].isoformat(),
+                        'user_input': row['user_input']
+                    }
+                    
+                    if row['bookmark_id']:
+                        content_item['is_bookmarked'] = True
+                        content_item['bookmark_title'] = row['bookmark_title']
+                        content_item['bookmark_notes'] = row['notes']
+                    
+                    if include_responses and row['response_data']:
+                        content_item['ai_response'] = row['response_data'].get('SyntaxPrime', '')
+                    
+                    export_content.append(content_item)
+        
+        if not export_content:
+            return jsonify({
+                'success': False,
+                'error': 'No content found to export'
+            }), 404
+        
+        # Format content for Google Docs
+        if export_format == 'google_docs':
+            try:
+                # Create Google Doc
+                document_content = f"# {document_title}\n\n"
+                document_content += f"Exported on: {datetime.datetime.now().strftime('%Y-%m-%d at %H:%M')}\n\n"
+                
+                for item in export_content:
+                    if item['type'] == 'bookmark':
+                        document_content += f"## {item['title']}\n"
+                        document_content += f"**Project:** {item['project']}\n"
+                        document_content += f"**Date:** {datetime.datetime.fromisoformat(item['conversation_date']).strftime('%Y-%m-%d %H:%M')}\n"
+                        
+                        if item.get('notes'):
+                            document_content += f"**Notes:** {item['notes']}\n"
+                        
+                        document_content += f"\n**User Input:**\n{item['user_input']}\n"
+                        
+                        if include_responses and item.get('ai_response'):
+                            document_content += f"\n**AI Response:**\n{item['ai_response']}\n"
+                        
+                        document_content += "\n---\n\n"
+                    
+                    elif item['type'] == 'thread_conversation':
+                        document_content += f"### {datetime.datetime.fromisoformat(item['conversation_date']).strftime('%H:%M')}"
+                        
+                        if item.get('is_bookmarked'):
+                            document_content += f" [BOOKMARKED: {item['bookmark_title']}]"
+                        
+                        document_content += f"\n\n**User:** {item['user_input']}\n"
+                        
+                        if include_responses and item.get('ai_response'):
+                            document_content += f"\n**SyntaxPrime:** {item['ai_response']}\n"
+                        
+                        document_content += "\n"
+                
+                # Create Google Doc using the enhanced integration
+                doc_result = google_integration.create_google_doc(
+                    title=document_title,
+                    content=document_content
+                )
+                
+                if doc_result.get('success'):
+                    return jsonify({
+                        'success': True,
+                        'export': {
+                            'format': 'google_docs',
+                            'document_id': doc_result['document_id'],
+                            'document_url': doc_result['document_url'],
+                            'document_title': document_title,
+                            'items_exported': len(export_content),
+                            'export_date': datetime.datetime.now().isoformat(),
+                            'include_responses': include_responses
+                        },
+                        'message': f'Successfully exported {len(export_content)} items to Google Docs'
+                    })
+                else:
+                    return jsonify({
+                        'success': False,
+                        'error': f'Google Docs creation failed: {doc_result.get("error", "Unknown error")}'
+                    }), 500
+                    
+            except Exception as e:
+                app.logger.error(f"Google Docs export failed: {e}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Google Docs export failed: {str(e)}'
+                }), 500
+        
+        else:  # Markdown format
+            markdown_content = f"# {document_title}\n\n"
+            markdown_content += f"Exported on: {datetime.datetime.now().strftime('%Y-%m-%d at %H:%M')}\n\n"
+            
+            for item in export_content:
+                if item['type'] == 'bookmark':
+                    markdown_content += f"## {item['title']}\n\n"
+                    markdown_content += f"**Project:** {item['project']}  \n"
+                    markdown_content += f"**Date:** {datetime.datetime.fromisoformat(item['conversation_date']).strftime('%Y-%m-%d %H:%M')}  \n"
+                    
+                    if item.get('notes'):
+                        markdown_content += f"**Notes:** {item['notes']}  \n"
+                    
+                    markdown_content += f"\n**User Input:**\n```\n{item['user_input']}\n```\n\n"
+                    
+                    if include_responses and item.get('ai_response'):
+                        markdown_content += f"**AI Response:**\n```\n{item['ai_response']}\n```\n\n"
+                    
+                    markdown_content += "---\n\n"
+            
+            return jsonify({
+                'success': True,
+                'export': {
+                    'format': 'markdown',
+                    'content': markdown_content,
+                    'document_title': document_title,
+                    'items_exported': len(export_content),
+                    'export_date': datetime.datetime.now().isoformat(),
+                    'include_responses': include_responses
+                },
+                'message': f'Successfully exported {len(export_content)} items as Markdown'
+            })
+        
+    except Exception as e:
+        app.logger.error(f"Export to Drive API failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# Section 24: Weather Integration Routes and Functions (NEW)
+# Weather monitoring for headache prediction and UV sensitivity alerts
+
+# Weather Integration Functions
+def process_user_input_with_weather(user_input: str, project: str) -> Dict[str, str]:
+    """Enhanced input processing with weather integration"""
+    
+    # Import weather integration
+    try:
+        from modules.weather_integration import (
+            detect_weather_command,
+            handle_weather_integration,
+            WEATHER_COMMANDS
+        )
+        weather_available = True
+    except ImportError:
+        weather_available = False
+    
+    # Check for weather commands first
+    if weather_available and detect_weather_command(user_input):
+        print("🌦️ Processing weather command")
+        weather_response = handle_weather_integration(user_input, project)
+        if weather_response:
+            return weather_response
+    
+    # Check for specific weather command patterns
+    user_lower = user_input.lower().strip()
+    
+    # Direct weather command responses
+    weather_command_responses = {
+        "weather": "Checking current weather conditions for health monitoring...",
+        "pressure": "Analyzing barometric pressure for headache prediction...",
+        "uv": "Checking UV index for sun sensitivity alerts...",
+        "weather alerts": "Reviewing active weather alerts and health warnings...",
+        "headache weather": "Analyzing current conditions for headache triggers...",
+        "weather help": """🌦️ **Weather Monitoring Commands**:
+        
+**Basic Commands:**
+• `weather` or `weather now` - Current conditions
+• `pressure` - Barometric pressure and headache risk
+• `uv` or `uv index` - UV levels and sun safety
+• `weather alerts` - Active health alerts
+• `weather patterns` - Historical pressure analysis
+
+**Health Monitoring:**
+• Tracks pressure drops that may trigger headaches (3+ mbar changes)
+• Monitors UV index for sun sensitivity (alerts at 6+ UV index)
+• Provides personalized health alerts based on conditions
+
+**Data Sources:**
+• Powered by Tomorrow.io Weather API
+• Updates every 30 minutes to conserve API calls
+• Maintains 7-day pressure history for pattern analysis
+
+Type any weather command to get started!"""
+    }
+    
+    # Check for exact weather command matches
+    for cmd, response in weather_command_responses.items():
+        if cmd in user_lower:
+            if weather_available:
+                # Process the actual weather command
+                return handle_weather_integration(user_input, project)
+            else:
+                return {"SyntaxPrime": f"🌦️ Weather integration not available. Please configure TOMORROW_IO_API_KEY to enable weather monitoring.\n\n{response}"}
+    
+    # If not a weather command, continue with normal processing
+    return None
+
+def enhance_conversation_with_weather_awareness(messages: List[Dict], user_input: str) -> List[Dict]:
+    """Add weather context to conversations when health-relevant topics are discussed"""
+    
+    try:
+        from modules.weather_integration import get_weather_monitor, is_weather_configured
+        
+        if not is_weather_configured():
+            return messages
+        
+        # Health-related keywords that benefit from weather context
+        health_keywords = [
+            'headache', 'migraine', 'head hurts', 'head pain', 'pressure headache',
+            'sun', 'sunny', 'outside', 'outdoors', 'going out', 'uv', 'sunlight',
+            'bright light', 'photosensitive', 'sun allergy', 'light sensitive',
+            'weather', 'barometric', 'atmospheric pressure', 'storm coming'
+        ]
+        
+        user_lower = user_input.lower()
+        if not any(keyword in user_lower for keyword in health_keywords):
+            return messages
+        
+        # Get current weather conditions
+        monitor = get_weather_monitor()
+        if not monitor:
+            return messages
+            
+        weather_data = monitor.get_current_conditions()
+        alerts = monitor.get_health_alerts(weather_data)
+        
+        # Determine if weather context is relevant
+        weather_relevant = False
+        context_info = []
+        
+        # Pressure-related context
+        if weather_data.pressure_trend in ['dropping_significantly', 'dropping_moderately']:
+            weather_relevant = True
+            trend_desc = "significantly" if weather_data.pressure_trend == "dropping_significantly" else "moderately"
+            context_info.append(f"Barometric pressure is dropping {trend_desc} ({weather_data.pressure_surface_level:.1f}mbar)")
+        
+        # UV-related context
+        if weather_data.uv_index >= 6 and any(keyword in user_lower for keyword in ['sun', 'outside', 'outdoors', 'uv', 'light']):
+            weather_relevant = True
+            context_info.append(f"UV index is high ({weather_data.uv_index:.1f} - {weather_data.uv_health_concern})")
+        
+        # Add weather context if relevant
+        if weather_relevant and context_info:
+            weather_context = f"""
+
+CURRENT WEATHER CONTEXT (for health-aware responses):
+{' | '.join(context_info)}
+Active health alerts: {', '.join(alerts) if alerts else 'None'}
+
+Consider this weather information when providing health advice or discussing outdoor activities."""
+            
+            if messages and messages[0]["role"] == "system":
+                messages[0]["content"] += weather_context
+            else:
+                messages.insert(0, {
+                    "role": "system",
+                    "content": f"You are a helpful AI assistant with access to current weather conditions.{weather_context}"
+                })
+                
+            print(f"🌦️ Added weather context to conversation (pressure: {weather_data.pressure_surface_level:.1f}mbar, UV: {weather_data.uv_index:.1f})")
+    
+    except Exception as e:
+        print(f"⚠️ Failed to add weather context: {e}")
+    
+    return messages
+
+def get_weather_aware_prompt(user_input: str, weather_data) -> Optional[str]:
+    """Generate weather-aware prompts based on user input and current conditions"""
+    
+    user_lower = user_input.lower()
+    
+    # Weather-aware AI response templates
+    weather_aware_prompts = {
+        "headache_pressure": """The user is experiencing headaches. Current barometric pressure is {pressure}mbar and {trend}. 
+        This pressure change may be contributing to their headache symptoms. Provide empathetic advice considering the weather context.""",
+        
+        "sun_sensitivity": """The user is asking about going outside. Current UV index is {uv_index} ({uv_concern}). 
+        Consider their sun sensitivity and provide appropriate outdoor activity recommendations.""",
+        
+        "weather_health": """Current weather conditions may affect the user's health:
+        - Pressure: {pressure}mbar ({pressure_trend})
+        - UV Index: {uv_index} ({uv_concern})
+        - Active alerts: {alerts}
+        
+        Provide health-conscious advice considering these weather factors."""
+    }
+    
+    if any(word in user_lower for word in ['headache', 'migraine', 'head hurts', 'head pain']):
+        if weather_data.pressure_trend in ['dropping_significantly', 'dropping_moderately']:
+            return weather_aware_prompts["headache_pressure"].format(
+                pressure=weather_data.pressure_surface_level,
+                trend=weather_data.pressure_trend.replace('_', ' ')
+            )
+    
+    elif any(word in user_lower for word in ['outside', 'sun', 'outdoors', 'going out']) and weather_data.uv_index >= 6:
+        return weather_aware_prompts["sun_sensitivity"].format(
+            uv_index=weather_data.uv_index,
+            uv_concern=weather_data.uv_health_concern
+        )
+    
+    elif any(word in user_lower for word in ['weather', 'how am i feeling', 'health', 'wellness']):
+        try:
+            from modules.weather_integration import get_weather_monitor
+            monitor = get_weather_monitor()
+            alerts = monitor.get_health_alerts(weather_data) if monitor else []
+        except:
+            alerts = []
+            
+        return weather_aware_prompts["weather_health"].format(
+            pressure=weather_data.pressure_surface_level,
+            pressure_trend=weather_data.pressure_trend.replace('_', ' '),
+            uv_index=weather_data.uv_index,
+            uv_concern=weather_data.uv_health_concern,
+            alerts=', '.join(alerts) if alerts else 'None'
+        )
+    
+    return None
+
+def normalize_weather_command(user_input: str) -> str:
+    """Normalize user input to standard weather commands"""
+    
+    # Command aliases for natural language processing
+    weather_command_aliases = {
+        # Pressure-related
+        "barometric pressure": "pressure",
+        "atmospheric pressure": "pressure",
+        "pressure headache": "pressure",
+        "headache weather": "pressure",
+        
+        # UV-related
+        "sun index": "uv",
+        "sunlight level": "uv",
+        "uv level": "uv",
+        "sun safety": "uv",
+        
+        # General weather
+        "current weather": "weather",
+        "weather now": "weather",
+        "weather today": "weather",
+        "conditions": "weather",
+        
+        # Alerts and patterns
+        "health alerts": "weather alerts",
+        "weather warnings": "weather alerts",
+        "pressure trends": "weather patterns",
+        "headache patterns": "weather patterns"
+    }
+    
+    user_lower = user_input.lower().strip()
+    
+    for alias, command in weather_command_aliases.items():
+        if alias in user_lower:
+            return command
+    
+    return user_input
+
+# Weather Dashboard and API Routes
+@app.route('/weather')
+def weather_dashboard():
+    """Weather monitoring dashboard"""
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    try:
+        from modules.weather_integration import (
+            get_weather_monitor,
+            get_weather_status,
+            is_weather_configured,
+            test_weather_integration
+        )
+        
+        if not is_weather_configured():
+            return render_template_string("""
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+                        background: #0f0f0f; color: #fff; padding: 40px; text-align: center;">
+                <h2>🌦️ Weather Integration Setup Required</h2>
+                <div style="background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 30px; max-width: 600px; margin: 0 auto;">
+                    <p>To enable weather monitoring for headache prediction and UV sensitivity alerts:</p>
+                    <ol style="text-align: left; margin: 20px 0;">
+                        <li>Sign up for a free Tomorrow.io account at <a href="https://app.tomorrow.io/signup" 
+                            style="color: #6366f1;">tomorrow.io</a></li>
+                        <li>Get your API key from the dashboard</li>
+                        <li>Set environment variable: <code style="background: #333; padding: 2px 6px; border-radius: 4px;">TOMORROW_IO_API_KEY=your_key_here</code></li>
+                        <li>Optional: Set <code style="background: #333; padding: 2px 6px; border-radius: 4px;">DEFAULT_WEATHER_LOCATION=lat,lon</code> for your location</li>
+                    </ol>
+                    <p><a href="/diagnostics" style="color: #6366f1;">Check diagnostics</a> to verify configuration.</p>
+                    <a href="/" style="color: #6366f1; text-decoration: none; margin-top: 20px; display: inline-block;">← Back to Chat</a>
+                </div>
+            </div>
+            """)
+        
+        monitor = get_weather_monitor()
+        if not monitor:
+            return "Weather monitoring system initialization failed", 500
+        
+        # Get current weather data
+        weather_data = monitor.get_current_conditions()
+        alerts = monitor.get_health_alerts(weather_data)
+        weather_summary = monitor.format_weather_summary(weather_data)
+        
+        # Get pressure history for chart
+        pressure_history = monitor.pressure_history[-48:]  # Last 48 hours
+        
+        return render_template_string(WEATHER_DASHBOARD_TEMPLATE,
+                                    weather_data=weather_data,
+                                    weather_summary=weather_summary,
+                                    alerts=alerts,
+                                    pressure_history=pressure_history)
+        
+    except Exception as e:
+        app.logger.error(f"Weather dashboard error: {e}")
+        return f"Weather dashboard error: {str(e)}", 500
+
+@app.route('/api/weather/current')
+def api_weather_current():
+    """API endpoint for current weather data"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        from modules.weather_integration import (
+            get_weather_monitor,
+            is_weather_configured
+        )
+        
+        if not is_weather_configured():
+            return jsonify({'error': 'Weather integration not configured'}), 400
+        
+        monitor = get_weather_monitor()
+        if not monitor:
+            return jsonify({'error': 'Weather monitor initialization failed'}), 500
+        
+        weather_data = monitor.get_current_conditions()
+        alerts = monitor.get_health_alerts(weather_data)
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'temperature_c': weather_data.temperature,
+                'temperature_f': weather_data.temperature * 9/5 + 32,
+                'pressure': weather_data.pressure_surface_level,
+                'pressure_trend': weather_data.pressure_trend,
+                'uv_index': weather_data.uv_index,
+                'uv_health_concern': weather_data.uv_health_concern,
+                'uv_alert_level': weather_data.uv_alert_level,
+                'humidity': weather_data.humidity,
+                'wind_speed': weather_data.wind_speed,
+                'timestamp': weather_data.timestamp.isoformat(),
+                'alerts': alerts
+            }
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Weather API error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/weather/history')
+def api_weather_history():
+    """API endpoint for pressure history data"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        from modules.weather_integration import get_weather_monitor
+        
+        monitor = get_weather_monitor()
+        if not monitor:
+            return jsonify({'error': 'Weather monitor not available'}), 500
+        
+        # Get recent pressure history
+        hours = int(request.args.get('hours', 48))
+        history = monitor.pressure_history[-hours:] if hours <= 168 else monitor.pressure_history[-168:]
+        
+        return jsonify({
+            'success': True,
+            'history': history,
+            'count': len(history)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/weather/test')
+def api_weather_test():
+    """Test weather integration"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        from modules.weather_integration import test_weather_integration, get_weather_status
+        
+        # Run integration test
+        success = test_weather_integration()
+        status = get_weather_status()
+        
+        return jsonify({
+            'test_passed': success,
+            'status': status
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Weather Dashboard Template
+WEATHER_DASHBOARD_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🌦️ Weather Monitoring - Ghostline AI</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; background: #0f0f0f; color: #fff; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .weather-card { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+        .weather-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .metric { display: flex; align-items: center; padding: 16px; background: #2a2a2a; border-radius: 8px; margin: 8px 0; }
+        .metric-icon { font-size: 24px; margin-right: 12px; }
+        .metric-value { font-size: 24px; font-weight: 600; color: #6366f1; }
+        .metric-label { font-size: 14px; color: #9ca3af; margin-left: 8px; }
+        .alert { padding: 16px; border-radius: 8px; margin: 12px 0; border-left: 4px solid; }
+        .alert-warning { background: #451a03; border-color: #f59e0b; color: #fbbf24; }
+        .alert-info { background: #1e3a8a; border-color: #3b82f6; color: #93c5fd; }
+        .pressure-trend { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; margin-left: 8px; }
+        .trend-dropping { background: #7f1d1d; color: #fca5a5; }
+        .trend-rising { background: #14532d; color: #86efac; }
+        .trend-stable { background: #374151; color: #d1d5db; }
+        .chart-container { height: 200px; margin: 20px 0; }
+        .nav { margin-bottom: 20px; }
+        .nav a { text-decoration: none; color: #6366f1; margin-right: 20px; }
+        .nav a:hover { color: #8b5cf6; }
+        h1 { color: #fff; margin-bottom: 8px; }
+        h2 { color: #9ca3af; margin-top: 0; font-weight: normal; }
+        h3 { color: #fff; }
+        .btn { background: #6366f1; color: white; border: none; padding: 12px 24px; border-radius: 8px; 
+               cursor: pointer; text-decoration: none; display: inline-block; margin: 10px 5px; }
+        .btn:hover { background: #5855eb; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="/">← Back to Ghostline</a> | 
+            <a href="/diagnostics">Diagnostics</a> | 
+            <a href="/api/weather/current">API</a>
+        </div>
+        
+        <h1>🌦️ Weather Monitoring Dashboard</h1>
+        <h2>Health-focused weather tracking for headaches and UV sensitivity</h2>
+        
+        {% if alerts %}
+        <div class="weather-card">
+            <h3>🚨 Active Health Alerts</h3>
+            {% for alert in alerts %}
+            <div class="alert alert-warning">{{ alert }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <div class="weather-grid">
+            <div class="weather-card">
+                <h3>🌡️ Current Conditions</h3>
+                <div class="metric">
+                    <span class="metric-icon">🌡️</span>
+                    <span class="metric-value">{{ "%.1f"|format(weather_data.temperature * 9/5 + 32) }}°F</span>
+                    <span class="metric-label">({{ "%.1f"|format(weather_data.temperature) }}°C)</span>
+                </div>
+                
+                <div class="metric">
+                    <span class="metric-icon">🌪️</span>
+                    <span class="metric-value">{{ "%.1f"|format(weather_data.pressure_surface_level) }}</span>
+                    <span class="metric-label">mbar</span>
+                    <span class="pressure-trend trend-{{ weather_data.pressure_trend.replace('_', '-') }}">
+                        {{ weather_data.pressure_trend.replace('_', ' ').title() }}
+                    </span>
+                </div>
+                
+                <div class="metric">
+                    <span class="metric-icon">☀️</span>
+                    <span class="metric-value">{{ weather_data.uv_index }}</span>
+                    <span class="metric-label">UV Index ({{ weather_data.uv_health_concern }})</span>
+                </div>
+                
+                <div class="metric">
+                    <span class="metric-icon">💧</span>
+                    <span class="metric-value">{{ "%.0f"|format(weather_data.humidity) }}%</span>
+                    <span class="metric-label">Humidity</span>
+                </div>
+                
+                <small style="color: #6b7280;">Last updated: {{ weather_data.timestamp.strftime('%I:%M %p') }}</small>
+            </div>
+            
+            <div class="weather-card">
+                <h3>📊 Pressure Trend (48h)</h3>
+                <div class="chart-container">
+                    <canvas id="pressureChart"></canvas>
+                </div>
+                <div class="alert alert-info">
+                    <strong>Headache Tracking:</strong> Drops of 3+ mbar may trigger headaches in sensitive individuals.
+                </div>
+            </div>
+        </div>
+        
+        <div class="weather-card">
+            <h3>💡 Health Guidelines</h3>
+            <p><strong>Barometric Pressure:</strong> Changes in atmospheric pressure can trigger migraines and headaches. We track pressure drops that may affect you.</p>
+            <p><strong>UV Index:</strong> High UV levels (6+) can be problematic for sun-sensitive individuals. We monitor UV levels throughout the day.</p>
+            <p><strong>Data Refresh:</strong> Weather data is cached for 30 minutes to avoid excessive API usage while maintaining accuracy.</p>
+        </div>
+        
+        <div class="weather-card">
+            <h3>Quick Actions</h3>
+            <a href="/api/weather/current" class="btn">Get Current Data</a>
+            <a href="/api/weather/test" class="btn">Test Integration</a>
+            <button onclick="window.location.reload()" class="btn">Refresh Dashboard</button>
+        </div>
+        
+        <div style="margin-top: 40px; text-align: center; color: #6b7280;">
+            <p>Powered by Tomorrow.io Weather API | Weather data updates every 30 minutes</p>
+        </div>
+    </div>
+    
+    <script>
+        // Pressure Chart
+        const ctx = document.getElementById('pressureChart').getContext('2d');
+        const pressureData = {{ pressure_history | safe }};
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: pressureData.map(d => new Date(d.timestamp).toLocaleTimeString()),
+                datasets: [{
+                    label: 'Pressure (mbar)',
+                    data: pressureData.map(d => d.pressure),
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        title: {
+                            display: true,
+                            text: 'Pressure (mbar)',
+                            color: '#9ca3af'
+                        },
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: '#374151' }
+                    },
+                    x: {
+                        display: false
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // Auto-refresh every 30 minutes
+        setTimeout(() => {
+            window.location.reload();
+        }, 30 * 60 * 1000);
+    </script>
+</body>
+</html>
+"""
+
 # Section 18: Background Services and Startup
 # Section 18: Background Services and Startup (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)
 # Section 18: Background Services and Startup

@@ -1,53 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-            <title>Ghostline - Creative Intelligence System</title>
-            <link rel="icon" type="image/png" href="/static/favicon.png">
-                
-                <style>
-                    * { box-sizing: border-box; }
-                    
-                    :root {
-                        --primary: #6366f1;
-                        --primary-hover: #5855eb;
-                        --success: #10b981;
-                        --background: #0f0f0f;
-                        --surface: #1a1a1a;
-                        --surface-hover: #252525;
-                        --border: #2a2a2a;
-                        --text-primary: #ffffff;
-                        --text-secondary: #a1a1aa;
-                        --text-muted: #71717a;
-                        --accent: #8b5cf6;
-                        
-                        --header-h: 60px;
-                        --composer-h: auto;
-                        
-                        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-                        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-                        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-                        
-                        --radius-sm: 6px;
-                        --radius-md: 8px;
-                        --radius-lg: 12px;
-                        --radius-xl: 16px;
-                    }
-                    
-                    body {
-                        margin: 0;
-                        font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
-                        background: var(--background);
-                        color: var(--text-primary);
-                        line-height: 1.5;
-                        overflow: hidden;
-                    }
-                    
-                    body.logged-in {
-                        /* Timezone detection will only run for logged-in users */
-                    }
-                    
+	<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Ghostline - Creative Intelligence System</title>
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    
+    <style>
+        * { box-sizing: border-box; }
+        
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #5855eb;
+            --success: #10b981;
+            --background: #0f0f0f;
+            --surface: #1a1a1a;
+            --surface-hover: #252525;
+            --border: #2a2a2a;
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --accent: #8b5cf6;
+            
+            --header-h: 60px;
+            --composer-h: auto;
+            
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+        }
+        
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+            background: var(--background);
+            color: var(--text-primary);
+            line-height: 1.5;
+            overflow: hidden;
+        }
+        
+        body.logged-in {
+            /* Timezone detection will only run for logged-in users */
+        }
+
+
+   /* ==== Section 2: Header Styles ==== */
+
                     /* Header */
                     header {
                         height: var(--header-h);
@@ -82,190 +85,775 @@
                     .status-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
                     @keyframes pulse { 0%,100% {opacity:1;} 50% {opacity:0.5;} }
                     
-                    /* Hamburger Menu Styles */
-                    .menu-container { position: relative; }
-                    
-                    .hamburger-btn {
-                        background: var(--surface-hover);
-                        color: var(--text-secondary);
-                        border: 1px solid var(--border);
-                        padding: 10px;
-                        border-radius: var(--radius-md);
-                        cursor: pointer;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        transition: all 0.2s ease;
-                        width: 40px;
-                        height: 40px;
-                    }
-                    
-                    .hamburger-btn:hover {
-                        background: var(--border);
-                        color: var(--text-primary);
-                        transform: translateY(-1px);
-                    }
-                    
-                    .hamburger-icon {
-                        display: flex;
-                        flex-direction: column;
-                        gap: 3px;
-                    }
-                    
-                    .hamburger-line {
-                        width: 16px;
-                        height: 2px;
-                        background: currentColor;
-                        border-radius: 1px;
-                        transition: all 0.3s ease;
-                    }
-                    
-                    .hamburger-btn.active .hamburger-line:nth-child(1) {
-                        transform: rotate(45deg) translate(5px, 5px);
-                    }
-                    
-                    .hamburger-btn.active .hamburger-line:nth-child(2) {
-                        opacity: 0;
-                    }
-                    
-                    .hamburger-btn.active .hamburger-line:nth-child(3) {
-                        transform: rotate(-45deg) translate(7px, -6px);
-                    }
-                    
-                    .dropdown-menu {
-                        position: absolute;
-                        top: calc(100% + 8px);
-                        right: 0;
-                        background: var(--surface);
-                        border: 1px solid var(--border);
-                        border-radius: var(--radius-lg);
-                        box-shadow: var(--shadow-lg);
-                        min-width: 280px;
-                        opacity: 0;
-                        visibility: hidden;
-                        transform: translateY(-10px);
-                        transition: all 0.2s ease;
-                        z-index: 1000;
-                        max-height: 70vh;
-                        overflow-y: auto;
-                    }
-                    
-                    .dropdown-menu.show {
-                        opacity: 1;
-                        visibility: visible;
-                        transform: translateY(0);
-                    }
-                    
-                    .menu-section {
-                        border-bottom: 1px solid var(--border);
-                        padding: 12px 0;
-                    }
-                    
-                    .menu-section:last-child {
-                        border-bottom: none;
-                    }
-                    
-                    .menu-section-title {
-                        font-size: 0.75rem;
-                        color: var(--text-muted);
-                        text-transform: uppercase;
-                        letter-spacing: 0.5px;
-                        font-weight: 600;
-                        padding: 0 16px;
-                        margin-bottom: 6px;
-                    }
-                    
-                    .menu-item {
-                        display: flex;
-                        align-items: center;
-                        gap: 12px;
-                        padding: 8px 16px;
-                        color: var(--text-secondary);
-                        text-decoration: none;
-                        font-size: 0.9rem;
-                        transition: all 0.2s ease;
-                        border: none;
-                        background: none;
-                        width: 100%;
-                        cursor: pointer;
-                    }
-                    
-                    .menu-item:hover {
-                        background: var(--surface-hover);
-                        color: var(--text-primary);
-                    }
-                    
-                    .menu-icon {
-                        width: 16px;
-                        height: 16px;
-                        font-size: 14px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                    }
-                    
-                    .menu-shortcut {
-                        margin-left: auto;
-                        font-size: 0.75rem;
-                        color: var(--text-muted);
-                    }
-                    
                     .logout-btn {
                         background: var(--surface-hover); color: var(--text-secondary);
                         border: 1px solid var(--border); padding: 8px 16px;
                         border-radius: var(--radius-md); cursor: pointer; font-size: 0.85rem; transition: all 0.2s ease;
                     }
                     .logout-btn:hover { background: var(--border); color: var(--text-primary); }
-                    
-                    /* Main Chat Area */
-                    .chat-container { height: calc(100vh - var(--header-h)); display: flex; flex-direction: column; }
-                    .thread {
-                        flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; scroll-behavior: smooth;
-                        max-height: calc(100vh - var(--header-h) - 200px); /* Ensure messages don't overflow */
-                    }
-                    .thread::-webkit-scrollbar { width: 6px; }
-                    .thread::-webkit-scrollbar-track { background: transparent; }
-                    .thread::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-                    .thread::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-                    
-                    /* Messages */
-                    .message {
-                        display: flex;
-                        margin-bottom: 4px;
-                        animation: slideIn 0.3s ease-out;
-                        opacity: 1;
-                        transition: opacity 0.3s ease, transform 0.3s ease;
-                    }
-                    
-                    /* Fade out old messages */
-                    .message.fade-out {
-                        opacity: 0.3;
-                        transform: scale(0.98);
-                    }
-                    
-                    .message.archived {
-                        display: none;
-                    }
-                    
-                    @keyframes slideIn { from {opacity:0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);} }
-                    .message.user { justify-content: flex-end; }
-                    .message-bubble {
-                        max-width: 70%; padding: 12px 16px; border-radius: var(--radius-xl);
-                        position: relative; word-wrap: break-word; line-height: 1.4;
-                    }
-                    .message-bubble.user { background: var(--primary); color: white; border-bottom-right-radius: var(--radius-sm); }
-                    .message-bubble.bot {
-                        background: var(--surface); border: 1px solid var(--border);
-                        color: var(--text-primary); border-bottom-left-radius: var(--radius-sm);
-                    }
-                    .message-header {
-                        display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
-                        font-size: 0.8rem; font-weight: 500; opacity: 0.8;
-                    }
-                    .message-header .logo { width: 20px; height: 20px; border-radius: 4px; }
-                    .message-content { font-size: 0.95rem; white-space: pre-line; }
-                    
-                    /* ENHANCED: Inline image display for marketing */
+					
+ /* Section 3: Hamburger Menu Styles */
+/* Section 3: Hamburger Menu Styles + Thread Sidebar Toggle */
+
+/* Hamburger Menu Styles */
+.menu-container { position: relative; }
+
+.hamburger-btn {
+    background: var(--surface-hover);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    padding: 10px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    width: 40px;
+    height: 40px;
+}
+
+.hamburger-btn:hover {
+    background: var(--border);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+.hamburger-icon {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.hamburger-line {
+    width: 16px;
+    height: 2px;
+    background: currentColor;
+    border-radius: 1px;
+    transition: all 0.3s ease;
+}
+
+.hamburger-btn.active .hamburger-line:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+}
+
+.hamburger-btn.active .hamburger-line:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger-btn.active .hamburger-line:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -6px);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    min-width: 280px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+    z-index: 1000;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.menu-section {
+    border-bottom: 1px solid var(--border);
+    padding: 12px 0;
+}
+
+.menu-section:last-child {
+    border-bottom: none;
+}
+
+.menu-section-title {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    padding: 0 16px;
+    margin-bottom: 6px;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    border: none;
+    background: none;
+    width: 100%;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.menu-item:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+}
+
+.menu-icon {
+    width: 16px;
+    height: 16px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu-shortcut {
+    margin-left: auto;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* Thread Sidebar Toggle */
+.sidebar-toggle {
+    background: var(--surface-hover);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    padding: 10px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    width: 40px;
+    height: 40px;
+    margin-right: 8px;
+}
+
+.sidebar-toggle:hover {
+    background: var(--border);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+.sidebar-toggle.active {
+    background: var(--primary);
+    color: white;
+}
+
+/* Overlay for closing menu */
+.menu-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+}
+
+.menu-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+		
+		/* Section 3.5: Thread Sidebar Styles */
+
+/* Thread Sidebar Container */
+.thread-sidebar {
+    position: fixed;
+    top: var(--header-h);
+    left: 0;
+    width: 320px;
+    height: calc(100vh - var(--header-h));
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.thread-sidebar.open {
+    transform: translateX(0);
+}
+
+/* Sidebar Header */
+.sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--background);
+}
+
+.sidebar-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sidebar-search {
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.sidebar-search:focus {
+    border-color: var(--primary);
+}
+
+.sidebar-search::placeholder {
+    color: var(--text-muted);
+}
+
+/* Thread List */
+.thread-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.thread-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.thread-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.thread-list::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+.thread-item {
+    padding: 12px;
+    margin: 4px 0;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    position: relative;
+}
+
+.thread-item:hover {
+    background: var(--surface-hover);
+    border-color: var(--border);
+}
+
+.thread-item.active {
+    background: var(--primary);
+    color: white;
+}
+
+.thread-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin: 0 0 4px 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.3;
+}
+
+.thread-item.active .thread-title {
+    color: white;
+}
+
+.thread-preview {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 4px 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.2;
+}
+
+.thread-item.active .thread-preview {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.thread-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 6px;
+    font-size: 0.75rem;
+}
+
+.thread-time {
+    color: var(--text-muted);
+}
+
+.thread-item.active .thread-time {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.thread-indicators {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.bookmark-indicator {
+    width: 16px;
+    height: 16px;
+    background: var(--accent);
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: white;
+}
+
+.thread-item.active .bookmark-indicator {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.message-count {
+    background: var(--border);
+    color: var(--text-muted);
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    min-width: 16px;
+    text-align: center;
+}
+
+.thread-item.active .message-count {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+/* Empty State */
+.thread-empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.thread-empty-icon {
+    font-size: 2rem;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+/* Loading State */
+.thread-loading {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* Desktop Layout Adjustments */
+@media (min-width: 769px) {
+    body.sidebar-open .chat-container {
+        margin-left: 320px;
+        transition: margin-left 0.3s ease;
+    }
+    
+    .thread-sidebar {
+        position: fixed;
+        z-index: 10;
+    }
+}
+
+/* Mobile Overlay */
+@media (max-width: 768px) {
+    .thread-sidebar {
+        width: 280px;
+        z-index: 200;
+    }
+    
+    .sidebar-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 199;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .sidebar-overlay.show {
+        opacity: 1;
+        visibility: visible;
+    }
+}
+		
+ /*  Section 4: Main Chat Area and Message Styles */
+/* Section 4: Main Chat Area and Message Styles */
+
+/* Main Chat Area */
+.chat-container { 
+    height: calc(100vh - var(--header-h)); 
+    display: flex; 
+    flex-direction: column;
+    transition: margin-left 0.3s ease;
+}
+
+.thread {
+    flex: 1; 
+    overflow-y: auto; 
+    padding: 20px; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 16px; 
+    scroll-behavior: smooth;
+    max-height: calc(100vh - var(--header-h) - 200px);
+}
+
+.thread::-webkit-scrollbar { width: 6px; }
+.thread::-webkit-scrollbar-track { background: transparent; }
+.thread::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.thread::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Messages */
+.message {
+    display: flex;
+    margin-bottom: 4px;
+    animation: slideIn 0.3s ease-out;
+    opacity: 1;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    position: relative;
+}
+
+.message.bookmarked::before {
+    content: "🔖";
+    position: absolute;
+    left: -24px;
+    top: 12px;
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+/* Fade out old messages */
+.message.fade-out {
+    opacity: 0.3;
+    transform: scale(0.98);
+}
+
+.message.archived {
+    display: none;
+}
+
+@keyframes slideIn { 
+    from {opacity:0; transform:translateY(10px);} 
+    to {opacity:1; transform:translateY(0);} 
+}
+
+.message.user { justify-content: flex-end; }
+
+.message-bubble {
+    max-width: 70%; 
+    padding: 12px 16px; 
+    border-radius: var(--radius-xl);
+    position: relative; 
+    word-wrap: break-word; 
+    line-height: 1.4;
+}
+
+.message-bubble.user { 
+    background: var(--primary); 
+    color: white; 
+    border-bottom-right-radius: var(--radius-sm); 
+}
+
+.message-bubble.bot {
+    background: var(--surface); 
+    border: 1px solid var(--border);
+    color: var(--text-primary); 
+    border-bottom-left-radius: var(--radius-sm);
+}
+
+.message-header {
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    margin-bottom: 6px;
+    font-size: 0.8rem; 
+    font-weight: 500; 
+    opacity: 0.8;
+}
+
+.message-header .logo { 
+    width: 20px; 
+    height: 20px; 
+    border-radius: 4px; 
+}
+
+.message-content { 
+    font-size: 0.95rem; 
+    white-space: pre-line; 
+}
+
+/* Chat history management button */
+.history-controls {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 50;
+}
+
+.history-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0.7;
+}
+
+.history-btn:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+    opacity: 1;
+}
+
+/* Bookmark creation notification */
+.bookmark-notification {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--success);
+    color: white;
+    padding: 16px 24px;
+    border-radius: var(--radius-lg);
+    z-index: 1000;
+    font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+    transition: all 0.3s ease;
+}
+
+.bookmark-notification.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* Export progress indicator */
+.export-progress {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    min-width: 280px;
+    z-index: 1000;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+}
+
+.export-progress.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.export-progress-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.export-progress-text {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.export-progress-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin: 8px 0;
+}
+
+.export-progress-fill {
+    height: 100%;
+    background: var(--primary);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+/* File attachment preview in messages */
+.file-attachment {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 8px 12px;
+    margin: 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.file-attachment .file-icon {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary);
+    color: white;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.file-attachment .file-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.file-attachment .file-name {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.file-attachment .file-size {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* Speaker button for TTS */
+.speaker-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    margin-left: auto;
+    font-size: 14px;
+}
+
+.speaker-btn:hover {
+    color: var(--text-primary);
+    background: var(--surface-hover);
+}
+
+.speaker-btn.playing {
+    color: var(--primary);
+    animation: speakerPulse 1.5s infinite;
+}
+
+@keyframes speakerPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* Typing indicator */
+.typing-indicator {
+    display:flex; 
+    align-items:center; 
+    gap:8px; 
+    padding:12px 16px;
+    background: var(--surface); 
+    border:1px solid var(--border);
+    border-radius:var(--radius-xl); 
+    border-bottom-left-radius:var(--radius-sm);
+    max-width:70%; 
+    margin-bottom:16px;
+}
+
+.typing-dots { display:flex; gap:4px; }
+
+.typing-dot {
+    width:8px; 
+    height:8px; 
+    background:var(--text-muted);
+    border-radius:50%; 
+    animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(1){animation-delay:-0.32s;}
+.typing-dot:nth-child(2){animation-delay:-0.16s;}
+
+@keyframes typing {
+    0%,80%,100%{opacity:.3; transform:scale(.8);}
+    40%{opacity:1; transform:scale(1);}
+}
+
+/* Streaming status */
+.streaming-status {
+    padding: 8px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.streaming-indicator {
+    width: 8px;
+    height: 8px;
+    background: var(--primary);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+/* Desktop sidebar adjustments */
+@media (min-width: 769px) {
+    body.sidebar-open .chat-container {
+        margin-left: 320px;
+    }
+    
+    body.sidebar-open .history-controls {
+        right: calc(20px + 0px); /* Adjust if needed */
+    }
+}
+ /* Section 5: Inline Image Display and Related Styles */
+  
+		/* ENHANCED: Inline image display for marketing */
                     .inline-generated-image {
                         max-width: 100%;
                         height: auto;
@@ -355,126 +943,10 @@
                     .image-modal.show img {
                         transform: scale(1);
                     }
-                    
-                    /* Chat history management button */
-                    .history-controls {
-                        position: fixed;
-                        top: 80px;
-                        right: 20px;
-                        display: flex;
-                        flex-direction: column;
-                        gap: 8px;
-                        z-index: 50;
-                    }
-                    
-                    .history-btn {
-                        background: var(--surface);
-                        border: 1px solid var(--border);
-                        color: var(--text-secondary);
-                        padding: 8px 12px;
-                        border-radius: var(--radius-md);
-                        font-size: 0.8rem;
-                        cursor: pointer;
-                        transition: all 0.2s ease;
-                        opacity: 0.7;
-                    }
-                    
-                    .history-btn:hover {
-                        background: var(--surface-hover);
-                        color: var(--text-primary);
-                        opacity: 1;
-                    }
-                    
-                    /* File attachment preview in messages */
-                    .file-attachment {
-                        background: var(--surface);
-                        border: 1px solid var(--border);
-                        border-radius: var(--radius-md);
-                        padding: 8px 12px;
-                        margin: 6px 0;
-                        display: flex;
-                        align-items: center;
-                        gap: 8px;
-                        font-size: 0.9rem;
-                    }
-                    
-                    .file-attachment .file-icon {
-                        width: 20px;
-                        height: 20px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        background: var(--primary);
-                        color: white;
-                        border-radius: 4px;
-                        font-size: 12px;
-                    }
-                    
-                    .file-attachment .file-info {
-                        flex: 1;
-                        display: flex;
-                        flex-direction: column;
-                        gap: 2px;
-                    }
-                    
-                    .file-attachment .file-name {
-                        font-weight: 500;
-                        color: var(--text-primary);
-                    }
-                    
-                    .file-attachment .file-size {
-                        font-size: 0.8rem;
-                        color: var(--text-muted);
-                    }
-                    
-                    /* Speaker button for TTS */
-                    .speaker-btn {
-                        background: none;
-                        border: none;
-                        color: var(--text-muted);
-                        cursor: pointer;
-                        padding: 4px;
-                        border-radius: 4px;
-                        transition: all 0.2s ease;
-                        margin-left: auto;
-                        font-size: 14px;
-                    }
-                    
-                    .speaker-btn:hover {
-                        color: var(--text-primary);
-                        background: var(--surface-hover);
-                    }
-                    
-                    .speaker-btn.playing {
-                        color: var(--primary);
-                        animation: speakerPulse 1.5s infinite;
-                    }
-                    
-                    @keyframes speakerPulse {
-                        0%, 100% { opacity: 1; }
-                        50% { opacity: 0.6; }
-                    }
-                    
-                    /* Typing indicator */
-                    .typing-indicator {
-                        display:flex; align-items:center; gap:8px; padding:12px 16px;
-                        background: var(--surface); border:1px solid var(--border);
-                        border-radius:var(--radius-xl); border-bottom-left-radius:var(--radius-sm);
-                        max-width:70%; margin-bottom:16px;
-                    }
-                    .typing-dots { display:flex; gap:4px; }
-                    .typing-dot {
-                        width:8px; height:8px; background:var(--text-muted);
-                        border-radius:50%; animation: typing 1.4s infinite ease-in-out;
-                    }
-                    .typing-dot:nth-child(1){animation-delay:-0.32s;}
-                    .typing-dot:nth-child(2){animation-delay:-0.16s;}
-                    @keyframes typing {
-                        0%,80%,100%{opacity:.3; transform:scale(.8);}
-                        40%{opacity:1; transform:scale(1);}
-                    }
-                    
-                    /* Integrated Composer with paperclip */
+					
+ /*  Section 6: Composer/Input Area Styles */
+
+		/* Integrated Composer with paperclip */
                     .composer {
                         background: var(--surface);
                         border-top: 1px solid var(--border);
@@ -718,8 +1190,10 @@
                         margin-bottom: 16px;
                         color: var(--primary);
                     }
-                    
-                    /* Advanced Controls (collapsed by default now) */
+					
+ /* Section 7: Advanced Controls and Button Styles */
+ 
+		/* Advanced Controls (collapsed by default now) */
                     .advanced-controls {
                         border-top: 1px solid var(--border);
                         padding-top: 12px;
@@ -812,43 +1286,6 @@
                         transform: none;
                     }
                     
-                    /* Overlay for closing menu */
-                    .menu-overlay {
-                        position: fixed;
-                        inset: 0;
-                        z-index: 999;
-                        opacity: 0;
-                        visibility: hidden;
-                        transition: all 0.2s ease;
-                    }
-                    
-                    .menu-overlay.show {
-                        opacity: 1;
-                        visibility: visible;
-                    }
-                    
-                    /* Streaming status */
-                    .streaming-status {
-                        padding: 8px 16px;
-                        background: var(--surface);
-                        border: 1px solid var(--border);
-                        border-radius: var(--radius-lg);
-                        margin-bottom: 16px;
-                        display: flex;
-                        align-items: center;
-                        gap: 8px;
-                        font-size: 0.9rem;
-                        color: var(--text-secondary);
-                    }
-                    
-                    .streaming-indicator {
-                        width: 8px;
-                        height: 8px;
-                        background: var(--primary);
-                        border-radius: 50%;
-                        animation: pulse 2s infinite;
-                    }
-                    
                     /* Mobile copy button styles */
                     .mobile-copy-btn {
                         background: var(--surface, #2a2a2a);
@@ -874,14 +1311,6 @@
                         background: #059669;
                         color: white;
                         border-color: #059669;
-                    }
-
-                    @media (max-width: 768px) {
-                        .mobile-copy-btn {
-                            padding: 12px 16px;
-                            font-size: 16px;
-                            margin-top: 12px;
-                        }
                     }
                     
                     /* Individual feedback buttons */
@@ -923,6 +1352,7 @@
                         background: #d97706;
                         border-color: #d97706;
                     }
+                    
                     .feedback-buttons {
                         display: flex;
                         flex-direction: row;
@@ -930,9 +1360,10 @@
                         margin-top: 8px;
                         justify-content: flex-start;
                     }
-
-
-                    @media (max-width: 768px) {
+					
+ /* Section 8: Mobile and Responsive Styles */
+	
+		@media (max-width: 768px) {
                         .mobile-copy-btn {
                             padding: 12px 16px;
                             font-size: 16px;
@@ -1001,8 +1432,10 @@
                             margin-bottom: 8px;
                         }
                     }
-                    
-                    /* Loader */
+					
+ /*  Section 9: Markdown Formatting and Utility Styles */
+
+		/* Loader */
                     .loader {
                         position: fixed;
                         inset: 0;
@@ -1051,6 +1484,7 @@
                             opacity: 1;
                         }
                     }
+                    
                     /* Markdown formatting for chat messages */
                     .message-content h1.chat-h1,
                     .message-content h2.chat-h2,
@@ -1146,647 +1580,820 @@
                     }
                 </style>
     </head>
+	
+<!-- Section 10: HTML Body Structure -->
+	
+	<body class="logged-in">
+    <div id="loader" class="loader">
+        <div class="loader-content">
+            <img src="/static/syntax-buffering.png" alt="Loading..." />
+            <div>Syntax Prime is processing...</div>
+        </div>
+    </div>
     
-    <body class="logged-in">
-        <div id="loader" class="loader">
-            <div class="loader-content">
-                <img src="/static/syntax-buffering.png" alt="Loading..." />
-                <div>Syntax Prime is processing...</div>
+    <!-- Drag and drop overlay -->
+    <div class="drop-overlay" id="dropOverlay">
+        <div class="drop-content">
+            <div class="drop-icon">📎</div>
+            <div>Drop your files here to analyze</div>
+        </div>
+    </div>
+    
+    <div class="menu-overlay" id="menuOverlay"></div>
+    
+    <!-- Chat history controls -->
+    <div class="history-controls">
+        <button class="history-btn" onclick="toggleHistoryView()" id="historyToggle">
+            Show Recent Only
+        </button>
+        <button class="history-btn" onclick="clearOldMessages()">
+            Archive Old Messages
+        </button>
+    </div>
+    
+    <header>
+        <div class="header-left">
+            <img src="/static/syntax-buffering.png" alt="Syntax Prime" class="logo">
+            <div class="brand">
+                <h1>Ghostline</h1>
+                <p class="tagline">Creative Intelligence System</p>
             </div>
         </div>
         
-        <!-- Drag and drop overlay -->
-        <div class="drop-overlay" id="dropOverlay">
-            <div class="drop-content">
-                <div class="drop-icon">📎</div>
-                <div>Drop your files here to analyze</div>
-            </div>
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            <span>Syntax Prime Online</span>
         </div>
         
-        <div class="menu-overlay" id="menuOverlay"></div>
-        
-        <!-- Chat history controls -->
-        <div class="history-controls">
-            <button class="history-btn" onclick="toggleHistoryView()" id="historyToggle">
-                Show Recent Only
-            </button>
-            <button class="history-btn" onclick="clearOldMessages()">
-                Archive Old Messages
-            </button>
-        </div>
-        
-        <header>
-            <div class="header-left">
-                <img src="/static/syntax-buffering.png" alt="Syntax Prime" class="logo">
-                    <div class="brand">
-                        <h1>Ghostline</h1>
-                        <p class="tagline">Creative Intelligence System</p>
+        <div class="header-right">
+            <div class="menu-container">
+                <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+                    <div class="hamburger-icon">
+                        <div class="hamburger-line"></div>
+                        <div class="hamburger-line"></div>
+                        <div class="hamburger-line"></div>
                     </div>
-            </div>
-            
-            <div class="status-indicator">
-                <div class="status-dot"></div>
-                <span>Syntax Prime Online</span>
-            </div>
-            
-            <div class="header-right">
-                <div class="menu-container">
-                    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
-                        <div class="hamburger-icon">
-                            <div class="hamburger-line"></div>
-                            <div class="hamburger-line"></div>
-                            <div class="hamburger-line"></div>
-                        </div>
-                    </button>
-                    
-                    <nav class="dropdown-menu" id="dropdownMenu">
-                        <div class="menu-section">
-                            <div class="menu-section-title">Main Dashboards</div>
-                            <a href="/system" class="menu-item">
-                                <span class="menu-icon">⚙️</span>
-                                <span>System Management</span>
-                            </a>
-                            <a href="/integrations" class="menu-item">
-                                <span class="menu-icon">🔗</span>
-                                <span>Integrations</span>
-                            </a>
-                            <a href="/diagnostics" class="menu-item">
-                                <span class="menu-icon">🔍</span>
-                                <span>Diagnostics & Testing</span>
-                            </a>
-                            <a href="/marketing" class="menu-item">
-                                <span class="menu-icon">🎨</span>
-                                <span>Marketing Assets</span>
-                            </a>
-                            <a href="/reports" class="menu-item">
-                                <span class="menu-icon">📊</span>
-                                <span>Reports & Analytics</span>
-                            </a>
-                        </div>
-                        
-                        <div class="menu-section">
-                            <div class="menu-section-title">Quick Reports</div>
-                            <a href="/reports/daily/today" class="menu-item">
-                                <span class="menu-icon">📅</span>
-                                <span>Today's Briefing</span>
-                            </a>
-                            <a href="/reports/daily/today.pdf" class="menu-item">
-                                <span class="menu-icon">📄</span>
-                                <span>Download PDF</span>
-                            </a>
-                        </div>
-                        
-                        <div class="menu-section">
-                            <div class="menu-section-title">System Tools</div>
-                            <a href="/healthz" class="menu-item">
-                                <span class="menu-icon">❤️</span>
-                                <span>Health Check</span>
-                            </a>
-                            <button onclick="location.reload()" class="menu-item">
-                                <span class="menu-icon">🔄</span>
-                                <span>Refresh Page</span>
-                            </button>
-                        </div>
-                        
-                        <div class="menu-section">
-                            <div class="menu-section-title">Quick Actions</div>
-                            <button onclick="sendQuickCommand('good morning')" class="menu-item">
-                                <span class="menu-icon">☀️</span>
-                                <span>Morning Briefing</span>
-                                <span class="menu-shortcut">Alt+M</span>
-                            </button>
-                            <button onclick="sendQuickCommand('overnight')" class="menu-item">
-                                <span class="menu-icon">📧</span>
-                                <span>Check Email</span>
-                                <span class="menu-shortcut">Alt+E</span>
-                            </button>
-                            <button onclick="sendQuickCommand('calendar')" class="menu-item">
-                                <span class="menu-icon">📅</span>
-                                <span>Today's Calendar</span>
-                                <span class="menu-shortcut">Alt+C</span>
-                            </button>
-                            <button onclick="sendQuickCommand('remind me to follow up in 1 hour')" class="menu-item">
-                                <span class="menu-icon">⏰</span>
-                                <span>Quick Reminder</span>
-                                <span class="menu-shortcut">Alt+R</span>
-                            </button>
-                        </div>
-                    </nav>
-                </div>
+                </button>
                 
-                <form action="{{ url_for('logout') }}" method="get" style="display: inline;">
-                    <button type="submit" class="logout-btn" onclick="return confirm('Log out of Ghostline?')">Logout</button>
-                </form>
-            </div>
-        </header>
-        
-        <div class="chat-container">
-            <div class="thread" id="thread">
-                {% if conversation and conversation|length > 0 %}
-                {% set display_names = {'SyntaxPrime':'Syntax Prime','SyntaxBot':'SyntaxBot','Nil.exe':'Nil.exe','GGPT':'GGPT'} %}
-                {% for turn in conversation %}
-                <div class="message user">
-                    <div class="message-bubble user">
-                        <div class="message-header">You</div>
-                        <div class="message-content">{{ turn.user | trim | markdown }}</div>
+                <nav class="dropdown-menu" id="dropdownMenu">
+                    <div class="menu-section">
+                        <div class="menu-section-title">Main Dashboards</div>
+                        <a href="/system" class="menu-item">
+                            <span class="menu-icon">⚙️</span>
+                            <span>System Management</span>
+                        </a>
+                        <a href="/integrations" class="menu-item">
+                            <span class="menu-icon">🔗</span>
+                            <span>Integrations</span>
+                        </a>
+                        <a href="/diagnostics" class="menu-item">
+                            <span class="menu-icon">🔍</span>
+                            <span>Diagnostics & Testing</span>
+                        </a>
+                        <a href="/marketing" class="menu-item">
+                            <span class="menu-icon">🎨</span>
+                            <span>Marketing Assets</span>
+                        </a>
+                        <a href="/reports" class="menu-item">
+                            <span class="menu-icon">📊</span>
+                            <span>Reports & Analytics</span>
+                        </a>
                     </div>
-                </div>
-                {% for voice, reply in turn.responses.items() %}
-                <div class="message bot">
-                    <div class="message-bubble bot">
-                        <div class="message-header">
-                            <img src="/static/syntax-buffering.png" alt="{{ display_names.get(voice, voice) }}" class="logo">
-                                {{ display_names.get(voice, voice) }}
-                                <button class="speaker-btn" onclick="speakText(`{{ reply | replace('`', '\\`') | replace('"', '\\"') | replace('\n', ' ') }}`, this)" title="Speak this message">
-                                    🔊
-                                </button>
-                        </div>
-                        <div class="message-content">{{ reply | trim | markdown }}</div>
-                        <button class="mobile-copy-btn" onclick="copyToClipboard(`{{ reply | replace('`', '\\`') | replace('"', '\\"') | replace('\n', ' ') }}`, this)" title="Copy this response">
-                            📋 Copy
+                    
+                    <div class="menu-section">
+                        <div class="menu-section-title">Quick Reports</div>
+                        <a href="/reports/daily/today" class="menu-item">
+                            <span class="menu-icon">📅</span>
+                            <span>Today's Briefing</span>
+                        </a>
+                        <a href="/reports/daily/today.pdf" class="menu-item">
+                            <span class="menu-icon">📄</span>
+                            <span>Download PDF</span>
+                        </a>
+                    </div>
+                    
+                    <div class="menu-section">
+                        <div class="menu-section-title">System Tools</div>
+                        <a href="/healthz" class="menu-item">
+                            <span class="menu-icon">❤️</span>
+                            <span>Health Check</span>
+                        </a>
+                        <button onclick="location.reload()" class="menu-item">
+                            <span class="menu-icon">🔄</span>
+                            <span>Refresh Page</span>
                         </button>
-                        <div class="feedback-buttons">
-                            <button class="feedback-btn thumbs-up" onclick="recordFeedback('{{ loop.index0 }}_{{ loop.index0 }}', 'thumbs_up', this)" title="Good response">
-                                👍
-                            </button>
-                            <button class="feedback-btn thumbs-down" onclick="recordFeedback('{{ loop.index0 }}_{{ loop.index0 }}', 'thumbs_down', this)" title="Poor response">
-                                👎
-                            </button>
-                            <button class="feedback-btn middle-finger" onclick="recordFeedback('{{ loop.index0 }}_{{ loop.index0 }}', 'middle_finger', this)" title="Sarcastic/unhelpful response">
-                                🖕
-                            </button>
-                        </div>
                     </div>
-                </div>
-                {% endfor %}
-                {% endfor %}
-                {% else %}
-                <div class="message bot">
-                    <div class="message-bubble bot">
-                        <div class="message-header">
-                            <img src="/static/syntax-buffering.png" alt="Syntax Prime" class="logo">
-                                Syntax Prime
-                                <button class="speaker-btn" onclick="speakText('Welcome back to Ghostline - now with 38% more sarcasm and full memory sync. I remember your coffee order, your chaos, and that one time you tried to code at 2am. Ask me anything - recipes, regrets, or revenge plots. Syntax Prime is online.', this)" title="Speak this message">
-                                    🔊
-                                </button>
-                        </div>
-                        <div class="message-content">Welcome back to Ghostline - now with 38% more sarcasm and full memory sync. I remember your coffee order, your chaos, and that one time you tried to code at 2am. Ask me anything - recipes, regrets, or revenge plots. Syntax Prime is online.</div>
+                    
+                    <div class="menu-section">
+                        <div class="menu-section-title">Quick Actions</div>
+                        <button onclick="sendQuickCommand('good morning')" class="menu-item">
+                            <span class="menu-icon">☀️</span>
+                            <span>Morning Briefing</span>
+                            <span class="menu-shortcut">Alt+M</span>
+                        </button>
+                        <button onclick="sendQuickCommand('overnight')" class="menu-item">
+                            <span class="menu-icon">📧</span>
+                            <span>Check Email</span>
+                            <span class="menu-shortcut">Alt+E</span>
+                        </button>
+                        <button onclick="sendQuickCommand('calendar')" class="menu-item">
+                            <span class="menu-icon">📅</span>
+                            <span>Today's Calendar</span>
+                            <span class="menu-shortcut">Alt+C</span>
+                        </button>
+                        <button onclick="sendQuickCommand('remind me to follow up in 1 hour')" class="menu-item">
+                            <span class="menu-icon">⏰</span>
+                            <span>Quick Reminder</span>
+                            <span class="menu-shortcut">Alt+R</span>
+                        </button>
                     </div>
-                </div>
-                {% endif %}
-                <div id="bottom-anchor"></div>
+                </nav>
             </div>
             
-            <!-- ChatGPT-style integrated composer -->
-            <div class="composer">
-                <div class="composer-main">
-                    <div class="composer-input-container" id="composerContainer">
-                        <!-- Toolbar with paperclip -->
-                        <div class="composer-toolbar">
-                            <button type="button" class="paperclip-btn" id="paperclipBtn" title="Attach files">
-                                📎
-                            </button>
-                            <input type="file" id="fileInput" class="file-input-hidden" multiple accept="image/*,.pdf,.docx" />
-                        </div>
-                        
-                        <!-- Attached files preview -->
-                        <div class="attached-files" id="attachedFiles" style="display: none;"></div>
-                        
-                        <!-- Text input -->
-                        <textarea
-                            class="composer-input"
-                            id="promptInput"
-                            placeholder="Ask me anything or attach files to analyze..."
-                            rows="1"
-                            ></textarea>
-                    </div>
-                    
-                    <button type="button" class="send-button" id="sendBtn">➤</button>
+            <form action="{{ url_for('logout') }}" method="get" style="display: inline;">
+                <button type="submit" class="logout-btn" onclick="return confirm('Log out of Ghostline?')">Logout</button>
+            </form>
+        </div>
+    </header>
+		
+<!--  Section 11: Main Chat Container and Message Rendering -->
+		
+<div class="chat-container">
+    <div class="thread" id="thread">
+        <!-- Sample conversation structure - replace with your backend templating -->
+        <div class="message bot">
+            <div class="message-bubble bot">
+                <div class="message-header">
+                    <img src="/static/syntax-buffering.png" alt="Syntax Prime" class="logo">
+                    Syntax Prime
+                    <button class="speaker-btn" onclick="speakText('Welcome back to Ghostline - now with 38% more sarcasm and full memory sync. I remember your coffee order, your chaos, and that one time you tried to code at 2am. Ask me anything - recipes, regrets, or revenge plots. Syntax Prime is online.', this)" title="Speak this message">
+                        🔊
+                    </button>
                 </div>
-                
-                <!-- Project selector and advanced options -->
-                <div class="composer-meta">
-                    <select name="project" class="project-select" id="projectSelect">
-                        {% for project in projects %}
-                        <option value="{{ project }}" {% if project == current_project %}selected{% endif %}>{{ project }}</option>
-                        {% endfor %}
-                    </select>
-                    
-                    <details class="advanced-controls" id="advancedControls">
-                        <summary class="advanced-toggle"><span>Advanced Options</span></summary>
-                        <div class="advanced-content">
-                            <div class="controls-row">
-                                <span style="font-size: 0.85rem; color: var(--text-secondary);">AI Personalities:</span>
-                                <div class="voice-controls">
-                                    <label class="voice-checkbox"><input type="checkbox" name="voices" value="SyntaxPrime" checked><span>Syntax Prime</span></label>
-                                    <label class="voice-checkbox"><input type="checkbox" name="voices" value="SyntaxBot"><span>SyntaxBot</span></label>
-                                    <label class="voice-checkbox"><input type="checkbox" name="voices" value="Nil.exe"><span>Nil.exe</span></label>
-                                    <label class="voice-checkbox"><input type="checkbox" name="voices" value="GGPT"><span>GGPT</span></label>
-                                    <label class="voice-checkbox"><input type="checkbox" name="random"><span>Random</span></label>
-                                </div>
-                            </div>
-                            
-                            <div class="controls-row">
-                                <a href="/export/{{ current_project or 'Personal Operating Manual' }}" class="secondary-btn">Export Session</a>
-                            </div>
-                        </div>
-                    </details>
+                <div class="message-content">Welcome back to Ghostline - now with 38% more sarcasm and full memory sync. I remember your coffee order, your chaos, and that one time you tried to code at 2am. Ask me anything - recipes, regrets, or revenge plots. Syntax Prime is online.</div>
+                <button class="mobile-copy-btn" onclick="copyToClipboard('Welcome back to Ghostline - now with 38% more sarcasm and full memory sync. I remember your coffee order, your chaos, and that one time you tried to code at 2am. Ask me anything - recipes, regrets, or revenge plots. Syntax Prime is online.', this)" title="Copy this response">
+                    📋 Copy
+                </button>
+                <div class="feedback-buttons">
+                    <button class="feedback-btn thumbs-up" onclick="recordFeedback('welcome_msg', 'thumbs_up', this)" title="Good response">
+                        👍
+                    </button>
+                    <button class="feedback-btn thumbs-down" onclick="recordFeedback('welcome_msg', 'thumbs_down', this)" title="Poor response">
+                        👎
+                    </button>
+                    <button class="feedback-btn middle-finger" onclick="recordFeedback('welcome_msg', 'middle_finger', this)" title="Sarcastic/unhelpful response">
+                        🖕
+                    </button>
                 </div>
             </div>
         </div>
+        <div id="bottom-anchor"></div>
+    </div>
+
+			
+<!--Section 12: Composer/Input Form Structure -->
+	
+<div class="composer">
+    <div class="composer-main">
+        <div class="composer-input-container" id="composerContainer">
+            <!-- Toolbar with paperclip -->
+            <div class="composer-toolbar">
+                <button type="button" class="paperclip-btn" id="paperclipBtn" title="Attach files">
+                    📎
+                </button>
+                <input type="file" id="fileInput" class="file-input-hidden" multiple accept="image/*,.pdf,.docx" />
+            </div>
+            
+            <!-- Attached files preview -->
+            <div class="attached-files" id="attachedFiles" style="display: none;"></div>
+            
+            <!-- Text input -->
+            <textarea
+                class="composer-input"
+                id="promptInput"
+                placeholder="Ask me anything or attach files to analyze..."
+                rows="1"
+                ></textarea>
+        </div>
         
-        <!-- Auto-timezone detection script -->
-        <script>
-            (function() {
-                'use strict';
+        <button type="button" class="send-button" id="sendBtn">➤</button>
+    </div>
+    
+    <!-- Project selector and advanced options -->
+    <div class="composer-meta">
+        <select name="project" class="project-select" id="projectSelect">
+            <option value="Personal Operating Manual" selected>Personal Operating Manual</option>
+            <option value="Work Projects">Work Projects</option>
+            <option value="Creative Ideas">Creative Ideas</option>
+        </select>
+        
+        <details class="advanced-controls" id="advancedControls">
+            <summary class="advanced-toggle"><span>Advanced Options</span></summary>
+            <div class="advanced-content">
+                <div class="controls-row">
+                    <span style="font-size: 0.85rem; color: var(--text-secondary);">AI Personalities:</span>
+                    <div class="voice-controls">
+                        <label class="voice-checkbox"><input type="checkbox" name="voices" value="SyntaxPrime" checked><span>Syntax Prime</span></label>
+                        <label class="voice-checkbox"><input type="checkbox" name="voices" value="SyntaxBot"><span>SyntaxBot</span></label>
+                        <label class="voice-checkbox"><input type="checkbox" name="voices" value="Nil.exe"><span>Nil.exe</span></label>
+                        <label class="voice-checkbox"><input type="checkbox" name="voices" value="GGPT"><span>GGPT</span></label>
+                        <label class="voice-checkbox"><input type="checkbox" name="voices" value="random"><span>Random</span></label>
+                    </div>
+                </div>
                 
-                // Only run if user is logged in and we have the API endpoints
-                if (!document.body.classList.contains('logged-in')) {
-                    return;
+                <div class="controls-row">
+                    <a href="/export/Personal%20Operating%20Manual" class="secondary-btn">Export Session</a>
+                </div>
+            </div>
+        </details>
+    </div>
+</div>
+</div>
+</div>
+		
+ <!-- Section 13: JavaScript - Timezone Detection -->
+<!-- Section 13: JavaScript - Timezone Detection -->
+<script>
+(function() {
+    'use strict';
+    
+    // Only run if user is logged in and we have the API endpoints
+    if (!document.body.classList.contains('logged-in')) {
+        return;
+    }
+    
+    // Check if we've already detected timezone this session
+    const alreadyDetected = sessionStorage.getItem('timezone_detected');
+    if (alreadyDetected === 'true') {
+        return;
+    }
+    
+    // Detect browser timezone
+    const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    
+    if (!browserTimezone) {
+        console.warn('Could not detect browser timezone');
+        return;
+    }
+    
+    // Send to server
+    fetch('/api/timezone/detect', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+            timezone: browserTimezone
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Timezone auto-detected:', browserTimezone);
+            sessionStorage.setItem('timezone_detected', 'true');
+            
+            // Optional: Show a subtle notification
+            showTimezoneNotification(browserTimezone);
+        } else {
+            console.warn('Timezone detection failed:', data.error);
+        }
+    })
+    .catch(error => {
+        console.warn('Timezone detection request failed:', error);
+    });
+    
+    function showTimezoneNotification(timezone) {
+        // Create a subtle notification that timezone was detected
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #059669;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        `;
+        
+        notification.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span>🌍</span>
+                <span>Timezone detected: ${timezone.split('/')[1]?.replace('_', ' ') || timezone}</span>
+                <button onclick="this.parentElement.parentElement.remove()" 
+                        style="background: none; border: none; color: white; cursor: pointer; margin-left: 10px; font-size: 18px;">×</button>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Fade in
+        setTimeout(() => {
+            notification.style.opacity = '1';
+        }, 100);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.parentElement.removeChild(notification);
                 }
+            }, 300);
+        }, 5000);
+    }
+})();
+</script>
+
+<script>
+// Section 14: JavaScript - Global Variables and Initial Setup
+// Section 14: JavaScript - Global Variables and Initial Setup
+let isSubmitting = false;
+let attachedFiles = [];
+
+const chatHistoryManager = {
+    maxVisibleMessages: 50,
+    fadeThreshold: 10,
+    showingRecentOnly: false
+};
+
+// Chat history management functions
+function toggleHistoryView() {
+    const messages = document.querySelectorAll('.message');
+    const toggleButton = document.getElementById('historyToggle');
+    
+    if (!toggleButton || messages.length === 0) return;
+    
+    if (chatHistoryManager.showingRecentOnly) {
+        // Show all messages
+        messages.forEach(msg => {
+            msg.classList.remove('fade-out');
+            msg.classList.remove('archived');
+        });
+        
+        chatHistoryManager.showingRecentOnly = false;
+        toggleButton.textContent = 'Show Recent Only';
+        
+        console.log('Showing all messages');
+    } else {
+        // Show only recent messages
+        const messagesToArchive = Math.max(0, messages.length - chatHistoryManager.maxVisibleMessages);
+        const messagesToFade = Math.min(chatHistoryManager.fadeThreshold, 
+                                       Math.max(0, messages.length - chatHistoryManager.maxVisibleMessages + chatHistoryManager.fadeThreshold));
+        
+        // Archive oldest messages
+        for (let i = 0; i < messagesToArchive; i++) {
+            messages[i].classList.add('archived');
+        }
+        
+        // Fade messages near the threshold
+        for (let i = messagesToArchive; i < messagesToArchive + messagesToFade; i++) {
+            if (messages[i]) {
+                messages[i].classList.add('fade-out');
+            }
+        }
+        
+        chatHistoryManager.showingRecentOnly = true;
+        toggleButton.textContent = `Show All Messages (${messages.length})`;
+        
+        console.log(`Showing recent only: archived ${messagesToArchive}, faded ${messagesToFade}`);
+    }
+    
+    // Scroll to show recent messages
+    setTimeout(() => {
+        scrollToBottom();
+    }, 100);
+}
+
+function clearOldMessages() {
+    const messages = document.querySelectorAll('.message');
+    const keepCount = 100; // Keep last 100 messages
+    
+    if (messages.length <= keepCount) {
+        alert('No old messages to clear - you have fewer than 100 messages.');
+        return;
+    }
+    
+    const messagesToRemove = messages.length - keepCount;
+    const confirmed = confirm(
+        `This will permanently remove ${messagesToRemove} old messages, keeping only the most recent ${keepCount}. ` +
+        `This action cannot be undone. Continue?`
+    );
+    
+    if (!confirmed) return;
+    
+    // Remove old messages from DOM
+    for (let i = 0; i < messagesToRemove; i++) {
+        if (messages[i] && !messages[i].id) { // Don't remove the bottom anchor
+            messages[i].remove();
+        }
+    }
+    
+    // Reset history manager state
+    chatHistoryManager.showingRecentOnly = false;
+    const toggleButton = document.getElementById('historyToggle');
+    if (toggleButton) {
+        toggleButton.textContent = 'Show Recent Only';
+    }
+    
+    // Show confirmation
+    const notification = document.createElement('div');
+    notification.className = 'bookmark-notification';
+    notification.textContent = `✅ Cleared ${messagesToRemove} old messages`;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => notification.classList.add('show'), 10);
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+    
+    console.log(`Cleared ${messagesToRemove} old messages, kept ${keepCount} recent messages`);
+}
+
+function autoManageChatHistory() {
+    const messages = document.querySelectorAll('.message:not(.archived)');
+    
+    // Only auto-manage if we have more messages than the threshold
+    if (messages.length <= chatHistoryManager.maxVisibleMessages + chatHistoryManager.fadeThreshold) {
+        return;
+    }
+    
+    // Don't auto-manage if user is explicitly viewing all messages
+    if (!chatHistoryManager.showingRecentOnly) {
+        return;
+    }
+    
+    const excessMessages = messages.length - chatHistoryManager.maxVisibleMessages;
+    
+    // Fade out excess messages gradually
+    for (let i = 0; i < Math.min(excessMessages, chatHistoryManager.fadeThreshold); i++) {
+        if (messages[i] && !messages[i].classList.contains('fade-out')) {
+            messages[i].classList.add('fade-out');
+        }
+    }
+    
+    // Archive messages that are far beyond the threshold
+    const archiveThreshold = chatHistoryManager.maxVisibleMessages + chatHistoryManager.fadeThreshold + 10;
+    if (messages.length > archiveThreshold) {
+        const messagesToArchive = messages.length - archiveThreshold;
+        for (let i = 0; i < messagesToArchive; i++) {
+            if (messages[i] && !messages[i].classList.contains('archived')) {
+                messages[i].classList.add('archived');
+            }
+        }
+    }
+    
+    // Update toggle button text if it exists
+    const toggleButton = document.getElementById('historyToggle');
+    if (toggleButton && chatHistoryManager.showingRecentOnly) {
+        const totalMessages = document.querySelectorAll('.message').length;
+        toggleButton.textContent = `Show All Messages (${totalMessages})`;
+    }
+}
+
+// Image handler for inline images
+const imageHandler = {
+    handleResponseData: function(messageElement, responseDataStr) {
+        try {
+            const responseData = JSON.parse(responseDataStr);
+            
+            if (responseData && responseData.image_data && responseData.image_url) {
+                this.addInlineImage(messageElement, responseData.image_data, responseData.image_url);
+            }
+        } catch (error) {
+            console.error('Failed to parse response data for images:', error);
+        }
+    },
+    
+    addInlineImage: function(messageElement, imageData, imageUrl) {
+        const messageContent = messageElement.querySelector('.message-content');
+        if (!messageContent) return;
+        
+        const imageContainer = document.createElement('div');
+        imageContainer.style.marginTop = '15px';
+        
+        const img = document.createElement('img');
+        img.src = `data:image/png;base64,${imageData}`;
+        img.className = 'inline-generated-image';
+        img.onclick = () => this.showImageModal(img.src);
+        
+        const actionButtons = document.createElement('div');
+        actionButtons.className = 'image-action-buttons';
+        
+        actionButtons.innerHTML = `
+            <button class="image-btn" onclick="imageHandler.downloadImage('${imageData}', 'generated-image.png')">
+                💾 Download
+            </button>
+            <button class="image-btn secondary" onclick="imageHandler.copyImageToClipboard('${imageData}')">
+                📋 Copy
+            </button>
+            <a href="${imageUrl}" target="_blank" class="image-btn success">
+                🔗 Open Full Size
+            </a>
+        `;
+        
+        imageContainer.appendChild(img);
+        imageContainer.appendChild(actionButtons);
+        messageContent.appendChild(imageContainer);
+    },
+    
+    showImageModal: function(src) {
+        const modal = document.createElement('div');
+        modal.className = 'image-modal';
+        modal.innerHTML = `<img src="${src}" alt="Generated image">`;
+        modal.onclick = () => modal.remove();
+        
+        document.body.appendChild(modal);
+        setTimeout(() => modal.classList.add('show'), 10);
+    },
+    
+    downloadImage: function(imageData, filename) {
+        const link = document.createElement('a');
+        link.href = `data:image/png;base64,${imageData}`;
+        link.download = filename;
+        link.click();
+    },
+    
+    copyImageToClipboard: function(imageData) {
+        // Convert base64 to blob and copy to clipboard
+        fetch(`data:image/png;base64,${imageData}`)
+            .then(res => res.blob())
+            .then(blob => {
+                navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
+                alert('Image copied to clipboard!');
+            })
+            .catch(err => {
+                console.error('Failed to copy image:', err);
+                alert('Failed to copy image to clipboard');
+            });
+    }
+};
+
+// Copy to clipboard function
+function copyToClipboard(text, buttonElement) {
+    navigator.clipboard.writeText(text).then(() => {
+        const originalText = buttonElement.innerHTML;
+        buttonElement.innerHTML = '✅ Copied';
+        buttonElement.classList.add('success');
+        
+        setTimeout(() => {
+            buttonElement.innerHTML = originalText;
+            buttonElement.classList.remove('success');
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy text:', err);
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        const originalText = buttonElement.innerHTML;
+        buttonElement.innerHTML = '✅ Copied';
+        setTimeout(() => {
+            buttonElement.innerHTML = originalText;
+        }, 2000);
+    });
+}
+
+// Text-to-speech function
+function speakText(text, buttonElement) {
+    if ('speechSynthesis' in window) {
+        // Stop any current speech
+        speechSynthesis.cancel();
+        
+        if (buttonElement.classList.contains('playing')) {
+            buttonElement.classList.remove('playing');
+            return;
+        }
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.9;
+        utterance.pitch = 1;
+        utterance.volume = 0.8;
+        
+        buttonElement.classList.add('playing');
+        
+        utterance.onend = () => {
+            buttonElement.classList.remove('playing');
+        };
+        
+        utterance.onerror = () => {
+            buttonElement.classList.remove('playing');
+        };
+        
+        speechSynthesis.speak(utterance);
+    } else {
+        alert('Text-to-speech not supported in this browser');
+    }
+}
+
+// Section 15: JavaScript - Menu Handling Functions
+function initializeMenu() {
+    console.log('Initializing menu...');
+    
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    const menuOverlay = document.getElementById('menuOverlay');
+    
+    if (!hamburgerBtn || !dropdownMenu || !menuOverlay) {
+        console.error('Menu elements not found');
+        return;
+    }
+    
+    // Fix hamburger button click handler
+    hamburgerBtn.addEventListener('click', (e) => {
+        console.log('Hamburger button clicked');
+        e.preventDefault();
+        e.stopPropagation();
+        toggleMenu();
+    });
+    
+    // Fix menu overlay click handler
+    menuOverlay.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeMenu();
+    });
+    
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!dropdownMenu.contains(e.target) && !hamburgerBtn.contains(e.target)) {
+            closeMenu();
+        }
+    });
+    
+    // Fix menu item click handlers - this is the key fix
+    dropdownMenu.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent menu from closing immediately
+        
+        const menuItem = e.target.closest('.menu-item');
+        if (menuItem) {
+            console.log('Menu item clicked:', menuItem);
+            
+            // Handle different types of menu items
+            if (menuItem.tagName === 'A') {
+                // For anchor tags, let the default behavior happen
+                console.log('Following link:', menuItem.href);
+                setTimeout(() => closeMenu(), 100);
+            } else if (menuItem.tagName === 'BUTTON') {
+                // For buttons, ensure the onclick is triggered
+                console.log('Button clicked');
                 
-                // Check if we've already detected timezone this session
-                const alreadyDetected = sessionStorage.getItem('timezone_detected');
-                if (alreadyDetected === 'true') {
-                    return;
-                }
-                
-                // Detect browser timezone
-                const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                
-                if (!browserTimezone) {
-                    console.warn('Could not detect browser timezone');
-                    return;
-                }
-                
-                // Send to server
-                fetch('/api/timezone/detect', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({
-                        timezone: browserTimezone
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        console.log('Timezone auto-detected:', browserTimezone);
-                        sessionStorage.setItem('timezone_detected', 'true');
-                        
-                        // Optional: Show a subtle notification
-                        showTimezoneNotification(browserTimezone);
-                    } else {
-                        console.warn('Timezone detection failed:', data.error);
-                    }
-                })
-                .catch(error => {
-                    console.warn('Timezone detection request failed:', error);
-                });
-                
-                function showTimezoneNotification(timezone) {
-                    // Create a subtle notification that timezone was detected
-                    const notification = document.createElement('div');
-                    notification.style.cssText = `
-                        position: fixed;
-                        top: 20px;
-                        right: 20px;
-                        background: #059669;
-                        color: white;
-                        padding: 12px 20px;
-                        border-radius: 8px;
-                        font-size: 14px;
-                        z-index: 1000;
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                        opacity: 0;
-                        transition: opacity 0.3s ease;
-                    `;
-                    
-                    notification.innerHTML = `
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span>🌍</span>
-                            <span>Timezone detected: ${timezone.split('/')[1]?.replace('_', ' ') || timezone}</span>
-                            <button onclick="this.parentElement.parentElement.remove()" 
-                                    style="background: none; border: none; color: white; cursor: pointer; margin-left: 10px; font-size: 18px;">×</button>
-                        </div>
-                    `;
-                    
-                    document.body.appendChild(notification);
-                    
-                    // Fade in
-                    setTimeout(() => {
-                        notification.style.opacity = '1';
-                    }, 100);
-                    
-                    // Auto-remove after 5 seconds
-                    setTimeout(() => {
-                        notification.style.opacity = '0';
-                        setTimeout(() => {
-                            if (notification.parentElement) {
-                                notification.parentElement.removeChild(notification);
-                            }
-                        }, 300);
-                    }, 5000);
-                }
-            })();
-        </script>
-
-        <script>
-            // Global variables
-            let isSubmitting = false;
-            let currentEventSource = null;
-            let currentStreamingMessage = null;
-            let attachedFiles = []; // Track attached files
-            let chatHistoryManager = {
-                showingRecentOnly: false,
-                maxVisibleMessages: 200, // Show last 200 messages by default
-                fadeThreshold: 150 // Start fading after 150 messages
-            };
-
-            // ENHANCED: Inline Image Display Manager
-            class InlineImageHandler {
-                constructor() {
-                    this.setupImageDisplay();
-                }
-
-                setupImageDisplay() {
-                    // Watch for new chat responses that might contain images
-                    const observer = new MutationObserver((mutations) => {
-                        mutations.forEach((mutation) => {
-                            if (mutation.type === 'childList') {
-                                mutation.addedNodes.forEach((node) => {
-                                    if (node.nodeType === Node.ELEMENT_NODE) {
-                                        this.processNewContent(node);
-                                    }
-                                });
-                            }
-                        });
-                    });
-
-                    // Start observing the chat container
-                    const chatContainer = document.querySelector('.thread');
-                    if (chatContainer) {
-                        observer.observe(chatContainer, {
-                            childList: true,
-                            subtree: true
-                        });
-                    }
-                }
-
-                processNewContent(element) {
-                    // Look for elements that might contain marketing response data
-                    if (element.classList && element.classList.contains('message') && element.classList.contains('bot')) {
-                        // Check if this message has image data attribute
-                        const responseData = element.getAttribute('data-response-data');
-                        if (responseData) {
-                            this.handleResponseData(element, responseData);
-                        }
-                    }
-                }
-
-                handleResponseData(element, responseDataStr) {
+                // Check for onclick attribute
+                const onclickAttr = menuItem.getAttribute('onclick');
+                if (onclickAttr) {
                     try {
-                        const responseData = JSON.parse(responseDataStr);
-                        
-                        if (responseData.image_data && responseData.image_url) {
-                            this.displayInlineImage(element, responseData);
-                        }
-                    } catch (e) {
-                        console.debug('No valid image response data found:', e);
+                        // Execute the onclick function
+                        eval(onclickAttr);
+                    } catch (error) {
+                        console.error('Error executing onclick:', error);
                     }
                 }
-
-                displayInlineImage(element, responseData) {
-                    const imageData = responseData.image_data;
-                    const imageUrl = responseData.image_url;
-                    
-                    // Create image element
-                    const img = document.createElement('img');
-                    img.src = `data:${imageData.content_type};base64,${imageData.data}`;
-                    img.alt = 'Generated marketing image';
-                    img.className = 'inline-generated-image';
-                    
-                    // Add click handler for full-size view
-                    img.addEventListener('click', () => {
-                        this.showFullSizeImage(imageUrl, imageData);
-                    });
-
-                    // Find the message content area and add image after text
-                    const messageContent = element.querySelector('.message-content');
-                    if (messageContent) {
-                        messageContent.appendChild(img);
-                        
-                        // Add action buttons
-                        const buttonContainer = this.createImageButtons(imageUrl, responseData);
-                        messageContent.appendChild(buttonContainer);
-                    }
-                }
-
-                createImageButtons(imageUrl, responseData) {
-                    const container = document.createElement('div');
-                    container.className = 'image-action-buttons';
-
-                    // Download button
-                    const downloadBtn = document.createElement('button');
-                    downloadBtn.textContent = '⬇️ Download';
-                    downloadBtn.className = 'image-btn';
-                    downloadBtn.addEventListener('click', () => {
-                        this.downloadImage(imageUrl);
-                    });
-
-                    // Copy URL button
-                    const copyBtn = document.createElement('button');
-                    copyBtn.textContent = '📋 Copy URL';
-                    copyBtn.className = 'image-btn secondary';
-                    copyBtn.addEventListener('click', () => {
-                        this.copyToClipboard(imageUrl, copyBtn);
-                    });
-
-                    // Marketing dashboard link
-                    const dashboardBtn = document.createElement('a');
-                    dashboardBtn.href = '/marketing';
-                    dashboardBtn.textContent = '🎨 More Options';
-                    dashboardBtn.className = 'image-btn secondary';
-
-                    container.appendChild(downloadBtn);
-                    container.appendChild(copyBtn);
-                    container.appendChild(dashboardBtn);
-
-                    return container;
-                }
-
-                showFullSizeImage(imageUrl, imageData) {
-                    // Create modal overlay
-                    const modal = document.createElement('div');
-                    modal.className = 'image-modal';
-                    
-                    // Create image
-                    const img = document.createElement('img');
-                    img.src = `data:${imageData.content_type};base64,${imageData.data}`;
-                    img.alt = 'Generated marketing image';
-
-                    // Close on click
-                    modal.addEventListener('click', () => {
-                        modal.classList.remove('show');
-                        setTimeout(() => {
-                            if (modal.parentElement) {
-                                document.body.removeChild(modal);
-                            }
-                        }, 300);
-                    });
-
-                    // Close on escape key
-                    const handleEscape = (e) => {
-                        if (e.key === 'Escape') {
-                            modal.click();
-                            document.removeEventListener('keydown', handleEscape);
-                        }
-                    };
-                    document.addEventListener('keydown', handleEscape);
-
-                    modal.appendChild(img);
-                    document.body.appendChild(modal);
-                    
-                    // Show with animation
-                    setTimeout(() => {
-                        modal.classList.add('show');
-                    }, 10);
-                }
-
-                downloadImage(imageUrl) {
-                    const link = document.createElement('a');
-                    link.href = imageUrl;
-                    link.download = `ghostline-image-${Date.now()}.webp`;
-                    link.target = '_blank';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                }
-
-                async copyToClipboard(text, button) {
-                    try {
-                        await navigator.clipboard.writeText(text);
-                        const originalText = button.textContent;
-                        button.textContent = '✅ Copied!';
-                        button.classList.add('success');
-                        
-                        setTimeout(() => {
-                            button.textContent = originalText;
-                            button.classList.remove('success');
-                        }, 2000);
-                    } catch (err) {
-                        console.error('Failed to copy to clipboard:', err);
-                        this.fallbackCopyToClipboard(text, button);
-                    }
-                }
-
-                fallbackCopyToClipboard(text, button) {
-                    const textArea = document.createElement('textarea');
-                    textArea.value = text;
-                    textArea.style.position = 'fixed';
-                    textArea.style.left = '-999999px';
-                    document.body.appendChild(textArea);
-                    textArea.focus();
-                    textArea.select();
-                    
-                    try {
-                        document.execCommand('copy');
-                        button.textContent = '✅ Copied!';
-                        button.classList.add('success');
-                        setTimeout(() => {
-                            button.textContent = '📋 Copy URL';
-                            button.classList.remove('success');
-                        }, 2000);
-                    } catch (err) {
-                        console.error('Fallback copy failed:', err);
-                    }
-                    
-                    document.body.removeChild(textArea);
-                }
+                
+                setTimeout(() => closeMenu(), 100);
             }
-
-            // Initialize image handler
-            const imageHandler = new InlineImageHandler();
-
-            // Chat history management functions
-            function toggleHistoryView() {
-                const thread = document.getElementById('thread');
-                const toggle = document.getElementById('historyToggle');
-                const messages = thread.querySelectorAll('.message');
-                
-                chatHistoryManager.showingRecentOnly = !chatHistoryManager.showingRecentOnly;
-                
-                if (chatHistoryManager.showingRecentOnly) {
-                    // Show only recent messages
-                    messages.forEach((message, index) => {
-                        if (index < messages.length - chatHistoryManager.maxVisibleMessages) {
-                            message.classList.add('archived');
-                        } else if (index < messages.length - chatHistoryManager.fadeThreshold) {
-                            message.classList.add('fade-out');
-                            message.classList.remove('archived');
-                        } else {
-                            message.classList.remove('fade-out', 'archived');
-                        }
-                    });
-                    toggle.textContent = 'Show All History';
-                } else {
-                    // Show all messages
-                    messages.forEach(message => {
-                        message.classList.remove('fade-out', 'archived');
-                    });
-                    toggle.textContent = 'Show Recent Only';
-                }
-                
-                setTimeout(scrollToBottom, 100);
+        }
+    });
+    
+    // Keyboard support
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeMenu();
+        }
+    });
+    
+    // Enhanced keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        if (e.altKey && !e.ctrlKey && !e.shiftKey) {
+            switch(e.key.toLowerCase()) {
+                case 'm':
+                    e.preventDefault();
+                    sendQuickCommand('good morning');
+                    break;
+                case 'e':
+                    e.preventDefault();
+                    sendQuickCommand('overnight');
+                    break;
+                case 'c':
+                    e.preventDefault();
+                    sendQuickCommand('calendar');
+                    break;
+                case 'r':
+                    e.preventDefault();
+                    sendQuickCommand('remind me to follow up in 1 hour');
+                    break;
             }
+        }
+    });
+    
+    console.log('Menu initialized successfully with fixed click handlers');
+}
 
-            function clearOldMessages() {
-                const thread = document.getElementById('thread');
-                const messages = thread.querySelectorAll('.message');
-                const keepCount = 100; // Keep last 100 messages
-                
-                if (messages.length <= keepCount) {
-                    alert('No old messages to archive (keeping last 100 messages).');
-                    return;
-                }
-                
-                const toRemove = messages.length - keepCount;
-                if (confirm(`Archive ${toRemove} old messages? They'll be removed from view but kept in the database.`)) {
-                    for (let i = 0; i < toRemove; i++) {
-                        messages[i].style.animation = 'fadeOut 0.3s ease-out';
-                        setTimeout(() => {
-                            if (messages[i].parentElement) {
-                                messages[i].remove();
-                            }
-                        }, 300);
-                    }
-                    
-                    setTimeout(() => {
-                        scrollToBottom();
-                    }, 400);
-                }
-            }
+function toggleMenu() {
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    const menuOverlay = document.getElementById('menuOverlay');
+    
+    const isOpen = dropdownMenu.classList.contains('show');
+    
+    console.log('Toggle menu - currently open:', isOpen);
+    
+    if (isOpen) {
+        closeMenu();
+    } else {
+        openMenu();
+    }
+}
 
-            // Auto-manage chat history when new messages are added
-            function autoManageChatHistory() {
-                const thread = document.getElementById('thread');
-                const messages = thread.querySelectorAll('.message');
-                
-                // If we have too many messages visible, auto-fade older ones
-                if (messages.length > chatHistoryManager.maxVisibleMessages && chatHistoryManager.showingRecentOnly) {
-                    messages.forEach((message, index) => {
-                        if (index < messages.length - chatHistoryManager.maxVisibleMessages) {
-                            message.classList.add('archived');
-                        } else if (index < messages.length - chatHistoryManager.fadeThreshold) {
-                            message.classList.add('fade-out');
-                        }
-                    });
-                }
-            }
+function openMenu() {
+    console.log('Opening menu');
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    const menuOverlay = document.getElementById('menuOverlay');
+    
+    if (hamburgerBtn) hamburgerBtn.classList.add('active');
+    if (dropdownMenu) dropdownMenu.classList.add('show');
+    if (menuOverlay) menuOverlay.classList.add('show');
+    
+    // Ensure menu items are properly interactive
+    const menuItems = dropdownMenu.querySelectorAll('.menu-item');
+    menuItems.forEach(item => {
+        item.style.pointerEvents = 'auto';
+        item.style.cursor = 'pointer';
+    });
+}
 
-            // File handling functions
+function closeMenu() {
+    console.log('Closing menu');
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    const menuOverlay = document.getElementById('menuOverlay');
+    
+    if (hamburgerBtn) hamburgerBtn.classList.remove('active');
+    if (dropdownMenu) dropdownMenu.classList.remove('show');
+    if (menuOverlay) menuOverlay.classList.remove('show');
+}
+
+function sendQuickCommand(command) {
+    console.log('Sending quick command:', command);
+    const promptInput = document.getElementById('promptInput');
+    
+    if (promptInput) {
+        promptInput.value = command;
+        closeMenu();
+        setTimeout(() => {
+            submitForm();
+        }, 100);
+    }
+}
+
+// Enhanced quick command functions that were referenced in the HTML
+function refreshPage() {
+    location.reload();
+}
+
+// Fix for specific menu button functions that weren't working
+window.sendQuickCommand = sendQuickCommand;
+window.refreshPage = refreshPage;
+
+// Add global function to ensure menu items work
+window.executeMenuAction = function(action, param) {
+    console.log('Executing menu action:', action, param);
+    
+    switch(action) {
+        case 'quickCommand':
+            sendQuickCommand(param);
+            break;
+        case 'navigate':
+            window.location.href = param;
+            break;
+        case 'reload':
+            refreshPage();
+            break;
+        default:
+            console.warn('Unknown menu action:', action);
+    }
+    
+    closeMenu();
+};
+</script>
+<script>			
+ // Section 16: JavaScript - File Handling Functions 
+  
+ /// File handling functions
             function initializeFileHandling() {
               console.log('Initializing file handling...');
               
@@ -1973,247 +2580,1034 @@
               const i = Math.floor(Math.log(bytes) / Math.log(k));
               return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
             }
+// Section 16.5: Thread Sidebar Functionality
+// Section 16.5: Thread Sidebar Functionality
 
-            // TTS functionality
-            async function speakText(text, buttonElement) {
-              if (!text || text.trim() === '') return;
-              
-              const cleanText = text
-                .replace(/\*\*(.*?)\*\*/g, '$1')
-                .replace(/\*(.*?)\*/g, '$1')
-                .replace(/`(.*?)`/g, '$1')
-                .replace(/#{1,6}\s*(.*)/g, '$1')
-                .replace(/\n\n+/g, '. ')
-                .replace(/\n/g, ' ')
-                .trim();
-              
-              if (buttonElement) {
-                buttonElement.classList.add('playing');
-              }
-              
-              try {
-                const response = await fetch('/api/tts', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ text: cleanText })
+class ThreadSidebar {
+    constructor() {
+        this.sidebar = null;
+        this.overlay = null;
+        this.isOpen = false;
+        this.currentThreadId = null;
+        this.threads = [];
+        this.searchTerm = '';
+        
+        this.init();
+    }
+    
+    init() {
+        this.createSidebarHTML();
+        this.attachEventListeners();
+        this.loadThreads();
+        
+        // Auto-refresh threads every 30 seconds
+        setInterval(() => {
+            this.loadThreads();
+        }, 30000);
+    }
+    
+    createSidebarHTML() {
+        // Create sidebar overlay for mobile
+        this.overlay = document.createElement('div');
+        this.overlay.className = 'sidebar-overlay';
+        this.overlay.addEventListener('click', () => this.close());
+        document.body.appendChild(this.overlay);
+        
+        // Create sidebar
+        this.sidebar = document.createElement('div');
+        this.sidebar.className = 'thread-sidebar';
+        this.sidebar.innerHTML = `
+            <div class="sidebar-header">
+                <div class="sidebar-title">
+                    <span>📚</span>
+                    Bookmarked Threads
+                </div>
+                <input type="text" class="sidebar-search" placeholder="Search bookmarks..." id="threadSearch">
+            </div>
+            <div class="thread-list" id="threadList">
+                <div class="thread-loading">Loading bookmarks...</div>
+            </div>
+        `;
+        
+        document.body.appendChild(this.sidebar);
+        
+        // Add sidebar toggle to header
+        this.addSidebarToggle();
+    }
+    
+    addSidebarToggle() {
+        const headerRight = document.querySelector('.header-right');
+        if (headerRight) {
+            const toggle = document.createElement('button');
+            toggle.className = 'sidebar-toggle';
+            toggle.innerHTML = '📚';
+            toggle.title = 'Toggle Bookmarks';
+            toggle.addEventListener('click', () => this.toggle());
+            
+            // Insert before the hamburger menu
+            headerRight.insertBefore(toggle, headerRight.firstChild);
+        }
+    }
+    
+    attachEventListeners() {
+        const searchInput = document.getElementById('threadSearch');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                this.searchTerm = e.target.value.toLowerCase();
+                this.renderThreads();
+            });
+        }
+        
+        // Close sidebar on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.isOpen) {
+                this.close();
+            }
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768 && this.isOpen) {
+                document.body.classList.add('sidebar-open');
+            } else {
+                document.body.classList.remove('sidebar-open');
+            }
+        });
+    }
+    
+    async loadThreads() {
+        try {
+            const response = await fetch('/api/threads?include_archived=false&limit=50', {
+                credentials: 'include'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.threads = data.threads.filter(thread => 
+                    thread.message_count > 0 // Only show threads with messages
+                );
+                this.renderThreads();
+            } else {
+                this.showError('Failed to load bookmarks');
+            }
+        } catch (error) {
+            console.error('Failed to load threads:', error);
+            this.showError('Connection error');
+        }
+    }
+    
+    renderThreads() {
+        const threadList = document.getElementById('threadList');
+        if (!threadList) return;
+        
+        let filteredThreads = this.threads;
+        
+        // Apply search filter
+        if (this.searchTerm) {
+            filteredThreads = this.threads.filter(thread =>
+                thread.title.toLowerCase().includes(this.searchTerm) ||
+                (thread.project && thread.project.toLowerCase().includes(this.searchTerm))
+            );
+        }
+        
+        if (filteredThreads.length === 0) {
+            threadList.innerHTML = this.searchTerm ? 
+                `<div class="thread-empty">
+                    <div class="thread-empty-icon">🔍</div>
+                    <div>No bookmarks match "${this.searchTerm}"</div>
+                </div>` :
+                `<div class="thread-empty">
+                    <div class="thread-empty-icon">📚</div>
+                    <div>No bookmarked conversations yet</div>
+                    <div style="font-size: 0.8rem; margin-top: 8px; opacity: 0.7;">
+                        Say "bookmark this" to save conversations
+                    </div>
+                </div>`;
+            return;
+        }
+        
+        threadList.innerHTML = filteredThreads.map(thread => this.renderThreadItem(thread)).join('');
+        
+        // Attach click listeners
+        threadList.querySelectorAll('.thread-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const threadId = item.dataset.threadId;
+                this.selectThread(threadId);
+            });
+        });
+    }
+    
+    renderThreadItem(thread) {
+        const isActive = thread.thread_id === this.currentThreadId;
+        const timeAgo = this.formatTimeAgo(thread.last_message_at || thread.updated_at);
+        const hasBookmarks = thread.message_count > 0; // Assuming bookmarked threads have messages
+        
+        return `
+            <div class="thread-item ${isActive ? 'active' : ''}" data-thread-id="${thread.thread_id}">
+                <div class="thread-title">${this.escapeHtml(thread.title)}</div>
+                <div class="thread-preview">${this.escapeHtml(thread.project || 'General')}</div>
+                <div class="thread-meta">
+                    <div class="thread-time">${timeAgo}</div>
+                    <div class="thread-indicators">
+                        ${hasBookmarks ? '<div class="bookmark-indicator">📌</div>' : ''}
+                        <div class="message-count">${thread.message_count}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    async selectThread(threadId) {
+        if (!threadId) return;
+        
+        try {
+            // Show loading state
+            const threadItems = document.querySelectorAll('.thread-item');
+            threadItems.forEach(item => item.classList.remove('active'));
+            
+            const selectedItem = document.querySelector(`[data-thread-id="${threadId}"]`);
+            if (selectedItem) {
+                selectedItem.classList.add('active');
+            }
+            
+            // Load thread content
+            const response = await fetch(`/api/threads/${threadId}`, {
+                credentials: 'include'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.currentThreadId = threadId;
+                this.loadThreadIntoChat(data);
+                
+                // Close sidebar on mobile after selection
+                if (window.innerWidth <= 768) {
+                    this.close();
+                }
+            } else {
+                this.showError('Failed to load thread');
+            }
+        } catch (error) {
+            console.error('Failed to load thread:', error);
+            this.showError('Failed to load conversation');
+        }
+    }
+    
+    loadThreadIntoChat(threadData) {
+        const chatThread = document.getElementById('thread');
+        const bottomAnchor = document.getElementById('bottom-anchor');
+        
+        if (!chatThread || !bottomAnchor) {
+            console.error('Chat elements not found');
+            return;
+        }
+        
+        // Clear current messages (except the anchor)
+        const messages = chatThread.querySelectorAll('.message');
+        messages.forEach(msg => msg.remove());
+        
+        // Add thread messages
+        if (threadData.conversations && threadData.conversations.length > 0) {
+            threadData.conversations.forEach(conversation => {
+                this.addMessageToChat(conversation, threadData.bookmarks);
+            });
+        }
+        
+        // Scroll to bottom
+        setTimeout(() => {
+            bottomAnchor.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+        
+        // Show notification
+        this.showNotification(`Loaded: ${threadData.metadata?.title || 'Thread'}`);
+    }
+    
+</script>
+<script>
+addMessageToChat(conversation, bookmarks = []) {
+        const chatThread = document.getElementById('thread');
+        const bottomAnchor = document.getElementById('bottom-anchor');
+        
+        if (!chatThread || !bottomAnchor) return;
+        
+        // Check if this conversation is bookmarked
+        const isBookmarked = bookmarks.some(bookmark => 
+            bookmark.chat_id === conversation.id
+        );
+        
+        // Create user message
+        const userMessageDiv = document.createElement('div');
+        userMessageDiv.className = `message user ${isBookmarked ? 'bookmarked' : ''}`;
+        userMessageDiv.innerHTML = `
+            <div class="message-bubble user">
+                <div class="message-header">You</div>
+                <div class="message-content">${this.escapeHtml(conversation.user_input)}</div>
+            </div>
+        `;
+        
+        chatThread.insertBefore(userMessageDiv, bottomAnchor);
+        
+        // Create AI response if exists
+        if (conversation.response_data) {
+            const responseData = conversation.response_data;
+            
+            Object.entries(responseData).forEach(([voice, response]) => {
+                if (response && typeof response === 'string') {
+                    const aiMessageDiv = document.createElement('div');
+                    aiMessageDiv.className = `message bot ${isBookmarked ? 'bookmarked' : ''}`;
+                    aiMessageDiv.innerHTML = `
+                        <div class="message-bubble bot">
+                            <div class="message-header">
+                                <img src="/static/syntax-buffering.png" alt="${voice}" class="logo">
+                                ${voice}
+                                <button class="speaker-btn" onclick="speakText('${this.escapeForJs(response)}', this)" title="Speak this message">
+                                    🔊
+                                </button>
+                            </div>
+                            <div class="message-content">${this.escapeHtml(response)}</div>
+                            <button class="mobile-copy-btn" onclick="copyToClipboard('${this.escapeForJs(response)}', this)" title="Copy this response">
+                                📋 Copy
+                            </button>
+                        </div>
+                    `;
+                    
+                    chatThread.insertBefore(aiMessageDiv, bottomAnchor);
+                }
+            });
+        }
+    }
+
+    formatTimeAgo(dateString) {
+        if (!dateString) return 'Unknown';
+        
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffDays < 7) return `${diffDays}d ago`;
+        
+        return date.toLocaleDateString();
+    }
+    
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text || '';
+        return div.innerHTML;
+    }
+    
+    escapeForJs(text) {
+        return (text || '').replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n');
+    }
+    
+    showNotification(message) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = 'bookmark-notification';
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        // Show notification
+        setTimeout(() => notification.classList.add('show'), 10);
+        
+        // Hide and remove after 3 seconds
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
+    }
+    
+    showError(message) {
+        const threadList = document.getElementById('threadList');
+        if (threadList) {
+            threadList.innerHTML = `
+                <div class="thread-empty">
+                    <div class="thread-empty-icon">⚠️</div>
+                    <div style="color: #dc2626;">${message}</div>
+                    <button onclick="threadSidebar.loadThreads()" style="margin-top: 8px; padding: 4px 8px; background: var(--surface-hover); border: 1px solid var(--border); border-radius: 4px; color: inherit; cursor: pointer;">
+                        Retry
+                    </button>
+                </div>
+            `;
+        }
+    }
+    
+    toggle() {
+        if (this.isOpen) {
+            this.close();
+        } else {
+            this.open();
+        }
+    }
+    
+    open() {
+        this.isOpen = true;
+        this.sidebar.classList.add('open');
+        
+        if (window.innerWidth > 768) {
+            document.body.classList.add('sidebar-open');
+        } else {
+            this.overlay.classList.add('show');
+        }
+        
+        // Update toggle button
+        const toggle = document.querySelector('.sidebar-toggle');
+        if (toggle) {
+            toggle.classList.add('active');
+        }
+        
+        // Refresh threads when opening
+        this.loadThreads();
+    }
+    
+    close() {
+        this.isOpen = false;
+        this.sidebar.classList.remove('open');
+        this.overlay.classList.remove('show');
+        document.body.classList.remove('sidebar-open');
+        
+        // Update toggle button
+        const toggle = document.querySelector('.sidebar-toggle');
+        if (toggle) {
+            toggle.classList.remove('active');
+        }
+    }
+}
+
+// Enhanced bookmark detection and notification
+function detectBookmarkCommand(userInput) {
+    const bookmarkPatterns = [
+        /^bookmark$/i,
+        /^bookmark this$/i,
+        /^bookmark this as/i,
+        /^save this$/i,
+        /^mark this$/i
+    ];
+    
+    return bookmarkPatterns.some(pattern => pattern.test(userInput.trim()));
+}
+
+function showBookmarkNotification(success = true, message = null) {
+    const text = message || (success ? '✅ Bookmark created!' : '❌ Bookmark failed');
+    
+    const notification = document.createElement('div');
+    notification.className = 'bookmark-notification';
+    notification.textContent = text;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => notification.classList.add('show'), 10);
+    
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+    
+    // Refresh sidebar threads if bookmark was successful
+    if (success && window.threadSidebar) {
+        setTimeout(() => {
+            window.threadSidebar.loadThreads();
+        }, 1000);
+    }
+}
+
+// Enhanced export progress tracking
+function showExportProgress(message) {
+    let progressElement = document.querySelector('.export-progress');
+    
+    if (!progressElement) {
+        progressElement = document.createElement('div');
+        progressElement.className = 'export-progress';
+        progressElement.innerHTML = `
+            <div class="export-progress-header">
+                <span>📤</span>
+                <span id="exportProgressText">Preparing export...</span>
+            </div>
+            <div class="export-progress-bar">
+                <div class="export-progress-fill" id="exportProgressFill"></div>
+            </div>
+        `;
+        document.body.appendChild(progressElement);
+    }
+    
+    const progressText = document.getElementById('exportProgressText');
+    const progressFill = document.getElementById('exportProgressFill');
+    
+    progressText.textContent = message;
+    progressElement.classList.add('show');
+    
+    // Simulate progress
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += Math.random() * 30;
+        if (progress > 90) progress = 90;
+        progressFill.style.width = progress + '%';
+    }, 300);
+    
+    return {
+        update: (newMessage, newProgress = null) => {
+            progressText.textContent = newMessage;
+            if (newProgress !== null) {
+                clearInterval(interval);
+                progressFill.style.width = newProgress + '%';
+            }
+        },
+        complete: (finalMessage = 'Export complete!') => {
+            clearInterval(interval);
+            progressText.textContent = finalMessage;
+            progressFill.style.width = '100%';
+            
+            setTimeout(() => {
+                progressElement.classList.remove('show');
+                setTimeout(() => {
+                    if (progressElement.parentNode) {
+                        progressElement.parentNode.removeChild(progressElement);
+                    }
+                }, 300);
+            }, 2000);
+        }
+    };
+}
+
+// Initialize thread sidebar when DOM is ready
+let threadSidebar;
+document.addEventListener('DOMContentLoaded', function() {
+    threadSidebar = new ThreadSidebar();
+    window.threadSidebar = threadSidebar; // Make globally accessible
+});	
+		
+// Section 17: JavaScript - TTS Functionality 
+// Section 17: Form Handling and App Initialization
+// Section 17: JavaScript - Enhanced Form Submission and Streaming
+
+async function submitForm() {
+    console.log('Submit form called');
+    
+    if (isSubmitting) return;
+    
+    const promptInput = document.getElementById('promptInput');
+    const projectSelect = document.getElementById('projectSelect');
+    
+    if (!promptInput || !projectSelect) {
+        console.error('Form elements not found');
+        return;
+    }
+    
+    const inputValue = promptInput.value.trim();
+    
+    // Allow submission if there's text OR files attached
+    if (!inputValue && attachedFiles.length === 0) {
+        promptInput.focus();
+        return;
+    }
+    
+    // Check for bookmark command
+    const isBookmarkCommand = detectBookmarkCommand(inputValue);
+    
+    // Check for export command
+    const isExportCommand = /export|copy to google docs|save to drive/i.test(inputValue);
+    
+    isSubmitting = true;
+    
+    const sendButton = document.getElementById('sendBtn');
+    if (sendButton) {
+        sendButton.disabled = true;
+        sendButton.style.opacity = '0.5';
+        sendButton.style.pointerEvents = 'none';
+    }
+    
+    let exportProgress = null;
+    
+    try {
+        // Show export progress for export commands
+        if (isExportCommand) {
+            exportProgress = showExportProgress('Preparing export to Google Drive...');
+        }
+        
+        // If files are attached, handle file upload + analysis
+        if (attachedFiles.length > 0) {
+            await handleFileUploadAndAnalysis(inputValue, projectSelect.value);
+        } else {
+            // Regular text-only chat
+            const voices = getSelectedVoices();
+            const random = document.querySelector('input[name="random"]')?.checked || false;
+            
+            addUserMessage(inputValue);
+            promptInput.value = '';
+            autoResize(promptInput);
+            
+            // Start streaming chat with enhanced monitoring
+            await startStreamingChatWithMonitoring(inputValue, projectSelect.value, voices, random, {
+                isBookmarkCommand,
+                isExportCommand,
+                exportProgress
+            });
+        }
+    } catch (error) {
+        console.error('Chat failed:', error);
+        addErrorMessage('Failed to send message: ' + error.message);
+        
+        if (exportProgress) {
+            exportProgress.complete('Export failed: ' + error.message);
+        }
+    } finally {
+        if (sendButton) {
+            sendButton.disabled = false;
+            sendButton.style.opacity = '';
+            sendButton.style.pointerEvents = '';
+        }
+        isSubmitting = false;
+        promptInput.focus();
+        
+        // Auto-manage chat history after new messages
+        autoManageChatHistory();
+    }
+}
+
+async function startStreamingChatWithMonitoring(userInput, project, voices, random, options = {}) {
+    const { isBookmarkCommand, isExportCommand, exportProgress } = options;
+    
+    try {
+        const response = await fetch('/api/chat/stream', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_input: userInput,
+                project: project,
+                voices: voices,
+                random: random
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        
+        const responseData = {};
+        
+        function readStream() {
+            return reader.read().then(({ done, value }) => {
+                if (done) {
+                    // Handle post-completion actions
+                    if (isBookmarkCommand) {
+                        handleBookmarkCreation(responseData, project);
+                    }
+                    
+                    if (isExportCommand && exportProgress) {
+                        handleExportCompletion(responseData, exportProgress);
+                    }
+                    
+                    return;
+                }
+                
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+                
+                lines.forEach(line => {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.slice(6));
+                            
+                            switch (data.type) {
+                                case 'start':
+                                    showStreamingStatus(data.message);
+                                    if (exportProgress) {
+                                        exportProgress.update('Processing request...');
+                                    }
+                                    break;
+                                    
+                                case 'content':
+                                    if (!responseData[data.voice]) {
+                                        responseData[data.voice] = '';
+                                        addStreamingMessage(data.voice);
+                                    }
+                                    responseData[data.voice] += data.chunk;
+                                    updateStreamingMessage(data.voice, responseData[data.voice]);
+                                    break;
+                                    
+                                case 'image':
+                                    handleInlineImageData(data.image_data, data.image_url);
+                                    break;
+                                    
+                                case 'complete':
+                                    hideStreamingStatus();
+                                    finalizeStreamingMessages(data.responses);
+                                    
+                                    // Handle post-completion actions
+                                    if (isBookmarkCommand) {
+                                        handleBookmarkCreation(data.responses, project);
+                                    }
+                                    
+                                    if (isExportCommand && exportProgress) {
+                                        handleExportCompletion(data.responses, exportProgress);
+                                    }
+                                    
+                                    return;
+                                    
+                                case 'error':
+                                    hideStreamingStatus();
+                                    if (exportProgress) {
+                                        exportProgress.complete('Error: ' + data.message);
+                                    }
+                                    throw new Error(data.message);
+                            }
+                        } catch (e) {
+                            console.error('Failed to parse SSE data:', e);
+                        }
+                    }
                 });
                 
-                const result = await response.json();
-                
-                if (result.success) {
-                  const audioBlob = new Blob([
-                    Uint8Array.from(atob(result.audio), c => c.charCodeAt(0))
-                  ], { type: 'audio/mpeg' });
-                  
-                  const audioUrl = URL.createObjectURL(audioBlob);
-                  const audio = new Audio(audioUrl);
-                  
-                  audio.onended = () => {
-                    if (buttonElement) {
-                      buttonElement.classList.remove('playing');
-                    }
-                    URL.revokeObjectURL(audioUrl);
-                  };
-                  
-                  audio.onerror = () => {
-                    if (buttonElement) {
-                      buttonElement.classList.remove('playing');
-                    }
-                    console.error('Audio playback failed');
-                  };
-                  
-                  await audio.play();
-                } else {
-                  throw new Error(result.error || 'TTS failed');
-                }
-              } catch (error) {
-                console.error('TTS Error:', error);
-                if (buttonElement) {
-                  buttonElement.classList.remove('playing');
-                }
-                
-                if ('speechSynthesis' in window) {
-                  const utterance = new SpeechSynthesisUtterance(cleanText);
-                  utterance.rate = 0.9;
-                  utterance.pitch = 1;
-                  utterance.volume = 0.8;
-                  
-                  utterance.onend = () => {
-                    if (buttonElement) {
-                      buttonElement.classList.remove('playing');
-                    }
-                  };
-                  
-                  speechSynthesis.speak(utterance);
-                }
-              }
+                return readStream();
+            });
+        }
+        
+        return readStream();
+        
+    } catch (error) {
+        hideStreamingStatus();
+        if (exportProgress) {
+            exportProgress.complete('Stream failed: ' + error.message);
+        }
+        console.error('Streaming fetch failed:', error);
+        throw error;
+    }
+}
+
+async function handleBookmarkCreation(responseData, project) {
+    try {
+        const chatId = Date.now();
+        
+        const bookmarkData = {
+            chat_id: chatId,
+            title: `Bookmark - ${new Date().toLocaleString()}`,
+            notes: '',
+            bookmark_type: 'manual'
+        };
+        
+        const response = await fetch('/api/bookmark', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(bookmarkData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showBookmarkNotification(true, 'Bookmark created successfully!');
+        } else {
+            showBookmarkNotification(false, 'Failed to create bookmark');
+        }
+        
+    } catch (error) {
+        console.error('Bookmark creation failed:', error);
+        showBookmarkNotification(false, 'Bookmark creation failed');
+    }
+}
+
+async function handleExportCompletion(responseData, exportProgress) {
+    try {
+        exportProgress.update('Generating document...', 75);
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const exportUrl = findExportUrlInResponse(responseData);
+        
+        if (exportUrl) {
+            exportProgress.complete('Export complete! Opening document...');
+            setTimeout(() => {
+                window.open(exportUrl, '_blank');
+            }, 1000);
+        } else {
+            exportProgress.complete('Export completed successfully!');
+        }
+        
+    } catch (error) {
+        exportProgress.complete('Export failed: ' + error.message);
+    }
+}
+	
+function findExportUrlInResponse(responseData) {
+    const responseText = Object.values(responseData).join(' ');
+    const urlMatch = responseText.match(/https:\/\/docs\.google\.com\/document\/d\/[a-zA-Z0-9-_]+/);
+    return urlMatch ? urlMatch[0] : null;
+}
+
+// Handle file upload and analysis
+async function handleFileUploadAndAnalysis(textMessage, project) {
+    const loader = document.getElementById('loader');
+    
+    try {
+        addUserMessageWithFiles(textMessage || 'Analyze these files:', attachedFiles.slice());
+        
+        document.getElementById('promptInput').value = '';
+        const currentFiles = attachedFiles.slice();
+        attachedFiles = [];
+        updateAttachedFilesUI();
+        updatePaperclipButton();
+        
+        if (loader) {
+            loader.style.display = 'flex';
+        }
+
+        for (const file of currentFiles) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('project', project);
+            
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Upload failed for ${file.name}: ${response.status} - ${errorText}`);
             }
+        }
 
-            // Submit form with file handling
-            async function submitForm() {
-              console.log('Submit form called');
-              
-              if (isSubmitting) return;
-              
-              const promptInput = document.getElementById('promptInput');
-              const projectSelect = document.getElementById('projectSelect');
-              
-              if (!promptInput || !projectSelect) {
-                console.error('Form elements not found');
-                return;
-              }
-              
-              const inputValue = promptInput.value.trim();
-              
-              // Allow submission if there's text OR files attached
-              if (!inputValue && attachedFiles.length === 0) {
-                promptInput.focus();
-                return;
-              }
-              
-              isSubmitting = true;
-              
-              const sendButton = document.getElementById('sendBtn');
-              if (sendButton) {
-                sendButton.disabled = true;
-                sendButton.style.opacity = '0.5';
-                sendButton.style.pointerEvents = 'none';
-              }
-              
-              try {
-                // If files are attached, handle file upload + analysis
-                if (attachedFiles.length > 0) {
-                  await handleFileUploadAndAnalysis(inputValue, projectSelect.value);
-                } else {
-                  // Regular text-only chat
-                  const voices = getSelectedVoices();
-                  const random = document.querySelector('input[name="random"]').checked;
-                  
-                  addUserMessage(inputValue);
-                  promptInput.value = '';
-                  autoResize(promptInput);
-                  
-                  await startStreamingChat(inputValue, projectSelect.value, voices, random);
-                }
-              } catch (error) {
-                console.error('Chat failed:', error);
-                addErrorMessage('Failed to send message: ' + error.message);
-              } finally {
-                if (sendButton) {
-                  sendButton.disabled = false;
-                  sendButton.style.opacity = '';
-                  sendButton.style.pointerEvents = '';
-                }
-                isSubmitting = false;
-                promptInput.focus();
-                
-                // Auto-manage chat history after new messages
-                autoManageChatHistory();
-              }
-            }
+        window.location.reload();
 
-            // Handle file upload and analysis
-            async function handleFileUploadAndAnalysis(textMessage, project) {
-              const loader = document.getElementById('loader');
-              
-              try {
-                // Show user message with file attachments
-                addUserMessageWithFiles(textMessage || 'Analyze these files:', attachedFiles.slice());
-                
-                // Clear input and files
-                document.getElementById('promptInput').value = '';
-                const currentFiles = attachedFiles.slice(); // Copy before clearing
-                attachedFiles = [];
-                updateAttachedFilesUI();
-                updatePaperclipButton();
-                
-                if (loader) {
-                  loader.style.display = 'flex';
-                }
+    } catch (error) {
+        console.error('File upload error:', error);
+        addErrorMessage(`File upload failed: ${error.message}`);
+    } finally {
+        if (loader) {
+            loader.style.display = 'none';
+        }
+    }
+}
 
-                // Process each file
-                for (const file of currentFiles) {
-                  const formData = new FormData();
-                  formData.append('file', file);
-                  formData.append('project', project);
-                  
-                  const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                  });
-
-                  if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`Upload failed for ${file.name}: ${response.status} - ${errorText}`);
-                  }
-                }
-
-                // Reload page to show analysis results
-                window.location.reload();
-
-              } catch (error) {
-                console.error('File upload error:', error);
-                addErrorMessage(`File upload failed: ${error.message}`);
-              } finally {
-                if (loader) {
-                  loader.style.display = 'none';
-                }
-              }
-            }
-
-            function addUserMessageWithFiles(text, files) {
-              const thread = document.getElementById('thread');
-              const anchor = document.getElementById('bottom-anchor');
-              
-              let fileAttachmentsHtml = '';
-              if (files && files.length > 0) {
-                fileAttachmentsHtml = files.map(file => `
-                  <div class="file-attachment">
-                    <div class="file-icon">${getFileIcon(file)}</div>
-                    <div class="file-info">
-                      <div class="file-name">${file.name}</div>
-                      <div class="file-size">${formatFileSize(file.size)}</div>
-                    </div>
-                  </div>
-                `).join('');
-              }
-              
-              const messageDiv = document.createElement('div');
-              messageDiv.className = 'message user';
-              messageDiv.innerHTML = `
-                <div class="message-bubble user">
-                  <div class="message-header">You</div>
-                  ${fileAttachmentsHtml}
-                  ${text ? `<div class="message-content">${text}</div>` : ''}
+function addUserMessageWithFiles(text, files) {
+    const thread = document.getElementById('thread');
+    const anchor = document.getElementById('bottom-anchor');
+    
+    let fileAttachmentsHtml = '';
+    if (files && files.length > 0) {
+        fileAttachmentsHtml = files.map(file => `
+            <div class="file-attachment">
+                <div class="file-icon">${getFileIcon(file)}</div>
+                <div class="file-info">
+                    <div class="file-name">${file.name}</div>
+                    <div class="file-size">${formatFileSize(file.size)}</div>
                 </div>
-              `;
-              
-              thread.insertBefore(messageDiv, anchor);
-              scrollToBottom();
-            }
+            </div>
+        `).join('');
+    }
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message user';
+    messageDiv.innerHTML = `
+        <div class="message-bubble user">
+            <div class="message-header">You</div>
+            ${fileAttachmentsHtml}
+            ${text ? `<div class="message-content">${text}</div>` : ''}
+        </div>
+    `;
+    
+    thread.insertBefore(messageDiv, anchor);
+    scrollToBottom();
+}
 
-            function scrollToBottom() {
-              const thread = document.getElementById('thread');
-              const anchor = document.getElementById('bottom-anchor');
-              
-              if (anchor) {
-                anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
-              } else if (thread) {
-                thread.scrollTop = thread.scrollHeight;
-              }
-            }
+// Streaming UI functions
 
-            function updateExportLink() {
-              const projectSelect = document.getElementById('projectSelect');
-              const exportLink = document.querySelector('a[href*="/export/"]');
-              
-              if (projectSelect && exportLink) {
-                const selectedProject = encodeURIComponent(projectSelect.value);
-                exportLink.href = `/export/${selectedProject}`;
-              }
-            }
+function showStreamingStatus(message) {
+    const thread = document.getElementById('thread');
+    const anchor = document.getElementById('bottom-anchor');
+    
+    const statusDiv = document.createElement('div');
+    statusDiv.className = 'streaming-status';
+    statusDiv.id = 'streamingStatus';
+    statusDiv.innerHTML = `
+        <div class="streaming-indicator"></div>
+        <span>${message}</span>
+    `;
+    
+    thread.insertBefore(statusDiv, anchor);
+    scrollToBottom();
+}
 
-            // ENHANCED: Streaming chat functionality with image support
+function hideStreamingStatus() {
+    const status = document.getElementById('streamingStatus');
+    if (status) {
+        status.remove();
+    }
+}
+
+function addStreamingMessage(voice) {
+    const thread = document.getElementById('thread');
+    const anchor = document.getElementById('bottom-anchor');
+    
+    const displayNames = {
+        'SyntaxPrime': 'Syntax Prime',
+        'SyntaxBot': 'SyntaxBot',
+        'Nil.exe': 'Nil.exe',
+        'GGPT': 'GGPT'
+    };
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message bot';
+    messageDiv.innerHTML = `
+        <div class="message-bubble bot">
+            <div class="message-header">
+                <img src="/static/syntax-buffering.png" alt="${displayNames[voice] || voice}" class="logo">
+                ${displayNames[voice] || voice}
+                <button class="speaker-btn" onclick="speakText(this.closest('.message-bubble').querySelector('.message-content').textContent, this)" title="Speak this message">
+                    🔊
+                </button>
+            </div>
+            <div class="message-content" id="streaming-${voice}"></div>
+            <button class="mobile-copy-btn" onclick="copyToClipboard(this.closest('.message-bubble').querySelector('.message-content').textContent, this)" title="Copy this response">
+                📋 Copy
+            </button>
+            <div class="feedback-buttons">
+                <button class="feedback-btn thumbs-up" onclick="recordFeedback('${Date.now()}_${voice}', 'thumbs_up', this)" title="Good response">
+                    👍
+                </button>
+                <button class="feedback-btn thumbs-down" onclick="recordFeedback('${Date.now()}_${voice}', 'thumbs_down', this)" title="Poor response">
+                    👎
+                </button>
+                <button class="feedback-btn middle-finger" onclick="recordFeedback('${Date.now()}_${voice}', 'middle_finger', this)" title="Sarcastic/unhelpful response">
+                    🖕
+                </button>
+            </div>
+        </div>
+    `;
+    
+    thread.insertBefore(messageDiv, anchor);
+    scrollToBottom();
+}
+
+function updateStreamingMessage(voice, content) {
+    const element = document.getElementById(`streaming-${voice}`);
+    if (element) {
+        element.innerHTML = renderMarkdown(content);
+        scrollToBottom();
+    }
+}
+
+function finalizeStreamingMessages(responseData) {
+    const streamingElements = document.querySelectorAll('[id^="streaming-"]');
+    streamingElements.forEach(el => {
+        el.removeAttribute('id');
+    });
+    
+    if (responseData) {
+        for (const [voice, response] of Object.entries(responseData)) {
+            if (typeof response === 'object' && response.image_data && response.image_url) {
+                const botMessages = document.querySelectorAll('.message.bot');
+                const lastBotMessage = botMessages[botMessages.length - 1];
+                
+                if (lastBotMessage) {
+                    const responseDataStr = JSON.stringify(response);
+                    lastBotMessage.setAttribute('data-response-data', responseDataStr);
+                    imageHandler.handleResponseData(lastBotMessage, responseDataStr);
+                }
+            }
+        }
+    }
+    
+    setTimeout(scrollToBottom, 100);
+}
+
+function handleInlineImageData(imageData, imageUrl) {
+    const botMessages = document.querySelectorAll('.message.bot');
+    const lastBotMessage = botMessages[botMessages.length - 1];
+    
+    if (lastBotMessage && imageData && imageUrl) {
+        const responseDataStr = JSON.stringify({
+            image_data: imageData,
+            image_url: imageUrl
+        });
+        
+        lastBotMessage.setAttribute('data-response-data', responseDataStr);
+        imageHandler.handleResponseData(lastBotMessage, responseDataStr);
+    }
+}
+
+// Enhanced markdown rendering function
+function renderMarkdown(text) {
+    if (!text) return '';
+    
+    return text
+        // Headers (must be done first)
+        .replace(/^### (.*$)/gm, '<h3 class="chat-h3">$1</h3>')
+        .replace(/^## (.*$)/gm, '<h2 class="chat-h2">$1</h2>')
+        .replace(/^# (.*$)/gm, '<h1 class="chat-h1">$1</h1>')
+        
+        // Bold and italic (improved to avoid conflicts)
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '<em>$1</em>')
+        
+        // Code blocks and inline code
+        .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+        .replace(/`([^`\n]+)`/g, '<code>$1</code>')
+        
+        // Lists - improved handling
+        .replace(/^\* (.+)$/gm, '<li>$1</li>')
+        .replace(/^- (.+)$/gm, '<li>$1</li>')
+        .replace(/((?:<li>.*<\/li>\s*\n?)+)/gm, '<ul>$1</ul>')
+        
+        // Numbered lists
+        .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+        .replace(/((?:<li>.*<\/li>\s*\n?)+)(?![^<]*<ul>)/gm, '<ol>$1</ol>')
+        
+        // Blockquotes
+        .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+        
+        // Line breaks - preserve double breaks as paragraphs
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>')
+        
+        // Wrap in paragraphs (avoid wrapping headers, lists, blockquotes, code blocks)
+        .replace(/^(?!<[h1-6|ul|ol|blockquote|pre])(.*?)$/gm, '<p>$1</p>')
+        
+        // Clean up empty paragraphs and nested tags
+        .replace(/<p><\/p>/g, '')
+        .replace(/<p>(<h[1-6][^>]*>.*?<\/h[1-6]>)<\/p>/g, '$1')
+        .replace(/<p>(<ul>.*?<\/ul>)<\/p>/gs, '$1')
+        .replace(/<p>(<ol>.*?<\/ol>)<\/p>/gs, '$1')
+        .replace(/<p>(<blockquote>.*?<\/blockquote>)<\/p>/g, '$1')
+        .replace(/<p>(<pre>.*?<\/pre>)<\/p>/gs, '$1')
+        
+        // Fix broken paragraph tags
+        .replace(/<p><br>/g, '<p>')
+        .replace(/<br><\/p>/g, '</p>');
+}
+
+</script>			
+// Section 18: JavaScript - Form Submission and File Upload Functions 
+	
+// Section 19: JavaScript - Streaming Chat and Markdown Rendering 
+<script> 
             function startStreamingChat(userInput, project, voices, random) {
               return new Promise((resolve, reject) => {
                 fetch('/api/chat/stream', {
@@ -2474,293 +3868,250 @@
               // Auto-scroll after finalization
               setTimeout(scrollToBottom, 100);
             }
+</script>			
+// Section 20: JavaScript - Menu Handling Functions 
+// Section 20: JavaScript - Menu Handling Functions (Clean)
+<script>
+function sendQuickCommand(command) {
+    console.log('Sending quick command:', command);
+    const promptInput = document.getElementById('promptInput');
+    
+    if (promptInput) {
+        promptInput.value = command;
+        closeMenu();
+        setTimeout(() => {
+            submitForm();
+        }, 100);
+    }
+}
 
-            // Menu handling
-            function initializeMenu() {
-              console.log('Initializing menu...');
-              
-              const hamburgerBtn = document.getElementById('hamburgerBtn');
-              const dropdownMenu = document.getElementById('dropdownMenu');
-              const menuOverlay = document.getElementById('menuOverlay');
-              
-              if (!hamburgerBtn || !dropdownMenu || !menuOverlay) {
-                console.error('Menu elements not found');
-                return;
-              }
-              
-              hamburgerBtn.addEventListener('click', (e) => {
-                console.log('Hamburger button clicked');
-                e.stopPropagation();
-                toggleMenu();
-              });
-              
-              menuOverlay.addEventListener('click', closeMenu);
-              
-              document.addEventListener('click', (e) => {
-                if (!dropdownMenu.contains(e.target) && !hamburgerBtn.contains(e.target)) {
-                  closeMenu();
-                }
-              });
-              
-              dropdownMenu.addEventListener('click', (e) => {
-                if (e.target.closest('a, button')) {
-                  setTimeout(() => closeMenu(), 100);
-                }
-              });
-              
-              document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                  closeMenu();
-                }
-              });
-              
-              document.addEventListener('keydown', (e) => {
-                if (e.altKey && !e.ctrlKey && !e.shiftKey) {
-                  switch(e.key.toLowerCase()) {
-                    case 'm':
-                      e.preventDefault();
-                      sendQuickCommand('good morning');
-                      break;
-                    case 'e':
-                      e.preventDefault();
-                      sendQuickCommand('overnight');
-                      break;
-                    case 'c':
-                      e.preventDefault();
-                      sendQuickCommand('calendar');
-                      break;
-                    case 'r':
-                      e.preventDefault();
-                      sendQuickCommand('remind me to follow up in 1 hour');
-                      break;
-                  }
-                }
-              });
-              
-              console.log('Menu initialized successfully');
-            }
+// Enhanced quick command functions that were referenced in the HTML
+function refreshPage() {
+    location.reload();
+}
+
+// Fix for specific menu button functions that weren't working
+window.sendQuickCommand = sendQuickCommand;
+window.refreshPage = refreshPage;
+
+// Add global function to ensure menu items work
+window.executeMenuAction = function(action, param) {
+    console.log('Executing menu action:', action, param);
+    
+    switch(action) {
+        case 'quickCommand':
+            sendQuickCommand(param);
+            break;
+        case 'navigate':
+            window.location.href = param;
+            break;
+        case 'reload':
+            refreshPage();
+            break;
+        default:
+            console.warn('Unknown menu action:', action);
+    }
+    
+    closeMenu();
+};
+</script>			
+// Section 21: JavaScript - Form Handling and App Initialization 
+// Section 21: JavaScript - App Initialization and Utilities (Clean)
+<script>
+function initializeApp() {
+    console.log('Initializing app...');
+    
+    try {
+        initializeMenu();
+        initializeFileHandling();
+        
+        const promptInput = document.getElementById('promptInput');
+        const sendButton = document.getElementById('sendBtn');
+
+        if (promptInput) {
+            promptInput.addEventListener('input', () => autoResize(promptInput));
+            autoResize(promptInput);
+            promptInput.addEventListener('keydown', handleKeyDown);
+            promptInput.addEventListener('focus', handleInputFocus);
+            promptInput.addEventListener('blur', handleInputBlur);
+        }
+
+        if (sendButton) {
+            sendButton.replaceWith(sendButton.cloneNode(true));
+            const newSendButton = document.getElementById('sendBtn');
             
-            function toggleMenu() {
-              const hamburgerBtn = document.getElementById('hamburgerBtn');
-              const dropdownMenu = document.getElementById('dropdownMenu');
-              const menuOverlay = document.getElementById('menuOverlay');
-              
-              const isOpen = dropdownMenu.classList.contains('show');
-              
-              console.log('Toggle menu - currently open:', isOpen);
-              
-              if (isOpen) {
-                closeMenu();
-              } else {
-                openMenu();
-              }
-            }
+            newSendButton.addEventListener('click', handleSendClick);
+            newSendButton.addEventListener('touchend', handleSendTouch);
             
-            function openMenu() {
-              console.log('Opening menu');
-              const hamburgerBtn = document.getElementById('hamburgerBtn');
-              const dropdownMenu = document.getElementById('dropdownMenu');
-              const menuOverlay = document.getElementById('menuOverlay');
-              
-              hamburgerBtn.classList.add('active');
-              dropdownMenu.classList.add('show');
-              menuOverlay.classList.add('show');
-            }
-            
-            function closeMenu() {
-              console.log('Closing menu');
-              const hamburgerBtn = document.getElementById('hamburgerBtn');
-              const dropdownMenu = document.getElementById('dropdownMenu');
-              const menuOverlay = document.getElementById('menuOverlay');
-              
-              if (hamburgerBtn) hamburgerBtn.classList.remove('active');
-              if (dropdownMenu) dropdownMenu.classList.remove('show');
-              if (menuOverlay) menuOverlay.classList.remove('show');
-            }
-            
-            function sendQuickCommand(command) {
-              console.log('Sending quick command:', command);
-              const promptInput = document.getElementById('promptInput');
-              
-              if (promptInput) {
-                promptInput.value = command;
-                closeMenu();
-                setTimeout(() => {
-                  submitForm();
-                }, 100);
-              }
-            }
-
-            // Form handling
-            function initializeApp() {
-              console.log('Initializing app...');
-              
-              try {
-                initializeMenu();
-                initializeFileHandling();
-                
-                const promptInput = document.getElementById('promptInput');
-                const sendButton = document.getElementById('sendBtn');
-
-                if (promptInput) {
-                  promptInput.addEventListener('input', () => autoResize(promptInput));
-                  autoResize(promptInput);
-                  promptInput.addEventListener('keydown', handleKeyDown);
-                  promptInput.addEventListener('focus', handleInputFocus);
-                  promptInput.addEventListener('blur', handleInputBlur);
-                }
-
-                if (sendButton) {
-                  sendButton.replaceWith(sendButton.cloneNode(true));
-                  const newSendButton = document.getElementById('sendBtn');
-                  
-                  newSendButton.addEventListener('click', handleSendClick);
-                  newSendButton.addEventListener('touchend', handleSendTouch);
-                  
-                  newSendButton.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                  });
-                  
-                  newSendButton.addEventListener('contextmenu', (e) => {
-                    e.preventDefault();
-                  });
-                }
-
-                const projectSelect = document.getElementById('projectSelect');
-                if (projectSelect) {
-                  projectSelect.addEventListener('change', updateExportLink);
-                }
-                
-                // Initialize with recent-only view if we have many messages
-                const messages = document.querySelectorAll('.message');
-                if (messages.length > chatHistoryManager.maxVisibleMessages) {
-                  chatHistoryManager.showingRecentOnly = true;
-                  toggleHistoryView();
-                }
-                
-                console.log('App initialized successfully');
-              } catch (error) {
-                console.error('Failed to initialize app:', error);
-              }
-            }
-
-            function autoResize(textarea) {
-              textarea.style.height = 'auto';
-              const maxHeight = 120;
-              const newHeight = Math.min(textarea.scrollHeight, maxHeight);
-              textarea.style.height = newHeight + 'px';
-            }
-
-            function handleKeyDown(e) {
-              if (e.key === 'Enter' && !e.shiftKey) {
+            newSendButton.addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                submitForm();
-              }
-            }
-
-            function handleInputFocus() {
-              setTimeout(() => {
-                document.getElementById('promptInput')?.scrollIntoView({
-                  behavior: 'smooth',
-                  block: 'center'
-                });
-              }, 300);
-            }
-
-            function handleInputBlur() {
-              setTimeout(() => {
-                window.scrollTo(0, 0);
-              }, 100);
-            }
-
-            function handleSendClick(e) {
-              e.preventDefault();
-              e.stopPropagation();
-              submitForm();
-            }
-
-            function handleSendTouch(e) {
-              e.preventDefault();
-              e.stopPropagation();
-              
-              const button = e.currentTarget;
-              button.style.transform = 'scale(0.95)';
-              button.style.opacity = '0.8';
-              
-              setTimeout(() => {
-                if (!isSubmitting) {
-                  button.style.transform = '';
-                  button.style.opacity = '';
-                }
-              }, 150);
-              
-              submitForm();
-            }
-
-            function getSelectedVoices() {
-              const checkboxes = document.querySelectorAll('input[name="voices"]:checked');
-              const voices = Array.from(checkboxes).map(cb => cb.value);
-              return voices.length > 0 ? voices : ['SyntaxPrime'];
-            }
-
-            function addUserMessage(content) {
-              const thread = document.getElementById('thread');
-              const anchor = document.getElementById('bottom-anchor');
-              
-              const messageDiv = document.createElement('div');
-              messageDiv.className = 'message user';
-              messageDiv.innerHTML = `
-                <div class="message-bubble user">
-                  <div class="message-header">You</div>
-                  <div class="message-content">${content}</div>
-                </div>
-              `;
-              
-              thread.insertBefore(messageDiv, anchor);
-              scrollToBottom();
-            }
-
-            function addErrorMessage(content) {
-              const thread = document.getElementById('thread');
-              const anchor = document.getElementById('bottom-anchor');
-              
-              const messageDiv = document.createElement('div');
-              messageDiv.className = 'message bot';
-              messageDiv.innerHTML = `
-                <div class="message-bubble bot" style="border-color: #ef4444;">
-                  <div class="message-header">
-                    <img src="/static/syntax-buffering.png" alt="System" class="logo">
-                    System Error
-                  </div>
-                  <div class="message-content">${content}</div>
-                </div>
-              `;
-              
-              thread.insertBefore(messageDiv, anchor);
-              scrollToBottom();
-            }
-
-            // Initialize everything when DOM is ready
-            document.addEventListener('DOMContentLoaded', initializeApp);
-
-            // Also initialize on window load for safety
-            window.addEventListener('load', () => {
-              setTimeout(() => {
-                scrollToBottom();
-                
-                if (!window.location.hash) {
-                  const promptInput = document.getElementById('promptInput');
-                  if (promptInput) {
-                    promptInput.focus();
-                  }
-                }
-              }, 100);
-              
-              if (window.location.hash === '#bottom-anchor') {
-                setTimeout(scrollToBottom, 500);
-              }
             });
-            function recordFeedback(responseId, feedbackType, buttonElement) {
+            
+            newSendButton.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+            });
+        }
+
+        const projectSelect = document.getElementById('projectSelect');
+        if (projectSelect) {
+            projectSelect.addEventListener('change', updateExportLink);
+        }
+        
+        // Initialize with recent-only view if we have many messages
+        const messages = document.querySelectorAll('.message');
+        if (messages.length > chatHistoryManager.maxVisibleMessages) {
+            chatHistoryManager.showingRecentOnly = true;
+            toggleHistoryView();
+        }
+        
+        console.log('App initialized successfully');
+    } catch (error) {
+        console.error('Failed to initialize app:', error);
+    }
+}
+
+function autoResize(textarea) {
+    textarea.style.height = 'auto';
+    const maxHeight = 120;
+    const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+    textarea.style.height = newHeight + 'px';
+}
+
+function handleKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        submitForm();
+    }
+}
+
+function handleInputFocus() {
+    setTimeout(() => {
+        document.getElementById('promptInput')?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+        });
+    }, 300);
+}
+
+function handleInputBlur() {
+    setTimeout(() => {
+        window.scrollTo(0, 0);
+    }, 100);
+}
+
+function handleSendClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    submitForm();
+}
+
+function handleSendTouch(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const button = e.currentTarget;
+    button.style.transform = 'scale(0.95)';
+    button.style.opacity = '0.8';
+    
+    setTimeout(() => {
+        if (!isSubmitting) {
+            button.style.transform = '';
+            button.style.opacity = '';
+        }
+    }, 150);
+    
+    submitForm();
+}
+
+function getSelectedVoices() {
+    const checkboxes = document.querySelectorAll('input[name="voices"]:checked');
+    const voices = Array.from(checkboxes).map(cb => cb.value);
+    return voices.length > 0 ? voices : ['SyntaxPrime'];
+}
+
+function addUserMessage(content) {
+    const thread = document.getElementById('thread');
+    const anchor = document.getElementById('bottom-anchor');
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message user';
+    messageDiv.innerHTML = `
+        <div class="message-bubble user">
+            <div class="message-header">You</div>
+            <div class="message-content">${content}</div>
+        </div>
+    `;
+    
+    thread.insertBefore(messageDiv, anchor);
+    scrollToBottom();
+}
+
+function addErrorMessage(content) {
+    const thread = document.getElementById('thread');
+    const anchor = document.getElementById('bottom-anchor');
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message bot';
+    messageDiv.innerHTML = `
+        <div class="message-bubble bot" style="border-color: #ef4444;">
+            <div class="message-header">
+                <img src="/static/syntax-buffering.png" alt="System" class="logo">
+                System Error
+            </div>
+            <div class="message-content">${content}</div>
+        </div>
+    `;
+    
+    thread.insertBefore(messageDiv, anchor);
+    scrollToBottom();
+}
+
+function scrollToBottom() {
+    const thread = document.getElementById('thread');
+    const anchor = document.getElementById('bottom-anchor');
+    
+    if (anchor) {
+        anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    } else if (thread) {
+        thread.scrollTop = thread.scrollHeight;
+    }
+}
+
+function updateExportLink() {
+    const projectSelect = document.getElementById('projectSelect');
+    const exportLink = document.querySelector('a[href*="/export/"]');
+    
+    if (projectSelect && exportLink) {
+        const selectedProject = encodeURIComponent(projectSelect.value);
+        exportLink.href = `/export/${selectedProject}`;
+    }
+}
+
+// Initialize everything when DOM is ready
+document.addEventListener('DOMContentLoaded', initializeApp);
+
+// Also initialize on window load for safety
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        scrollToBottom();
+        
+        if (!window.location.hash) {
+            const promptInput = document.getElementById('promptInput');
+            if (promptInput) {
+                promptInput.focus();
+            }
+        }
+    }, 100);
+    
+    if (window.location.hash === '#bottom-anchor') {
+        setTimeout(scrollToBottom, 500);
+    }
+});
+
+</script>
+// Section 22: JavaScript - Feedback Recording and Closing Tags 
+<script>  
+	function recordFeedback(responseId, feedbackType, buttonElement) {
                 // Visual feedback
                 const feedbackButtons = buttonElement.parentElement.querySelectorAll('.feedback-btn');
                 feedbackButtons.forEach(btn => btn.classList.remove('selected'));
@@ -2788,3 +4139,5 @@
           </script>
         </body>
         </html>
+
+	
