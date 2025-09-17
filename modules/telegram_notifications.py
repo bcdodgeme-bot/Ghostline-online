@@ -1,6 +1,6 @@
 # modules/telegram_notifications.py
 # Telegram Bot notification system with reminder persistence and timezone handling
-# FIXED VERSION - PREVENTS SPAM + FLASK CONTEXT ISSUE RESOLVED + MISSING SCHEDULE_REMINDER METHOD ADDED
+# DEBUG VERSION - Shows exact database errors to diagnose reminder creation failure
 
 #-- Section 1: Imports and Configuration
 import os
@@ -10,6 +10,7 @@ import hashlib
 import requests
 import re
 import psycopg2.extras
+import traceback
 from modules.database import get_db_connection
 
 #-- Section 2: TelegramBot Class
@@ -185,50 +186,67 @@ class GhostlineTelegramReminders:
         except RuntimeError:
             print(f"INFO: {message}")
 
-#-- Section 4: Reminder Creation (Fixed Method)
+#-- Section 4: Reminder Creation (DEBUG VERSION)
     def create_reminder(self, title: str, remind_at: datetime.datetime,
                        project: str = None, priority: int = 3, content: str = None,
                        reminder_type: str = "user_reminder", repeat_pattern: str = None,
                        metadata: dict = None) -> dict:
-        """Create a reminder - FIXED method with proper error handling"""
+        """Create a reminder - DEBUG VERSION with detailed logging"""
+        
+        print(f"🔍 DEBUG: create_reminder called with:")
+        print(f"   title: {title}")
+        print(f"   remind_at: {remind_at}")
+        print(f"   project: {project}")
+        print(f"   priority: {priority}")
+        print(f"   content: {content}")
+        print(f"   reminder_type: {reminder_type}")
+        print(f"   repeat_pattern: {repeat_pattern}")
+        print(f"   metadata: {metadata}")
         
         if not self.bot:
+            print(f"❌ DEBUG: Bot not configured")
             return {"success": False, "error": "Telegram not configured"}
         
-        # Generate unique reminder ID
-        reminder_id = hashlib.md5(f"{title}{remind_at}{datetime.datetime.now()}".encode()).hexdigest()
-        
-        return self._actually_create_reminder(
-            reminder_id=reminder_id,
-            reminder_type=reminder_type,
-            title=title,
-            content=content,
-            remind_at=remind_at,
-            project=project,
-            priority=priority,
-            repeat_pattern=repeat_pattern,
-            metadata=metadata
-        )
+        try:
+            # Generate unique reminder ID
+            reminder_id = hashlib.md5(f"{title}{remind_at}{datetime.datetime.now()}".encode()).hexdigest()
+            print(f"🔍 DEBUG: Generated reminder_id: {reminder_id}")
+            
+            result = self._actually_create_reminder(
+                reminder_id=reminder_id,
+                reminder_type=reminder_type,
+                title=title,
+                content=content,
+                remind_at=remind_at,
+                project=project,
+                priority=priority,
+                repeat_pattern=repeat_pattern,
+                metadata=metadata
+            )
+            
+            print(f"🔍 DEBUG: _actually_create_reminder returned: {result}")
+            return result
+            
+        except Exception as e:
+            print(f"❌ DEBUG: Exception in create_reminder: {e}")
+            print(f"❌ DEBUG: Exception type: {type(e)}")
+            traceback.print_exc()
+            return {"success": False, "error": f"create_reminder failed: {str(e)}"}
     
     def schedule_reminder(self, title: str, remind_at: datetime.datetime,
                          project: str = None, priority: int = 2, content: str = None,
                          repeat_pattern: str = None, metadata: dict = None) -> dict:
-        """
-        Schedule a reminder with the provided parameters - FIXED MISSING METHOD.
-        This method was being called but was missing from the GhostlineTelegramReminders class.
+        """Schedule a reminder - DEBUG VERSION with detailed logging"""
         
-        Args:
-            title (str): The reminder title/content
-            remind_at (datetime): When to send the reminder
-            project (str): Associated project name
-            priority (int): Priority level (1=urgent, 2=high, 3=normal)
-            content (str): Additional reminder content
-            repeat_pattern (str): Optional repeat pattern ('daily', 'weekly', 'workdays')
-            metadata (dict): Additional metadata
+        print(f"🔍 DEBUG: schedule_reminder called with:")
+        print(f"   title: {title}")
+        print(f"   remind_at: {remind_at}")
+        print(f"   project: {project}")
+        print(f"   priority: {priority}")
+        print(f"   content: {content}")
+        print(f"   repeat_pattern: {repeat_pattern}")
+        print(f"   metadata: {metadata}")
         
-        Returns:
-            dict: Result with success status and details
-        """
         try:
             # Use the existing create_reminder method internally
             result = self.create_reminder(
@@ -241,12 +259,20 @@ class GhostlineTelegramReminders:
                 metadata=metadata
             )
             
+            print(f"🔍 DEBUG: create_reminder returned: {result}")
+            
             if result.get('success'):
+                print(f"✅ DEBUG: Scheduled reminder successfully: {title} at {remind_at}")
                 self._safe_log_info(f"Scheduled reminder via schedule_reminder: {title} at {remind_at}")
+            else:
+                print(f"❌ DEBUG: create_reminder failed: {result.get('error', 'Unknown error')}")
             
             return result
             
         except Exception as e:
+            print(f"❌ DEBUG: Exception in schedule_reminder: {e}")
+            print(f"❌ DEBUG: Exception type: {type(e)}")
+            traceback.print_exc()
             self._safe_log_error(f"Failed to schedule reminder: {e}")
             return {
                 "success": False,
@@ -256,35 +282,77 @@ class GhostlineTelegramReminders:
     def _actually_create_reminder(self, reminder_id: str, reminder_type: str, title: str,
                                  content: str, remind_at: datetime.datetime, project: str,
                                  priority: int, repeat_pattern: str, metadata: dict) -> dict:
-        """Actually create the reminder in database"""
+        """Actually create the reminder in database - DEBUG VERSION"""
+        print(f"🔍 DEBUG: _actually_create_reminder called")
+        print(f"   reminder_id: {reminder_id}")
+        print(f"   reminder_type: {reminder_type}")
+        print(f"   title: {title}")
+        print(f"   content: {content}")
+        print(f"   remind_at: {remind_at}")
+        print(f"   project: {project}")
+        print(f"   priority: {priority}")
+        print(f"   repeat_pattern: {repeat_pattern}")
+        print(f"   metadata: {metadata}")
+        
         try:
             with get_db_connection() as conn:
-                if conn:
-                    try:
-                        cursor = conn.cursor()
-                        cursor.execute('''
-                            INSERT INTO telegram_reminders 
-                            (reminder_id, reminder_type, title, content, remind_at, 
-                             project, priority, repeat_pattern, metadata)
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                        ''', (reminder_id, reminder_type, title, content, remind_at,
+                if not conn:
+                    print(f"❌ DEBUG: No database connection")
+                    return {"success": False, "error": "Database not available"}
+                
+                print(f"✅ DEBUG: Got database connection")
+                
+                try:
+                    cursor = conn.cursor()
+                    print(f"✅ DEBUG: Got database cursor")
+                    
+                    # Print the exact SQL we're about to execute
+                    sql = '''
+                        INSERT INTO telegram_reminders 
+                        (reminder_id, reminder_type, title, content, remind_at, 
+                         project, priority, repeat_pattern, metadata)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    '''
+                    params = (reminder_id, reminder_type, title, content, remind_at,
                              project, priority, repeat_pattern,
-                             psycopg2.extras.Json(metadata or {})))
-                        
-                        conn.commit()
-                        
-                        self._safe_log_info(f"Telegram reminder created: {reminder_id}")
-                        return {"success": True, "reminder_id": reminder_id, "remind_at": remind_at}
-                        
-                    except Exception as e:
-                        self._safe_log_error(f"Failed to create reminder: {e}")
-                        return {"success": False, "error": str(e)}
+                             psycopg2.extras.Json(metadata or {}))
+                    
+                    print(f"🔍 DEBUG: Executing SQL:")
+                    print(f"   SQL: {sql}")
+                    print(f"   Params: {params}")
+                    
+                    cursor.execute(sql, params)
+                    print(f"✅ DEBUG: SQL executed successfully")
+                    
+                    conn.commit()
+                    print(f"✅ DEBUG: Transaction committed")
+                    
+                    self._safe_log_info(f"Telegram reminder created: {reminder_id}")
+                    print(f"✅ DEBUG: Reminder created successfully: {reminder_id}")
+                    
+                    return {"success": True, "reminder_id": reminder_id, "remind_at": remind_at}
+                    
+                except Exception as db_error:
+                    print(f"❌ DEBUG: Database operation failed: {db_error}")
+                    print(f"❌ DEBUG: Database error type: {type(db_error)}")
+                    traceback.print_exc()
+                    
+                    conn.rollback()
+                    print(f"🔄 DEBUG: Transaction rolled back")
+                    
+                    self._safe_log_error(f"Failed to create reminder: {db_error}")
+                    return {"success": False, "error": str(db_error)}
             
+            print(f"❌ DEBUG: Database connection block exited - this shouldn't happen")
             return {"success": False, "error": "Database not available"}
             
-        except Exception as e:
-            self._safe_log_error(f"Database connection failed: {e}")
-            return {"success": False, "error": f"Database connection failed: {str(e)}"}
+        except Exception as outer_error:
+            print(f"❌ DEBUG: Outer exception in _actually_create_reminder: {outer_error}")
+            print(f"❌ DEBUG: Outer exception type: {type(outer_error)}")
+            traceback.print_exc()
+            
+            self._safe_log_error(f"Database connection failed: {outer_error}")
+            return {"success": False, "error": f"Database connection failed: {str(outer_error)}"}
 
 #-- Section 5: Reminder Checking and Sending (Anti-Spam)
     def check_and_send_reminders(self):

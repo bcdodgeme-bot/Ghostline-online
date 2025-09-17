@@ -1,7 +1,7 @@
 # modules/weather_integration.py
 # Complete Tomorrow.io Weather API Integration for Ghostline AI
+# FIXED VERSION - Correct field names matching actual API response
 # Supports comprehensive weather monitoring + health-focused tracking for headaches and UV sensitivity
-# UPDATED WITH LOCATION DETECTION AND METHOD COMPATIBILITY FIXES
 
 import os
 import json
@@ -36,13 +36,13 @@ VERY_HIGH_UV_THRESHOLD = int(os.getenv("VERY_HIGH_UV_THRESHOLD", "8"))  # UV ind
 _weather_cache = {}
 _cache_duration = int(os.getenv("WEATHER_CACHE_DURATION", "1800"))  # 30 minutes in seconds
 
-# Comprehensive weather fields for Tomorrow.io API
+# FIXED: Correct weather fields that actually exist in Tomorrow.io API
 COMPREHENSIVE_WEATHER_FIELDS = [
     "temperature",
     "temperatureApparent",
     "pressureSurfaceLevel",
     "uvIndex",
-    "uvHealthConcern",
+    "uvHealthConcern",  # Returns number (0-11+), we'll convert to text
     "humidity",
     "windSpeed",
     "windDirection",
@@ -50,9 +50,13 @@ COMPREHENSIVE_WEATHER_FIELDS = [
     "visibility",
     "cloudCover",
     "weatherCode",
-    "precipitationIntensity",
+    "rainIntensity",  # FIXED: Use specific intensity fields
     "precipitationProbability",
-    "precipitationType"
+    "precipitationType",  # Returns number codes (0,1,2,3,4)
+    "dewPoint",
+    "snowIntensity",
+    "sleetIntensity",
+    "freezingRainIntensity"
 ]
 
 # Comprehensive weather code mappings
@@ -95,6 +99,15 @@ WEATHER_CODES = {
     8000: {"desc": "Thunderstorm", "icon": "⛈️", "category": "storm"}
 }
 
+# FIXED: Precipitation type code mappings from API docs
+PRECIPITATION_TYPES = {
+    0: "No precipitation",
+    1: "Rain",
+    2: "Snow",
+    3: "Freezing Rain",
+    4: "Ice Pellets/Sleet"
+}
+
 #-- Section 1: Data Structures
 @dataclass
 class ComprehensiveWeatherData:
@@ -104,7 +117,7 @@ class ComprehensiveWeatherData:
     feels_like: float  # Celsius (temperatureApparent)
     pressure_surface_level: float  # mbar/hPa
     uv_index: float
-    uv_health_concern: str  # Tomorrow.io's health concern level
+    uv_health_concern: str  # Converted from number to description
     humidity: float  # Percentage
     wind_speed: float  # m/s
     wind_direction: float  # Degrees
@@ -112,7 +125,7 @@ class ComprehensiveWeatherData:
     visibility: float  # km
     cloud_cover: float  # Percentage
     weather_code: int  # Tomorrow.io weather code
-    precipitation_intensity: float  # mm/hr
+    precipitation_intensity: float  # mm/hr (will be max of rain/snow/sleet)
     precipitation_probability: float  # Percentage
     precipitation_type: int  # Tomorrow.io precipitation type code
     location: str
@@ -161,7 +174,7 @@ class TomorrowIOClient:
             "location": location,
             "fields": ",".join(COMPREHENSIVE_WEATHER_FIELDS),
             "units": "metric",  # Use metric units consistently
-            "timesteps": "current"
+            "timesteps": "current"  # FIXED: Proper parameter name
         }
         
         try:
@@ -224,6 +237,21 @@ class WeatherMonitor:
         cache_key = f"comprehensive_weather_{location}"
         _weather_cache[cache_key] = (weather_data, datetime.datetime.now())
     
+    def _convert_uv_health_concern(self, uv_number: int) -> str:
+        """Convert UV index number to health concern text"""
+        if uv_number >= 11:
+            return "Extreme"
+        elif uv_number >= 8:
+            return "Very High"
+        elif uv_number >= 6:
+            return "High"
+        elif uv_number >= 3:
+            return "Moderate"
+        elif uv_number >= 1:
+            return "Low"
+        else:
+            return "Minimal"
+    
     def get_comprehensive_conditions(self, location: str = None) -> ComprehensiveWeatherData:
         """Get comprehensive current weather conditions"""
         location = location or DEFAULT_LOCATION
@@ -239,14 +267,22 @@ class WeatherMonitor:
             current_data = self.client.get_comprehensive_weather(location)
             values = current_data["data"]["values"]
             
-            # Create comprehensive weather data object
+            # FIXED: Calculate max precipitation intensity from available fields
+            precipitation_intensity = max(
+                values.get("rainIntensity", 0),
+                values.get("snowIntensity", 0),
+                values.get("sleetIntensity", 0),
+                values.get("freezingRainIntensity", 0)
+            )
+            
+            # Create comprehensive weather data object with FIXED field mapping
             weather_data = ComprehensiveWeatherData(
                 timestamp=datetime.datetime.now(),
                 temperature=values.get("temperature", 0),
                 feels_like=values.get("temperatureApparent", values.get("temperature", 0)),
                 pressure_surface_level=values.get("pressureSurfaceLevel", 0),
                 uv_index=values.get("uvIndex", 0),
-                uv_health_concern=values.get("uvHealthConcern", "unknown"),
+                uv_health_concern=self._convert_uv_health_concern(values.get("uvHealthConcern", 0)),
                 humidity=values.get("humidity", 0),
                 wind_speed=values.get("windSpeed", 0),
                 wind_direction=values.get("windDirection", 0),
@@ -254,7 +290,7 @@ class WeatherMonitor:
                 visibility=values.get("visibility", 0),
                 cloud_cover=values.get("cloudCover", 0),
                 weather_code=values.get("weatherCode", 1000),
-                precipitation_intensity=values.get("precipitationIntensity", 0),
+                precipitation_intensity=precipitation_intensity,
                 precipitation_probability=values.get("precipitationProbability", 0),
                 precipitation_type=values.get("precipitationType", 0),
                 location=location
@@ -349,11 +385,13 @@ class WeatherMonitor:
         elif "Moderate headache risk" in weather_data.pressure_trend:
             alerts.append("⚠️ Moderate headache risk - pressure decline noted")
         
-        # UV-based sun safety alerts
+        # UV-based sun safety alerts (perfect for sun allergy!)
         if weather_data.uv_index >= VERY_HIGH_UV_THRESHOLD:
-            alerts.append("☀️ Very high UV index - avoid sun exposure, use SPF 30+")
+            alerts.append(f"☀️ Very high UV index ({weather_data.uv_index:.1f}) - avoid sun exposure, use SPF 30+")
         elif weather_data.uv_index >= HIGH_UV_THRESHOLD:
-            alerts.append("🌞 High UV index - limit sun exposure, use sunscreen")
+            alerts.append(f"🌞 High UV index ({weather_data.uv_index:.1f}) - limit sun exposure, use sunscreen")
+        elif weather_data.uv_index >= 3:
+            alerts.append(f"🌤️ Moderate UV index ({weather_data.uv_index:.1f}) - sun protection recommended")
         
         # Temperature comfort alerts
         temp_f = weather_data.temperature * 9/5 + 32
@@ -392,10 +430,11 @@ class WeatherMonitor:
         
         summary += f"**🏥 Health Monitoring:**\n"
         summary += f"• Barometric pressure: {weather_data.pressure_surface_level:.1f} mbar ({weather_data.pressure_trend})\n"
-        summary += f"• UV index: {weather_data.uv_index:.1f} ({weather_data.uv_alert_level})\n"
+        summary += f"• UV index: {weather_data.uv_index:.1f} ({weather_data.uv_alert_level}) - {weather_data.uv_health_concern}\n"
         
         if weather_data.precipitation_probability > 20:
-            summary += f"• Precipitation chance: {weather_data.precipitation_probability:.0f}%\n"
+            precip_type = PRECIPITATION_TYPES.get(weather_data.precipitation_type, "Unknown")
+            summary += f"• Precipitation: {weather_data.precipitation_probability:.0f}% chance of {precip_type.lower()}\n"
         
         return summary
     
@@ -422,7 +461,10 @@ class WeatherMonitor:
         report += f"• Visibility: {visibility_miles:.1f} miles\n"
         
         if weather_data.precipitation_probability > 0:
-            report += f"• Precipitation: {weather_data.precipitation_probability:.0f}% chance\n"
+            precip_type = PRECIPITATION_TYPES.get(weather_data.precipitation_type, "Unknown")
+            report += f"• Precipitation: {weather_data.precipitation_probability:.0f}% chance of {precip_type.lower()}\n"
+            if weather_data.precipitation_intensity > 0:
+                report += f"• Precipitation intensity: {weather_data.precipitation_intensity:.1f} mm/hr\n"
         
         report += f"\n**🌪️ Wind & Pressure:**\n"
         report += f"• Wind: {wind_mph:.0f} mph from {self._get_wind_direction(weather_data.wind_direction)}\n"
@@ -432,8 +474,8 @@ class WeatherMonitor:
         report += f"• Pressure trend: {weather_data.pressure_trend}\n\n"
         
         report += f"**🏥 Health Monitoring:**\n"
-        report += f"• UV index: {weather_data.uv_index:.1f} ({weather_data.uv_alert_level})\n"
-        report += f"• UV concern level: {weather_data.uv_health_concern}\n"
+        report += f"• UV index: {weather_data.uv_index:.1f} ({weather_data.uv_alert_level}) - {weather_data.uv_health_concern}\n"
+        report += f"• Sun allergy risk: {'HIGH - Stay indoors!' if weather_data.uv_index >= 6 else 'Moderate - Use protection' if weather_data.uv_index >= 3 else 'Low'}\n"
         
         return report
 
@@ -452,10 +494,11 @@ class WeatherMonitor:
         summary += f"Wind: {wind_mph:.0f} mph from {self._get_wind_direction(weather_data.wind_direction)}\n"
         summary += f"Visibility: {visibility_miles:.1f} miles\n"
         summary += f"Barometric Pressure: {weather_data.pressure_surface_level:.1f} mbar ({weather_data.pressure_trend})\n"
-        summary += f"UV Index: {weather_data.uv_index:.1f} ({weather_data.uv_alert_level})\n"
+        summary += f"UV Index: {weather_data.uv_index:.1f} ({weather_data.uv_alert_level}) - {weather_data.uv_health_concern}\n"
         
         if weather_data.precipitation_probability > 20:
-            summary += f"Precipitation Chance: {weather_data.precipitation_probability:.0f}%\n"
+            precip_type = PRECIPITATION_TYPES.get(weather_data.precipitation_type, "precipitation")
+            summary += f"Precipitation: {weather_data.precipitation_probability:.0f}% chance of {precip_type.lower()}\n"
         
         return summary
     
@@ -484,11 +527,13 @@ class WeatherMonitor:
         # Rain/precipitation questions
         if any(word in q for word in ["rain", "raining", "wet", "precipitation"]):
             if weather_data.precipitation_probability > 70:
-                return f"Yes, there's a high chance of rain ({weather_data.precipitation_probability:.0f}%)."
+                precip_type = PRECIPITATION_TYPES.get(weather_data.precipitation_type, "precipitation")
+                return f"Yes, there's a high chance of {precip_type.lower()} ({weather_data.precipitation_probability:.0f}%)."
             elif weather_data.precipitation_probability > 30:
-                return f"Possibly - there's a {weather_data.precipitation_probability:.0f}% chance of rain."
+                precip_type = PRECIPITATION_TYPES.get(weather_data.precipitation_type, "precipitation")
+                return f"Possibly - there's a {weather_data.precipitation_probability:.0f}% chance of {precip_type.lower()}."
             else:
-                return f"No rain expected (only {weather_data.precipitation_probability:.0f}% chance)."
+                return f"No precipitation expected (only {weather_data.precipitation_probability:.0f}% chance)."
         
         # Wind questions
         if any(word in q for word in ["wind", "windy", "breeze"]):
@@ -500,9 +545,13 @@ class WeatherMonitor:
             else:
                 return f"Light winds at {wind_mph:.0f} mph - quite calm."
         
-        # UV/sun questions
+        # UV/sun questions (important for sun allergy!)
         if any(word in q for word in ["uv", "sun", "sunny", "sunlight"]):
-            return f"UV index is {weather_data.uv_index:.1f} ({weather_data.uv_alert_level}). {weather_data.uv_health_concern.title()} concern level."
+            uv_risk = "VERY HIGH RISK - Stay indoors!" if weather_data.uv_index >= 8 else \
+                     "HIGH RISK - Use full protection" if weather_data.uv_index >= 6 else \
+                     "Moderate risk - Use sunscreen" if weather_data.uv_index >= 3 else \
+                     "Low risk"
+            return f"UV index is {weather_data.uv_index:.1f} ({weather_data.uv_health_concern}). Sun allergy risk: {uv_risk}"
         
         # Pressure questions
         if any(word in q for word in ["pressure", "headache", "barometric"]):
@@ -647,7 +696,7 @@ def handle_weather_alerts_command(user_input: str, project: str) -> Dict[str, st
             
             analysis += f"**Current Monitoring Status:**\n"
             analysis += f"• Barometric pressure: {weather_data.pressure_surface_level:.1f}mbar ({weather_data.pressure_trend})\n"
-            analysis += f"• UV index: {weather_data.uv_index:.1f} ({weather_data.uv_alert_level})\n"
+            analysis += f"• UV index: {weather_data.uv_index:.1f} ({weather_data.uv_alert_level}) - {weather_data.uv_health_concern}\n"
             analysis += f"• General conditions: {weather_data.weather_description}\n\n"
             
             analysis += f"**Alert Thresholds:**\n"
@@ -662,7 +711,7 @@ def handle_weather_alerts_command(user_input: str, project: str) -> Dict[str, st
             
             analysis += f"**Current Conditions:**\n"
             analysis += f"• Pressure: {weather_data.pressure_surface_level:.1f}mbar ({weather_data.pressure_trend})\n"
-            analysis += f"• UV: {weather_data.uv_index:.1f} ({weather_data.uv_alert_level})\n"
+            analysis += f"• UV: {weather_data.uv_index:.1f} ({weather_data.uv_alert_level}) - {weather_data.uv_health_concern}\n"
             analysis += f"• Temperature: {weather_data.temperature:.1f}°C\n"
             analysis += f"• Humidity: {weather_data.humidity:.0f}%\n\n"
             
@@ -677,7 +726,8 @@ def handle_weather_alerts_command(user_input: str, project: str) -> Dict[str, st
             
             analysis += f"\n**Health Impact Assessment:**\n"
             analysis += f"• Headache risk: {'High' if 'High headache risk' in weather_data.pressure_trend else 'Moderate' if 'Moderate headache risk' in weather_data.pressure_trend else 'Low'}\n"
-            analysis += f"• UV protection needed: {'Yes' if weather_data.uv_index >= HIGH_UV_THRESHOLD else 'No'}\n"
+            analysis += f"• UV protection needed: {'YES - High risk!' if weather_data.uv_index >= HIGH_UV_THRESHOLD else 'Moderate precautions' if weather_data.uv_index >= 3 else 'Low risk'}\n"
+            analysis += f"• Sun allergy risk: {'VERY HIGH - Stay indoors!' if weather_data.uv_index >= 8 else 'HIGH - Full protection needed' if weather_data.uv_index >= 6 else 'Moderate - Use sunscreen' if weather_data.uv_index >= 3 else 'Low'}\n"
             
             # Add visibility assessment
             visibility_miles = weather_data.visibility * 0.621371
@@ -688,9 +738,8 @@ def handle_weather_alerts_command(user_input: str, project: str) -> Dict[str, st
                 analysis += "(poor - drive carefully)\n"
             else:
                 analysis += "(good)\n"
-            analysis += f"**\n"
             
-            analysis += f"\n💡 **Monitoring Settings**:\n"
+            analysis += f"\n💡 **Monitoring Settings:**\n"
             analysis += f"• Headache threshold: {PRESSURE_DROP_THRESHOLD}mbar drop\n"
             analysis += f"• UV alert threshold: {HIGH_UV_THRESHOLD} UV index\n"
             analysis += f"• Data cached for: {_cache_duration//60} minutes\n"
@@ -840,7 +889,7 @@ def test_weather_integration():
         print(f"   Temperature: {weather_data.temperature}°C ({weather_data.temperature * 9/5 + 32:.0f}°F)")
         print(f"   Condition: {weather_data.weather_description}")
         print(f"   Pressure: {weather_data.pressure_surface_level} mbar")
-        print(f"   UV Index: {weather_data.uv_index}")
+        print(f"   UV Index: {weather_data.uv_index} ({weather_data.uv_health_concern})")
         print(f"   Wind: {weather_data.wind_speed * 2.237:.0f} mph")
         print(f"   Pressure trend: {weather_data.pressure_trend}")
         return True
