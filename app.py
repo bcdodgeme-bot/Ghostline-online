@@ -830,12 +830,16 @@ def enhanced_marketing_command_processor(user_input: str, project: str, use_voic
 # Section 4: Main Chat Route (UPDATED WITH COMMAND PARSING) 9/16/25
 # Try hybrid content strategy commands
 # Section 4: Main Chat Route (FIXED INDENTATION)
+# Section 4: Main Chat Route (UPDATED WITH COMMAND PARSING) 9/16/25
+# Section 4: Main Chat Route (UPDATED WITH COMMAND PARSING) 9/16/25
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    """Main chat route with enhanced integration processing"""
     if not session.get('logged_in'):
         return redirect(url_for('login'))
-    
+
+    response_data = {}
+    selected_project = PROJECTS[0]
+
     if request.method == 'GET':
         try:
             # Load personality preferences
@@ -883,143 +887,133 @@ def index():
             return render_template('index.html',
                                  projects=PROJECTS,
                                  error=f"Dashboard load error: {str(e)}")
-    
+
     # POST request processing
-    try:
-        # Get form data
-        user_input = request.form.get('user_input', '').strip()
-        project = request.form.get('project', PROJECTS[0])
+    if request.method == 'POST':
+        try:
+            # Get form data
+            user_input = request.form.get('user_input', '').strip()
+            project = request.form.get('project', PROJECTS[0])
+            use_voices = request.form.getlist('voices') or ['SyntaxPrime']
+            random_toggle = 'random' in request.form
+            
+            # Store preferences in session
+            session['current_project'] = project
+            session['use_voices'] = use_voices
+            session['random_toggle'] = random_toggle
+            
+            if not user_input:
+                return redirect('/')
+            
+            app.logger.info(f"Processing request: '{user_input}' for project '{project}'")
+        selected_project = project
+        user_input = request.form['user_input'].strip()
+        app.logger.info(f"POST request received with input: {user_input}")
+        project = request.form['project']
+        selected_project = project
         use_voices = request.form.getlist('voices') or ['SyntaxPrime']
         random_toggle = 'random' in request.form
-        
-        # Store preferences in session
-        session['current_project'] = project
-        session['use_voices'] = use_voices
-        session['random_toggle'] = random_toggle
-        
-        if not user_input:
-            return redirect('/')
-        
-        app.logger.info(f"Processing request: '{user_input}' for project '{project}'")
-        
+
+        # Generate session ID for context tracking
+        session_id = session.get('session_id')
+        if not session_id:
+            import uuid
+            session_id = str(uuid.uuid4())
+            session['session_id'] = session_id
+
         # Auto-refresh brain context periodically
         try:
             refresh_brain_context()
         except Exception as e:
-            app.logger.warning(f"Brain context refresh failed: {e}")
+            print(f"Brain context refresh failed: {e}")
 
-        # === INTEGRATION COMMAND PROCESSING ===
-        response_data = {}
-        handled = False
-        
-        # PRIORITY 1: Handle reminder commands FIRST
+        # NEW: Weather awareness integration - check FIRST for health-related topics
         try:
-            print(f"Checking reminder command for: '{user_input}'")
+            from modules.weather_health_integration import process_user_input_with_weather
+            weather_response = process_user_input_with_weather(user_input, project)
+            if weather_response:
+                app.logger.info("Health & weather context provided")
+                save_conversation_enhanced(project, user_input, weather_response)
+                return _render_enhanced(project, weather_response)
+        except ImportError:
+            pass  # Weather module not available, continue normally
+        except Exception as e:
+            app.logger.error(f"Weather processing failed: {e}")
+            # Continue with normal processing if weather fails
+
+        # PRIORITY 1: Handle reminder commands FIRST - This is the key fix!
+        try:
+            print(f"MAIN ROUTE: Checking reminder command for: '{user_input}'")
             response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
             if handled:
-                print(f"Reminder handled successfully!")
+                print(f"MAIN ROUTE: Reminder handled successfully!")
                 save_conversation_enhanced(project, user_input, response_data)
                 return _render_enhanced(project, response_data)
             else:
-                print(f"Not a reminder command, continuing...")
+                print(f"MAIN ROUTE: Not a reminder command, continuing...")
         except Exception as e:
             app.logger.error(f"Reminder handler failed: {e}")
-            # Don't set handled=True here - let other processors try
+            # Don't fail the whole request, just log and continue
 
-        # Try BlueSky integration with enhanced pattern matching
+        # FIXED: BlueSky commands with enhanced pattern matching (HIGHEST PRIORITY)
         if is_bluesky_configured():
-            app.logger.info(f"BlueSky is configured, processing command: '{user_input}'")
+            app.logger.info(f"Checking BlueSky command patterns for: '{user_input}'")
             try:
-                # Enhanced BlueSky command detection
+                # Enhanced BlueSky command detection with more flexible patterns
                 user_lower = user_input.lower().strip()
                 
+                # Comprehensive BlueSky trigger patterns
                 bluesky_patterns = [
+                    # Direct BlueSky mentions
                     'bluesky', 'bsky', 'blue sky',
+                    # Action patterns
                     'analyze bluesky', 'check bluesky', 'my bluesky', 'bluesky feed',
                     'bluesky timeline', 'bluesky posts', 'bluesky analysis',
+                    # Engagement patterns
                     'bluesky engagement', 'bluesky suggestions', 'who should i follow',
                     'bluesky opportunities', 'social engagement', 'feed analysis',
+                    # High priority patterns
                     'bluesky high priority', 'best bluesky posts', 'top bluesky',
+                    # Test patterns
                     'bluesky test', 'test bluesky', 'bluesky connection'
                 ]
                 
-                bluesky_detected = any(pattern in user_lower for pattern in bluesky_patterns)
+                # Check if input matches any BlueSky pattern
+                bluesky_detected = False
+                for pattern in bluesky_patterns:
+                    if pattern in user_lower:
+                        bluesky_detected = True
+                        app.logger.info(f"BlueSky pattern matched: '{pattern}'")
+                        break
                 
-                # Also check for standalone keywords
+                # Also check for standalone keywords that might be BlueSky related
                 standalone_keywords = ['bsky', 'bluesky']
                 if not bluesky_detected:
                     for keyword in standalone_keywords:
                         if user_lower == keyword or user_lower.startswith(keyword + ' ') or user_lower.endswith(' ' + keyword):
                             bluesky_detected = True
+                            app.logger.info(f"BlueSky standalone keyword matched: '{keyword}'")
                             break
                 
                 if bluesky_detected:
                     app.logger.info(f"Processing BlueSky command: '{user_input}'")
                     response_content = process_bluesky_command(user_input)
                     
+                    # Check if we got a real response (not just the help menu)
                     if response_content and "Available BlueSky commands" not in response_content:
                         app.logger.info(f"BlueSky command successfully processed")
                         response_data = {"SyntaxPrime": response_content}
-                        handled = True
                         save_conversation_enhanced(project, user_input, response_data)
                         return _render_enhanced(project, response_data)
                     else:
-                        app.logger.info(f"BlueSky returned help menu, falling through")
+                        # If it's just the help menu, let it fall through to normal processing
+                        # but log that we tried BlueSky
+                        app.logger.info(f"BlueSky returned help menu, falling through to normal processing")
                 
             except Exception as e:
                 app.logger.error(f"BlueSky processing failed: {e}")
-
-        # Enhanced Marketing Commands with RSS Knowledge Base
-        if not handled:
-            try:
-                app.logger.info(f"Enhanced marketing processing: '{user_input}'")
-                response_data, handled = enhanced_marketing_command_processor(user_input, project, use_voices, random_toggle)
-                if handled:
-                    app.logger.info(f"Enhanced marketing command handled successfully")
-                    save_conversation_enhanced(project, user_input, response_data)
-                    return _render_enhanced(project, response_data)
-            except Exception as e:
-                app.logger.error(f"Enhanced marketing processing failed: {e}")
-
-        # Try Google integration commands
-        if not handled:
-            try:
-                response_data, handled = process_google_ecosystem_commands(user_input, project, use_voices, random_toggle)
-                if handled:
-                    save_conversation_enhanced(project, user_input, response_data)
-                    return _render_enhanced(project, response_data)
-            except Exception as e:
-                app.logger.error(f"Google integration failed: {e}")
-
-        # Try Calendar-Telegram integration
-        if is_calendar_telegram_configured() and not handled:
-            try:
-                response_data, handled = process_calendar_telegram_command(user_input, project, use_voices, random_toggle)
-                if handled:
-                    save_conversation_enhanced(project, user_input, response_data)
-                    return _render_enhanced(project, response_data)
-            except Exception as e:
-                app.logger.error(f"Calendar-Telegram integration failed: {e}")
-
-        # Try Cloze integration commands
-        if is_cloze_configured() and not handled:
-            try:
-                response_data, handled = process_cloze_command(user_input, project, use_voices, random_toggle)
-                if handled:
-                    save_conversation_enhanced(project, user_input, response_data)
-                    return _render_enhanced(project, response_data)
-            except Exception as e:
-                app.logger.error(f"Cloze integration failed: {e}")
-
-        # Try ClickUp integration commands
-        if is_clickup_configured() and not handled:
-            try:
-                response_data, handled = process_clickup_command(user_input, project, use_voices, random_toggle)
-                if handled:
-                    save_conversation_enhanced(project, user_input, response_data)
-                    return _render_enhanced(project, response_data)
-            except Exception as e:
-                app.logger.error(f"ClickUp integration failed: {e}")
+                # Don't fail the whole request, just log and continue
+                pass
 
         # Try hybrid content strategy commands
         try:
@@ -1062,76 +1056,348 @@ def index():
                     response_data = {"SyntaxPrime": f"Integration module import failed: {str(e)}\nCheck if modules/cloze_clickup_integration.py exists and has no syntax errors."}
                     save_conversation_enhanced(project, user_input, response_data)
                     return _render_enhanced(project, response_data)
-        
+
+        # Try ClickUp-only commands
+        if is_clickup_configured():
+            response_data, handled = process_clickup_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+
         # Handle scrape command
         if user_input.lower().startswith("scrape "):
+            url = user_input.split(" ", 1)[1].strip()
             try:
-                url = user_input.split(" ", 1)[1].strip()
                 result = scrape_url(url)
                 if not result["ok"]:
-                    response_data = {"SyntaxPrime": f"Could not fetch content: {result['error']}"}
+                    response_data = {"SyntaxPrime": f"Could not fetch/extract content: {result['error']}"}
                 else:
                     summary_prompt = (
                         "Summarize the key points from the following webpage for Carl. "
-                        "Focus on actionable insights and key information:\n\n"
-                        f"{result['content']}"
+                        "Use bullets and keep it tight and actionable.\n\n"
+                        f"--- SCRAPED CONTENT START ---\n{result['text']}\n--- SCRAPED CONTENT END ---"
                     )
-                    
                     retrieval_ctx = enhanced_retrieve(summary_prompt, k=5, project=project) if is_ready() else []
-                    
                     response_data = generate_response(
                         summary_prompt, use_voices, random_toggle,
                         project=project, model=CHAT_MODEL, retrieval_context=retrieval_ctx
                     )
-                
-                save_conversation_enhanced(project, user_input, response_data)
-                return _render_enhanced(project, response_data)
-                
+                handled = True
             except Exception as e:
                 app.logger.error(f"Scrape command failed: {e}")
-                response_data = {"SyntaxPrime": f"Scraping failed: {e}"}
-                save_conversation_enhanced(project, user_input, response_data)
-                return _render_enhanced(project, response_data)
+                response_data = {"SyntaxPrime": f"Scrape failed: {e}"}
+                handled = True
+            
+            save_conversation_enhanced(project, user_input, response_data)
+            return _render_enhanced(project, response_data)
 
-        # Gmail/Calendar commands
-        try:
-            from modules.gmail import process_gmail_command
-            response_data, handled = process_gmail_command(user_input, project, use_voices, random_toggle)
+        # Try Unified Google Integration (Gmail, Calendar, Analytics, Search Console, Docs, Sheets)
+        if is_google_configured():
+            try:
+                response_data, handled = process_google_ecosystem_commands(
+                    user_input, project, use_voices, random_toggle
+                )
+                if handled:
+                    save_conversation_enhanced(project, user_input, response_data)
+                    return _render_enhanced(project, response_data)
+            except Exception as e:
+                app.logger.error(f"Google integration processing failed: {e}")
+
+        # Try Slack integration
+        if is_slack_configured():
+            response_data, handled = process_slack_command(user_input, project, use_voices, random_toggle)
             if handled:
                 save_conversation_enhanced(project, user_input, response_data)
                 return _render_enhanced(project, response_data)
-        except Exception as e:
-            app.logger.error(f"Gmail processor failed: {e}")
 
-        # Normal AI response generation
+        # Enhanced Marketing Commands with RSS Knowledge Base
         try:
-            app.logger.info("Using normal AI response generation")
-            
-            # Get conversation context
-            retrieval_ctx = enhanced_retrieve(user_input, k=5, project=project) if is_ready() else []
-            
-            # Use enhanced response generation with context validation
-            response_data = generate_response_with_context_check(
-                user_input, use_voices, random_toggle,
-                project, CHAT_MODEL, retrieval_ctx
-            )
-            
-            save_conversation_enhanced(project, user_input, response_data)
-            return _render_enhanced(project, response_data)
-            
+            response_data, handled = enhanced_marketing_command_processor(user_input, project, use_voices, random_toggle)
+            if handled:
+                app.logger.info(f"Enhanced marketing command handled successfully")
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
         except Exception as e:
-            app.logger.error(f"AI response generation failed: {e}")
-            response_data = {"SyntaxPrime": f"I'm having trouble processing that request right now. Please try again."}
-            save_conversation_enhanced(project, user_input, response_data)
-            return _render_enhanced(project, response_data)
-            
-    except Exception as e:
-        app.logger.error(f"Main route failed: {e}", exc_info=True)
-        return render_template('index.html',
-                             projects=PROJECTS,
-                             error=f"Request processing failed: {str(e)}")
-    
-    
+            app.logger.error(f"Enhanced marketing processing failed: {e}")
+
+        # Try Cloze commands with proper configuration validation
+        if is_cloze_configured():
+            response_data, handled = process_cloze_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+
+        # Try Telegram integration
+        if is_telegram_configured():
+            response_data, handled = process_telegram_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+
+        # Try Calendar-Telegram integration
+        if is_calendar_telegram_configured():
+            response_data, handled = process_calendar_telegram_command(user_input, project, use_voices, random_toggle)
+            if handled:
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+
+        # NEW: Chat Commands (Bookmark and Google Docs Export) - ADD BEFORE normal AI response
+        try:
+            # Import command parser functions
+            def detect_bookmark_command(user_input: str) -> bool:
+                """Detect if user wants to create a bookmark"""
+                import re
+                bookmark_patterns = [
+                    r'\bbookmark\b',
+                    r'\bsave this\b',
+                    r'\bmark this\b',
+                    r'\bremember this\b',
+                    r'\bsave conversation\b'
+                ]
+                user_lower = user_input.lower().strip()
+                return any(re.search(pattern, user_lower) for pattern in bookmark_patterns)
+
+            def detect_export_command(user_input: str) -> bool:
+                """Detect if user wants to export to Google Docs"""
+                import re
+                export_patterns = [
+                    r'\bcopy to google docs?\b',
+                    r'\bexport to google\b',
+                    r'\bgoogle docs?\b',
+                    r'\bsend to drive\b',
+                    r'\bexport conversation\b',
+                    r'\bcreate doc\b'
+                ]
+                user_lower = user_input.lower().strip()
+                return any(re.search(pattern, user_lower) for pattern in export_patterns)
+
+            def extract_bookmark_title(user_input: str):
+                """Extract a custom title from bookmark command"""
+                import re
+                user_input = user_input.strip()
+                
+                title_patterns = [
+                    r'bookmark(?:\s+this)?\s+as\s+(.+)',
+                    r'bookmark:\s*(.+)',
+                    r'save this as\s+(.+)',
+                    r'mark this as\s+(.+)'
+                ]
+                
+                for pattern in title_patterns:
+                    match = re.search(pattern, user_input, re.IGNORECASE)
+                    if match:
+                        title = match.group(1).strip()
+                        title = re.sub(r'[^\w\s\-\(\)]+', '', title)  # Remove special chars
+                        return title[:100]  # Limit length
+                return None
+
+            # Check for bookmark command
+            if detect_bookmark_command(user_input):
+                app.logger.info(f"Bookmark command detected: '{user_input}'")
+                
+                try:
+                    # Extract custom title if provided
+                    custom_title = extract_bookmark_title(user_input)
+                    
+                    # Generate default title if none provided
+                    if not custom_title:
+                        import datetime
+                        timestamp = datetime.datetime.now().strftime("%m/%d %H:%M")
+                        custom_title = f"Bookmark - {project} - {timestamp}"
+                    
+                    # Create a temporary response for the bookmark command
+                    bookmark_response = {
+                        "SyntaxPrime": f"Bookmark \"{custom_title}\" will be created after this conversation is saved.\n\nThis conversation point will be saved for easy reference. Use 'copy to google docs' to export it later."
+                    }
+                    
+                    # Save conversation first to get chat_id
+                    chat_id = save_conversation_enhanced(project, user_input, bookmark_response)
+                    
+                    if chat_id:
+                        # Now create the actual bookmark with the chat_id
+                        from modules.database import create_bookmark
+                        bookmark_id = create_bookmark(
+                            chat_id=chat_id,
+                            title=custom_title,
+                            notes=f"User-requested bookmark for {project}",
+                            bookmark_type='user_command'
+                        )
+                        
+                        if bookmark_id:
+                            app.logger.info(f"Bookmark created successfully: {bookmark_id}")
+                            # Update response to confirm successful creation
+                            bookmark_response["SyntaxPrime"] = f"Bookmark created: \"{custom_title}\"\n\nThis conversation point has been saved for easy reference. Use 'copy to google docs' to export it later."
+                        else:
+                            app.logger.error(f"Failed to create bookmark in database")
+                            bookmark_response["SyntaxPrime"] = f"Bookmark command processed, but database storage failed.\n\nThe conversation is still saved in your history."
+                    
+                    return _render_enhanced(project, bookmark_response)
+                    
+                except Exception as e:
+                    app.logger.error(f"Bookmark processing failed: {e}")
+                    error_response = {
+                        "SyntaxPrime": f"Failed to create bookmark: {str(e)}\n\nThe conversation is still saved in your history, but the bookmark wasn't created."
+                    }
+                    save_conversation_enhanced(project, user_input, error_response)
+                    return _render_enhanced(project, error_response)
+
+            # Check for export command
+            elif detect_export_command(user_input):
+                app.logger.info(f"Export command detected: '{user_input}'")
+                
+                try:
+                    # Check if Google integration is available
+                    try:
+                        from modules.enhanced_google_integration import EnhancedGoogleIntegration
+                        google_integration = EnhancedGoogleIntegration()
+                        
+                        if not google_integration.is_configured():
+                            export_response = {
+                                "SyntaxPrime": "Google Docs export requires Google OAuth setup. Visit /integrations to configure Google Drive access first."
+                            }
+                            save_conversation_enhanced(project, user_input, export_response)
+                            return _render_enhanced(project, export_response)
+                            
+                    except ImportError:
+                        export_response = {
+                            "SyntaxPrime": "Google Docs integration not available. The enhanced Google integration module needs to be configured."
+                        }
+                        save_conversation_enhanced(project, user_input, export_response)
+                        return _render_enhanced(project, export_response)
+                    
+                    # Get recent bookmarks for this project
+                    from modules.database import get_bookmarks, get_db_connection
+                    bookmarks = get_bookmarks(project=project, limit=5)
+                    
+                    if not bookmarks:
+                        export_response = {
+                            "SyntaxPrime": "No bookmarks found to export. Create a bookmark first using 'bookmark this' or 'save this'."
+                        }
+                        save_conversation_enhanced(project, user_input, export_response)
+                        return _render_enhanced(project, export_response)
+                    
+                    # Use the most recent bookmark
+                    latest_bookmark = bookmarks[0]
+                    
+                    # Export to Google Docs
+                    import datetime
+                    doc_title = f"Ghostline Export - {latest_bookmark['title']} - {datetime.datetime.now().strftime('%Y-%m-%d')}"
+                    
+                    # Get the conversation content
+                    with get_db_connection() as conn:
+                        if not conn:
+                            export_response = {
+                                "SyntaxPrime": "Database connection failed. Cannot retrieve conversation for export."
+                            }
+                            save_conversation_enhanced(project, user_input, export_response)
+                            return _render_enhanced(project, export_response)
+                        
+                        cursor = conn.cursor()
+                        cursor.execute('''
+                            SELECT user_input, response_data, created_at 
+                            FROM chat_threads 
+                            WHERE id = %s
+                        ''', (latest_bookmark['chat_id'],))
+                        
+                        conversation = cursor.fetchone()
+                        
+                        if not conversation:
+                            export_response = {
+                                "SyntaxPrime": "Conversation not found. The bookmark may reference a conversation that was deleted."
+                            }
+                            save_conversation_enhanced(project, user_input, export_response)
+                            return _render_enhanced(project, export_response)
+                        
+                        # Format content for Google Docs
+                        user_input_orig, response_data_json, created_at = conversation
+                        ai_response = response_data_json.get('SyntaxPrime', '') if response_data_json else ''
+                        
+                        document_content = f"""# {doc_title}
+
+**Project:** {project}
+**Date:** {created_at.strftime('%Y-%m-%d %H:%M')}
+**Bookmark:** {latest_bookmark['title']}
+
+## User Input
+{user_input_orig}
+
+## AI Response
+{ai_response}
+
+---
+*Exported from Ghostline AI*
+"""
+                        
+                        # Create Google Doc
+                        doc_result = google_integration.create_google_doc(
+                            title=doc_title,
+                            content=document_content
+                        )
+                        
+                        if doc_result.get('success'):
+                            export_response = {
+                                "SyntaxPrime": f"Successfully exported to Google Docs!\n\n**Document:** {doc_title}\n**URL:** {doc_result['document_url']}\n\nThe bookmark \"{latest_bookmark['title']}\" has been exported with full conversation context."
+                            }
+                        else:
+                            export_response = {
+                                "SyntaxPrime": f"Google Docs export failed: {doc_result.get('error', 'Unknown error')}\n\nCheck your Google integration setup in /integrations."
+                            }
+                    
+                    save_conversation_enhanced(project, user_input, export_response)
+                    return _render_enhanced(project, export_response)
+                    
+                except Exception as e:
+                    app.logger.error(f"Export processing failed: {e}")
+                    export_response = {
+                        "SyntaxPrime": f"Export failed: {str(e)}\n\nTry checking your Google integration setup or create a bookmark first."
+                    }
+                    save_conversation_enhanced(project, user_input, export_response)
+                    return _render_enhanced(project, export_response)
+
+        except Exception as e:
+            app.logger.error(f"Command parsing failed: {e}")
+            # Continue to normal AI response if command parsing fails
+
+        # Normal AI response as fallback (same enhanced logic as web version)
+        if not response_data:
+            try:
+                retrieval_ctx = enhanced_retrieve(user_input, k=5, project=project) if is_ready() else []
+                
+                # NEW: Try to enhance conversation with weather context for health topics
+                enhanced_user_input = user_input
+                try:
+                    from modules.weather_health_integration import enhance_conversation_with_weather_awareness
+                    enhanced_messages = enhance_conversation_with_weather_awareness(
+                        [{"role": "user", "content": user_input}],
+                        user_input
+                    )
+                    if enhanced_messages and len(enhanced_messages) > 0:
+                        enhanced_user_input = enhanced_messages[0]["content"]
+                except ImportError:
+                    pass  # Weather module not available
+                except Exception as e:
+                    app.logger.error(f"Weather message enhancement failed: {e}")
+                
+                # Use enhanced response generation with context validation
+                response_data = generate_response_with_context_check(
+                    enhanced_user_input, use_voices, random_toggle,
+                    project, CHAT_MODEL, retrieval_ctx
+                )
+                
+                save_conversation_enhanced(project, user_input, response_data)
+            except Exception as e:
+                app.logger.error(f"Normal response generation failed: {e}")
+                response_data = {"SyntaxPrime": f"Response generation failed: {e}"}
+                save_conversation_enhanced(project, user_input, response_data)
+
+            except Exception as e:
+                app.logger.error(f"Main route failed: {e}", exc_info=True)
+                return render_template('index.html',
+                                     projects=PROJECTS,
+                                     error=f"Request processing failed: {str(e)}")
+
+    # GET request - render the chat interface
+    return render_template('index.html', projects=PROJECTS, selected_project=selected_project, response_data=response_data)
     
 # Section 5: Brain Building Routes
 from modules.brain import handle_build_brain, handle_build_new_brain, get_brain_status, get_brain_control_dashboard
@@ -8947,7 +9213,7 @@ def api_export_to_drive():
 # Weather monitoring for headache prediction and UV sensitivity alerts
 
 # Weather Integration Functions
-def process_user_input_with_weather(user_input: str, project: str) -> Dict[str, str]:
+def process_user_input_with_weather(user_input: str, project: str) -> dict[str, str]:
     """Enhanced input processing with weather integration"""
     
     # Import weather integration
@@ -9012,7 +9278,7 @@ Type any weather command to get started!"""
     # If not a weather command, continue with normal processing
     return None
 
-def enhance_conversation_with_weather_awareness(messages: List[Dict], user_input: str) -> List[Dict]:
+def enhance_conversation_with_weather_awareness(messages: list[dict], user_input: str) -> List[dict]:
     """Add weather context to conversations when health-relevant topics are discussed"""
     
     try:
