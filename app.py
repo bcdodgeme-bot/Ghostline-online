@@ -889,6 +889,7 @@ def index():
                                  error=f"Dashboard load error: {str(e)}")
 
     # POST request processing
+    # POST request processing
     if request.method == 'POST':
         try:
             # Get form data
@@ -906,8 +907,31 @@ def index():
                 return redirect('/')
             
             app.logger.info(f"Processing request: '{user_input}' for project '{project}'")
-        selected_project = project
-        user_input = request.form['user_input'].strip()
+            
+            # Set selected_project
+            selected_project = project
+            
+            # Generate session ID for context tracking
+            session_id = session.get('session_id')
+            if not session_id:
+                import uuid
+                session_id = str(uuid.uuid4())
+                session['session_id'] = session_id
+
+            # Auto-refresh brain context periodically
+            try:
+                refresh_brain_context()
+            except Exception as e:
+                print(f"Brain context refresh failed: {e}")
+
+            # Continue with the rest of your processing logic...
+            # [Rest of your POST processing code here]
+            
+        except Exception as e:
+            app.logger.error(f"Main route failed: {e}", exc_info=True)
+            return render_template('index.html',
+                                 projects=PROJECTS,
+                                 error=f"Request processing failed: {str(e)}")
         app.logger.info(f"POST request received with input: {user_input}")
         project = request.form['project']
         selected_project = project
