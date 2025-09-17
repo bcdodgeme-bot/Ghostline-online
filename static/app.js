@@ -1,6 +1,6 @@
 /**
  * Ghostline Creative Intelligence System - Main Application JavaScript
- * Complete JavaScript extraction from index.html
+ * Complete version with submit functionality fixes
  */
 
 'use strict';
@@ -140,7 +140,7 @@ function toggleHistoryView() {
     } else {
         // Show only recent messages
         const messagesToArchive = Math.max(0, messages.length - chatHistoryManager.maxVisibleMessages);
-        const messagesToFade = Math.min(chatHistoryManager.fadeThreshold, 
+        const messagesToFade = Math.min(chatHistoryManager.fadeThreshold,
                                        Math.max(0, messages.length - chatHistoryManager.maxVisibleMessages + chatHistoryManager.fadeThreshold));
         
         // Archive oldest messages
@@ -887,7 +887,7 @@ class ThreadSidebar {
             const data = await response.json();
             
             if (data.success) {
-                this.threads = data.threads.filter(thread => 
+                this.threads = data.threads.filter(thread =>
                     thread.message_count > 0
                 );
                 this.renderThreads();
@@ -915,7 +915,7 @@ class ThreadSidebar {
         }
         
         if (filteredThreads.length === 0) {
-            threadList.innerHTML = this.searchTerm ? 
+            threadList.innerHTML = this.searchTerm ?
                 `<div class="thread-empty">
                     <div class="thread-empty-icon">🔍</div>
                     <div>No bookmarks match "${this.searchTerm}"</div>
@@ -1038,7 +1038,7 @@ class ThreadSidebar {
         if (!chatThread || !bottomAnchor) return;
         
         // Check if this conversation is bookmarked
-        const isBookmarked = bookmarks.some(bookmark => 
+        const isBookmarked = bookmarks.some(bookmark =>
             bookmark.chat_id === conversation.id
         );
         
@@ -1288,7 +1288,7 @@ function showExportProgress(message) {
 }
 
 // =============================================================================
-// FORM SUBMISSION AND CHAT
+// FORM SUBMISSION AND CHAT - FIXED VERSION
 // =============================================================================
 
 async function submitForm() {
@@ -1434,7 +1434,7 @@ function addUserMessage(content) {
     messageDiv.innerHTML = `
         <div class="message-bubble user">
             <div class="message-header">You</div>
-            <div class="message-content">${content}</div>
+            <div class="message-content">${escapeHtml(content)}</div>
         </div>
     `;
     
@@ -1491,12 +1491,18 @@ function addErrorMessage(content) {
                 <img src="/static/syntax-buffering.png" alt="System" class="logo">
                 System Error
             </div>
-            <div class="message-content">${content}</div>
+            <div class="message-content">${escapeHtml(content)}</div>
         </div>
     `;
     
     thread.insertBefore(messageDiv, anchor);
     scrollToBottom();
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text || '';
+    return div.innerHTML;
 }
 
 // =============================================================================
@@ -1758,7 +1764,7 @@ function finalizeStreamingMessages(responseData) {
 }
 
 // =============================================================================
-// FORM HANDLING AND APP INITIALIZATION
+// FIXED FORM HANDLING AND APP INITIALIZATION
 // =============================================================================
 
 function initializeApp() {
@@ -1778,19 +1784,27 @@ function initializeApp() {
         const sendButton = document.getElementById('sendBtn');
 
         if (promptInput) {
+            console.log('Setting up prompt input handlers');
+            
             // Remove any existing event listeners by cloning the element
             const newPromptInput = promptInput.cloneNode(true);
             promptInput.parentNode.replaceChild(newPromptInput, promptInput);
             
             // Add fresh event listeners
             newPromptInput.addEventListener('input', () => autoResize(newPromptInput));
-            autoResize(newPromptInput);
             newPromptInput.addEventListener('keydown', handleKeyDown);
             newPromptInput.addEventListener('focus', handleInputFocus);
             newPromptInput.addEventListener('blur', handleInputBlur);
+            
+            autoResize(newPromptInput);
+            console.log('Prompt input handlers set up successfully');
+        } else {
+            console.error('Prompt input not found!');
         }
 
         if (sendButton) {
+            console.log('Setting up send button handlers');
+            
             // Remove any existing event listeners by cloning the element
             const newSendButton = sendButton.cloneNode(true);
             sendButton.parentNode.replaceChild(newSendButton, sendButton);
@@ -1804,6 +1818,10 @@ function initializeApp() {
             newSendButton.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
             });
+            
+            console.log('Send button handlers set up successfully');
+        } else {
+            console.error('Send button not found!');
         }
 
         const projectSelect = document.getElementById('projectSelect');
@@ -1833,7 +1851,10 @@ function autoResize(textarea) {
 }
 
 function handleKeyDown(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    // Only submit on Enter for desktop/laptop (not mobile)
+    const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
         e.preventDefault();
         submitForm();
     }
@@ -1849,32 +1870,19 @@ function handleInputFocus() {
 }
 
 function handleInputBlur() {
-    setTimeout(() => {
-        window.scrollTo(0, 0);
-    }, 100);
+    // Only scroll to top on mobile to prevent keyboard issues
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+        setTimeout(() => {
+            window.scrollTo(0, 0);
+        }, 100);
+    }
 }
 
 function handleSendClick(e) {
+    console.log('Send button clicked');
     e.preventDefault();
     e.stopPropagation();
-    submitForm();
-}
-
-function handleSendTouch(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const button = e.currentTarget;
-    button.style.transform = 'scale(0.95)';
-    button.style.opacity = '0.8';
-    
-    setTimeout(() => {
-        if (!isSubmitting) {
-            button.style.transform = '';
-            button.style.opacity = '';
-        }
-    }, 150);
-    
     submitForm();
 }
 
@@ -2003,6 +2011,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize main app
     initializeApp();
+    
+    // Test that elements exist
+    const promptInput = document.getElementById('promptInput');
+    const sendButton = document.getElementById('sendBtn');
+    
+    console.log('Elements found:', {
+        promptInput: !!promptInput,
+        sendButton: !!sendButton
+    });
 });
 
 // Also initialize on window load for safety
@@ -2024,6 +2041,4 @@ window.addEventListener('load', function() {
     }
 });
 
-console.log('Ghostline app.js loaded successfully');end', handleSendTouch);
-            
-            newSendButton.addEventListener('touch// JavaScript Document
+console.log('Complete Ghostline app.js loaded successfully');
