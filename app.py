@@ -804,7 +804,7 @@ User's original request: {user_input}"""
     
 # Section 4: Main Chat Route
 # ========================================
-# Section 4: Main Chat Route (UPDATED WITH ENHANCED MARKETING)
+# Section 4: Main Chat Route (UPDATED WITH WEATHER INTEGRATION FIX)
 # Section 4: Main Chat Route (UPDATED WITH CALENDAR-TELEGRAM INTEGRATION)
 # Section 4: Main Chat Route (UPDATED WITH UNIFIED CONVERSATION CONTEXT)
 # Section 4: Main Chat Route (UPDATED WITH SLACK INTEGRATION)
@@ -815,7 +815,7 @@ User's original request: {user_input}"""
 # Section 4: Main Chat Route (UPDATED WITH RSS MARKETING KNOWLEDGE INTEGRATION) 9/13/25
 # Section 4: Main Chat Route (UPDATED WITH WEATHER INTEGRATION) 9/16/25
 # Section 4: Main Chat Route (UPDATED WITH COMMAND PARSING) 9/16/25
-# Section 4: Main Chat Route (FIXED INDENTATION AND MISSING ROUTE DECORATOR) 9/17/25
+# Section 4: Main Chat Route (FIXED INDENTATION AND MISSING ROUTE DECORATOR + WEATHER FIX) 9/17/25
 # ========================================
 
 @app.route('/', methods=['GET', 'POST'])
@@ -888,7 +888,30 @@ def index():
                 app.logger.error(f"Weather processing failed: {e}")
                 # Continue with normal processing if weather fails
 
-            # PRIORITY 1: Handle reminder commands FIRST - This is the key fix!
+            # PRIORITY 1: Weather integration - check FIRST for weather commands
+            try:
+                from modules.weather_integration import (
+                    detect_weather_command,
+                    handle_weather_integration,
+                    is_weather_configured
+                )
+                
+                # Check if this is a weather command and integration is configured
+                if is_weather_configured() and detect_weather_command(user_input):
+                    app.logger.info(f"Weather command detected: '{user_input}'")
+                    response_data = handle_weather_integration(user_input, project)
+                    if response_data:
+                        app.logger.info("Weather command handled successfully")
+                        save_conversation_enhanced(project, user_input, response_data)
+                        return _render_enhanced(project, response_data)
+                        
+            except ImportError:
+                app.logger.info("Weather integration module not available")
+            except Exception as e:
+                app.logger.error(f"Weather integration failed: {e}")
+                # Continue to other processors if weather fails
+
+            # PRIORITY 2: Handle reminder commands FIRST - This is the key fix!
             try:
                 print(f"MAIN ROUTE: Checking reminder command for: '{user_input}'")
                 response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
@@ -902,7 +925,7 @@ def index():
                 app.logger.error(f"Reminder handler failed: {e}")
                 # Don't fail the whole request, just log and continue
 
-            # PRIORITY 2: Smart Commands - Handle content creation BEFORE Gmail integration
+            # PRIORITY 3: Smart Commands - Handle content creation BEFORE Gmail integration
             try:
                 from modules.smart_commands import classify_email_command, process_smart_commands
                 print(f"MAIN ROUTE: Checking smart commands for: '{user_input}'")
@@ -1160,33 +1183,6 @@ def _render_enhanced(project, response_data):
                          use_voices=session.get('use_voices', ['SyntaxPrime']),
                          response=response_data,
                          error=None)
-
-
-def handle_reminder_command(user_input, project, use_voices, random_toggle):
-    """Handle reminder commands"""
-    try:
-        if is_telegram_configured():
-            from modules.telegram_notifications import GhostlineTelegramReminders, parse_reminder_command
-            
-            reminder_data = parse_reminder_command(user_input)
-            if reminder_data:
-                reminders = GhostlineTelegramReminders()
-                result = reminders.schedule_reminder(
-                    reminder_data['message'],
-                    reminder_data['when'],
-                    reminder_data.get('repeat_type')
-                )
-                
-                if result['success']:
-                    response_data = {"SyntaxPrime": f"✅ Reminder set: {result['message']}"}
-                else:
-                    response_data = {"SyntaxPrime": f"❌ Reminder failed: {result['error']}"}
-                
-                return response_data, True
-    except Exception as e:
-        app.logger.error(f"Reminder command processing failed: {e}")
-    
-    return {}, False
 
 
 def enhanced_marketing_command_processor(user_input, project, use_voices, random_toggle):
