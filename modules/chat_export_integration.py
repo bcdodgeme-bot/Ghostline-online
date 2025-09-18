@@ -1,8 +1,11 @@
 # modules/chat_export_integration.py - Integration with existing Ghostline system
 
+# Section 1: Imports and Core Setup
 from typing import Dict, List, Optional, Any
 import datetime
+import re
 
+# Section 2: Main Export Command Handler
 def handle_export_command(user_input: str, project: str, use_voices: list, random_toggle: bool) -> tuple[Dict, bool]:
     """Handle export commands in the main chat flow
     
@@ -61,6 +64,39 @@ Visit `/integrations` to configure Google Drive access, then try the export comm
             "SyntaxPrime": f"Export command failed: {str(e)}\n\nPlease ensure Google Drive integration is properly configured in `/integrations`."
         }, True
 
+# Section 3: Title Extraction Utility Functions
+def extract_document_title(user_input: str, default_prefix: str = "New Document") -> str:
+    """Extract document title from user commands like 'create google doc test15'"""
+    user_input = user_input.strip()
+    
+    # Patterns to extract title from various command formats
+    title_patterns = [
+        r'create google doc(?:ument)?\s+(.+)',
+        r'export to (?:google )?docs?\s+(.+)',
+        r'save (?:to|as) (?:google )?docs?\s+(.+)',
+        r'copy to (?:google )?docs?\s+(.+)',
+        r'export bookmarks?\s+(.+)',
+        r'export thread\s+(.+)'
+    ]
+    
+    for pattern in title_patterns:
+        match = re.search(pattern, user_input, re.IGNORECASE)
+        if match:
+            title = match.group(1).strip()
+            # Clean up the title - remove common trailing words
+            cleanup_words = ['with responses', 'without responses', 'responses', 'ai', 'formatted']
+            for cleanup in cleanup_words:
+                if title.lower().endswith(' ' + cleanup):
+                    title = title[:-len(' ' + cleanup)].strip()
+            
+            if title and len(title) > 0:
+                return title
+    
+    # If no title found, generate default with timestamp
+    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+    return f"{default_prefix} {timestamp}"
+
+# Section 4: Bookmark Export Handler
 def handle_bookmark_export(exporter, project: str, user_input: str) -> tuple[Dict, bool]:
     """Handle bookmark export commands"""
     try:
@@ -80,6 +116,9 @@ Create bookmarks first using:
 Then try the export command again."""
             }, True
         
+        # Extract custom title if provided
+        document_title = extract_document_title(user_input, f"{project} Bookmarks")
+        
         # Convert bookmarks to export format
         export_bookmarks = []
         for bookmark in bookmarks:
@@ -92,9 +131,13 @@ Then try the export command again."""
                 'ai_response': bookmark.get('ai_response_preview', '') if 'include responses' in user_input.lower() else ''
             })
         
-        # Export to Google Docs
+        # Export to Google Docs with extracted title
         include_responses = 'responses' in user_input.lower() or 'ai' in user_input.lower()
-        result = exporter.export_bookmarked_conversations(export_bookmarks, include_responses)
+        result = exporter.export_bookmarked_conversations(
+            export_bookmarks,
+            include_responses,
+            document_title=document_title
+        )
         
         if result['success']:
             return {
@@ -126,12 +169,10 @@ Try again in a few minutes or check your Google integration status."""
             "SyntaxPrime": f"Bookmark export error: {str(e)}"
         }, True
 
+# Section 5: Thread Export Handler
 def handle_thread_export(exporter, project: str, user_input: str) -> tuple[Dict, bool]:
     """Handle conversation thread export commands"""
     try:
-        # This would integrate with your thread management system
-        # For now, we'll export recent conversations as a thread
-        
         from modules.database import load_conversation_enhanced
         
         # Get recent conversations for this project
@@ -142,10 +183,13 @@ def handle_thread_export(exporter, project: str, user_input: str) -> tuple[Dict,
                 "SyntaxPrime": f"No conversation history found for project '{project}' to export as a thread."
             }, True
         
+        # Extract custom title if provided
+        document_title = extract_document_title(user_input, f"{project} Conversation Thread")
+        
         # Convert to thread format
         thread_data = {
             'metadata': {
-                'title': f"{project} Conversation Thread",
+                'title': document_title,
                 'project': project,
                 'created_at': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'),
                 'message_count': len(conversations)
@@ -162,9 +206,13 @@ def handle_thread_export(exporter, project: str, user_input: str) -> tuple[Dict,
             'bookmarks': []  # Could be populated from bookmark system
         }
         
-        # Export to Google Docs
+        # Export to Google Docs with extracted title
         include_responses = 'responses' in user_input.lower() or 'ai' in user_input.lower()
-        result = exporter.export_thread_conversations(thread_data, include_responses)
+        result = exporter.export_thread_conversations(
+            thread_data,
+            include_responses,
+            document_title=document_title
+        )
         
         if result['success']:
             return {
@@ -191,8 +239,9 @@ Check your Google Drive integration and try again."""
             "SyntaxPrime": f"Thread export error: {str(e)}"
         }, True
 
+# Section 6: Single Conversation Export Handler (MAIN FIX)
 def handle_recent_conversation_export(exporter, project: str, user_input: str) -> tuple[Dict, bool]:
-    """Handle single conversation export commands"""
+    """Handle single conversation export commands - FIXED VERSION"""
     try:
         from modules.database import load_conversation_enhanced
         
@@ -206,9 +255,18 @@ def handle_recent_conversation_export(exporter, project: str, user_input: str) -
         
         recent_conversation = conversations[0]
         
-        # Export to Google Docs
+        # CRITICAL FIX: Extract custom title from user input
+        document_title = extract_document_title(user_input, f"{project} Conversation")
+        
+        # Export to Google Docs with extracted title
         include_responses = 'responses' in user_input.lower() or 'ai' in user_input.lower()
-        result = exporter.export_chat_conversation(recent_conversation, include_responses)
+        
+        # FIXED: Pass the extracted title as document_title parameter
+        result = exporter.export_chat_conversation(
+            recent_conversation,
+            include_responses,
+            document_title=document_title  # This was missing before!
+        )
         
         if result['success']:
             return {
@@ -235,7 +293,7 @@ Check your Google Drive integration and try again."""
             "SyntaxPrime": f"Conversation export error: {str(e)}"
         }, True
 
-# Integration with existing bookmark system
+# Section 7: Bookmark Enhancement Integration
 def enhance_bookmark_command(user_input: str, project: str) -> tuple[Dict, bool]:
     """Enhanced bookmark command that offers export option
     
@@ -245,14 +303,11 @@ def enhance_bookmark_command(user_input: str, project: str) -> tuple[Dict, bool]
     
     # Check for bookmark creation with export intent
     export_bookmark_patterns = [
-        'bookmark and export', 'bookmark for export', 
+        'bookmark and export', 'bookmark for export',
         'save and export', 'bookmark to drive'
     ]
     
     if any(pattern in user_lower for pattern in export_bookmark_patterns):
-        # Create the bookmark first (using existing system)
-        # Then automatically export
-        
         return {
             "SyntaxPrime": """📌 **Bookmark Created with Export Intent**
 
@@ -267,31 +322,47 @@ The export will create a formatted Google Doc with all your bookmarked conversat
     
     return {}, False
 
-# Command suggestions for users
+# Section 8: Help and Documentation
 def get_export_help() -> str:
     """Return help text for export commands"""
-    return """🔄 **Google Drive Export Commands**
+    return """📄 **Google Drive Export Commands**
 
 **Single Conversation:**
 - `export to google docs` - Export current conversation
-- `copy to google docs` - Same as above
-- `create google doc` - Export with formatting
+- `create google doc MyTitle` - Export with custom title
+- `copy to google docs ProjectNotes` - Export with custom name
 
 **Bookmark Export:**
 - `export bookmarks` - Export all project bookmarks
+- `export bookmarks MyBookmarks` - Export with custom title
 - `export bookmarks with responses` - Include AI responses
 
 **Thread Export:**
 - `export thread` - Export conversation history
+- `export thread MyThread` - Export with custom title
 - `export conversation thread` - Full project history
+
+**Title Examples:**
+- `create google doc test15` - Creates "test15"
+- `export bookmarks Meeting Notes` - Creates "Meeting Notes"
+- `export thread Project Summary` - Creates "Project Summary"
 
 **Options:**
 - Add "with responses" to include AI replies
-- Add "with formatting" for enhanced document formatting
+- Add custom titles after the command
+- Titles are automatically cleaned of command words
 
 **Requirements:**
 - Google OAuth configured (`/integrations`)
 - Google Docs API access enabled
 - Valid authentication token
 
-Example: `export bookmarks with responses`"""
+**Command Processing:**
+When you type "create google doc test15", the system:
+1. Detects it's an export command
+2. Extracts "test15" as the document title
+3. Gets your recent conversation
+4. Creates a Google Doc named "test15"
+5. Returns the document URL
+
+Example: `create google doc test15`"""
