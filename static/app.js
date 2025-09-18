@@ -1343,9 +1343,9 @@ function initializeApp() {
             
             // Add fresh event listeners
             newSendButton.addEventListener('click', handleSendClick);
-            newSendButton.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-            });
+            // newSendButton.addEventListener('touchstart', (e) => {
+            //    e.preventDefault();
+            //});
             
             newSendButton.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
