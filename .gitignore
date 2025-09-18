@@ -25,3 +25,5 @@ test_retrieval.py
 SyntaxPrime
 modules/brain copy.py
 test_thread_bookmark_functionality.py
+utils/__pycache__/ghostline_engine.cpython-311.pyc
+weather_test.py

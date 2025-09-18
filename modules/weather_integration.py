@@ -174,7 +174,7 @@ class TomorrowIOClient:
             "location": location,
             "fields": ",".join(COMPREHENSIVE_WEATHER_FIELDS),
             "units": "metric",  # Use metric units consistently
-            "timesteps": "current"  # FIXED: Proper parameter name
+            
         }
         
         try:
