@@ -858,6 +858,35 @@ def index():
             
             app.logger.info(f"Processing request: '{user_input}' for project '{project}'")
             
+            # WEATHER CHECK - HIGHEST PRIORITY
+            user_lower = user_input.lower().strip()
+            weather_keywords = [
+                "weather", "weather now", "weather today", "temperature", "temp",
+                "pressure", "barometric", "uv", "humidity", "conditions",
+                "outside", "headache weather", "weather alerts"
+            ]
+            
+            is_weather_command = any(keyword in user_lower for keyword in weather_keywords)
+            
+            if is_weather_command:
+                app.logger.info(f"WEATHER: Processing weather command: '{user_input}'")
+                
+                weather_api_key = os.getenv("TOMORROW_IO_API_KEY")
+                if not weather_api_key:
+                    response_data = {"SyntaxPrime": "Weather monitoring not configured. Set TOMORROW_IO_API_KEY environment variable."}
+                else:
+                    try:
+                        from modules.weather_integration import handle_weather_integration
+                        response_data = handle_weather_integration(user_input, project)
+                        if not response_data:
+                            response_data = {"SyntaxPrime": "Weather service temporarily unavailable."}
+                    except Exception as e:
+                        app.logger.error(f"Weather integration failed: {e}")
+                        response_data = {"SyntaxPrime": f"Weather error: {str(e)}"}
+                
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
+            
             # Set selected_project
             selected_project = project
             
