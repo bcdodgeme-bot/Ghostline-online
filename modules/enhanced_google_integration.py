@@ -913,458 +913,85 @@ All data below is verified and extracted from actual sources.
 # =============================================================================
 # SECTION 6: MAIN COMMAND PROCESSOR AND MISSING METHODS - ANTI-HALLUCINATION VERSION WITH REVERSE PATTERN FIX 9/12/25
 # =============================================================================
-
-    def find_site_by_name(self, site_query: str) -> Optional[str]:
-        """Find site key by name or alias - ENHANCED with better multi-word matching"""
-        if not site_query:
-            return None
+    def handle_docs_command(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
+            """Handle Google Docs creation and manipulation commands"""
+            user_lower = user_input.lower().strip()
             
-        site_query_clean = site_query.lower().strip()
-        
-        print(f"🔍 Site search: Looking for '{site_query_clean}' in {list(self.sites_config.keys())}")
-        
-        # Method 1: Direct key match (exact)
-        if site_query_clean in self.sites_config:
-            print(f"✅ Direct key match: {site_query_clean}")
-            return site_query_clean
-        
-        # Method 2: Convert multi-word site name to expected key format
-        # "Damn It Carl" -> "damn_it_carl"
-        # "TV Signals" -> "tv_signals"
-        # "Rose and Angel" -> "rose_and_angel"
-        # "Meals N Feelz" -> "meals_n_feelz"
-        key_format = site_query_clean.replace(' ', '_').replace('&', 'and').replace('n ', 'n_')
-        if key_format in self.sites_config:
-            print(f"✅ Key format match: '{site_query_clean}' -> '{key_format}'")
-            return key_format
-        
-        # Method 3: Exact name match (case insensitive)
-        for key, config in self.sites_config.items():
-            if config['name'].lower() == site_query_clean:
-                print(f"✅ Name match: '{site_query_clean}' -> '{key}' ({config['name']})")
-                return key
-        
-        # Method 4: Alias match (exact)
-        for key, config in self.sites_config.items():
-            aliases = [alias.strip().lower() for alias in config.get('aliases', [])]
-            if site_query_clean in aliases:
-                print(f"✅ Alias match: '{site_query_clean}' -> '{key}' (alias: {site_query_clean})")
-                return key
-        
-        # Method 5: Partial name match (contains)
-        for key, config in self.sites_config.items():
-            config_name_lower = config['name'].lower()
-            if site_query_clean in config_name_lower or config_name_lower in site_query_clean:
-                print(f"✅ Partial name match: '{site_query_clean}' -> '{key}' ({config['name']})")
-                return key
-        
-        # Method 6: Partial alias match
-        for key, config in self.sites_config.items():
-            aliases = [alias.strip().lower() for alias in config.get('aliases', [])]
-            for alias in aliases:
-                if site_query_clean in alias or alias in site_query_clean:
-                    print(f"✅ Partial alias match: '{site_query_clean}' -> '{key}' (partial alias: {alias})")
-                    return key
-        
-        print(f"❌ No site match found for: '{site_query_clean}'")
-        print(f"Available sites: {[(key, config['name']) for key, config in self.sites_config.items()]}")
-        return None
-
-    def format_search_console_response(self, result: Dict, user_input: str) -> str:
-        """ANTI-HALLUCINATION: Template-based Search Console response using ONLY real API data"""
-        if not result.get('success'):
-            error_msg = result.get('error', 'Unknown error')
-            response = f"**Search Console Error:**\n{error_msg}\n\n"
+            print(f"🔧 DEBUG: handle_docs_command called with: '{user_input}'")
             
-            # Show available sites if site not found
-            if "not found" in error_msg.lower():
-                sites = self.get_available_sites()
-                if sites:
-                    response += f"**Available sites for Search Console:**\n"
-                    for site in sites:
-                        if site.get('has_search_console'):
-                            response += f"• **{site['name']}** (key: `{site['key']}`)\n"
-                            if site['aliases']:
-                                response += f"  Aliases: {', '.join(site['aliases'])}\n"
-                    
-                    response += f"\n**Usage examples:**\n"
-                    response += f"• `search console for {sites[0]['name']}`\n"
-                    response += f"• `search console {sites[0]['name']} last 30 days`\n"
+            # Extract document title from various patterns
+            title = None
+            content = ""
             
-            return response
-        
-        # SUCCESS: Format real API data ONLY
-        data = result.get('data', [])
-        site_name = result.get('site_name', 'Unknown Site')
-        date_range = result.get('date_range', 'Unknown range')
-        
-        response = f"**Search Console Report for {site_name} ({date_range})**\n\n"
-        response += f"**Summary:**\n"
-        response += f"- Total Clicks: {result.get('total_clicks', 0):,}\n"
-        response += f"- Total Impressions: {result.get('total_impressions', 0):,}\n"
-        response += f"- Average CTR: {result.get('average_ctr', 0):.2f}%\n"
-        response += f"- Total Queries: {result.get('total_queries', 0)}\n\n"
-        
-        if data and isinstance(data, list) and len(data) > 0:
-            response += f"**Top Performing Queries:**\n"
-            sorted_data = sorted([row for row in data if isinstance(row, dict)],
-                               key=lambda x: x.get('clicks', 0), reverse=True)
-            for i, row in enumerate(sorted_data[:10], 1):
-                query = row.get('query', 'Unknown query')
-                clicks = row.get('clicks', 0)
-                impressions = row.get('impressions', 0)
-                response += f"{i}. {query} - {clicks} clicks, {impressions} impressions\n"
-        else:
-            response += "No search console data found for the specified period."
-        
-        return response
-
-    def format_analytics_response(self, result: Dict, start_date: str, end_date: str) -> str:
-        """ANTI-HALLUCINATION: Template-based Analytics response using ONLY real API data"""
-        if not result.get('success'):
-            error_msg = result.get('error', 'Unknown error')
-            response = f"**Analytics Error:**\n{error_msg}\n\n"
+            # Pattern 1: "create google doc 'title'" or "create google doc "title""
+            title_match = re.search(r"create (?:google )?doc[ument]*\s*['\"]([^'\"]+)['\"]", user_input, re.IGNORECASE)
+            if title_match:
+                title = title_match.group(1).strip()
+                print(f"🔧 DEBUG: Extracted title from quotes: '{title}'")
             
-            # Show available sites if site not found
-            if "not found" in error_msg.lower():
-                sites = self.get_available_sites()
-                if sites:
-                    response += f"**Available sites for Analytics:**\n"
-                    for site in sites:
-                        if site.get('has_analytics'):
-                            response += f"• **{site['name']}** (key: `{site['key']}`)\n"
-                            if site['aliases']:
-                                response += f"  Aliases: {', '.join(site['aliases'])}\n"
-                    
-                    response += f"\n**Usage examples:**\n"
-                    response += f"• `analytics for {sites[0]['name']}`\n"
-                    response += f"• `analytics for {sites[0]['name']} last 30 days`\n"
+            # Pattern 2: "create google doc title" (without quotes)
+            elif re.search(r"create (?:google )?doc", user_lower):
+                # Find everything after "doc" or "document"
+                doc_match = re.search(r"create (?:google )?doc(?:ument)?\s+(.+)$", user_input, re.IGNORECASE)
+                if doc_match:
+                    title = doc_match.group(1).strip()
+                    # Clean up common words that might be included
+                    title = re.sub(r'\b(called|named|titled)\b', '', title, flags=re.IGNORECASE).strip()
+                    print(f"🔧 DEBUG: Extracted title from pattern: '{title}'")
             
-            return response
-        
-        # SUCCESS: Format real API data ONLY
-        data = result.get('data', [])
-        site_name = result.get('site_name', 'Unknown Site')
-        
-        response = f"**GA4 Analytics Report for {site_name} ({start_date} to {end_date})**\n\n"
-        response += f"**Summary:**\n"
-        response += f"- Total Sessions: {result.get('total_sessions', 0):,}\n"
-        response += f"- Total Users: {result.get('total_users', 0):,}\n"
-        response += f"- Total Pageviews: {result.get('total_pageviews', 0):,}\n"
-        response += f"- Average Bounce Rate: {result.get('avg_bounce_rate', 0):.1f}%\n\n"
-        
-        if data and isinstance(data, list) and len(data) > 0:
-            # Show recent breakdown or full period depending on range
-            if len(data) <= 31:  # Show all days if 31 or fewer
-                response += f"**Daily Breakdown:**\n"
-                for row in data:
-                    if isinstance(row, dict):
-                        date = row.get('date', 'Unknown')
-                        sessions = row.get('sessions', 0)
-                        users = row.get('users', 0)
-                        response += f"- {date}: {sessions} sessions, {users} users\n"
-            else:  # Show summary for longer periods
-                response += f"**Recent Activity (Last 7 days):**\n"
-                for row in data[-7:]:
-                    if isinstance(row, dict):
-                        date = row.get('date', 'Unknown')
-                        sessions = row.get('sessions', 0)
-                        users = row.get('users', 0)
-                        response += f"- {date}: {sessions} sessions, {users} users\n"
-        else:
-            response += "No analytics data found for the specified period."
-        
-        return response
-
-    def format_all_sites_analytics_response(self, result: Dict, start_date: str, end_date: str) -> str:
-        """ANTI-HALLUCINATION: Template-based response for all sites analytics using ONLY real API data"""
-        if not result.get('success'):
-            return f"**Error:** {result.get('error', 'Failed to get analytics for all sites')}"
-        
-        response = f"**GA4 Analytics Report for All Sites ({start_date} to {end_date})**\n\n"
-        
-        sites_data = result.get('sites', {})
-        for site_key, site_result in sites_data.items():
-            if site_result.get('success'):
-                data = site_result.get('data', [])
-                site_name = site_result.get('site_name', site_key)
+            # Default title if none found
+            if not title:
+                title = f"New Document {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}"
+                print(f"🔧 DEBUG: Using default title: '{title}'")
+            
+            # Use the existing create_google_doc method
+            try:
+                print(f"🔧 DEBUG: Calling create_google_doc with title='{title}'")
+                result = self.create_google_doc(title, content)
+                print(f"🔧 DEBUG: create_google_doc result: {result}")
                 
-                if data and isinstance(data, list):
-                    total_sessions = sum(row.get('sessions', 0) for row in data if isinstance(row, dict))
-                    total_users = sum(row.get('users', 0) for row in data if isinstance(row, dict))
-                    total_pageviews = sum(row.get('pageviews', 0) for row in data if isinstance(row, dict))
+                if result['success']:
+                    success_msg = f"✅ **Google Doc Created Successfully!**\n\n"
+                    success_msg += f"**Title:** {result['title']}\n"
+                    success_msg += f"**Document URL:** {result['document_url']}\n\n"
+                    success_msg += f"Your document is ready! Click the link above to open it in Google Docs."
                     
-                    response += f"**{site_name}:**\n"
-                    response += f"- Sessions: {total_sessions:,}\n"
-                    response += f"- Users: {total_users:,}\n"
-                    response += f"- Pageviews: {total_pageviews:,}\n\n"
+                    if not content:
+                        success_msg += f"\n\n*The document is currently empty - perfect for adding your content.*"
+                    
+                    response_data = {"SyntaxPrime": success_msg}
+                    return response_data, True
                 else:
-                    response += f"**{site_name}:** No data available\n\n"
-            else:
-                site_name = site_result.get('site_name', site_key)
-                error = site_result.get('error', 'Unknown error')
-                response += f"**{site_name}:** Error - {error}\n\n"
-        
-        return response
-
-    def format_sites_list_response(self) -> str:
-        """ANTI-HALLUCINATION: Template-based sites list using ONLY configuration data"""
-        sites = self.get_available_sites()
-        
-        if not sites:
-            return "No sites configured. Set up GOOGLE_SITES_CONFIG environment variable."
-        
-        response = f"**Available Sites for Analytics:**\n\n"
-        for site in sites:
-            status_icons = []
-            if site['has_analytics']:
-                status_icons.append("GA4 Analytics")
-            if site['has_search_console']:
-                status_icons.append("Search Console")
-            
-            status = " | ".join(status_icons) if status_icons else "Not configured"
-            response += f"**{site['name']}** (key: `{site['key']}`)\n"
-            response += f"- Status: {status}\n"
-            
-            if site['aliases']:
-                response += f"- Aliases: {', '.join(site['aliases'])}\n"
-            response += "\n"
-        
-        response += f"**Usage Examples:**\n"
-        response += f"- `analytics for {sites[0]['name']}`\n"
-        response += f"- `analytics for {sites[0]['name']} last 6 months`\n"
-        response += f"- `all sites analytics last year`\n"
-        response += f"- `search console for {sites[0]['name']} last 3 months`\n"
-        
-        return response
-
-    def process_google_commands(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
-        """Main command processor for all Google services with ANTI-HALLUCINATION response generation - FIXED REVERSE PATTERNS"""
-        user_lower = user_input.lower().strip()
-        
-        print(f"🔍 Google command processing: '{user_input}'")
-        
-        # PRIORITY 0: Check for follow-up questions first
-        context = enhanced_conversation_context.get_context(project)
-        if context and enhanced_conversation_context.detect_follow_up_question(user_input, context):
-            response_data, handled = enhanced_conversation_context.generate_contextual_response(
-                user_input, context, project, use_voices, random_toggle
-            )
-            if handled:
-                save_conversation_enhanced(project, user_input, response_data)
-            return response_data, handled
-        
-        # Blog suggestions commands - WITH VALIDATION BLOCKING
-        blog_patterns = [
-            'blog suggestions', 'blog ideas', 'content ideas', 'what to write',
-            'blog suggestions for', 'content suggestions', 'post ideas'
-        ]
-        
-        if any(pattern in user_lower for pattern in blog_patterns):
-            print("✏️ Detected blog suggestions command - will validate data first")
-            response_data, handled = self.handle_blog_suggestions_command(user_input, project, use_voices, random_toggle)
-            if handled:
-                save_conversation_enhanced(project, user_input, response_data)
-            return response_data, handled
-        
-        # PRIORITY 1: Multi-site search console commands - TEMPLATE-BASED RESPONSES
-        search_console_patterns = [
-            'search console for', 'seo for', 'search console', 'seo data'
-        ]
-        
-        if any(trigger in user_lower for trigger in search_console_patterns):
-            print("🔍 Detected Search Console command")
-            
-            # Extract site name using enhanced parsing
-            site_key = None
-            site_name_extracted = None
-            
-            # Strategy 1: "search console for SITE_NAME [time_period]"
-            for_pattern = re.search(r'search console for\s+(.+?)(?:\s+(?:last|this|from|past|in)\s|$)', user_lower)
-            if for_pattern:
-                site_name_extracted = for_pattern.group(1).strip()
-            
-            # Strategy 2: "SITE_NAME search console"
-            if not site_name_extracted:
-                site_console_pattern = re.search(r'^(.+?)\s+search console', user_lower)
-                if site_console_pattern:
-                    site_name_extracted = site_console_pattern.group(1).strip()
-            
-            # Strategy 3: "search console SITE_NAME"
-            if not site_name_extracted:
-                console_site_pattern = re.search(r'search console\s+(.+?)(?:\s+(?:last|this|from|past|in)\s|$)', user_lower)
-                if console_site_pattern:
-                    site_name_extracted = console_site_pattern.group(1).strip()
-            
-            if site_name_extracted:
-                site_key = self.find_site_by_name(site_name_extracted)
-            
-            # Parse date range
-            start_date, end_date = self.parse_date_range_from_input(user_input)
-            
-            # Convert to Search Console format
-            if start_date.endswith('daysAgo'):
-                days_ago = int(start_date.replace('daysAgo', ''))
-                start_date_obj = datetime.date.today() - datetime.timedelta(days=days_ago)
-                start_date = start_date_obj.strftime('%Y-%m-%d')
-            elif start_date == 'today':
-                start_date = datetime.date.today().strftime('%Y-%m-%d')
-            
-            if end_date == 'today':
-                end_date = datetime.date.today().strftime('%Y-%m-%d')
-            
-            # Get data and format with template (NO AI GENERATION)
-            result = self.get_search_console_data_for_site(site_key, start_date, end_date)
-            response_text = self.format_search_console_response(result, user_input)
-            
-            response_data = {"SyntaxPrime": response_text}
-            save_conversation_enhanced(project, user_input, response_data)
-            return response_data, True
-        
-        # PRIORITY 2: Multi-site analytics commands - TEMPLATE-BASED RESPONSES WITH REVERSE PATTERN FIX
-        analytics_triggers = [
-            'analytics for', 'all sites analytics', 'list sites', 'available sites',
-            'analytics report', 'website analytics', 'site traffic'
-        ]
-        
-        # Check for direct analytics triggers
-        is_analytics_command = any(trigger in user_lower for trigger in analytics_triggers)
-        
-        # CRITICAL FIX: Also check for "[SITE] analytics" and "[SITE] traffic" patterns
-        if not is_analytics_command:
-            # Pattern: "Rose and Angel analytics", "TV Signals analytics", etc.
-            reverse_analytics_pattern = re.search(r'^(.+?)\s+(analytics|traffic)(?:\s|$)', user_lower)
-            if reverse_analytics_pattern:
-                potential_site = reverse_analytics_pattern.group(1).strip()
-                # Verify this is actually a configured site
-                if self.find_site_by_name(potential_site):
-                    is_analytics_command = True
-                    print(f"📊 Detected reverse analytics pattern: '{potential_site} {reverse_analytics_pattern.group(2)}'")
-        
-        if is_analytics_command:
-            print("📊 Detected Analytics command")
-            
-            # Handle "all sites" commands
-            if 'all sites' in user_lower or 'all websites' in user_lower:
-                start_date, end_date = self.parse_date_range_from_input(user_input)
-                result = self.get_all_sites_analytics(start_date, end_date)
-                response_text = self.format_all_sites_analytics_response(result, start_date, end_date)
+                    error_msg = f"❌ **Document Creation Failed**\n\n"
+                    error_msg += f"**Error:** {result['error']}\n\n"
+                    
+                    # Add specific troubleshooting based on error type
+                    if "service not initialized" in result['error'].lower():
+                        error_msg += f"**Solution:** The Google Docs API service isn't available. "
+                        error_msg += f"This usually means the OAuth token doesn't include document creation scopes.\n\n"
+                        error_msg += f"**Fix:** Visit `/google/auth/start` to re-authenticate with full permissions."
+                    elif "403" in result['error']:
+                        error_msg += f"**Solution:** Permission denied - check your Google Cloud Console:\n"
+                        error_msg += f"1. Enable Google Docs API\n"
+                        error_msg += f"2. Ensure OAuth consent screen includes document scopes\n"
+                        error_msg += f"3. Re-authenticate via `/google/auth/start`"
+                    else:
+                        error_msg += f"**Troubleshooting:**\n"
+                        error_msg += f"• Check Google Docs API is enabled in Google Cloud Console\n"
+                        error_msg += f"• Verify OAuth includes document creation permissions\n"
+                        error_msg += f"• Try re-authenticating: `/google/auth/start`"
+                    
+                    response_data = {"SyntaxPrime": error_msg}
+                    return response_data, True
+                    
+            except Exception as e:
+                print(f"🔧 DEBUG: Exception in handle_docs_command: {e}")
+                error_msg = f"❌ **Document Creation Exception**\n\n"
+                error_msg += f"**Error:** {str(e)}\n\n"
+                error_msg += f"This indicates a code-level issue. Check the logs for more details."
                 
-                response_data = {"SyntaxPrime": response_text}
-                save_conversation_enhanced(project, user_input, response_data)
+                response_data = {"SyntaxPrime": error_msg}
                 return response_data, True
-            
-            # Handle site list command
-            elif 'list sites' in user_lower or 'available sites' in user_lower:
-                response_text = self.format_sites_list_response()
-                
-                response_data = {"SyntaxPrime": response_text}
-                save_conversation_enhanced(project, user_input, response_data)
-                return response_data, True
-            
-            # Handle single site analytics
-            else:
-                # Extract site name using enhanced parsing - FIXED TO HANDLE BOTH PATTERNS
-                site_key = None
-                site_name_extracted = None
-                
-                # Strategy 1: "analytics for SITE_NAME [time_period]"
-                for_pattern = re.search(r'analytics for\s+(.+?)(?:\s+(?:last|this|from|past|in)\s|$)', user_lower)
-                if for_pattern:
-                    site_name_extracted = for_pattern.group(1).strip()
-                
-                # Strategy 2: "SITE_NAME analytics" - THIS WAS MISSING!
-                if not site_name_extracted:
-                    reverse_pattern = re.search(r'^(.+?)\s+analytics', user_lower)
-                    if reverse_pattern:
-                        site_name_extracted = reverse_pattern.group(1).strip()
-                
-                # Strategy 3: "SITE_NAME traffic"
-                if not site_name_extracted:
-                    traffic_pattern = re.search(r'^(.+?)\s+traffic', user_lower)
-                    if traffic_pattern:
-                        site_name_extracted = traffic_pattern.group(1).strip()
-                
-                if site_name_extracted:
-                    site_key = self.find_site_by_name(site_name_extracted)
-                
-                start_date, end_date = self.parse_date_range_from_input(user_input)
-                result = self.get_analytics_data(site_key, start_date, end_date)
-                response_text = self.format_analytics_response(result, start_date, end_date)
-                
-                response_data = {"SyntaxPrime": response_text}
-                save_conversation_enhanced(project, user_input, response_data)
-                return response_data, True
-        
-        # PRIORITY 3: Gmail/Calendar commands (keep AI generation for these)
-        gmail_triggers = [
-            'overnight', 'mail', 'emails', 'inbox', 'check mail',
-            'calendar', 'today', 'meetings', 'schedule',
-            'next meeting', 'next', 'upcoming',
-            'good morning', 'morning', 'gm'
-        ]
-        
-        if any(trigger in user_lower for trigger in gmail_triggers):
-            response_data, handled = self.handle_gmail_commands(user_input, project, use_voices, random_toggle)
-            if handled:
-                return response_data, True
-        
-        # PRIORITY 4: Document creation commands (keep AI generation)
-        docs_triggers = ['create document', 'create doc', 'add to document', 'append to document']
-        if any(trigger in user_lower for trigger in docs_triggers):
-            return self.handle_docs_command(user_input, project, use_voices, random_toggle)
-        
-        # PRIORITY 5: Spreadsheet commands (keep AI generation)
-        sheets_triggers = ['create spreadsheet', 'create sheet', 'read sheet', 'get data from sheet']
-        if any(trigger in user_lower for trigger in sheets_triggers):
-            return self.handle_sheets_command(user_input, project, use_voices, random_toggle)
-        
-        return {}, False
-
-    def get_search_console_data_for_site(self, site_key: str, start_date: str = None, end_date: str = None) -> Dict:
-        """Get search console data for a specific site with ENHANCED VALIDATION - FIXED VERSION"""
-        
-        # CRITICAL FIX: Validate site_key parameter
-        if not site_key or site_key not in self.sites_config:
-            available_sites = [(key, config['name']) for key, config in self.sites_config.items()] if self.sites_config else []
-            return {
-                'success': False,
-                'error': f'Site "{site_key}" not found in configuration.\n\nAvailable sites: {available_sites}\n\nTip: Try using the exact site name like "Damn It Carl" or an alias like "carl".'
-            }
-        
-        site_config = self.sites_config[site_key]
-        site_url = site_config.get('search_console_url')
-        
-        if not site_url:
-            return {
-                'success': False,
-                'error': f'No Search Console URL configured for site "{site_config["name"]}". Add search_console_url to your GOOGLE_SITES_CONFIG.'
-            }
-        
-        # Get the raw search console data
-        try:
-            result = self.get_search_console_data(site_url, start_date, end_date)
-            
-            # Validate the result is a dictionary
-            if not isinstance(result, dict):
-                return {
-                    'success': False,
-                    'error': f'get_search_console_data returned {type(result)} instead of dict'
-                }
-            
-            # Add site information to successful results
-            if result.get('success'):
-                result['site_name'] = site_config['name']
-                result['site_key'] = site_key
-            
-            return result
-            
-        except Exception as e:
-            print(f"get_search_console_data_for_site exception: {e}")
-            return {
-                'success': False,
-                'error': f'Exception in search console data retrieval: {str(e)}'
-            }
 # =============================================================================
 # SECTION 7: GOOGLE DOCS AND SHEETS INTEGRATION
 # =============================================================================
@@ -1587,7 +1214,86 @@ All data below is verified and extracted from actual sources.
             
         except Exception as e:
             return {'success': False, 'error': str(e)}
-        
+
+    def handle_docs_command(self, user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
+            """Handle Google Docs creation and manipulation commands"""
+            user_lower = user_input.lower().strip()
+            
+            print(f"🔧 DEBUG: handle_docs_command called with: '{user_input}'")
+            
+            # Extract document title from various patterns
+            title = None
+            content = ""
+            
+            # Pattern 1: "create google doc 'title'" or "create google doc "title""
+            title_match = re.search(r"create (?:google )?doc[ument]*\s*['\"]([^'\"]+)['\"]", user_input, re.IGNORECASE)
+            if title_match:
+                title = title_match.group(1).strip()
+                print(f"🔧 DEBUG: Extracted title from quotes: '{title}'")
+            
+            # Pattern 2: "create google doc title" (without quotes)
+            elif re.search(r"create (?:google )?doc", user_lower):
+                # Find everything after "doc" or "document"
+                doc_match = re.search(r"create (?:google )?doc(?:ument)?\s+(.+)$", user_input, re.IGNORECASE)
+                if doc_match:
+                    title = doc_match.group(1).strip()
+                    # Clean up common words that might be included
+                    title = re.sub(r'\b(called|named|titled)\b', '', title, flags=re.IGNORECASE).strip()
+                    print(f"🔧 DEBUG: Extracted title from pattern: '{title}'")
+            
+            # Default title if none found
+            if not title:
+                title = f"New Document {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}"
+                print(f"🔧 DEBUG: Using default title: '{title}'")
+            
+            # Use the existing create_google_doc method
+            try:
+                print(f"🔧 DEBUG: Calling create_google_doc with title='{title}'")
+                result = self.create_google_doc(title, content)
+                print(f"🔧 DEBUG: create_google_doc result: {result}")
+                
+                if result['success']:
+                    success_msg = f"✅ **Google Doc Created Successfully!**\n\n"
+                    success_msg += f"**Title:** {result['title']}\n"
+                    success_msg += f"**Document URL:** {result['document_url']}\n\n"
+                    success_msg += f"Your document is ready! Click the link above to open it in Google Docs."
+                    
+                    if not content:
+                        success_msg += f"\n\n*The document is currently empty - perfect for adding your content.*"
+                    
+                    response_data = {"SyntaxPrime": success_msg}
+                    return response_data, True
+                else:
+                    error_msg = f"❌ **Document Creation Failed**\n\n"
+                    error_msg += f"**Error:** {result['error']}\n\n"
+                    
+                    # Add specific troubleshooting based on error type
+                    if "service not initialized" in result['error'].lower():
+                        error_msg += f"**Solution:** The Google Docs API service isn't available. "
+                        error_msg += f"This usually means the OAuth token doesn't include document creation scopes.\n\n"
+                        error_msg += f"**Fix:** Visit `/google/auth/start` to re-authenticate with full permissions."
+                    elif "403" in result['error']:
+                        error_msg += f"**Solution:** Permission denied - check your Google Cloud Console:\n"
+                        error_msg += f"1. Enable Google Docs API\n"
+                        error_msg += f"2. Ensure OAuth consent screen includes document scopes\n"
+                        error_msg += f"3. Re-authenticate via `/google/auth/start`"
+                    else:
+                        error_msg += f"**Troubleshooting:**\n"
+                        error_msg += f"• Check Google Docs API is enabled in Google Cloud Console\n"
+                        error_msg += f"• Verify OAuth includes document creation permissions\n"
+                        error_msg += f"• Try re-authenticating: `/google/auth/start`"
+                    
+                    response_data = {"SyntaxPrime": error_msg}
+                    return response_data, True
+                    
+            except Exception as e:
+                print(f"🔧 DEBUG: Exception in handle_docs_command: {e}")
+                error_msg = f"❌ **Document Creation Exception**\n\n"
+                error_msg += f"**Error:** {str(e)}\n\n"
+                error_msg += f"This indicates a code-level issue. Check the logs for more details."
+                
+                response_data = {"SyntaxPrime": error_msg}
+                return response_data, True
 # =============================================================================
 # SECTION 8: GA4 ANALYTICS AND SEARCH CONSOLE INTEGRATION WITH DATA VALIDATION
 # =============================================================================
