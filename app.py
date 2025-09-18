@@ -816,11 +816,12 @@ User's original request: {user_input}"""
 # Section 4: Main Chat Route (UPDATED WITH WEATHER INTEGRATION) 9/16/25
 # Section 4: Main Chat Route (UPDATED WITH COMMAND PARSING) 9/16/25
 # Section 4: Main Chat Route (FIXED INDENTATION AND MISSING ROUTE DECORATOR + WEATHER FIX) 9/17/25
+# Section 4: Main Chat Route (WEATHER INTEGRATION PRIORITY FIX) 9/18/25
 # ========================================
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    """Main chat interface route - FIXED VERSION"""
+    """Main chat interface route - FIXED VERSION WITH CORRECT WEATHER PRIORITY"""
     
     # Handle GET requests - show the chat interface
     if request.method == 'GET':
@@ -858,39 +859,6 @@ def index():
             
             app.logger.info(f"Processing request: '{user_input}' for project '{project}'")
             
-            # WEATHER CHECK - HIGHEST PRIORITY
-            user_lower = user_input.lower().strip()
-            weather_keywords = [
-                "weather", "weather now", "weather today", "temperature", "temp",
-                "pressure", "barometric", "uv", "humidity", "conditions",
-                "outside", "headache weather", "weather alerts"
-            ]
-            
-            is_weather_command = any(keyword in user_lower for keyword in weather_keywords)
-            app.logger.info(f"DEBUG: user_lower='{user_lower}', is_weather_command={is_weather_command}")
-            
-            if is_weather_command:
-                app.logger.info(f"WEATHER: Processing weather command: '{user_input}'")
-                
-                weather_api_key = os.getenv("TOMORROW_IO_API_KEY")
-                if not weather_api_key:
-                    response_data = {"SyntaxPrime": "Weather monitoring not configured. Set TOMORROW_IO_API_KEY environment variable."}
-                else:
-                    try:
-                        from modules.weather_integration import handle_weather_integration
-                        response_data = handle_weather_integration(user_input, project)
-                        if not response_data:
-                            response_data = {"SyntaxPrime": "Weather service temporarily unavailable."}
-                    except Exception as e:
-                        app.logger.error(f"Weather integration failed: {e}")
-                        response_data = {"SyntaxPrime": f"Weather error: {str(e)}"}
-                
-                save_conversation_enhanced(project, user_input, response_data)
-                return _render_enhanced(project, response_data)
-            
-            # Set selected_project
-            selected_project = project
-            
             # Generate session ID for context tracking
             session_id = session.get('session_id')
             if not session_id:
@@ -904,113 +872,7 @@ def index():
             except Exception as e:
                 print(f"Brain context refresh failed: {e}")
 
-            # NEW: Weather awareness integration - check FIRST for health-related topics
-            try:
-                from modules.weather_health_integration import process_user_input_with_weather
-                weather_response = process_user_input_with_weather(user_input, project)
-                if weather_response:
-                    app.logger.info("Health & weather context provided")
-                    save_conversation_enhanced(project, user_input, weather_response)
-                    return _render_enhanced(project, weather_response)
-            except ImportError:
-                pass  # Weather module not available, continue normally
-            except Exception as e:
-                app.logger.error(f"Weather processing failed: {e}")
-                # Continue with normal processing if weather fails
-
-            # PRIORITY 1: Weather integration - FIXED VERSION
-            try:
-                # Direct check for weather commands - bypass complex routing
-                user_lower = user_input.lower().strip()
-                weather_keywords = [
-                    "weather", "weather now", "weather today", "temperature", "temp",
-                    "pressure", "barometric", "uv", "humidity", "conditions",
-                    "outside", "headache weather", "weather alerts"
-                ]
-                
-                is_weather_command = any(keyword in user_lower for keyword in weather_keywords)
-                
-                if is_weather_command:
-                    app.logger.info(f"WEATHER: Direct weather command detected: '{user_input}'")
-                    print(f"🌦️ WEATHER: Processing weather command: '{user_input}'")
-                    
-                    # Check if API key is configured
-                    weather_api_key = os.getenv("TOMORROW_IO_API_KEY")
-                    if not weather_api_key:
-                        response_data = {"SyntaxPrime": "🌦️ Weather monitoring not configured. Set TOMORROW_IO_API_KEY environment variable to enable weather features."}
-                        app.logger.info("WEATHER: API key not configured")
-                    else:
-                        # Direct API call to test
-                        try:
-                            import requests
-                            
-                            url = "https://api.tomorrow.io/v4/weather/realtime"
-                            params = {
-                                "location": "38.8606,-77.2287",  # Merrifield, VA
-                                "fields": "temperature,humidity,windSpeed,weatherCode,pressureSurfaceLevel,uvIndex",
-                                "units": "metric",
-                                "timesteps": "current",
-                                "apikey": weather_api_key
-                            }
-                            
-                            print(f"🌦️ WEATHER: Making direct API call to {url}")
-                            app.logger.info(f"WEATHER: Direct API call with params: {params}")
-                            
-                            response = requests.get(url, params=params, timeout=10)
-                            print(f"🌦️ WEATHER: API Response status: {response.status_code}")
-                            
-                            if response.status_code == 200:
-                                data = response.json()
-                                values = data['data']['values']
-                                
-                                temp_c = values.get('temperature', 0)
-                                temp_f = temp_c * 9/5 + 32
-                                humidity = values.get('humidity', 0)
-                                pressure = values.get('pressureSurfaceLevel', 0)
-                                uv_index = values.get('uvIndex', 0)
-                                wind_speed = values.get('windSpeed', 0) * 2.237  # Convert to mph
-                                
-                                weather_response = f"""🌦️ **Current Weather Conditions**
-
-📍 **Location**: Merrifield, VA
-🌡️ **Temperature**: {temp_c:.1f}°C ({temp_f:.0f}°F)
-💧 **Humidity**: {humidity:.0f}%
-🌪️ **Pressure**: {pressure:.1f} mbar
-☀️ **UV Index**: {uv_index:.1f}
-💨 **Wind**: {wind_speed:.0f} mph
-
-**Health Monitoring**:
-• Pressure: {pressure:.1f} mbar (tracking for headache prediction)
-• UV: {uv_index:.1f} {'⚠️ HIGH - use sun protection' if uv_index >= 6 else '✅ Safe levels' if uv_index < 3 else 'Moderate - use sunscreen'}
-
-*Weather data updated every 30 minutes*"""
-                                
-                                response_data = {"SyntaxPrime": weather_response}
-                                print(f"🌦️ WEATHER: Successfully generated weather response")
-                                app.logger.info("WEATHER: Direct API call successful, response generated")
-                                
-                            else:
-                                error_msg = f"Weather API returned status {response.status_code}: {response.text}"
-                                response_data = {"SyntaxPrime": f"🌦️ Weather service temporarily unavailable: {error_msg}"}
-                                print(f"🌦️ WEATHER: API Error - {error_msg}")
-                                app.logger.error(f"WEATHER: API Error - {error_msg}")
-                                
-                        except Exception as api_error:
-                            error_msg = f"Weather API request failed: {str(api_error)}"
-                            response_data = {"SyntaxPrime": f"🌦️ Weather service error: {error_msg}"}
-                            print(f"🌦️ WEATHER: Exception - {error_msg}")
-                            app.logger.error(f"WEATHER: Exception - {error_msg}")
-                    
-                    # Save and return weather response
-                    save_conversation_enhanced(project, user_input, response_data)
-                    return _render_enhanced(project, response_data)
-                        
-            except Exception as e:
-                app.logger.error(f"Weather integration completely failed: {e}")
-                print(f"🌦️ WEATHER: Complete failure - {e}")
-                # Don't return here - let other processors handle it
-
-            # PRIORITY 2: Handle reminder commands FIRST - This is the key fix!
+            # PRIORITY 1: Handle reminder commands FIRST
             try:
                 print(f"MAIN ROUTE: Checking reminder command for: '{user_input}'")
                 response_data, handled = handle_reminder_command(user_input, project, use_voices, random_toggle)
@@ -1024,29 +886,50 @@ def index():
                 app.logger.error(f"Reminder handler failed: {e}")
                 # Don't fail the whole request, just log and continue
 
-            # PRIORITY 3: Smart Commands - Handle content creation BEFORE Gmail integration
-            try:
-                from modules.smart_commands import classify_email_command, process_smart_commands
-                print(f"MAIN ROUTE: Checking smart commands for: '{user_input}'")
-                response_data, handled = process_smart_commands(user_input, project, use_voices, random_toggle)
-                if handled:
-                    print(f"MAIN ROUTE: Smart command handled successfully!")
-                    save_conversation_enhanced(project, user_input, response_data)
-                    return _render_enhanced(project, response_data)
+            # PRIORITY 2: Weather integration - HIGHEST PRIORITY FOR WEATHER COMMANDS
+            user_lower = user_input.lower().strip()
+            weather_keywords = [
+                "weather", "weather now", "weather today", "temperature", "temp",
+                "pressure", "barometric", "uv", "uv index", "humidity", "conditions",
+                "outside", "headache weather", "weather alerts", "rain", "snow",
+                "wind", "windy", "sunny", "cloudy", "fog", "visibility"
+            ]
+            
+            is_weather_command = any(keyword in user_lower for keyword in weather_keywords)
+            app.logger.info(f"DEBUG: user_lower='{user_lower}', is_weather_command={is_weather_command}")
+            
+            if is_weather_command:
+                app.logger.info(f"WEATHER: Processing weather command with highest priority: '{user_input}'")
+                print(f"🌦️ WEATHER: Direct weather command detected: '{user_input}'")
+                
+                # Check if API key is configured
+                weather_api_key = os.getenv("TOMORROW_IO_API_KEY")
+                if not weather_api_key:
+                    response_data = {"SyntaxPrime": "🌦️ Weather monitoring not configured. Set TOMORROW_IO_API_KEY environment variable to enable weather features."}
+                    app.logger.info("WEATHER: API key not configured")
                 else:
-                    print(f"MAIN ROUTE: Not a smart command, continuing...")
-            except Exception as e:
-                app.logger.error(f"Smart commands handler failed: {e}")
-                # Don't fail the whole request, just log and continue
+                    try:
+                        from modules.weather_integration import handle_weather_integration
+                        response_data = handle_weather_integration(user_input, project)
+                        if not response_data:
+                            response_data = {"SyntaxPrime": "🌦️ Weather service temporarily unavailable."}
+                        app.logger.info("WEATHER: Integration successful")
+                        print(f"🌦️ WEATHER: Successfully processed weather command")
+                    except Exception as weather_error:
+                        error_msg = f"Weather integration failed: {str(weather_error)}"
+                        response_data = {"SyntaxPrime": f"🌦️ Weather error: {error_msg}"}
+                        app.logger.error(f"WEATHER: Integration failed - {error_msg}")
+                        print(f"🌦️ WEATHER: Exception - {error_msg}")
+                
+                # Save and return weather response immediately
+                save_conversation_enhanced(project, user_input, response_data)
+                return _render_enhanced(project, response_data)
 
-            # FIXED: BlueSky commands with enhanced pattern matching (HIGHEST PRIORITY)
+            # PRIORITY 3: BlueSky commands with enhanced pattern matching
             if is_bluesky_configured():
                 app.logger.info(f"Checking BlueSky command patterns for: '{user_input}'")
                 try:
                     # Enhanced BlueSky command detection with more flexible patterns
-                    user_lower = user_input.lower().strip()
-                    
-                    # Comprehensive BlueSky trigger patterns
                     bluesky_patterns = [
                         # Direct BlueSky mentions
                         'bluesky', 'bsky', 'blue sky',
@@ -1073,12 +956,10 @@ def index():
                         response_content = response_data.get('SyntaxPrime', '') if response_data else ''
                         if handled and response_content and 'Available BlueSky commands:' not in response_content:
                             app.logger.info(f"BlueSky command handled successfully with content")
-                            response_data = {"SyntaxPrime": response_content}
                             save_conversation_enhanced(project, user_input, response_data)
                             return _render_enhanced(project, response_data)
                         else:
                             # If it's just the help menu, let it fall through to normal processing
-                            # but log that we tried BlueSky
                             app.logger.info(f"BlueSky returned help menu, falling through to normal processing")
                     
                 except Exception as e:
@@ -1086,16 +967,22 @@ def index():
                     # Don't fail the whole request, just log and continue
                     pass
 
-            # Try hybrid content strategy commands
+            # PRIORITY 4: Smart Commands - Handle content creation
             try:
-                response_data, handled = generate_content_strategy_command(user_input, project, use_voices, random_toggle)
+                from modules.smart_commands import classify_email_command, process_smart_commands
+                print(f"MAIN ROUTE: Checking smart commands for: '{user_input}'")
+                response_data, handled = process_smart_commands(user_input, project, use_voices, random_toggle)
                 if handled:
+                    print(f"MAIN ROUTE: Smart command handled successfully!")
                     save_conversation_enhanced(project, user_input, response_data)
                     return _render_enhanced(project, response_data)
+                else:
+                    print(f"MAIN ROUTE: Not a smart command, continuing...")
             except Exception as e:
-                app.logger.error(f"Content strategy command failed: {e}")
+                app.logger.error(f"Smart commands handler failed: {e}")
+                # Don't fail the whole request, just log and continue
 
-            # Try Google Drive export commands
+            # PRIORITY 5: Google Drive export commands
             if is_google_configured():
                 try:
                     response_data, handled = handle_export_command(user_input, project, use_voices, random_toggle)
@@ -1112,6 +999,15 @@ def index():
                 response_data = {"SyntaxPrime": get_export_help()}
                 save_conversation_enhanced(project, user_input, response_data)
                 return _render_enhanced(project, response_data)
+
+            # Try hybrid content strategy commands
+            try:
+                response_data, handled = generate_content_strategy_command(user_input, project, use_voices, random_toggle)
+                if handled:
+                    save_conversation_enhanced(project, user_input, response_data)
+                    return _render_enhanced(project, response_data)
+            except Exception as e:
+                app.logger.error(f"Content strategy command failed: {e}")
 
             # Try Cloze + ClickUp integration commands
             if is_cloze_configured() and is_clickup_configured():
@@ -1238,6 +1134,16 @@ def index():
                     save_conversation_enhanced(project, user_input, response_data)
                     return _render_enhanced(project, response_data)
 
+            # Gmail/Calendar commands (processed AFTER smart commands and weather)
+            try:
+                from modules.gmail import process_gmail_command
+                response_data, handled = process_gmail_command(user_input, project, use_voices, random_toggle)
+                if handled:
+                    save_conversation_enhanced(project, user_input, response_data)
+                    return _render_enhanced(project, response_data)
+            except Exception as e:
+                app.logger.error(f"Gmail processing failed: {e}")
+
             # Fallback: Standard AI response generation
             try:
                 # Get retrieval context if brain is ready
@@ -1272,61 +1178,6 @@ def index():
             return render_template('index.html',
                                  projects=PROJECTS,
                                  error=f"Request processing failed: {str(e)}")
-
-
-def _render_enhanced(project, response_data):
-    """Helper function to render response with enhanced template data"""
-    return render_template('index.html',
-                         projects=PROJECTS,
-                         current_project=project,
-                         use_voices=session.get('use_voices', ['SyntaxPrime']),
-                         response=response_data,
-                         error=None)
-
-
-def enhanced_marketing_command_processor(user_input, project, use_voices, random_toggle):
-    """Enhanced marketing command processor with RSS knowledge"""
-    try:
-        from modules.marketing_retrieval import search_marketing_knowledge, get_marketing_retriever
-        
-        # Check if this is a marketing-related query
-        marketing_keywords = ['marketing', 'social media', 'content', 'seo', 'campaign', 'brand', 'advertising']
-        user_lower = user_input.lower()
-        
-        if any(keyword in user_lower for keyword in marketing_keywords):
-            # Get marketing knowledge context
-            retriever = get_marketing_retriever()
-            knowledge_results = search_marketing_knowledge(user_input, limit=3)
-            
-            if knowledge_results:
-                # Enhance the prompt with marketing knowledge
-                enhanced_prompt = f"{user_input}\n\nRelevant marketing insights:\n"
-                for result in knowledge_results[:2]:
-                    enhanced_prompt += f"- {result.get('content', '')[:200]}...\n"
-                
-                response_data = generate_response(
-                    enhanced_prompt,
-                    use_voices,
-                    random_toggle,
-                    project
-                )
-                
-                return response_data, True
-                
-    except Exception as e:
-        app.logger.error(f"Enhanced marketing processing failed: {e}")
-    
-    return {}, False
-
-
-def refresh_brain_context():
-    """Refresh brain context periodically"""
-    try:
-        # This is a placeholder for brain context refreshing
-        # Add your brain refresh logic here
-        pass
-    except Exception as e:
-        print(f"Brain context refresh failed: {e}")
     
 # Section 5: Brain Building Routes
 from modules.brain import handle_build_brain, handle_build_new_brain, get_brain_status, get_brain_control_dashboard
