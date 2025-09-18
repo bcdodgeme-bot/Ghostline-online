@@ -2357,6 +2357,9 @@ Provide specific, actionable blog post titles with brief explanations."""
 # =============================================================================
 # SECTION 10: FINAL ENTRY POINT AND INTEGRATION
 # =============================================================================
+# =============================================================================
+# SECTION 10: FINAL ENTRY POINT AND INTEGRATION 9/18/25
+# =============================================================================
 
 def process_google_ecosystem_commands(user_input: str, project: str, use_voices: list, random_toggle: bool) -> Tuple[Dict, bool]:
     """Main entry point for all Google ecosystem commands"""
@@ -2366,6 +2369,54 @@ def process_google_ecosystem_commands(user_input: str, project: str, use_voices:
     
     # Initialize the Google integration
     google_integration = GoogleIntegration()
+    user_lower = user_input.lower().strip()
     
-    # Process the command
-    return google_integration.process_google_commands(user_input, project, use_voices, random_toggle)
+    # Check for enhanced conversational context first
+    context = enhanced_conversation_context.get_context(project)
+    if context and enhanced_conversation_context.detect_follow_up_question(user_input, context):
+        return enhanced_conversation_context.generate_contextual_response(
+            user_input, context, project, use_voices, random_toggle
+        )
+    
+    # Gmail and Calendar commands
+    gmail_patterns = [
+        "daily briefing", "morning briefing", "super morning", "briefing",
+        "overnight", "overnight emails", "check mail", "inbox", "new emails",
+        "calendar", "today", "meetings", "schedule", "next meeting", "next", "upcoming"
+    ]
+    
+    # Check for Gmail/Calendar exact matches
+    if any(pattern == user_lower for pattern in gmail_patterns) or user_lower.startswith(("search ", "find ", "email about ")):
+        return google_integration.handle_gmail_commands(user_input, project, use_voices, random_toggle)
+    
+    # Google Docs commands
+    if re.search(r"create (?:google )?doc", user_lower):
+        return google_integration.handle_docs_command(user_input, project, use_voices, random_toggle)
+    
+    # Analytics commands with enhanced report types
+    analytics_patterns = [
+        r"analytics",
+        r"traffic sources?",
+        r"devices?",
+        r"geography",
+        r"content performance",
+        r"acquisition"
+    ]
+    
+    if any(re.search(pattern, user_lower) for pattern in analytics_patterns):
+        return google_integration.handle_multi_site_analytics_command(user_input, project, use_voices, random_toggle)
+    
+    # Search Console commands
+    if "search console" in user_lower or "seo" in user_lower:
+        return google_integration.handle_search_console_command(user_input, project, use_voices, random_toggle)
+    
+    # Blog suggestions
+    if "blog suggestions" in user_lower or "content ideas" in user_lower:
+        return google_integration.handle_blog_suggestions_command(user_input, project, use_voices, random_toggle)
+    
+    # List sites command
+    if "list sites" in user_lower or "available sites" in user_lower:
+        return google_integration.handle_multi_site_analytics_command(user_input, project, use_voices, random_toggle)
+    
+    # Default: no Google command recognized
+    return {}, False
