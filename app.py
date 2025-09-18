@@ -867,6 +867,7 @@ def index():
             ]
             
             is_weather_command = any(keyword in user_lower for keyword in weather_keywords)
+            app.logger.info(f"DEBUG: user_lower='{user_lower}', is_weather_command={is_weather_command}")
             
             if is_weather_command:
                 app.logger.info(f"WEATHER: Processing weather command: '{user_input}'")
