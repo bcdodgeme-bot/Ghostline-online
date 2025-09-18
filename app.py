@@ -1238,9 +1238,11 @@ def upload_file():
 # Section 7: Streaming Chat API (UPDATED WITH RSS MARKETING KNOWLEDGE INTEGRATION AND GOOGLE DRIVE EXPORT) 9/16/25
 # Section 7: Streaming Chat API (UPDATED WITH SMART COMMANDS INTEGRATION)
 # Section 7: Streaming Chat API (UPDATED WITH IMAGE STREAMING FIX FOR MARKETING SYSTEM) 9/17/25
+# Section 7: Streaming Chat API (WEATHER INTEGRATION PRIORITY CORRECTED) 9/18/25
+# ========================================
 @app.route('/api/chat/stream', methods=['POST'])
 def stream_chat():
-    """Enhanced streaming chat endpoint with proper image streaming support for marketing system"""
+    """Enhanced streaming chat endpoint with weather priority fix and proper image streaming support for marketing system"""
     
     # Enhanced logging for debugging auth issues
     app.logger.info(f"Stream request from {request.remote_addr}")
@@ -1373,7 +1375,65 @@ def stream_chat():
                     app.logger.error(f"Stream: Reminder handler failed: {e}")
                     # Don't set handled=True here - let other processors try
                 
-                # PRIORITY 2: Smart Commands - Handle content creation BEFORE Gmail integration
+                # PRIORITY 2: Weather integration - HIGHEST PRIORITY FOR WEATHER COMMANDS
+                user_lower = user_input.lower().strip()
+                weather_keywords = [
+                    "weather", "weather now", "weather today", "temperature", "temp",
+                    "pressure", "barometric", "uv", "uv index", "humidity", "conditions",
+                    "outside", "headache weather", "weather alerts", "rain", "snow",
+                    "wind", "windy", "sunny", "cloudy", "fog", "visibility"
+                ]
+                
+                is_weather_command = any(keyword in user_lower for keyword in weather_keywords)
+                app.logger.info(f"STREAM DEBUG: user_lower='{user_lower}', is_weather_command={is_weather_command}")
+                
+                if is_weather_command:
+                    app.logger.info(f"STREAM WEATHER: Processing weather command with highest priority: '{user_input}'")
+                    print(f"🌦️ STREAM WEATHER: Direct weather command detected: '{user_input}'")
+                    
+                    # Check if API key is configured
+                    weather_api_key = os.getenv("TOMORROW_IO_API_KEY")
+                    if not weather_api_key:
+                        response_data = {"SyntaxPrime": "🌦️ Weather monitoring not configured. Set TOMORROW_IO_API_KEY environment variable to enable weather features."}
+                        app.logger.info("STREAM WEATHER: API key not configured")
+                        handled = True
+                    else:
+                        try:
+                            from modules.weather_integration import handle_weather_integration
+                            response_data = handle_weather_integration(user_input, project)
+                            if not response_data:
+                                response_data = {"SyntaxPrime": "🌦️ Weather service temporarily unavailable."}
+                            app.logger.info("STREAM WEATHER: Integration successful")
+                            print(f"🌦️ STREAM WEATHER: Successfully processed weather command")
+                            handled = True
+                        except Exception as weather_error:
+                            error_msg = f"Weather integration failed: {str(weather_error)}"
+                            response_data = {"SyntaxPrime": f"🌦️ Weather error: {error_msg}"}
+                            app.logger.error(f"STREAM WEATHER: Integration failed - {error_msg}")
+                            print(f"🌦️ STREAM WEATHER: Exception - {error_msg}")
+                            handled = True
+                    
+                    if handled:
+                        # Save weather response
+                        save_conversation_enhanced(
+                            project=project,
+                            user_input=user_input,
+                            response_data=response_data,
+                            context_project=project if project_mapping_system else None,
+                            context_data={'session_id': session_id, 'mappings': project_context.get('data', {}) if 'project_context' in locals() else {}}
+                        )
+                        # Stream the weather response
+                        for voice, content in response_data.items():
+                            if content and isinstance(content, str):
+                                chunk_size = 30
+                                for i in range(0, len(content), chunk_size):
+                                    chunk = content[i:i+chunk_size]
+                                    yield f"data: {json.dumps({'type': 'content', 'voice': voice, 'chunk': chunk})}\n\n"
+                                    time.sleep(0.03)
+                        yield f"data: {json.dumps({'type': 'complete', 'responses': response_data})}\n\n"
+                        return  # Exit early since we handled weather
+
+                # PRIORITY 3: Smart Commands - Handle content creation
                 try:
                     from modules.smart_commands import classify_email_command, process_smart_commands
                     print(f"STREAM: Checking smart commands for: '{user_input}'")
@@ -1403,15 +1463,15 @@ def stream_chat():
                     app.logger.error(f"Stream: Smart commands handler failed: {e}")
                     # Don't set handled=True here - let other processors try
                 
-                # Try command processors only if reminder and smart commands didn't handle it
+                # Try command processors only if reminder, weather, and smart commands didn't handle it
                 if not handled:
                     processors = [
                         ('google_consolidated', lambda: process_google_ecosystem_commands(user_input, project, use_voices, random_toggle)),
                     ]
                     
-                    # FIXED: Add BlueSky processor with HIGHEST priority (position 0) - THIS IS THE KEY FIX
+                    # PRIORITY 4: Add BlueSky processor with HIGH priority
                     if is_bluesky_configured():
-                        app.logger.info(f"Adding BlueSky processor to stream pipeline with highest priority")
+                        app.logger.info(f"Adding BlueSky processor to stream pipeline with high priority")
                         
                         def bluesky_processor():
                             # Use the same detection logic as the main route
@@ -1529,7 +1589,7 @@ def stream_chat():
                         response_data = {"SyntaxPrime": f"Scraping failed: {e}"}
                         handled = True
 
-                # Gmail/Calendar commands (now processed AFTER smart commands)
+                # Gmail/Calendar commands (now processed AFTER smart commands and weather)
                 if not handled:
                     try:
                         from modules.gmail import process_gmail_command
