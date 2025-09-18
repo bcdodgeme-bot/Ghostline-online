@@ -118,12 +118,21 @@ def apply_session_preferences(*args, **kwargs):
 def is_google_configured():
     """Check if Google OAuth is properly configured for document export"""
     try:
-        from modules.enhanced_google_integration import EnhancedGoogleIntegration
-        google_integration = EnhancedGoogleIntegration()
+        from modules.enhanced_google_integration import GoogleIntegration
+        google_integration = GoogleIntegration()
         
         # Check if we have valid credentials and required scopes
-        if not google_integration.is_configured():
+        if not google_integration.credentials:
             return False
+            
+        # Add any other configuration checks here
+        return True
+        
+    except ImportError:
+        return False
+    except Exception as e:
+        print(f"Google configuration check failed: {e}")
+        return False
             
         # Check if we have the required document creation scope
         required_scopes = [
@@ -1098,9 +1107,8 @@ def index():
             # Try Google integration
             if is_google_configured():
                 try:
-                    from modules.enhanced_google_integration import EnhancedGoogleIntegration
-                    google_integration = EnhancedGoogleIntegration()
-                    response_data, handled = google_integration.process_google_commands(
+                    from modules.enhanced_google_integration import process_google_ecosystem_commands
+                    response_data, handled = process_google_ecosystem_commands(
                         user_input, project, use_voices, random_toggle
                     )
                     if handled:
@@ -4329,10 +4337,9 @@ def mobile_chat():
         if is_google_configured():
             app.logger.info(f"Mobile: Google is configured, processing command: '{user_input}'")
             try:
-                from modules.enhanced_google_integration import EnhancedGoogleIntegration
-                google_integration = EnhancedGoogleIntegration()
-                response_data, handled = google_integration.process_google_commands(
-                    user_input, project, use_voices, random_toggle
+                from modules.enhanced_google_integration import process_google_ecosystem_commands
+                response_data, handled = process_google_ecosystem_commands(
+                        user_input, project, use_voices, random_toggle
                 )
                 if handled:
                     app.logger.info(f"Mobile: Google command handled successfully")
@@ -4497,10 +4504,11 @@ def api_export_status():
         
         if is_google_configured():
             try:
-                from modules.enhanced_google_integration import EnhancedGoogleIntegration
-                google_integration = EnhancedGoogleIntegration()
-                
-                if google_integration.is_configured():
+                from modules.enhanced_google_integration import process_google_ecosystem_commands
+                response_data, handled = process_google_ecosystem_commands(
+                    user_input, project, use_voices, random_toggle
+                )
+                if handled:
                     status['export_available'] = True
                     # Try to get scopes if available
                     try:
@@ -4653,11 +4661,12 @@ def google_export_diagnostics():
         
         if is_google_configured():
             try:
-                from modules.enhanced_google_integration import EnhancedGoogleIntegration
-                google_integration = EnhancedGoogleIntegration()
-                
+                from modules.enhanced_google_integration import process_google_ecosystem_commands
+                response_data, handled = process_google_ecosystem_commands(
+                    user_input, project, use_voices, random_toggle
+                )
                 # Test basic connectivity
-                if google_integration.is_configured():
+                if handled:
                     diagnostics['test_results']['connectivity'] = {
                         'success': True,
                         'message': 'Google integration is configured and ready'
