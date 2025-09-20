@@ -72,6 +72,9 @@ function initializeTimezoneDetection() {
 // =============================================================================
 // BOOKMARK SIDEBAR FUNCTIONALITY (UPDATED FOR BOOKMARKS)
 // =============================================================================
+// =============================================================================
+// BOOKMARK SIDEBAR FUNCTIONALITY (UPDATED FOR BOOKMARKS) 9/19/25
+// =============================================================================
 
 class ThreadSidebar {
     constructor() {
@@ -384,8 +387,166 @@ class ThreadSidebar {
         }
     }
     
-    // NEW METHOD: Load conversation into chat interface
+    // MISSING FUNCTION 1: showError
+    showError(message) {
+        console.error('Bookmark sidebar error:', message);
+        
+        const bookmarkList = document.getElementById('bookmarkList');
+        if (bookmarkList) {
+            bookmarkList.innerHTML = `
+                <div class="thread-empty">
+                    <div class="thread-empty-icon">⚠️</div>
+                    <div style="color: var(--error-color, #ef4444);">${message}</div>
+                    <button onclick="window.threadSidebar.loadBookmarks()" style="margin-top: 12px; padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer;">
+                        Retry
+                    </button>
+                </div>
+            `;
+        }
+        
+        // Also show a toast notification
+        this.showNotification(message, false);
+    }
+    
+    // MISSING FUNCTION 2: escapeHtml
+    escapeHtml(text) {
+        if (!text) return '';
+        
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // MISSING FUNCTION 3: formatTimeAgo
+    formatTimeAgo(dateString) {
+        if (!dateString) return 'Unknown time';
+        
+        try {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            if (diffDays < 7) return `${diffDays}d ago`;
+            if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+            if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo ago`;
+            return `${Math.floor(diffDays / 365)}y ago`;
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return 'Unknown time';
+        }
+    }
+    
+    // MISSING FUNCTION 4: showNotification
+    showNotification(message, isSuccess = true) {
+        console.log('Bookmark notification:', message);
+        
+        // Remove existing notifications
+        const existingNotifications = document.querySelectorAll('.bookmark-sidebar-notification');
+        existingNotifications.forEach(n => n.remove());
+        
+        // Create notification
+        const notification = document.createElement('div');
+        notification.className = 'bookmark-sidebar-notification';
+        notification.innerHTML = `
+            <div class="notification-content">
+                <span class="notification-icon">${isSuccess ? '✅' : '❌'}</span>
+                <span class="notification-text">${message}</span>
+            </div>
+        `;
+        
+        // Add styles
+        notification.style.cssText = `
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: ${isSuccess ? 'var(--success-bg, #059669)' : 'var(--error-bg, #dc2626)'};
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 10000;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+            font-size: 14px;
+            max-width: 300px;
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Animate in
+        setTimeout(() => {
+            notification.style.opacity = '1';
+            notification.style.transform = 'translateX(0)';
+        }, 10);
+        
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
+    }
+    
+    // MISSING FUNCTION 5: highlightBookmarkedMessage
+    highlightBookmarkedMessage(chatId) {
+        console.log('Highlighting bookmarked message:', chatId);
+        
+        // Find message with matching data-chat-id or similar identifier
+        const messages = document.querySelectorAll('.message');
+        messages.forEach(message => {
+            const messageId = message.dataset.messageId || message.dataset.chatId;
+            if (messageId == chatId) {
+                message.classList.add('bookmarked');
+                
+                // Scroll into view
+                message.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+                
+                // Add temporary highlight effect
+                const highlight = document.createElement('div');
+                highlight.style.cssText = `
+                    position: absolute;
+                    top: -2px;
+                    left: -2px;
+                    right: -2px;
+                    bottom: -2px;
+                    background: var(--primary);
+                    opacity: 0.2;
+                    border-radius: 8px;
+                    pointer-events: none;
+                    animation: bookmarkHighlight 2s ease-out forwards;
+                `;
+                
+                message.style.position = 'relative';
+                message.appendChild(highlight);
+                
+                // Remove highlight after animation
+                setTimeout(() => {
+                    if (highlight.parentNode) {
+                        highlight.parentNode.removeChild(highlight);
+                    }
+                }, 2000);
+            }
+        });
+    }
+    
+    // MISSING FUNCTION 6: loadConversationIntoChat
     loadConversationIntoChat(conversationData) {
+        console.log('Loading conversation into chat:', conversationData);
+        
         const chatThread = document.getElementById('thread');
         const bottomAnchor = document.getElementById('bottom-anchor');
         
@@ -447,80 +608,6 @@ class ThreadSidebar {
         }
         
         chatThread.insertBefore(messageDiv, bottomAnchor);
-    }
-    
-    // NEW METHOD: Highlight bookmarked message
-    highlightBookmarkedMessage(chatId) {
-        const bookmarkedMessages = document.querySelectorAll('.message.bookmarked');
-        bookmarkedMessages.forEach(msg => {
-            msg.classList.add('highlight-bookmark');
-            setTimeout(() => {
-                msg.classList.remove('highlight-bookmark');
-            }, 3000);
-        });
-    }
-    
-    // Utility methods
-    formatTimeAgo(dateString) {
-        if (!dateString) return 'Unknown';
-        
-        const date = new Date(dateString);
-        const now = new Date();
-        const diffMs = now - date;
-        const diffMins = Math.floor(diffMs / 60000);
-        const diffHours = Math.floor(diffMs / 3600000);
-        const diffDays = Math.floor(diffMs / 86400000);
-        
-        if (diffMins < 1) return 'Just now';
-        if (diffMins < 60) return `${diffMins}m ago`;
-        if (diffHours < 24) return `${diffHours}h ago`;
-        if (diffDays < 7) return `${diffDays}d ago`;
-        
-        return date.toLocaleDateString();
-    }
-    
-    escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-    
-    showError(message) {
-        const bookmarkList = document.getElementById('bookmarkList');
-        if (bookmarkList) {
-            bookmarkList.innerHTML = `
-                <div class="thread-empty">
-                    <div class="thread-empty-icon">⚠️</div>
-                    <div style="color: var(--error);">${this.escapeHtml(message)}</div>
-                    <button onclick="threadSidebar.loadBookmarks()" style="margin-top: 8px; padding: 4px 8px; background: var(--surface-hover); border: 1px solid var(--border); border-radius: 4px; color: inherit; cursor: pointer;">
-                        Retry
-                    </button>
-                </div>
-            `;
-        }
-        console.error('Bookmark sidebar error:', message);
-    }
-    
-    showNotification(message) {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = 'bookmark-notification';
-        notification.textContent = message;
-        document.body.appendChild(notification);
-        
-        // Animate in
-        setTimeout(() => notification.classList.add('show'), 10);
-        
-        // Remove after 3 seconds
-        setTimeout(() => {
-            notification.classList.remove('show');
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 300);
-        }, 3000);
     }
 }
 

@@ -252,7 +252,7 @@ def _history_path(project: str) -> str:
     """Get history file path for project"""
     return f"sessions/{project.lower().replace(' ', '_')}.json"
 
-def load_user_history_only(project: str, max_tokens: int = 500) -> str:
+def load_user_history_only(project: str, max_tokens: int = 10000) -> str:
     """
     Load recent USER prompts only (no assistant text) to avoid response echoing.
     Returns a summary of recent conversation context.
@@ -274,7 +274,7 @@ def load_user_history_only(project: str, max_tokens: int = 500) -> str:
         total_tokens = 0
         
         # Go through history in reverse to get most recent context
-        for entry in reversed(history[-20:]):  # Last 20 entries
+        for entry in reversed(history[-400:]):  # Last 20 entries
             if isinstance(entry, dict) and "user_input" in entry:
                 user_input = entry["user_input"]
                 tokens = _estimate_tokens(user_input)
@@ -412,7 +412,7 @@ def generate_response(
     filtered_model = filter_model_selection(model)
     
     # Get conversation history context
-    conversation_context = load_user_history_only(project, max_tokens=500)
+    conversation_context = load_user_history_only(project, max_tokens=10000)
     
     # Get current time context
     time_context = get_current_time_context()
@@ -550,7 +550,7 @@ def generate_streaming_response(
     filtered_model = filter_model_selection(model)
     
     # Get context
-    conversation_context = load_user_history_only(project, max_tokens=500)
+    conversation_context = load_user_history_only(project, max_tokens=10000)
     time_context = get_current_time_context()
     
     # Build system context
@@ -794,7 +794,7 @@ def generate_feedback_aware_response(
     filtered_model = filter_model_selection(model)
     
     # Get conversation history context
-    conversation_context = load_user_history_only(project, max_tokens=500)
+    conversation_context = load_user_history_only(project, max_tokens=10000)
     
     # Get current time context
     time_context = get_current_time_context()

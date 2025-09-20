@@ -385,7 +385,7 @@ class ContentOpportunityDetector:
                         # Calculate similarity score
                         confidence = self._calculate_similarity(topic.query, keyword, topic.related_queries)
                         
-                        if confidence >= 10.0:  # Minimum relevance threshold
+                        if confidence >= 7.0:  # Minimum relevance threshold
                             site_info = SITE_DOMAINS.get(site_domain, {})
                             
                             matches.append({
@@ -853,7 +853,7 @@ def run_trends_monitoring_cycle():
         opportunities.sort(key=lambda x: x.confidence_score, reverse=True)
         
         for opportunity in opportunities[:3]:  # Max 3 per cycle
-            if opportunity.confidence_score >= 12.0:  # Higher threshold for auto-alerts
+            if opportunity.confidence_score >= 8.0:  # Higher threshold for auto-alerts
                 if alert_system.send_opportunity_alert(opportunity):
                     alerts_sent += 1
         
