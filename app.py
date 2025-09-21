@@ -1197,44 +1197,14 @@ def index():
 # Section 4.5: Post-Processing Bookmark Scanner
 # Safely detects bookmark commands AFTER main processing is complete
 # ========================================
-
-import re
-import datetime
-
-def extract_bookmark_title(user_input):
-    """Extract bookmark title from commands like 'bookmark this as test 1'"""
-    if not user_input:
-        return None
-    
-    patterns = [
-        r'bookmark this as (.+)',
-        r'bookmark (.+)',
-        r'save this as (.+)',
-        r'remember this as (.+)',
-        r'mark this as (.+)'
-    ]
-    
-    user_lower = user_input.lower().strip()
-    
-    for pattern in patterns:
-        match = re.search(pattern, user_lower)
-        if match:
-            title = match.group(1).strip()
-            # Clean up the title
-            if len(title) > 100:
-                title = title[:100] + "..."
-            return title
-    
-    return None
-
 def scan_for_bookmark_commands():
     """Post-processing scanner that checks recent conversations for bookmark commands"""
     try:
-        from modules.database_fixes import create_bookmark
-        from modules.database import get_db_connection
+        # Use the existing database connection method from your app
+        from modules.database import get_db_connection  # Use existing method
         from psycopg2.extras import RealDictCursor
         
-        with get_db_connection() as conn:
+        with get_db_connection() as conn:  # Use existing function
             if not conn:
                 print("📖 Bookmark scanner: No database connection")
                 return
@@ -1267,71 +1237,34 @@ def scan_for_bookmark_commands():
                 chat_id = row['id']
                 user_input = row['user_input']
                 created_at = row['created_at']
-                project = row['project']
                 
                 # Extract title from the command
-                title = extract_bookmark_title(user_input)
+                title = extract_bookmark_title(user_input) or f"Bookmark {created_at.strftime('%m/%d %H:%M')}"
                 
-                # If no specific title found, create a default one
-                if not title:
-                    # Check for simple bookmark commands
-                    simple_patterns = [
-                        r'^bookmark$',
-                        r'^bookmark this$',
-                        r'^save this$',
-                        r'^remember this$',
-                        r'^mark this$'
-                    ]
+                # Create bookmark using direct SQL instead of importing create_bookmark
+                try:
+                    cursor.execute('''
+                        INSERT INTO conversation_bookmarks (chat_id, title, notes, bookmark_type)
+                        VALUES (%s, %s, %s, %s)
+                        RETURNING bookmark_id
+                    ''', (chat_id, title, f"Auto-detected from: {user_input}", 'auto_detected'))
                     
-                    user_lower = user_input.lower().strip()
-                    if any(re.match(pattern, user_lower) for pattern in simple_patterns):
-                        title = f"Bookmark {created_at.strftime('%m/%d %H:%M')}"
-                    else:
-                        # Skip if it's not a clear bookmark command
-                        continue
-                
-                # Create the bookmark
-                print(f"📖 Creating bookmark for conversation {chat_id}: '{title}'")
-                
-                bookmark_id = create_bookmark(
-                    chat_id=chat_id,
-                    title=title,
-                    notes=f"Auto-detected from command: {user_input}",
-                    bookmark_type='auto_detected'
-                )
-                
-                if bookmark_id:
-                    bookmarks_created += 1
-                    print(f"📖 ✅ Auto-created bookmark {bookmark_id} for conversation {chat_id}")
-                else:
-                    print(f"📖 ❌ Failed to create bookmark for conversation {chat_id}")
+                    bookmark_result = cursor.fetchone()
+                    if bookmark_result:
+                        bookmark_id = bookmark_result['bookmark_id']
+                        conn.commit()
+                        bookmarks_created += 1
+                        print(f"📖 ✅ Created bookmark {bookmark_id} for conversation {chat_id}: '{title}'")
+                    
+                except Exception as bookmark_error:
+                    print(f"📖 ❌ Failed to create bookmark for conversation {chat_id}: {bookmark_error}")
+                    conn.rollback()
             
             if bookmarks_created > 0:
                 print(f"📖 Bookmark scanner completed: {bookmarks_created} bookmarks created")
                 
     except Exception as e:
         print(f"📖 Bookmark scanner failed (non-critical): {e}")
-        # Fail silently - don't disrupt main application
-
-def trigger_bookmark_scanner():
-    """Safe wrapper to trigger bookmark scanning without errors"""
-    try:
-        scan_for_bookmark_commands()
-    except Exception as e:
-        # Log but don't raise - this should never break the main flow
-        print(f"📖 Bookmark scanner wrapper failed: {e}")
-
-# Integration hook for main route
-def integrate_bookmark_scanner_into_main_route():
-    """
-    Add this call at the very end of your main route's POST processing:
-    
-    try:
-        trigger_bookmark_scanner()
-    except:
-        pass  # Fail completely silently
-    """
-    pass
     
 # Section 5: Brain Building Routes
 from modules.brain import handle_build_brain, handle_build_new_brain, get_brain_status, get_brain_control_dashboard
