@@ -1183,7 +1183,7 @@ def index():
 
 # ADD HERE - indented to match the except block above
             try:
-                trigger_bookmark_scanner()
+                scan_for_bookmark_scanner()
             except:
                 pass  # Completely silent failure
 
@@ -1772,7 +1772,7 @@ def stream_chat():
                 # ADD BOOKMARK SCANNER HERE
                 print("📖 About to trigger bookmark scanner from stream...")
                 try:
-                    trigger_bookmark_scanner()
+                    scan_for__bookmark_scanner()
                 except Exception as e:
                     print(f"📖 Bookmark scanner failed: {e}")
                 

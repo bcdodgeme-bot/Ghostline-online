@@ -1504,7 +1504,7 @@ def auto_create_bookmarks():
                 WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
                   AND id NOT IN (SELECT chat_id FROM conversation_bookmarks WHERE chat_id IS NOT NULL)
                 ORDER BY created_at DESC
-                LIMIT 50
+                LIMIT 400
             ''')
             
             rows = cursor.fetchall()
