@@ -1836,6 +1836,13 @@ def stream_chat():
                 yield f"data: {json.dumps(completion_event)}\n\n"
                 app.logger.info(f"Stream completed successfully (image: {has_image_data})")
                 
+                # ADD BOOKMARK SCANNER HERE
+                print("📖 About to trigger bookmark scanner from stream...")
+                try:
+                    trigger_bookmark_scanner()
+                except Exception as e:
+                    print(f"📖 Bookmark scanner failed: {e}")
+                
             except Exception as e:
                 app.logger.error(f"Stream generation failed: {e}", exc_info=True)
                 yield f"data: {json.dumps({'type': 'error', 'message': f'Stream failed: {str(e)}'})}\n\n"
