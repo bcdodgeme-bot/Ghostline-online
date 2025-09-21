@@ -247,19 +247,82 @@ _client = OpenRouterClient(OPENROUTER_API_KEY, OPENROUTER_BASE_URL)
 #-------------------------------------------------------------------
 # SECTION 5: CONVERSATION HISTORY MANAGEMENT
 #-------------------------------------------------------------------
+#-------------------------------------------------------------------
+# SECTION 5: CONVERSATION HISTORY MANAGEMENT (FIXED 9/20/25)
+#-------------------------------------------------------------------
 
 def _history_path(project: str) -> str:
-    """Get history file path for project"""
+    """Get history file path for project (kept for backwards compatibility)"""
     return f"sessions/{project.lower().replace(' ', '_')}.json"
 
 def load_user_history_only(project: str, max_tokens: int = 10000) -> str:
     """
-    Load recent USER prompts only (no assistant text) to avoid response echoing.
+    Load recent USER prompts only from DATABASE to avoid response echoing.
     Returns a summary of recent conversation context.
+    FIXED: Now reads from database instead of empty files!
     """
+    
+    print(f"🔍 Loading memory for project '{project}' from database...")
+    
+    try:
+        # Import the database function
+        from modules.database import load_conversation_enhanced
+        
+        # Load conversations from database instead of files
+        history = load_conversation_enhanced(project, limit=20)
+        
+        if not history:
+            print(f"⚠️ No conversation history found in database for project '{project}'")
+            # Fallback to file-based loading if database fails
+            return _load_file_history_fallback(project, max_tokens)
+        
+        print(f"✅ Found {len(history)} conversations in database for '{project}'")
+        
+        # Extract user messages only (no assistant responses to avoid echoing)
+        user_messages = []
+        total_tokens = 0
+        
+        # Go through history in reverse to get most recent context
+        for entry in reversed(history):
+            if "user" in entry and entry["user"]:
+                user_input = entry["user"]
+                tokens = _estimate_tokens(user_input)
+                
+                if total_tokens + tokens > max_tokens:
+                    break
+                
+                user_messages.insert(0, user_input)
+                total_tokens += tokens
+        
+        if user_messages:
+            context = "Recent conversation context (from database):\n"
+            for i, msg in enumerate(user_messages[-5:], 1):  # Last 5 user inputs
+                context += f"{i}. {msg}\n"
+            
+            print(f"📝 Generated context from {len(user_messages)} recent messages")
+            return context
+        
+        print("⚠️ No user messages found in database history")
+        return ""
+        
+    except ImportError as e:
+        print(f"⚠️ Database module import failed: {e}")
+        return _load_file_history_fallback(project, max_tokens)
+    except Exception as e:
+        print(f"⚠️ Database history loading failed: {e}")
+        return _load_file_history_fallback(project, max_tokens)
+
+def _load_file_history_fallback(project: str, max_tokens: int = 10000) -> str:
+    """
+    Fallback method: Load from files if database fails
+    (This is the original method, kept as backup)
+    """
+    print(f"📁 Falling back to file-based history for project '{project}'")
+    
     history_file = _history_path(project)
     
     if not os.path.exists(history_file):
+        print(f"⚠️ No history file found: {history_file}")
         return ""
     
     try:
@@ -274,7 +337,7 @@ def load_user_history_only(project: str, max_tokens: int = 10000) -> str:
         total_tokens = 0
         
         # Go through history in reverse to get most recent context
-        for entry in reversed(history[-400:]):  # Last 20 entries
+        for entry in reversed(history[-20:]):  # Last 20 entries
             if isinstance(entry, dict) and "user_input" in entry:
                 user_input = entry["user_input"]
                 tokens = _estimate_tokens(user_input)
@@ -286,7 +349,7 @@ def load_user_history_only(project: str, max_tokens: int = 10000) -> str:
                 total_tokens += tokens
         
         if user_messages:
-            context = "Recent conversation context:\n"
+            context = "Recent conversation context (from files):\n"
             for i, msg in enumerate(user_messages[-5:], 1):  # Last 5 user inputs
                 context += f"{i}. {msg}\n"
             return context
@@ -294,8 +357,70 @@ def load_user_history_only(project: str, max_tokens: int = 10000) -> str:
         return ""
         
     except Exception as e:
-        print(f"History loading error: {e}")
+        print(f"📁 File history loading error: {e}")
         return ""
+
+def save_conversation_to_database(project: str, user_input: str, responses: dict):
+    """
+    Save conversation to database using the database module
+    This ensures conversations are stored where they can be retrieved for memory
+    """
+    try:
+        from modules.database import save_conversation_enhanced
+        
+        # Save to database
+        chat_id = save_conversation_enhanced(
+            project=project,
+            user_input=user_input,
+            response_data=responses
+        )
+        
+        if chat_id:
+            print(f"💾 Conversation saved to database (ID: {chat_id})")
+        else:
+            print("⚠️ Failed to save conversation to database")
+            
+        return chat_id
+        
+    except ImportError as e:
+        print(f"⚠️ Database module not available for saving: {e}")
+        return None
+    except Exception as e:
+        print(f"⚠️ Failed to save conversation to database: {e}")
+        return None
+
+def get_conversation_stats(project: str) -> dict:
+    """
+    Get conversation statistics for diagnostics
+    """
+    stats = {
+        'project': project,
+        'database_conversations': 0,
+        'file_conversations': 0,
+        'memory_source': 'unknown'
+    }
+    
+    try:
+        # Check database conversations
+        from modules.database import load_conversation_enhanced
+        db_history = load_conversation_enhanced(project, limit=100)
+        stats['database_conversations'] = len(db_history) if db_history else 0
+        stats['memory_source'] = 'database' if stats['database_conversations'] > 0 else 'files'
+        
+    except Exception as e:
+        print(f"⚠️ Could not get database stats: {e}")
+    
+    try:
+        # Check file conversations
+        history_file = _history_path(project)
+        if os.path.exists(history_file):
+            with open(history_file, "r", encoding="utf-8") as f:
+                file_history = json.load(f)
+                stats['file_conversations'] = len(file_history) if isinstance(file_history, list) else 0
+    except Exception as e:
+        print(f"⚠️ Could not get file stats: {e}")
+    
+    return stats
 
 #-------------------------------------------------------------------
 # SECTION 6: AUTHENTIC PERSONALITY INTEGRATION

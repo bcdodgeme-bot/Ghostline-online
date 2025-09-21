@@ -1181,11 +1181,157 @@ def index():
                 save_conversation_enhanced(project, user_input, response_data)
                 return _render_enhanced(project, response_data)
 
+# ADD HERE - indented to match the except block above
+            try:
+                trigger_bookmark_scanner()
+            except:
+                pass  # Completely silent failure
+
         except Exception as e:
             app.logger.error(f"Main route failed: {e}", exc_info=True)
             return render_template('index.html',
                                  projects=PROJECTS,
                                  error=f"Request processing failed: {str(e)}")
+ 
+
+# Section 4.5: Post-Processing Bookmark Scanner
+# Safely detects bookmark commands AFTER main processing is complete
+# ========================================
+
+import re
+import datetime
+
+def extract_bookmark_title(user_input):
+    """Extract bookmark title from commands like 'bookmark this as test 1'"""
+    if not user_input:
+        return None
+    
+    patterns = [
+        r'bookmark this as (.+)',
+        r'bookmark (.+)',
+        r'save this as (.+)',
+        r'remember this as (.+)',
+        r'mark this as (.+)'
+    ]
+    
+    user_lower = user_input.lower().strip()
+    
+    for pattern in patterns:
+        match = re.search(pattern, user_lower)
+        if match:
+            title = match.group(1).strip()
+            # Clean up the title
+            if len(title) > 100:
+                title = title[:100] + "..."
+            return title
+    
+    return None
+
+def scan_for_bookmark_commands():
+    """Post-processing scanner that checks recent conversations for bookmark commands"""
+    try:
+        from modules.database_fixes import create_bookmark
+        from modules.database import get_db_connection
+        from psycopg2.extras import RealDictCursor
+        
+        with get_db_connection() as conn:
+            if not conn:
+                print("📖 Bookmark scanner: No database connection")
+                return
+            
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            
+            # Look for conversations from last 10 minutes that might be bookmark commands
+            cursor.execute('''
+                SELECT id, user_input, created_at, project
+                FROM chat_threads 
+                WHERE created_at > NOW() - INTERVAL '10 minutes'
+                  AND (LOWER(user_input) LIKE '%bookmark%' 
+                       OR LOWER(user_input) LIKE '%save this%'
+                       OR LOWER(user_input) LIKE '%remember this%'
+                       OR LOWER(user_input) LIKE '%mark this%')
+                  AND id NOT IN (SELECT chat_id FROM conversation_bookmarks WHERE chat_id IS NOT NULL)
+                ORDER BY created_at DESC
+                LIMIT 5
+            ''')
+            
+            recent_bookmark_commands = cursor.fetchall()
+            
+            if not recent_bookmark_commands:
+                print("📖 Bookmark scanner: No recent bookmark commands found")
+                return
+            
+            bookmarks_created = 0
+            
+            for row in recent_bookmark_commands:
+                chat_id = row['id']
+                user_input = row['user_input']
+                created_at = row['created_at']
+                project = row['project']
+                
+                # Extract title from the command
+                title = extract_bookmark_title(user_input)
+                
+                # If no specific title found, create a default one
+                if not title:
+                    # Check for simple bookmark commands
+                    simple_patterns = [
+                        r'^bookmark$',
+                        r'^bookmark this$',
+                        r'^save this$',
+                        r'^remember this$',
+                        r'^mark this$'
+                    ]
+                    
+                    user_lower = user_input.lower().strip()
+                    if any(re.match(pattern, user_lower) for pattern in simple_patterns):
+                        title = f"Bookmark {created_at.strftime('%m/%d %H:%M')}"
+                    else:
+                        # Skip if it's not a clear bookmark command
+                        continue
+                
+                # Create the bookmark
+                print(f"📖 Creating bookmark for conversation {chat_id}: '{title}'")
+                
+                bookmark_id = create_bookmark(
+                    chat_id=chat_id,
+                    title=title,
+                    notes=f"Auto-detected from command: {user_input}",
+                    bookmark_type='auto_detected'
+                )
+                
+                if bookmark_id:
+                    bookmarks_created += 1
+                    print(f"📖 ✅ Auto-created bookmark {bookmark_id} for conversation {chat_id}")
+                else:
+                    print(f"📖 ❌ Failed to create bookmark for conversation {chat_id}")
+            
+            if bookmarks_created > 0:
+                print(f"📖 Bookmark scanner completed: {bookmarks_created} bookmarks created")
+                
+    except Exception as e:
+        print(f"📖 Bookmark scanner failed (non-critical): {e}")
+        # Fail silently - don't disrupt main application
+
+def trigger_bookmark_scanner():
+    """Safe wrapper to trigger bookmark scanning without errors"""
+    try:
+        scan_for_bookmark_commands()
+    except Exception as e:
+        # Log but don't raise - this should never break the main flow
+        print(f"📖 Bookmark scanner wrapper failed: {e}")
+
+# Integration hook for main route
+def integrate_bookmark_scanner_into_main_route():
+    """
+    Add this call at the very end of your main route's POST processing:
+    
+    try:
+        trigger_bookmark_scanner()
+    except:
+        pass  # Fail completely silently
+    """
+    pass
     
 # Section 5: Brain Building Routes
 from modules.brain import handle_build_brain, handle_build_new_brain, get_brain_status, get_brain_control_dashboard
